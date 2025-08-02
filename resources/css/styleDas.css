@@ -1,0 +1,389 @@
+/* Sidebar base */
+.sidebar {
+    width: 16rem;
+    transition: width 0.35s cubic-bezier(.4, 0, .2, 1), background-color 0.3s, color 0.3s;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0 0 1rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 10px;
+}
+
+.sidebar.collapsed {
+    width: 4.6rem;
+
+}
+
+.dark .sidebar {
+    background: #07080c;
+    color: #f1f5f9;
+}
+
+/* Oculta solo el texto, mantiene espacio para iconos y evita encogimiento */
+.sidebar.collapsed .sidebar-text {
+    opacity: 0;
+    pointer-events: none;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    transition: opacity 0.5s cubic-bezier(.4, 0, .2, 1), width 0.35s cubic-bezier(.4, 0, .2, 1), min-width 0.35s cubic-bezier(.4, 0, .2, 1), max-width 0.35s cubic-bezier(.4, 0, .2, 1);
+    overflow: hidden;
+}
+
+.sidebar .sidebar-text {
+    opacity: 1;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    transition: opacity 0.5s cubic-bezier(.4, 0, .2, 1) 0s, width 0.35s cubic-bezier(.4, 0, .2, 1), min-width 0.35s cubic-bezier(.4, 0, .2, 1), max-width 0.35s cubic-bezier(.4, 0, .2, 1);
+}
+
+.sidebar .sidebar-text.delayed-opacity {
+    transition: opacity 0.5s cubic-bezier(.4, 0, .2, 1) 0.2s, width 0.35s cubic-bezier(.4, 0, .2, 1), min-width 0.35s cubic-bezier(.4, 0, .2, 1), max-width 0.35s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Iconos siempre alineados y tamaño fijo, sin encogerse */
+.sidebar .nav-item i,
+.sidebar .sidebar-header i {
+    width: 1rem !important;
+    height: 1rem !important;
+    min-width: 1rem !important;
+    min-height: 1rem !important;
+    max-width: 1rem !important;
+    max-height: 1rem !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem !important;
+    transition: color 0.3s, width 0.35s cubic-bezier(.4, 0, .2, 1), min-width 0.35s cubic-bezier(.4, 0, .2, 1), max-width 0.35s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Unifica estilos de todos los ítems, incluido configuración */
+.sidebar .nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 0.2rem 0.75rem 0.9rem;
+    min-height: 2.5rem;
+    gap: 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #64748b;
+    background: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+.sidebar .nav-item.active {
+    background: linear-gradient(135deg, #502d1398 0%, #36290e94 100%);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(92, 63, 30, 0.219);
+}
+
+.sidebar .nav-item.active i {
+    color: #fff !important;
+}
+
+/* Elimina el espacio entre icono y texto al cerrar el sidebar */
+.sidebar.collapsed .nav-item {
+    gap: 0;
+}
+
+.sidebar .nav-item:hover {
+    background: #e4dccd;
+    color: #1e293b;
+}
+
+.dark .sidebar .nav-item {
+    color: #94a3b8;
+}
+
+.dark .sidebar .nav-item:hover {
+    background: #3f2e1e54;
+    color: #fff;
+}
+
+.dark .sidebar .nav-item.active {
+    background: linear-gradient(135deg, #312a25dc 0%, #201713 100%);
+    color: #fff;
+}
+
+.dark .dropdown-menu .hover\:bg-red-100:hover {
+    background: #da171763;
+    color: #fff3f3;
+}
+
+.dark .dropdown-menu a:hover {
+    background: #793d253a;
+    color: #fff;
+}
+
+.dropdown-menu {
+    display: none;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+/* Mobile sidebar overlay */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+}
+
+.sidebar-overlay.show {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .sidebar-expanded {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .sidebar-expanded.mobile-open {
+        transform: translateX(0);
+    }
+}
+
+/* Dark mode styles */
+.dark {
+    color-scheme: dark;
+}
+
+.dark body {
+    background-color: #0f172a;
+}
+
+.dark .bg-white {
+    background-color: #07080c;
+}
+
+.dark .bg-gray-50 {
+    background-color: #040507;
+}
+
+.dark .bg-gray-100 {
+    background-color: #362b22;
+}
+
+.dark .bg-stone-200 {
+    background-color: #312d2a;
+}
+
+.dark .text-gray-900 {
+    color: #f1f5f9;
+}
+
+.dark .text-gray-700 {
+    color: #cbd5e1;
+}
+
+.dark .text-gray-600 {
+    color: #94a3b8;
+}
+
+.dark .text-gray-500 {
+    color: #64748b;
+}
+
+.dark .text-gray-400 {
+    color: #475569;
+}
+
+.dark .border-gray-200 {
+    border-color: #334155;
+}
+
+.dark .hover\:bg-gray-200:hover {
+    background-color: #35281cb7;
+}
+
+/* Toggle switch styles - moderately rounded */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: 0.3s;
+    border-radius: 13px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+input:checked+.toggle-slider {
+    background-color: #3b82f6;
+}
+
+input:checked+.toggle-slider:before {
+    transform: translateX(22px);
+}
+
+.dark .toggle-slider {
+    background-color: #475569;
+}
+
+.dark input:checked+.toggle-slider {
+    background-color: #72412063;
+}
+
+/* Mobile dark mode button */
+.mobile-dark-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 30;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.mobile-dark-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
+}
+
+.dark .mobile-dark-toggle {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    box-shadow: 0 8px 25px rgba(100, 116, 139, 0.3);
+}
+
+.dark .mobile-dark-toggle:hover {
+    box-shadow: 0 12px 35px rgba(100, 116, 139, 0.4);
+}
+
+@media (max-width: 640px) {
+    .mobile-dark-toggle {
+        display: flex;
+    }
+}
+
+/* Soft shadows */
+.shadow-soft {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dark .shadow-soft {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Gradient backgrounds */
+.bg-gradient-blue {
+    background: linear-gradient(135deg, #3f2c1bdc 0%, #30201b 100%);
+}
+
+.bg-gradient-green {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.bg-gradient-purple {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.bg-gradient-orange {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+/* Hover effects */
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.dark .hover-lift:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Progress bars with moderately rounded ends */
+.progress-bar {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    border-radius: 8px;
+    transition: width 0.5s ease;
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Agranda y mueve a la derecha el icono y el texto al hacer hover */
+
+
+/* Efecto cuando el sidebar está abierto */
+.sidebar:not(.collapsed) .nav-item:hover svg,
+.sidebar:not(.collapsed) .nav-item:hover .sidebar-text {
+    transform: scale(1.1) translateX(14%);
+    transition: transform 0.4s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Efecto cuando el sidebar está cerrado: solo el icono se agranda */
+.sidebar.collapsed .nav-item:hover svg {
+    transform: scale(1.15);
+    transition: transform 0.4s cubic-bezier(.4, 0, .2, 1);
+}

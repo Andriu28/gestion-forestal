@@ -14,27 +14,44 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+        @vite(['resources/css/styleDas.css', 'resources/js/DashFunctions.js'])
+        
+
+        <!-- esto se debe de mudar luego a local para la platilla -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
-            @include('layouts.navigation')
+   <body class="bg-gray-50">
+         <!-- Mobile sidebar overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white dark:bg-gray-800 shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
+        <!-- Mobile dark mode toggle button -->
+        <button id="mobileDarkToggle" class="mobile-dark-toggle">
+            <i id="mobileDarkIcon" data-lucide="sun" class="w-6 h-6 text-white"></i>
+        </button>
 
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
+         <div class="flex h-screen">
+            
+        
+                @include('layouts.navigation')
+
+            
+                <main>
+                    {{ $slot }}
+                </main>
+
+            </div>
         </div>
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+
+
+
+
+    <script src="{{ asset('js/DashFunctions.js') }}"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    
     </body>
 </html>
