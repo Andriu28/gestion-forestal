@@ -1,4 +1,3 @@
-<!-- resources/views/deforestation/create.blade.php -->
 
 <x-app-layout>
     <div class=" mx-auto ">
@@ -8,13 +7,13 @@
                     {{('Análisis de Deforestación') }}
                 </h2>
    
-                    <!-- CARGA DEL MAPA AQUÍ -->
+                   
                     <div id="map" style="height: 80vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
-                        <!-- Controles del mapa -->
+                        
                         <div id="map-controls">
-                            <!-- Contenedor para los botones superiores (Cambiar Mapa y Pantalla Completa) -->
+                            
                             <div class="flex flex-col items-end space-y-2">
-                                <!-- Fila superior: Cambiar Mapa y Pantalla Completa -->
+                                
                                 <div class="flex space-x-2">
 
                                     {{-- boton para mostrar u ocultar areas en deforestacion --}}
@@ -43,7 +42,7 @@
                                     </div>
 
                                     {{-- // AGREGAR AQUÍ EL NUEVO CONTROL DE OPACIDAD // --}}
-                                        <!-- Contenedor para controles de opacidad -->
+                                        
                                         <div class="relative">
                                             <button id="opacity-control-button" title="Ajustar Opacidad" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers w-6 h-6">
@@ -53,7 +52,7 @@
                                                 </svg>
                                             </button>
                                             
-                                            <!-- Panel de control de opacidad -->
+                                            
                                             <div id="opacity-control-panel" 
                                                 class="absolute mt-4 w-48 rounded-xl shadow-lg bg-gray-50 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 right-0
                                                         transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none">
@@ -63,14 +62,14 @@
                                                     </svg>
                                                 </div>
                                                 
-                                                <!-- Contenido del panel -->
+                                                
                                                 <div class="p-4 z-100">
                                                     <div class="flex items-center justify-between mb-2">
                                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Opacidad GFW</span>
                                                         <span id="opacity-value" class="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">75%</span>
                                                     </div>
                                                     
-                                                    <!-- Slider de opacidad -->
+                                                    
                                                     <input type="range" 
                                                         id="opacity-slider" 
                                                         min="0" 
@@ -78,7 +77,7 @@
                                                         value="75"
                                                         class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb">
                                                     
-                                                    <!-- Botones predefinidos -->
+                                                    
                                                     <div class="flex space-x-2 mt-3">
                                                         <button type="button" data-opacity="25" class="flex-1 py-1  bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs">
                                                             25%
@@ -96,14 +95,9 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        {{-- // FIN DEL NUEVO CONTROL DE OPACIDAD // --}}
-
-                                    {{-- ///////////////////////////////////////////////////// --}}
-
-                                    <!-- Contenedor para Cambiar Mapa con menú -->
+               
                                     <div class="relative">
                                         
-                                        <!-- Botón de cambio de mapa -->
                                         <button id="base-map-toggle" title="Cambiar mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
@@ -111,17 +105,16 @@
                                             Cambiar Mapa
                                         </button>
                                         
-                                        <!-- Menú de cambio de mapa - POSICIONADO RELATIVO AL BOTÓN -->
                                         <div id="base-map-menu"
                                              class="absolute mt-4 w-40 rounded-xl shadow-lg bg-white dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-1 right-0
                                                     transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none">
-                                            <!-- Flechita -->
+                                            
                                             <div class="absolute -top-2 right-6 w-4 h-2 z-100 pointer-events-none">
                                                 <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
                                                     <polygon points="8,0 16,8 0,8" fill="currentColor"/>
                                                 </svg>
                                             </div>
-                                            <!-- Menú -->
+                                            
                                              <div class="py-2 z-100" role="menu" aria-orientation="vertical">
                                                 <button data-layer="osm" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">OpenStreetMap</button>
                                                 <button data-layer="satellite" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Satélite Esri</button>
@@ -130,11 +123,7 @@
                                                 <button data-layer="dark" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Oscuro</button>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    {{-- ///////////////////////////////////////////////////// --}}
-                                    
-                                    <!-- Botón de pantalla completa -->
+                                    </div>   
 
                                     <button id="fullscreen-toggle" title="Pantalla Completa"class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,16 +131,10 @@
                                         </svg>
                                     </button>
 
-                                    {{-- ///////////////////////////////////////////////////// --}}
+                                </div>
+                                   
                                 </div>
                                 
-                                <!-- Fila inferior: Solo el botón de coordenadas manuales -->
-
-        
-                            
-                                   <!-- Botón para formulario manual -->
-                                </div>
-                                <!-- BOTONES DE CONTROL AÑADIDOS -->
                                 <div class=" flex space-x-2"> 
                                  
                                  <button id="manual-polygon-toggle" title="Escribir Cordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
@@ -180,7 +163,7 @@
                                 {{-- ///////////////////////////////////////////////////// --}}
                                 
                             <div class="flex space-x-2">
-                                <!-- Display del área en hectáreas -->
+                                
                                 <div id="area-display" class="hidden bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 rounded-lg shadow-lg">
                                     <div class="flex items-center space-x-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ruler">
@@ -198,11 +181,10 @@
                             </div>
                         </div>
                     </div>
-
-                <!-- Modal moderno para coordenadas UTM universal -->
+                
                 <div id="manual-polygon-modal" class="hidden">
                     <div class="bg-white dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-lg">
-                        <!-- Header -->
+                        
                         <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ingresar Coordenadas UTM</h3>
                             <button id="close-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ">
@@ -212,10 +194,8 @@
                             </button>
                         </div>
                         
-                        <!-- Formulario UTM Universal -->
                         <form id="manual-polygon-form" class="p-6 space-y-4">
                             
-                            <!-- Método de entrada -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Método de entrada:</label>
                                 <div class="flex space-x-2">
@@ -224,7 +204,6 @@
                                 </div>
                             </div>
 
-                            <!-- Entrada individual -->
                             <div id="single-input" class="space-y-3">
                                 <div class="grid grid-cols-4 gap-2">
                                     <div>
@@ -253,7 +232,6 @@
                                 </button>
                             </div>
 
-                            <!-- Entrada por lote -->
                             <div id="bulk-input" class="hidden">
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Coordenadas UTM (Zona,Hemisferio,Este,Norte por línea):
@@ -270,8 +248,7 @@
                                <textarea id="bulk-coords" rows="6" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 font-mono text-xs" 
           placeholder="Ejemplo:&#10;&#9;Zona,Hemisferio,Este,Norte&#10;&#9;20,N,476097.904,1157477.299&#10;&#9;20,N,476181.804,1157432.362&#10;&#9;20,N,475211.522,1157534.959"></textarea>
                             </div>
-
-                            <!-- Lista de coordenadas agregadas -->
+                            
                             <div id="coords-list" class="hidden">
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Coordenadas UTM agregadas:</label>
                                 <div class="max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-500 rounded-md p-2 bg-gray-50 dark:bg-gray-800/80">
@@ -292,7 +269,6 @@
                 </div> 
             </div>
             
-            <!-- Columna del Formulario -->
             <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden  sm:rounded-2xl  p-4 md:p-6 lg:p-8 ">
                 <div class="text-gray-900 dark:text-gray-100 ">
                     <h2 class="text-lg font-semibold mb-4">Configuración del Análisis</h2>
@@ -351,7 +327,7 @@
                             <span id="button-text">Analizar Deforestación</span>
                         </button>
                     </form>
-                    <!-- create.blade.php - Añadir después del formulario -->
+                    
                     <div id="producers-info" class="mt-6 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg hidden">
                         <h3 class="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Información de Productores Importados</h3>
                         <div class="overflow-x-auto">
@@ -364,7 +340,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="producers-list" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    <!-- Los datos se llenarán con JavaScript -->
+                                    
                                 </tbody>
                             </table>
                         </div>
@@ -376,38 +352,37 @@
         </div>
     </div>
     
-    <!-- Loader overlay -->
     
 <div id="loader-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden">
     <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl transform transition-all duration-300">
         <div class="flex flex-col items-center">
-            <!-- Spinner mejorado -->
+            
             <div class="relative mb-6">
                 <div class="w-20 h-20 border-4 border-green-100 dark:border-green-900 rounded-full"></div>
                 <div class="absolute top-0 left-0 w-20 h-20 border-4 border-transparent border-t-green-600 rounded-full animate-spin"></div>
                 <div class="absolute top-2 left-2 w-16 h-16 border-4 border-transparent border-b-green-400 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s"></div>
             </div>
             
-            <!-- Texto principal -->
+            
             <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">Analizando Deforestación</h3>
             <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
                 Procesando el área seleccionada. Esto puede tomar unos segundos...
             </p>
             
-            <!-- Barra de progreso mejorada -->
+            
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2 overflow-hidden">
                 <div id="progress-bar" class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full w-0 transition-all duration-500 ease-out relative">
                     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
                 </div>
             </div>
             
-            <!-- Información de progreso -->
+            
             <div class="flex justify-between w-full text-xs text-gray-500 dark:text-gray-400 mb-1">
                 <span id="progress-text">Iniciando...</span>
                 <span id="progress-percentage">0%</span>
             </div>
             
-            <!-- Tiempo estimado -->
+            
             <div class="text-xs text-gray-400 dark:text-gray-500 mt-2">
                 <span id="time-estimate">Tiempo estimado: 15-30 segundos</span>
             </div>
@@ -416,20 +391,20 @@
 </div>
 </x-app-layout>
 
-<!-- Incluir OpenLayers -->
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css">
 <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
 
-<!-- Incluir nuestro JavaScript -->
+
 <script src="{{ asset('js/deforestation/map.js') }}"></script>
 
 <script>
-// Variables globales para coordenadas UTM universales
+
 let coordinatesList = [];
 
-// Configurar Proj4 para UTM dinámicamente
+
 function setupUTMProjection(zone, hemisphere) {
     const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
     
@@ -441,24 +416,24 @@ function setupUTMProjection(zone, hemisphere) {
     return epsgCode;
 }
 
-// Función para validar coordenadas UTM
+
 function validateUTMCoordinates(zone, hemisphere, easting, northing) {
-    // Validar zona (1-60)
+    
     if (zone < 1 || zone > 60) {
         return 'Zona UTM debe estar entre 1 y 60';
     }
     
-    // Validar hemisferio
+    
     if (hemisphere !== 'N' && hemisphere !== 'S') {
         return 'Hemisferio debe ser N (Norte) o S (Sur)';
     }
     
-    // Validar easting (generalmente 100,000 - 900,000)
+    
     if (easting < 0 || easting > 1000000) {
         return 'Este (Easting) debe estar entre 0 y 1,000,000';
     }
     
-    // Validar northing según hemisferio
+    
     if (hemisphere === 'N') {
         if (northing < 0 || northing > 10000000) {
             return 'Norte (Northing) en hemisferio Norte debe estar entre 0 y 10,000,000';
@@ -469,10 +444,10 @@ function validateUTMCoordinates(zone, hemisphere, easting, northing) {
         }
     }
     
-    return null; // Sin errores
+    return null; 
 }
 
-// Mostrar/ocultar menú de cambio de mapa
+
 document.getElementById('base-map-toggle').addEventListener('click', function(e) {
     e.stopPropagation();
     const menu = document.getElementById('base-map-menu');
@@ -481,12 +456,12 @@ document.getElementById('base-map-toggle').addEventListener('click', function(e)
     toggleMenu('base-map-menu', !isShowing);
 });
 
-// Función para abrir el modal con animación
+
 function openCoordinateModal() {
     const modal = document.getElementById('manual-polygon-modal');
     modal.classList.remove('hidden');
     
-    // Forzar reflow para que la animación se ejecute
+    
     void modal.offsetWidth;
     
     setTimeout(() => {
@@ -495,14 +470,14 @@ function openCoordinateModal() {
     }, 100);
 }
 
-// Función para cerrar el modal con animación
+
 function closeCoordinateModal() {
     const modal = document.getElementById('manual-polygon-modal');
     
-    // Aplicar animación de salida
+    
     modal.classList.add('closing');
     
-    // Esperar a que termine la animación antes de ocultar
+    
     setTimeout(() => {
         modal.classList.add('hidden');
         modal.classList.remove('closing');
@@ -512,23 +487,23 @@ function closeCoordinateModal() {
         document.getElementById('single-easting').value = '';
         document.getElementById('single-northing').value = '';
         
-        // Resetear al método individual por defecto
+        
         setInputMethod('single');
     }, 300);
 }
 
-// Abrir modal de coordenadas UTM
+
 document.getElementById('manual-polygon-toggle').addEventListener('click', function(e) {
     e.stopPropagation();
     closeMenu('base-map-menu');
     openCoordinateModal();
 });
 
-// Cerrar modal de coordenadas UTM
+
 document.getElementById('close-modal').addEventListener('click', closeCoordinateModal);
 document.getElementById('cancel-modal').addEventListener('click', closeCoordinateModal);
 
-// Cambiar método de entrada en el modal
+
 document.getElementById('method-single').addEventListener('click', function() {
     setInputMethod('single');
 });
@@ -537,7 +512,7 @@ document.getElementById('method-bulk').addEventListener('click', function() {
     setInputMethod('bulk');
 });
 
-// Agregar coordenada UTM individual universal
+
 document.getElementById('add-coord').addEventListener('click', function() {
     const zone = parseInt(document.getElementById('single-zone').value);
     const hemisphere = document.getElementById('single-hemisphere').value;
@@ -554,7 +529,7 @@ document.getElementById('add-coord').addEventListener('click', function() {
         return;
     }
     
-    // Validar coordenadas UTM
+    
     const validationError = validateUTMCoordinates(zone, hemisphere, parseFloat(easting), parseFloat(northing));
     if (validationError) {
         showAlert(validationError, 'warning');
@@ -569,27 +544,27 @@ document.getElementById('add-coord').addEventListener('click', function() {
     });
     updateCoordinatesList();
     
-    // Limpiar inputs pero mantener zona y hemisferio
+    
     document.getElementById('single-easting').value = '';
     document.getElementById('single-northing').value = '';
     
     showAlert(`Coordenada agregada (Zona ${zone}${hemisphere})`, 'success');
 });
 
-// Limpiar lista de coordenadas UTM
+
 document.getElementById('clear-list').addEventListener('click', function() {
     coordinatesList = [];
     updateCoordinatesList();
 });
 
-// Enviar formulario del modal UTM universal
+
 document.getElementById('manual-polygon-form').addEventListener('submit', function(e) {
     e.preventDefault();
     
     let utmCoords = [];
     
     if (document.getElementById('method-single').classList.contains('bg-blue-600')) {
-        // Modo coordenada por coordenada
+        
         if (coordinatesList.length < 3) {
             showAlert('Se necesitan al menos 3 coordenadas', 'warning');
             return;
@@ -601,7 +576,7 @@ document.getElementById('manual-polygon-form').addEventListener('submit', functi
             coord.hemisphere
         ]);
     } else {
-        // Modo lote
+        
         const coordsText = document.getElementById('bulk-coords').value.trim();
         if (!coordsText) {
             showAlert('Debe ingresar coordenadas UTM', 'warning');
@@ -622,7 +597,7 @@ document.getElementById('manual-polygon-form').addEventListener('submit', functi
                 if (!isNaN(zone) && !isNaN(easting) && !isNaN(northing) && 
                     (hemisphere === 'N' || hemisphere === 'S')) {
                     
-                    // Validar coordenadas
+                    
                     const validationError = validateUTMCoordinates(zone, hemisphere, easting, northing);
                     if (validationError) {
                         showAlert(`Línea ${index + 1}: ${validationError}`, 'warning');
@@ -649,12 +624,12 @@ document.getElementById('manual-polygon-form').addEventListener('submit', functi
         }
     }
     
-    // Dibujar el polígono universal
+    
     drawUniversalUTMPolygon(utmCoords);
     closeCoordinateModal();
 });
 
-// Funciones para el modal de coordenadas UTM
+
 function setInputMethod(method) {
     const singleBtn = document.getElementById('method-single');
     const bulkBtn = document.getElementById('method-bulk');
@@ -670,7 +645,7 @@ function setInputMethod(method) {
         singleInput.classList.remove('hidden');
         bulkInput.classList.add('hidden');
         
-        // MOSTRAR LA LISTA SOLO SI HAY COORDENADAS EN EL MODO INDIVIDUAL
+        
         if (coordinatesList.length > 0) {
             coordsList.classList.remove('hidden');
         } else {
@@ -684,7 +659,7 @@ function setInputMethod(method) {
         bulkInput.classList.remove('hidden');
         singleInput.classList.add('hidden');
         
-        // OCULTAR LA LISTA EN EL MODO LOTE
+        
         coordsList.classList.add('hidden');
     }
 }
@@ -701,7 +676,7 @@ function updateCoordinatesList() {
         return;
     }
     
-    // SOLO MOSTRAR LA LISTA SI ESTAMOS EN MODO INDIVIDUAL
+    
     if (isSingleMode) {
         listSection.classList.remove('hidden');
     } else {
@@ -724,7 +699,7 @@ function removeCoordinate(index) {
     updateCoordinatesList();
 }
 
-// FUNCIÓN CLAVE: Dibujar polígono UTM universal
+
 
 function drawUniversalUTMPolygon(utmCoordinates) {
     if (window.deforestationMapInstance) {
@@ -732,7 +707,7 @@ function drawUniversalUTMPolygon(utmCoordinates) {
     }
 }
 
-// Funciones para los menús desplegables
+
 function toggleMenu(menuId, show) {
     const menu = document.getElementById(menuId);
     if (show) {
@@ -748,7 +723,7 @@ function closeMenu(menuId) {
     toggleMenu(menuId, false);
 }
 
-// Cerrar menús al hacer clic fuera
+
 document.addEventListener('click', function(e) {
     const baseMapToggle = document.getElementById('base-map-toggle');
     const baseMapMenu = document.getElementById('base-map-menu');
@@ -760,13 +735,13 @@ document.addEventListener('click', function(e) {
         }
     }
     
-    // Cerrar modal si se hace clic fuera de él
+    
     if (!modal.classList.contains('hidden') && e.target === modal) {
         closeCoordinateModal();
     }
 });
 
-// Nombres de capas para mostrar en el botón
+
 const layerNames = {
     'osm': 'OpenStreetMap',
     'satellite': 'Satélite Esri', 
@@ -775,7 +750,7 @@ const layerNames = {
     'dark': 'Oscuro'
 };
 
-// Cambiar capa base
+
 document.querySelectorAll('#base-map-menu button').forEach(button => {
     button.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -795,7 +770,7 @@ document.querySelectorAll('#base-map-menu button').forEach(button => {
     });
 });
 
-// Función para pantalla completa
+
 document.getElementById('fullscreen-toggle').addEventListener('click', function() {
     const mapElement = document.getElementById('map');
     if (!document.fullscreenElement) {
@@ -817,7 +792,7 @@ document.getElementById('fullscreen-toggle').addEventListener('click', function(
     }
 });
 
-// Función para mostrar/ocultar el panel de opacidad (igual que el de cambiar mapa)
+
 function toggleOpacityPanel(show) {
     const panel = document.getElementById('opacity-control-panel');
     
@@ -830,20 +805,20 @@ function toggleOpacityPanel(show) {
     }
 }
 
-// Función para actualizar la opacidad
+
 function updateOpacity(value) {
     const opacity = value / 100;
     
-    // Actualizar la capa GFW si existe
+    
     if (window.deforestationMapInstance && window.deforestationMapInstance.gfwLossLayer) {
         window.deforestationMapInstance.gfwLossLayer.setOpacity(opacity);
     }
     
-    // Actualizar la interfaz
+    
     document.getElementById('opacity-value').textContent = `${value}%`;
     document.getElementById('opacity-slider').value = value;
     
-    // Actualizar botones predefinidos
+    
     document.querySelectorAll('[data-opacity]').forEach(btn => {
         const btnOpacity = parseInt(btn.getAttribute('data-opacity'));
         if (btnOpacity === value) {
@@ -855,31 +830,31 @@ function updateOpacity(value) {
         }
     });
     
-    // Actualizar el track del slider visualmente
+    
     const slider = document.getElementById('opacity-slider');
     const progress = (value / slider.max) * 100;
     slider.style.background = `linear-gradient(to right, #4f46e5 ${progress}%, #e5e7eb ${progress}%)`;
 }
 
-// Event listener para el botón de opacidad
+
 document.getElementById('opacity-control-button').addEventListener('click', function(e) {
     e.stopPropagation();
     const panel = document.getElementById('opacity-control-panel');
     const isShowing = panel.classList.contains('show');
     
-    // Cerrar otros menús abiertos
+    
     closeMenu('base-map-menu');
     
-    // Alternar este menú
+    
     toggleOpacityPanel(!isShowing);
 });
 
-// Slider de opacidad
+
 document.getElementById('opacity-slider').addEventListener('input', function(e) {
     updateOpacity(parseInt(e.target.value));
 });
 
-// Botones predefinidos de opacidad
+
 document.querySelectorAll('[data-opacity]').forEach(button => {
     button.addEventListener('click', function() {
         const opacityValue = parseInt(this.getAttribute('data-opacity'));
@@ -887,7 +862,7 @@ document.querySelectorAll('[data-opacity]').forEach(button => {
     });
 });
 
-// Actualizar la función que cierra menús al hacer clic fuera
+
 document.addEventListener('click', function(e) {
     const baseMapToggle = document.getElementById('base-map-toggle');
     const baseMapMenu = document.getElementById('base-map-menu');
@@ -895,37 +870,37 @@ document.addEventListener('click', function(e) {
     const opacityPanel = document.getElementById('opacity-control-panel');
     const modal = document.getElementById('manual-polygon-modal');
     
-    // Solo procesar si el modal está cerrado
+    
     if (modal.classList.contains('hidden')) {
-        // Cerrar menú de cambio de mapa si se hace clic fuera
+        
         if (!baseMapToggle.contains(e.target) && !baseMapMenu.contains(e.target)) {
             closeMenu('base-map-menu');
         }
         
-        // Cerrar panel de opacidad si se hace clic fuera
+        
         if (!opacityButton.contains(e.target) && !opacityPanel.contains(e.target)) {
             toggleOpacityPanel(false);
         }
     }
     
-    // Cerrar modal si se hace clic fuera de él
+    
     if (!modal.classList.contains('hidden') && e.target === modal) {
         closeCoordinateModal();
     }
 });
 
-// Inicializar opacidad cuando el mapa esté listo
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Esperar a que el mapa se inicialice
+    
     setTimeout(() => {
         if (window.deforestationMapInstance && window.deforestationMapInstance.gfwLossLayer) {
             const currentOpacity = window.deforestationMapInstance.gfwLossLayer.getOpacity() * 100;
-            updateOpacity(currentOpacity || 75); // Valor por defecto 75%
+            updateOpacity(currentOpacity || 75); 
         }
     }, 1000);
 });
 
-// Función de alerta auxiliar
+
 function showAlert(message, type) {
     if (window.deforestationMapInstance && window.deforestationMapInstance.showAlert) {
         window.deforestationMapInstance.showAlert(message, type);
@@ -934,10 +909,10 @@ function showAlert(message, type) {
     }
 }
 
-// Inicializar el modal con método individual por defecto
+
 setInputMethod('single');
 
-// Manejo de importación de archivos
+
 document.getElementById('import-area').addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -985,14 +960,14 @@ document.getElementById('import-area').addEventListener('change', async function
     }
 });
 
-// Cerrar modal con tecla Escape
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeCoordinateModal();
     }
 });
 
-// Event listeners para botones de dibujo y limpieza
+
 document.getElementById('draw-polygon').addEventListener('click', function() {
     if (window.deforestationMapInstance) {
         window.deforestationMapInstance.activateDrawing();
@@ -1005,12 +980,12 @@ document.getElementById('clear-map').addEventListener('click', function() {
     }
 });
 
-// Toggle visibilidad de áreas en deforestación
+
 document.getElementById('visibility-toggle-button').addEventListener('click', function() {
     if (window.deforestationMapInstance) {
         window.deforestationMapInstance.toggleGFWVisibility();
         
-        // Alternar iconos de ojo abierto/cerrado
+        
         const iconOpen = document.getElementById('icon-eye-open');
         const iconClosed = document.getElementById('icon-eye-closed');
         
@@ -1024,7 +999,7 @@ document.getElementById('visibility-toggle-button').addEventListener('click', fu
     }
 });
 
-// ===== LOADER DURANTE LA CONSULTA =====
+
 
 
 function showEnhancedLoader() {
@@ -1034,10 +1009,10 @@ function showEnhancedLoader() {
     const progressPercentage = document.getElementById('progress-percentage');
     const timeEstimate = document.getElementById('time-estimate');
     
-    // Mostrar loader con animación
+    
     loaderOverlay.classList.remove('hidden');
     
-    // Configurar progreso
+    
     let progress = 0;
     const messages = [
         "Preparando análisis...",
@@ -1048,47 +1023,47 @@ function showEnhancedLoader() {
     ];
     
     window.loaderProgressInterval = setInterval(() => {
-        if (progress < 85) { // No pasar del 85% hasta que termine realmente
-            progress += (85 / 25); // 25 segundos para llegar al 85%
+        if (progress < 85) { 
+            progress += (85 / 25); 
             progressBar.style.width = `${progress}%`;
             progressPercentage.textContent = `${Math.round(progress)}%`;
             
-            // Cambiar mensaje según progreso
+            
             const messageIndex = Math.floor(progress / (100 / messages.length));
             if (messageIndex < messages.length) {
                 progressText.textContent = messages[messageIndex];
             }
             
-            // Actualizar tiempo estimado
+            
             const remaining = Math.max(1, Math.round((100 - progress) / 3));
             timeEstimate.textContent = `Tiempo estimado: ${remaining} segundos`;
         }
     }, 1000);
 }
 
-// Función para ocultar el loader mejorado
+
 function hideEnhancedLoader() {
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
     const progressPercentage = document.getElementById('progress-percentage');
     const timeEstimate = document.getElementById('time-estimate');
     
-    // Completar al 100%
+    
     progressBar.style.width = '100%';
     progressPercentage.textContent = '100%';
     progressText.textContent = '¡Completado!';
     timeEstimate.textContent = 'Finalizando...';
     
-    // Limpiar intervalo
+    
     if (window.loaderProgressInterval) {
         clearInterval(window.loaderProgressInterval);
     }
     
-    // Ocultar después de un breve delay
+    
     setTimeout(() => {
         document.getElementById('loader-overlay').classList.add('hidden');
         
-        // Resetear después de ocultar
+        
         setTimeout(() => {
             progressBar.style.width = '0%';
             progressPercentage.textContent = '0%';
@@ -1098,7 +1073,7 @@ function hideEnhancedLoader() {
     }, 1500);
 }
 
-// Manejar el envío del formulario con AJAX
+
 document.getElementById('analysis-form').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -1107,25 +1082,25 @@ document.getElementById('analysis-form').addEventListener('submit', function(e) 
     const spinner = document.getElementById('loading-spinner');
     const resultsDiv = document.getElementById('results');
     
-    // Validar que haya un polígono dibujado
+    
     const geometry = document.getElementById('geometry').value;
     if (!geometry) {
         window.deforestationMapInstance.showAlert('Debe dibujar un polígono en el mapa antes de analizar.', 'warning');
         return;
     }
     
-    // Mostrar loader
+    
     showEnhancedLoader();
     
-    // Deshabilitar el botón y mostrar spinner en el botón
+    
     submitButton.disabled = true;
     spinner.classList.remove('hidden');
     buttonText.textContent = 'Analizando...';
     
-    // Recoger datos del formulario
+    
     const formData = new FormData(this);
     
-    // Enviar con fetch
+    
     fetch(this.action, {
         method: 'POST',
         body: formData,
@@ -1141,10 +1116,10 @@ document.getElementById('analysis-form').addEventListener('submit', function(e) 
         return response.json();
     })
     .then(data => {
-        // Ocultar loader
+        
         hideEnhancedLoader();
         
-        // Habilitar el botón y ocultar spinner en el botón
+        
         submitButton.disabled = false;
         spinner.classList.add('hidden');
         buttonText.textContent = 'Analizar Deforestación';
@@ -1152,7 +1127,7 @@ document.getElementById('analysis-form').addEventListener('submit', function(e) 
         if (data.success) {
             resultsDiv.innerHTML = `<div class="mt-4 p-4 bg-green-100 text-green-800 rounded-md">${data.message}</div>`;
             
-            // Si hay datos de productores, mostrarlos
+            
             if (data.producers && data.producers.length > 0) {
                 const producersInfo = document.getElementById('producers-info');
                 const producersList = document.getElementById('producers-list');
@@ -1175,10 +1150,10 @@ document.getElementById('analysis-form').addEventListener('submit', function(e) 
         }
     })
     .catch(error => {
-        // Ocultar loader
+        
         hideEnhancedLoader();
         
-        // Habilitar el botón y ocultar spinner en el botón
+        
         submitButton.disabled = false;
         spinner.classList.add('hidden');
         buttonText.textContent = 'Analizar Deforestación';
@@ -1187,12 +1162,12 @@ document.getElementById('analysis-form').addEventListener('submit', function(e) 
     });
 });
 
-// Función para calcular área en hectáreas desde coordenadas WGS84
+
 function calculateAreaHectares(coordinates) {
     if (!coordinates || coordinates.length < 3) return 0;
     
     try {
-        // Usar la fórmula del shoelace para calcular área en metros cuadrados
+        
         let area = 0;
         const n = coordinates.length;
         
@@ -1206,19 +1181,19 @@ function calculateAreaHectares(coordinates) {
             area += xi * yj - xj * yi;
         }
         
-        // El área está en grados², necesitamos convertir a metros²
-        // Aproximación: 1 grado ≈ 111,320 metros (para latitud)
+        
+        
         area = Math.abs(area) / 2;
         
-        // Conversión más precisa considerando la latitud media
+        
         const avgLat = coordinates.reduce((sum, coord) => sum + coord[1], 0) / n;
-        const metersPerDegreeLat = 111320; // metros por grado de latitud
+        const metersPerDegreeLat = 111320; 
         const metersPerDegreeLon = 111320 * Math.cos(avgLat * Math.PI / 180);
         
-        // Convertir a metros cuadrados
+        
         const areaM2 = area * metersPerDegreeLat * metersPerDegreeLon;
         
-        // Convertir a hectáreas (1 ha = 10,000 m²)
+        
         const areaHa = areaM2 / 10000;
         
         return Math.abs(areaHa);
@@ -1228,7 +1203,7 @@ function calculateAreaHectares(coordinates) {
     }
 }
 
-// Función para actualizar el display del área
+
 function updateAreaDisplay(areaHa) {
     const areaDisplay = document.getElementById('area-display');
     const areaValue = document.getElementById('area-value');
@@ -1241,7 +1216,7 @@ function updateAreaDisplay(areaHa) {
     }
 }
 
-// Función para calcular área desde un polígono OpenLayers
+
 function calculatePolygonArea(feature) {
     if (!feature || !feature.getGeometry()) return 0;
     
@@ -1249,9 +1224,9 @@ function calculatePolygonArea(feature) {
     if (geometry.getType() !== 'Polygon') return 0;
     
     try {
-        // Obtener coordenadas en WGS84
+        
         const polygon = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
-        const coordinates = polygon.getCoordinates()[0]; // Primer anillo (exterior)
+        const coordinates = polygon.getCoordinates()[0]; 
         
         return calculateAreaHectares(coordinates);
     } catch (error) {

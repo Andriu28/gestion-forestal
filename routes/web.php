@@ -131,6 +131,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/api/analysis-data/{polygon}', [DeforestationController::class, 'getAnalysisData'])
             ->name('api.analysis-data');
     });
+    
+    // RUTAS DE REPORTES - AGREGAR AQUÍ
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ReportController::class, 'index'])->name('index');
+        Route::get('/deforestacion', [\App\Http\Controllers\ReportController::class, 'deforestacion'])->name('deforestacion');
+        Route::get('/usuarios', [\App\Http\Controllers\ReportController::class, 'usuarios'])->name('usuarios');
+    });
 
 
 });
