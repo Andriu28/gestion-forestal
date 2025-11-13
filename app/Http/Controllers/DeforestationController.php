@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use App\Services\GFWService;
+
 use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
@@ -18,10 +18,9 @@ class DeforestationController extends Controller
     protected $deforestationService;
     protected $gfwService;
     
-    public function __construct(DeforestationService $deforestationService, GFWService $gfwService)
+    public function __construct(DeforestationService $deforestationService)
     {
         $this->deforestationService = $deforestationService;
-        $this->gfwService = $gfwService;
     }
 
     /**
@@ -54,50 +53,20 @@ public function analyze(Request $request)
         return back()->withErrors(['error' => 'Error procesando la geometría: ' . $e->getMessage()]);
     }
 
-    // 3. Consulta principal (año seleccionado por el usuario) - PRIORITARIA
-    $mainStats = $this->gfwService->getZonalStats($geometryGeoJson, $year);
-
-    // 4. CONSULTAS PARALELAS PARA TODOS LOS AÑOS 2020-2024 (AJUSTADO)
-    // Siempre consultamos todos los años del 2020 al 2024, sin excepciones
-    $yearsToAnalyze = [2020, 2021, 2022, 2023, 2024];
-    
-    $yearlyResults = [];
-    
-    // Incluir el año principal en los resultados inmediatamente
-    $yearlyResults[$year] = [
-        'area__ha' => $mainStats['data'][0]['area__ha'] ?? 0,
-        'status' => $mainStats['status'] ?? 'error',
-        'year' => $year
-    ];
-
-    // Realizar consultas paralelas para TODOS los años 2020-2024
-    // Incluyendo el año principal para consistencia en el formato de respuesta
-    $parallelResults = $this->getParallelYearlyStats($geometryGeoJson, $yearsToAnalyze);
-    
-    // Combinar resultados, dando prioridad a la consulta principal para el año seleccionado
-    $yearlyResults = array_merge($parallelResults, $yearlyResults);
-    
-    // Ordenar por año
-    ksort($yearlyResults);
-
-    // 5. Preparar datos para la vista
+    // Preparar datos para la vista
     $dataToPass = [
         'analysis_year' => $year,
         'original_geojson' => $geometryString,
         'type' => $geometryGeoJson['type'],
         'geometry' => $geometryGeoJson['coordinates'][0],
-        'area__ha' => $mainStats['data'][0]['area__ha'] ?? 0,
         'polygon_area_ha' => $areaHa,
         'status' => $mainStats['status'] ?? 'error',
         'polygon_name' => $request->input('name', 'Área de Estudio'),
-        'description' => $request->input('description', ''),
-        'yearly_results' => $yearlyResults,
+        'description' => $request->input('description', '')
     ];
 
     // Log para debugging
     Log::info('Datos enviados a la vista:', [
-        'yearly_results_count' => count($yearlyResults),
-        'years_analyzed' => array_keys($yearlyResults),
         'main_stats_status' => $mainStats['status'] ?? 'unknown'
     ]);
 

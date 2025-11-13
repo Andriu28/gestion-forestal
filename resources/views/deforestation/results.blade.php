@@ -41,19 +41,14 @@
                     <div class="bg-red-100 dark:bg-red-900/60 p-4 rounded-lg shadow-md border-l-4 border-red-500">
                         <p class="text-sm font-medium text-red-600 dark:text-red-400">Área Deforestada</p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
-                            {{ number_format($dataToPass['area__ha'], 6, ',', '.') }} ha
+                            0 ha
                         </p>
                     </div>
 
                     <div class="bg-yellow-100 dark:bg-yellow-800/60 p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
                         <p class="text-sm font-medium text-yellow-600 dark:text-yellow-400">Porcentaje Deforestado</p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
-                            @php
-                                $percentage = $dataToPass['polygon_area_ha'] > 0 
-                                    ? ($dataToPass['area__ha'] / $dataToPass['polygon_area_ha']) * 100 
-                                    : 0;
-                            @endphp
-                            {{ number_format($percentage, 2, ',', '.') }}%
+                           0 %
                         </p>
                     </div>
                 </div>
@@ -69,14 +64,12 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600 dark:text-gray-300">Pérdida de cobertura:</span>
-                                <span class="font-medium text-red-600 dark:text-red-400">{{ number_format($dataToPass['area__ha'], 6, ',', '.') }} ha</span>
+                                <span class="font-medium text-red-600 dark:text-red-400">0 ha</span>
                             </div>
                             <div class="flex justify-between border-t pt-2">
                                 <span class="text-gray-600 dark:text-gray-300">Área conservada:</span>
-                                @php
-                                    $conservedArea = $dataToPass['polygon_area_ha'] - $dataToPass['area__ha'];
-                                @endphp
-                                <span class="font-medium text-green-600 dark:text-green-400">{{ number_format($conservedArea, 6, ',', '.') }} ha</span>
+                                
+                                <span class="font-medium text-green-600 dark:text-green-400">0 ha</span>
                             </div>
                         </div>
                     </div>
@@ -87,7 +80,7 @@
                             <div class="flex justify-between">
                                 <span class="text-gray-600 dark:text-gray-300">Estado:</span>
                                 <span class="font-medium @if($dataToPass['status'] === 'success') text-green-600 @else text-red-600 @endif">
-                                    {{ $dataToPass['status'] }}
+                                    Null
                                 </span>
                             </div>
                             <div class="flex justify-between">
@@ -189,35 +182,6 @@
                         </h3>
                         <div class="bg-gray-100 dark:bg-gray-800/40 p-4 rounded-lg shadow-inner" style="height: 430px;">
                             <canvas id="area-distribution-chart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Datos Técnicos -->
-                <div class="mt-8">
-                    <h3 class="font-semibold text-xl text-gray-900 dark:text-gray-100 mb-3">
-                        Datos Técnicos del Análisis
-                    </h3>
-                    <div class="bg-gray-100 dark:bg-gray-800/40 p-4 rounded-lg shadow-inner">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2">Información del Polígono</h4>
-                                <pre class="whitespace-pre-wrap font-mono text-xs text-gray-600 dark:text-gray-400">
-    Nombre: {{ $dataToPass['polygon_name'] }}
-    Área total: {{ number_format($dataToPass['polygon_area_ha'], 2, ',', '.') }} ha
-    Tipo: {{ $dataToPass['type'] }}
-    Vértices: {{ count($dataToPass['geometry']) }}
-                                </pre>
-                            </div>
-                            <div>
-                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2">Resultados GFW</h4>
-                                <pre class="whitespace-pre-wrap font-mono text-xs text-gray-600 dark:text-gray-400">
-    Año análisis: {{ $dataToPass['analysis_year'] }}
-    Área deforestada: {{ number_format($dataToPass['area__ha'], 6, ',', '.') }} ha
-    Estado: {{ $dataToPass['status'] }}
-    Porcentaje: {{ number_format($percentage, 2, ',', '.') }}%
-                                </pre>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -356,7 +320,7 @@ function initResultMap() {
     }
 
     // Añadir capa GFW (INICIALMENTE VISIBLE)
-    const GFW_LOSS_URL = 'https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png';
+    const GFW_LOSS_URL = '';
     
     gfwLossLayer = new ol.layer.Tile({
         source: new ol.source.XYZ({

@@ -19,8 +19,7 @@ class DeforestationMap {
         this.baseLayers = {};           // Capas base disponibles
         this.currentBaseLayer = null;   // Capa base actual
 
-        this.gfwLossLayer = null; // La instancia de la capa GFW de OpenLayers
-        this.STORAGE_KEY = 'gfwLossLayerState'; // Clave para localStorage
+       
         
         // Inicialización
         this.initializeMap();
@@ -43,17 +42,7 @@ class DeforestationMap {
         return this.gfwLossLayer ? this.gfwLossLayer.getOpacity() : 0.9;
     }
 
-    /**
-     * Alterna la visibilidad de la capa GFW
-     */
-    toggleGFWVisibility() {
-        if (this.gfwLossLayer) {
-            const currentVisibility = this.gfwLossLayer.getVisible();
-            this.gfwLossLayer.setVisible(!currentVisibility);
-            return !currentVisibility;
-        }
-        return false;
-    }
+   
 
     /**
      * Inicializa el mapa, las capas base y los estilos.
@@ -109,16 +98,16 @@ class DeforestationMap {
         const initialZoom = 12; // Ajusta según necesites
 
         // Resto del código de GFW y capas vectoriales permanece igual...
-        const GFW_LOSS_URL = 'https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png';
+        const GFW_LOSS_URL = '';
 
         this.gfwLossLayer = new ol.layer.Tile({
             source: new ol.source.XYZ({
                 url: GFW_LOSS_URL,
-                attributions: 'Hansen/UMD/Google/USGS/NASA | GFW',
+                attributions: 'Hansen/UMD/Google/USGS/NASA',
             }),
             opacity: 0.9, 
             visible: false,
-            title: 'Pérdida Arbórea GFW'
+            title: 'Pérdida Arbórea '
         });
 
         // Fuente vectorial para geometrías dibujadas/importadas
