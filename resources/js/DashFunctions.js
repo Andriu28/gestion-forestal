@@ -150,7 +150,7 @@ function initializeDataTables() {
                 "url": "https://cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
             },
             "dom": "<'flex justify-between items-center mb-4'<'flex-1'l><'flex-none'f>>" +
-                   "<'bg-white dark:bg-gray-100 rounded-lg overflow-hidden't>" +
+                   "<'bg-white dark:bg-gray-800 rounded-lg overflow-hidden't>" +
                    "<'flex justify-between items-center mt-4'<'flex-1'i><'flex-none'p>>",
             "drawCallback": function() {
                 // Re-aplicar estilos después de cada redibujado
