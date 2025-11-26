@@ -138,7 +138,7 @@ function animateCardsOnLoad() {
             card.style.transform = 'translateY(0)';
         }, idx * 100);
     });
-}s
+}
 
 /**
  * Inicializa DataTables con configuración mejorada para Tailwind CSS
