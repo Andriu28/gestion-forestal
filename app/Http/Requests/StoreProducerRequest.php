@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreProducerRequest extends FormRequest
 {
-  public function authorize()
+    public function authorize()
     {
         return true;
     }
@@ -14,14 +14,9 @@ class StoreProducerRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|string|max:255|unique:producers,name',
-            'contact_name' => 'nullable|string|max:255',
-            'email' => 'nullable|email|unique:producers,email',
-            
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'notes' => 'nullable|string',
+            'name' => 'required|string|max:255',
+            'lastname' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
             'is_active' => 'boolean'
         ];
     }
@@ -30,9 +25,6 @@ class StoreProducerRequest extends FormRequest
     {
         return [
             'name.required' => 'El nombre del productor es obligatorio.',
-            'name.unique' => 'Ya existe un productor con este nombre.',
-            'email.email' => 'El email debe ser una dirección válida.',
-            'email.unique' => 'Ya existe un productor con este email.',
         ];
     }
 }

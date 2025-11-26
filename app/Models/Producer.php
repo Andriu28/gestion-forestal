@@ -6,22 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-use App\Traits\StandardizesEmails;
-use App\Traits\StandardizesCities;
-use App\Traits\StandardizesCountries;
-
 class Producer extends Model
 {
-    use HasFactory, SoftDeletes, StandardizesEmails, StandardizesCities, StandardizesCountries;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
-        'contact_name',
-        'email',
-        'address',
-        'city',
-        'country',
-        'notes',
+        'lastname',
+        'description',
         'is_active'
     ];
 
@@ -37,7 +29,13 @@ class Producer extends Model
     public function scopeSearch($query, $search)
     {
         return $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('contact_name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('lastname', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+    }
+
+    // Relación con polygons
+    public function polygons()
+    {
+        return $this->hasMany(Polygon::class);
     }
 }

@@ -1,4 +1,3 @@
-
 <x-app-layout>
     <div class="max-w-7xl mx-auto">
         <div class="flex flex-col md:flex-row md:space-x-8">
@@ -11,15 +10,7 @@
                         <div>
                             <h6 class="text-indigo-600 font-bold mb-2">Información Básica</h6>
                             <p><span class="font-semibold">Nombre:</span> {{ $producer->name }}</p>
-                            <p><span class="font-semibold">Contacto:</span> {{ $producer->contact_name ?? 'N/A' }}</p>
-                            <p><span class="font-semibold">Email:</span> {{ $producer->email ?? 'N/A' }}</p>
-                            <p><span class="font-semibold">Teléfono:</span> {{ $producer->phone ?? 'N/A' }}</p>
-                        </div>
-                        <div>
-                            <h6 class="text-indigo-600 font-bold mb-2">Ubicación</h6>
-                            <p><span class="font-semibold">Dirección:</span> {{ $producer->address ?? 'N/A' }}</p>
-                            <p><span class="font-semibold">Ciudad:</span> {{ $producer->city ?? 'N/A' }}</p>
-                            <p><span class="font-semibold">País:</span> {{ $producer->country ?? 'N/A' }}</p>
+                            <p><span class="font-semibold">Apellido:</span> {{ $producer->lastname ?? 'N/A' }}</p>
                             <p><span class="font-semibold">Estado:</span>
                                 <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full
                                     {{ $producer->is_active ? 'bg-green-600 text-white' : 'bg-yellow-500 text-white' }}">
@@ -27,13 +18,11 @@
                                 </span>
                             </p>
                         </div>
-                    </div>
-                    @if($producer->notes)
-                        <div class="mt-6">
-                            <h6 class="text-indigo-600 font-bold mb-2">Notas</h6>
-                            <p>{{ $producer->notes }}</p>
+                        <div>
+                            <h6 class="text-indigo-600 font-bold mb-2">Descripción</h6>
+                            <p>{{ $producer->description ?? 'Sin descripción' }}</p>
                         </div>
-                    @endif
+                    </div>
                 </div>
             </div>
 
@@ -69,6 +58,9 @@
                     <h6 class="font-bold text-indigo-600 mb-4">Información Adicional</h6>
                     <p><span class="font-semibold">Creado:</span> {{ $producer->created_at->format('d/m/Y H:i') }}</p>
                     <p><span class="font-semibold">Actualizado:</span> {{ $producer->updated_at->format('d/m/Y H:i') }}</p>
+                    @if($producer->deleted_at)
+                        <p><span class="font-semibold">Eliminado:</span> {{ $producer->deleted_at->format('d/m/Y H:i') }}</p>
+                    @endif
                 </div>
             </div>
         </div>
