@@ -180,6 +180,6 @@ Route::middleware(['auth', 'verified', 'is.admin'])->prefix('admin')->name('admi
 });
 
 
-
+Route::get('/audit', [AuditLogController::class, 'showAuditLog'])->name('admin.audit');
 // Esta línea es la que importa las rutas de autenticación
 require __DIR__.'/auth.php';

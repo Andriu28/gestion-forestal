@@ -554,7 +554,7 @@ class DeforestationMap {
             this.clearMap();
             const format = new ol.format.GeoJSON();
             const features = format.readFeatures(geojson, {
-                featureProjection: 'EPSG:3857'
+                featureProjection: 'EPSG:2203 '
             });
 
             if (features.length === 0) {
