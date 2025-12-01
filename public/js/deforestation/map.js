@@ -1,10 +1,4 @@
-/**
- * DeforestationMap
- * Clase principal para gestionar el mapa de deforestación.
- * Permite dibujar, importar y visualizar múltiples áreas (polígonos) con etiquetas y detalles.
- * Soporta GeoJSON, KML y SHP (usando shpjs).
- * Autor: Inspirado en principios de "Código Limpio".
- */
+
 class DeforestationMap {
     constructor() {
         // Instancias y configuraciones principales
@@ -53,9 +47,9 @@ class DeforestationMap {
     setupBaseLayers() {
         this.baseLayers = {
             osm: new ol.layer.Tile({
-                source: new ol.source.OSM(),
+                source: new ol.source.OSM(), 
                 visible: true,
-                title: 'OpenStreetMap'
+                title: 'OpenStreetMap' 
             }),
             satellite: new ol.layer.Tile({
                 source: new ol.source.XYZ({
