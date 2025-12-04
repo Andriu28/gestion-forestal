@@ -23,72 +23,41 @@
                     @endif
                 </div>
 
+                <!-- seccion que permite editar rango de fecha -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-blue-100 dark:bg-blue-900/40 p-4 rounded-lg shadow-md border-l-4 border-blue-500">
-                        <p class="text-sm font-medium text-blue-600 dark:text-blue-400">Rango de Análisis</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
-                            {{ $dataToPass['start_year'] }} - {{ $dataToPass['end_year'] }}
-                        </p>
-                    </div>
+                    
+                    <x-forms.year-range-editor 
+                        :start-year="$dataToPass['start_year']" 
+                        :end-year="$dataToPass['end_year']" 
+                    />
 
-                    <div class="bg-green-100 dark:bg-green-900/50 p-4 rounded-lg shadow-md border-l-4 border-green-500">
-                        <p class="text-sm font-medium text-green-600 dark:text-green-400">Área Total del Polígono</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
-                            {{ number_format($dataToPass['polygon_area_ha'], 2, ',', '.') }} ha
-                        </p>
-                    </div>
+                    <x-cards.stats-card 
+                        title="Área Total del Polígono" 
+                        color="green" 
+                        value="{{ number_format($dataToPass['polygon_area_ha'], 4, ',', '.') }}" 
+                        unit="ha" 
+                    />
 
-                    <div class="bg-red-100 dark:bg-red-900/60 p-4 rounded-lg shadow-md border-l-4 border-red-500">
-                        <p class="text-sm font-medium text-red-600 dark:text-red-400">Área Deforestada {{ $dataToPass['end_year'] }}</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
-                            {{ number_format($dataToPass['area__ha'], 6, ',', '.') }} ha
-                        </p>
-                        @php
-                            $currentYearPercentage = $dataToPass['polygon_area_ha'] > 0 
-                                ? ($dataToPass['area__ha'] / $dataToPass['polygon_area_ha']) * 100 
-                                : 0;
-                        @endphp
-                        <p class="text-xs text-red-700 dark:text-red-300 mt-1">
-                            {{ number_format($currentYearPercentage, 2, ',', '.') }}% del área total
-                        </p>
-                    </div>
+                    @php
+                        $areaHa = $dataToPass['area__ha'] ?? 0;
+                        $polygonArea = $dataToPass['polygon_area_ha'] ?? 1;
+                        $currentYearPercentage = $polygonArea > 0 ? ($areaHa / $polygonArea) * 100 : 0;
+                    @endphp
 
-                    <div class="bg-yellow-100 dark:bg-yellow-800/60 p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
-                        <p class="text-sm font-medium text-yellow-600 dark:text-yellow-400">Pérdida Total ({{ $dataToPass['start_year'] }}-{{ $dataToPass['end_year'] }})</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
-                            @php
-                                $yearlyResults = $dataToPass['yearly_results'] ?? [];
-                                $polygonAreaHa = $dataToPass['polygon_area_ha'] ?? 0;
-                                $startYear = $dataToPass['start_year'] ?? 2020;
-                                $endYear = $dataToPass['end_year'] ?? 2024;
-                                
-                                $totalDeforestedArea = 0;
-                                $validYears = 0;
-                                
-                                foreach ($yearlyResults as $year => $yearData) {
-                                    if (isset($yearData['area__ha']) && $yearData['status'] === 'success') {
-                                        $totalDeforestedArea += $yearData['area__ha'];
-                                        $validYears++;
-                                    }
-                                }
-                                
-                                $totalPercentage = $polygonAreaHa > 0 ? ($totalDeforestedArea / $polygonAreaHa) * 100 : 0;
-                                $totalYearsInRange = $endYear - $startYear + 1;
-                            @endphp
-                            {{ number_format($totalPercentage, 2, ',', '.') }}%
-                        </p>
-                        
-                        @if($validYears > 0)
-                        <div class="text-xs text-yellow-700 dark:text-yellow-300 mt-2 space-y-1">
-                            <div>{{ number_format($totalDeforestedArea, 6, ',', '.') }} ha acumuladas</div>
-                            <div>{{ $validYears }}/{{ $totalYearsInRange }} años analizados</div>
-                        </div>
-                        @else
-                        <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                            Sin datos suficientes
-                        </p>
-                        @endif
-                    </div>
+                    <x-cards.stats-card 
+                        title="Área Deforestada {{ $dataToPass['end_year'] }}" 
+                        color="red" 
+                        value="{{ number_format($areaHa, 6, ',', '.') }}" 
+                        unit="ha" 
+                    >
+                        <x-slot name="footer">
+                            <p class="text-xs text-red-700 dark:text-red-300 mt-1">
+                                {{ number_format($currentYearPercentage, 2, ',', '.') }}% del área total
+                            </p>
+                        </x-slot>
+                    </x-cards.stats-card>
+
+                    <x-cards.total-loss-card :data-to-pass="$dataToPass" />
                 </div>
                 
 
@@ -99,7 +68,7 @@
                         <div class="space-y-2">
                             <div class="flex justify-between">
                                 <span class="text-gray-600 dark:text-gray-300">Área total analizada:</span>
-                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ number_format($dataToPass['polygon_area_ha'], 2, ',', '.') }} ha</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ number_format($dataToPass['polygon_area_ha'], 4, ',', '.') }} ha</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600 dark:text-gray-300">Pérdida de cobertura:</span>
@@ -236,36 +205,7 @@
                     </div>
                 </div>
 
-                <!-- Datos Técnicos -->
-                <div class="mt-8">
-                    <h3 class="font-semibold text-xl text-gray-900 dark:text-gray-100 mb-3">
-                        Datos Técnicos del Análisis
-                    </h3>
-                    <div class="bg-gray-100 dark:bg-gray-800/40 p-4 rounded-lg shadow-inner">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-        <div>
-            <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2">Información del Polígono</h4>
-            <pre class="whitespace-pre-wrap font-mono text-xs text-gray-600 dark:text-gray-400">
-Nombre: {{ $dataToPass['polygon_name'] }}
-Área total: {{ number_format($dataToPass['polygon_area_ha'], 2, ',', '.') }} ha
-Tipo: {{ $dataToPass['type'] }}
-Vértices: {{ count($dataToPass['geometry']) }}
-            </pre>
-        </div>
-        <div>
-            <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2">Resultados GFW</h4>
-            <pre class="whitespace-pre-wrap font-mono text-xs text-gray-600 dark:text-gray-400">
-Rango analizado: {{ $dataToPass['start_year'] }} - {{ $dataToPass['end_year'] }}
-Año análisis: {{ $dataToPass['analysis_year'] }}
-Área deforestada: {{ number_format($dataToPass['area__ha'], 6, ',', '.') }} ha
-Porcentaje año actual: {{ number_format($currentYearPercentage, 2, ',', '.') }}%
-Pérdida total: {{ number_format($totalDeforestedArea, 6, ',', '.') }} ha
-Porcentaje total: {{ number_format($totalPercentage, 2, ',', '.') }}%
-Estado: {{ $dataToPass['status'] }}
-            </pre>
-        </div>
     </div>
-</div>
                 </div>
                 </div>
 
@@ -669,6 +609,210 @@ function updateProgress(loadedCount) {
     }
 }
 
+/* comienzo del script de edicion de año */
+
+// Variables para controlar la edición de años
+let originalStartYear = {{ $dataToPass['start_year'] }};
+let originalEndYear = {{ $dataToPass['end_year'] }};
+let isEditing = false;
+
+// Función para habilitar la edición de un año
+function enableYearEdit(type) {
+    if (isEditing) return;
+    
+    isEditing = true;
+    document.getElementById('year-range-display').classList.add('hidden');
+    document.getElementById('year-range-edit').classList.remove('hidden');
+    
+    if (type === 'start') {
+        const input = document.getElementById('start-year-input');
+        input.focus();
+        input.select();
+    } else {
+        const input = document.getElementById('end-year-input');
+        input.focus();
+        input.select();
+    }
+}
+
+// Función para guardar los cambios
+function saveYearEdit() {
+    const newStartYear = parseInt(document.getElementById('start-year-input').value);
+    const newEndYear = parseInt(document.getElementById('end-year-input').value);
+    
+    // Validaciones
+    if (isNaN(newStartYear) || isNaN(newEndYear)) {
+        alert('Los años deben ser números válidos');
+        return;
+    }
+    
+    const currentYear = new Date().getFullYear();
+    if (newStartYear < 2000 || newStartYear > currentYear || 
+        newEndYear < 2000 || newEndYear > currentYear) {
+        alert(`Los años deben estar entre 2000 y ${currentYear}`);
+        return;
+    }
+    
+    if (newStartYear > newEndYear) {
+        alert('El año de inicio no puede ser mayor al año de fin');
+        return;
+    }
+    
+    // Actualizar la visualización
+    document.getElementById('start-year-display').textContent = newStartYear;
+    document.getElementById('end-year-display').textContent = newEndYear;
+    
+    // Verificar si hubo cambios
+    const hasChanged = (newStartYear !== originalStartYear) || (newEndYear !== originalEndYear);
+    
+    // Cerrar modo edición
+    cancelYearEdit();
+    
+    // Mostrar botón de reanálisis si hubo cambios
+    if (hasChanged) {
+        document.getElementById('reanalyze-button-container').classList.remove('hidden');
+    }
+}
+
+// Función para cancelar la edición
+function cancelYearEdit() {
+    isEditing = false;
+    document.getElementById('year-range-display').classList.remove('hidden');
+    document.getElementById('year-range-edit').classList.add('hidden');
+    
+    // Restaurar valores originales en los inputs
+    document.getElementById('start-year-input').value = originalStartYear;
+    document.getElementById('end-year-input').value = originalEndYear;
+}
+
+// Función para reanalizar con el nuevo rango
+function reanalyzeWithNewRange() {
+    const newStartYear = parseInt(document.getElementById('start-year-display').textContent);
+    const newEndYear = parseInt(document.getElementById('end-year-display').textContent);
+    
+    // Validar que los años sean diferentes a los originales
+    if (newStartYear === originalStartYear && newEndYear === originalEndYear) {
+        alert('No hay cambios en el rango de años');
+        return;
+    }
+    
+    // Mostrar spinner
+    const button = document.getElementById('reanalyze-button');
+    const buttonText = document.getElementById('reanalyze-button-text');
+    const spinner = document.getElementById('reanalyze-button-spinner');
+    
+    button.disabled = true;
+    buttonText.textContent = 'Analizando...';
+    spinner.classList.remove('hidden');
+    
+    // Obtener los datos necesarios del formulario original
+    const formData = new FormData();
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    formData.append('name', '{{ $dataToPass["polygon_name"] }}');
+    formData.append('description', '{{ $dataToPass["description"] }}');
+    formData.append('geometry', '{{ $dataToPass["original_geojson"] }}');
+    formData.append('area_ha', {{ $dataToPass['polygon_area_ha'] }});
+    formData.append('start_year', newStartYear);
+    formData.append('end_year', newEndYear);
+    
+    // Mostrar loader mejorado
+    showEnhancedLoader();
+    
+    // Enviar la solicitud
+    fetch('{{ route("deforestation.analyze") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.text();
+        }
+        throw new Error('Error en la red');
+    })
+    .then(html => {
+        // Ocultar loader
+        hideEnhancedLoader();
+        
+        // Redirigir a la nueva página de resultados
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newContent = doc.querySelector('.bg-stone-100').innerHTML;
+        
+        // Reemplazar el contenido actual
+        document.querySelector('.bg-stone-100').innerHTML = newContent;
+        
+        // Actualizar el estado del historial del navegador
+        window.history.pushState({}, '', window.location.href);
+        
+        // Re-inicializar los scripts necesarios
+        setTimeout(() => {
+            if (typeof initResultMap === 'function') {
+                initResultMap();
+            }
+            if (typeof initEvolutionChart === 'function') {
+                initEvolutionChart();
+            }
+        }, 100);
+    })
+    .catch(error => {
+        hideEnhancedLoader();
+        
+        // Restaurar el botón
+        button.disabled = false;
+        buttonText.textContent = 'Reanalizar con nuevo rango';
+        spinner.classList.add('hidden');
+        
+        alert('Error al reanalizar: ' + error.message);
+    });
+}
+
+// Manejar teclas durante la edición
+document.addEventListener('keydown', function(e) {
+    if (!isEditing) return;
+    
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        saveYearEdit();
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelYearEdit();
+    }
+});
+
+// Manejar clic fuera del área de edición para cancelar
+document.addEventListener('click', function(e) {
+    if (!isEditing) return;
+    
+    const editContainer = document.getElementById('year-range-edit');
+    const displayContainer = document.getElementById('year-range-display');
+    
+    if (!editContainer.contains(e.target) && !displayContainer.contains(e.target)) {
+        cancelYearEdit();
+    }
+});
+
+// Función para mostrar loader (ya debería existir)
+function showEnhancedLoader() {
+    const loaderOverlay = document.getElementById('loader-overlay');
+    if (loaderOverlay) {
+        loaderOverlay.classList.remove('hidden');
+    }
+}
+
+// Función para ocultar loader (ya debería existir)
+function hideEnhancedLoader() {
+    const loaderOverlay = document.getElementById('loader-overlay');
+    if (loaderOverlay) {
+        loaderOverlay.classList.add('hidden');
+    }
+}
+
+/* fin del script para la edicion de año */
+
 // Inicializar gráfica de evolución cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('deforestation-evolution-chart')) {
@@ -733,4 +877,58 @@ document.addEventListener('DOMContentLoaded', function() {
     height: 300px;
     width: 100%;
 }
+
+/* Estilos para la edición de años */
+#year-range-edit input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#reanalyze-button {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#reanalyze-button:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+#reanalyze-button:active {
+    transform: translateY(0);
+}
+
+/* Animación para el cambio de estado */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#reanalyze-button-container {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Efecto de pulso para indicar que se puede editar */
+@keyframes subtlePulse {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: rgba(59, 130, 246, 0.05); }
+}
+
+#start-year-display:hover, #end-year-display:hover {
+    animation: subtlePulse 2s infinite;
+}
+
+/* Oculta los controles spinner en Chrome, Safari y Opera */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0; /* Elimina el margen que a veces permanece */
+}
+
+/* Oculta los controles spinner en Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* fin de los estilos para la edicion de años */
 </style>
