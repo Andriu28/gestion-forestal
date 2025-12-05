@@ -33,9 +33,12 @@ class Producer extends Model
                     ->orWhere('description', 'like', "%{$search}%");
     }
 
-    // Relación con polygons
+    
+   // Relación con polygons
     public function polygons()
     {
         return $this->hasMany(Polygon::class);
     }
+
+   
 }

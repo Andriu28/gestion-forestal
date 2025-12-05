@@ -145,12 +145,12 @@
 
                 <!-- Separador y enlace de contacto -->
                 <div class="mt-3 pt-3 border-t border-amber-200 dark:border-gray-600 transition-colors">
-                    <p class="text-center text-xs text-custom-gold-darker dark:text-custom-gold-medium transition-colors">
+                   <!--  <p class="text-center text-xs text-custom-gold-darker dark:text-custom-gold-medium transition-colors">
                         ¿Problemas con el restablecimiento?
                         <button class="text-amber-800 dark:text-custom-gold-light hover:text-custom-dark dark:hover:text-amber-100 font-medium hover:underline ml-1 transition-colors">
                             Contacta al administrador
                         </button>
-                    </p>
+                    </p> -->
                 </div>
             </div>
         </div>

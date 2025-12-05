@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\ProducerController; 
+use App\Http\Controllers\PolygonController; 
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -122,6 +123,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{area}', [AreaController::class, 'show'])
             ->name('areas.show');
     });
+
+
+      // ========== RUTAS PARA POLÍGONOS - ORDEN CORREGIDO ==========
+    
+    // PRIMERO las rutas personalizadas (específicas)
+    Route::get('/polygons/map', [PolygonController::class, 'map'])->name('polygons.map');
+    Route::get('/polygons/geojson', [PolygonController::class, 'geojson'])->name('polygons.geojson');
+    Route::post('/polygons/find-parish', [PolygonController::class, 'findParishApi'])->name('polygons.find-parish-api');
+    Route::patch('/polygons/{polygon}/toggle-status', [PolygonController::class, 'toggleStatus'])->name('polygons.toggle-status');
+    Route::post('/polygons/{id}/restore', [PolygonController::class, 'restore'])->name('polygons.restore');
+
+    // LUEGO la ruta resource (genérica)
+    Route::resource('polygons', PolygonController::class);
 
        // Grupo de rutas para deforestación - CORREGIDO
     Route::prefix('deforestation')->name('deforestation.')->group(function () {

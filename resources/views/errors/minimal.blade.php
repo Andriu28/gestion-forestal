@@ -27,7 +27,7 @@
     </script>
 
 </head>
-<body class="min-h-screen bg-custom-light dark:bg-custom-dark text-custom-dark dark:text-custom-light overflow-hidden relative flex items-center justify-center transition-colors duration-300">
+<body class="min-h-screen bg-neutral-200 dark:bg-custom-dark text-custom-dark dark:text-custom-light overflow-hidden relative flex items-center justify-center transition-colors duration-300">
     
     <!-- Elementos decorativos -->
     <div class="absolute w-[900px] h-[900px] bg-custom-gold-light/40 rounded-full opacity-40 pointer-events-none top-[-470px] left-[-370px] animate-float" style="animation-delay: -4s;"></div>
