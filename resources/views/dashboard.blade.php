@@ -102,7 +102,7 @@ input.dt-input[type="search"] {
     max-width: 300px !important;
 }
 
-/* Para cuando DataTables regenera el DOM */
+/* Para cuando DataTables regenera el DOMss */
 .dt-container .dt-search input {
     width: 250px !important;
     min-width: 200px !important;
