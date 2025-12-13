@@ -97,12 +97,12 @@ class PolygonController extends Controller
     }
 
     // En el método store():
-    public function store(Request $request): RedirectResponse
+    public function store(\Illuminate\Http\Request $request): \Illuminate\Http\RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'geometry' => 'required|string', // ahora recibimos GeoJSON string
+            'geometry' => 'required|string',
             'producer_id' => 'nullable|exists:producers,id',
             'parish_id' => 'nullable|exists:parishes,id',
             'area_ha' => 'nullable|numeric|min:0',
@@ -116,50 +116,59 @@ class PolygonController extends Controller
 
         DB::beginTransaction();
         try {
-            $geojsonString = $validated['geometry'] ?? null;
-            if (empty($geojsonString) || $geojsonString === '[]') {
-                throw new \Exception('La geometría del polígono no puede estar vacía');
+            // Normalizar GeoJSON (acepta Feature o geometry)
+            $geojsonRaw = $validated['geometry'] ?? null;
+            if (empty($geojsonRaw)) throw new \Exception('La geometría no puede estar vacía.');
+            $decoded = json_decode($geojsonRaw, true);
+            if ($decoded === null) throw new \Exception('GeoJSON inválido (no se pudo parsear).');
+            $geometryObj = (isset($decoded['type']) && $decoded['type'] === 'Feature') ? ($decoded['geometry'] ?? null) : $decoded;
+            if (empty($geometryObj) || empty($geometryObj['type']) || empty($geometryObj['coordinates'])) {
+                throw new \Exception('GeoJSON geometry inválido o incompleto.');
+            }
+            if (!in_array($geometryObj['type'], ['Polygon','MultiPolygon'])) {
+                throw new \Exception('Solo se permiten Polygon o MultiPolygon.');
+            }
+            $geoForDb = json_encode($geometryObj, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+            // DEBUG: registrar inicio
+            \Log::debug('DEBUG Polygon.store - inserting with geometry', ['name' => $validated['name'], 'geo_len' => strlen($geoForDb)]);
+
+            // Insertar todo en una sola sentencia (evita NOT NULL violation)
+            $now = now();
+            $locationData = !empty($validated['location_data']) ? $validated['location_data'] : null;
+
+            $row = DB::selectOne(
+                "INSERT INTO polygons
+                    (name, description, producer_id, parish_id, area_ha, is_active, detected_parish, detected_municipality, detected_state, centroid_lat, centroid_lng, location_data, geometry, created_at, updated_at)
+                 VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?)
+                 RETURNING id",
+                [
+                    $validated['name'],
+                    $validated['description'] ?? null,
+                    $validated['producer_id'] ?? null,
+                    $validated['parish_id'] ?? null,
+                    $validated['area_ha'] ?? null,
+                    true,
+                    $validated['detected_parish'] ?? null,
+                    $validated['detected_municipality'] ?? null,
+                    $validated['detected_state'] ?? null,
+                    $validated['centroid_lat'] ?? null,
+                    $validated['centroid_lng'] ?? null,
+                    $locationData,
+                    $geoForDb,
+                    $now,
+                    $now
+                ]
+            );
+
+            if (!isset($row->id)) {
+                throw new \Exception('No se pudo insertar polígono (no se obtuvo id).');
             }
 
-            // Log corto para depuración (remover en producción)
-            \Log::debug('Polygon.store payload geometry (trunc): ' . substr($geojsonString, 0, 1000));
+            $polygon = \App\Models\Polygon::find($row->id);
 
-            // Crear registro inicial sin geometry
-            $polygon = Polygon::create([
-                'name' => $validated['name'],
-                'description' => $validated['description'] ?? null,
-                'producer_id' => $validated['producer_id'] ?? null,
-                'parish_id' => $validated['parish_id'] ?? null,
-                'area_ha' => $validated['area_ha'] ?? null,
-                'is_active' => true,
-                'detected_parish' => $validated['detected_parish'] ?? null,
-                'detected_municipality' => $validated['detected_municipality'] ?? null,
-                'detected_state' => $validated['detected_state'] ?? null,
-                'centroid_lat' => $validated['centroid_lat'] ?? null,
-                'centroid_lng' => $validated['centroid_lng'] ?? null,
-                'location_data' => !empty($validated['location_data']) ? json_decode($validated['location_data'], true) : null,
-            ]);
-
-            // Insertar geometría usando ST_GeomFromGeoJSON (SRID 4326)
-            // Asegurarse que geojson es un objeto Feature o geometry; si es Feature, tomar .geometry
-            $geo = json_decode($geojsonString, true);
-            if (isset($geo['type']) && $geo['type'] === 'Feature') {
-                $geoForDb = json_encode($geo['geometry']);
-            } else {
-                $geoForDb = json_encode($geo);
-            }
-
-            // Log del fragmento GeoJSON que se insertará
-            \Log::debug('Polygon.store geoForDb (trunc): ' . substr($geoForDb, 0, 1000));
-
-            // Ejecutar update con ST_SetSRID(ST_GeomFromGeoJSON(...), 4326)
-            DB::statement("
-                UPDATE polygons
-                SET geometry = ST_SetSRID(ST_GeomFromGeoJSON(?), 4326)
-                WHERE id = ?
-            ", [$geoForDb, $polygon->id]);
-
-            // Calcular área y centroide y actualizar modelo
+            // Calcular área y centroide con PostGIS y actualizar columnas calculadas
             $res = DB::selectOne("
                 SELECT 
                   ST_Area(geometry::geography) / 10000 AS area_ha,
@@ -182,15 +191,16 @@ class PolygonController extends Controller
 
             DB::commit();
 
-            return redirect()->route('polygons.index')
-                ->with('success', 'Polígono creado exitosamente.');
+            \Log::info('DEBUG Polygon.store - success insert id=' . $polygon->id);
+
+            return redirect()->route('polygons.index')->with('success', 'Polígono creado exitosamente.')
+                ->with('debug_info', ['polygon_id' => $polygon->id]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error creating polygon: ' . $e->getMessage(), [
-                'exception' => $e,
-            ]);
-            return back()->withInput()->with('error', 'Error al crear polígono: ' . $e->getMessage());
+            \Log::error('DEBUG Polygon.store - exception', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return back()->withInput()->with('error', 'Error al crear polígono: ' . $e->getMessage())
+                ->with('debug_error', substr($e->getMessage(), 0, 1000));
         }
     }
 
