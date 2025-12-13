@@ -245,8 +245,13 @@
                 document.getElementById('message-display').classList.add('hidden');
             }, 3000);
             
-            // Guardar geometría en el campo hidden
-            document.getElementById('geometry').value = JSON.stringify(layer.toGeoJSON().geometry.coordinates);
+            // Guardar siempre el objeto "geometry" del GeoJSON (no todo el Feature ni solo coordinates)
+            const geojson = layer.toGeoJSON();
+            if (geojson && geojson.geometry) {
+                document.getElementById('geometry').value = JSON.stringify(geojson.geometry);
+            } else {
+                document.getElementById('geometry').value = '';
+            }
         });
 
         // Mostrar coordenadas al mover el mouse
@@ -328,34 +333,140 @@
     async function processDetectedLocation(data, centroid) {
         const address = data.address;
         
-        // Extraer datos de OpenStreetMap
-        const detectedParish = address.municipality || address.county || address.city || 'No detectado';
-        const detectedMunicipality = address.county || address.state_district || 'No detectado';
-        const detectedState = address.state || 'No detectado';
+        // Extraer datos de OpenStreetMap (MEJORADO)
+        const detectedParish = extractParishName(address);
+        const detectedMunicipality = extractMunicipalityName(address);
+        const detectedState = extractStateName(address);
         
         // Actualizar campos hidden
-        document.getElementById('detected_parish').value = detectedParish;
-        document.getElementById('detected_municipality').value = detectedMunicipality;
-        document.getElementById('detected_state').value = detectedState;
+        document.getElementById('detected_parish').value = detectedParish.original;
+        document.getElementById('detected_municipality').value = detectedMunicipality.original;
+        document.getElementById('detected_state').value = detectedState.original;
         document.getElementById('centroid_lat').value = centroid.lat;
         document.getElementById('centroid_lng').value = centroid.lng;
         document.getElementById('location_data').value = JSON.stringify(data);
         
-        // Mostrar información al usuario
-        document.getElementById('detected-parish-text').textContent = detectedParish;
-        document.getElementById('detected-municipality-text').textContent = detectedMunicipality;
-        document.getElementById('detected-state-text').textContent = detectedState;
+        // Mostrar información al usuario (con/sin prefijos según lo original)
+        document.getElementById('detected-parish-text').textContent = detectedParish.original;
+        document.getElementById('detected-municipality-text').textContent = detectedMunicipality.original;
+        document.getElementById('detected-state-text').textContent = detectedState.original;
         document.getElementById('detected-coords-text').textContent = `${centroid.lat.toFixed(6)}, ${centroid.lng.toFixed(6)}`;
         
-        // Buscar parroquia en la base de datos
-        await findAndAssignParish(detectedParish, detectedMunicipality, detectedState);
+        // Buscar parroquia en la base de datos (enviando ambas versiones)
+        await findAndAssignParish(
+            detectedParish.normalized, // Versión normalizada para búsqueda
+            detectedParish.original,   // Versión original para mostrar
+            detectedMunicipality.normalized,
+            detectedMunicipality.original,
+            detectedState.normalized,
+            detectedState.original
+        );
+
+        // Validar que el polígono existe antes de buscar ubicación
+        if (!currentPolygon) {
+            showMessage('❌ No hay polígono dibujado', 'error');
+            return;
+        }
+        
+        // Guardar geometría actualizada en el campo hidden (OBJETO geometry)
+        if (currentPolygon) {
+            const geojson = currentPolygon.toGeoJSON();
+            if (geojson && geojson.geometry) {
+                document.getElementById('geometry').value = JSON.stringify(geojson.geometry);
+            }
+        }
         
         // Mostrar sección de ubicación detectada
         document.getElementById('location-info').classList.remove('hidden');
     }
 
+    // Funciones auxiliares para extraer nombres
+    function extractParishName(address) {
+        const fields = ['county', 'municipality', 'city_district', 'district', 'suburb', 'village'];
+        
+        for (const field of fields) {
+            if (address[field]) {
+                return {
+                    original: address[field],
+                    normalized: normalizeLocationName(address[field])
+                };
+            }
+        }
+        
+        return {
+            original: 'No detectado',
+            normalized: ''
+        };
+    }
+
+    function extractMunicipalityName(address) {
+        const fields = ['municipality', 'county', 'state_district', 'city', 'town'];
+        
+        for (const field of fields) {
+            if (address[field]) {
+                return {
+                    original: address[field],
+                    normalized: normalizeLocationName(address[field])
+                };
+            }
+        }
+        
+        return {
+            original: 'No detectado',
+            normalized: ''
+        };
+    }
+
+    function extractStateName(address) {
+        if (address.state) {
+            return {
+                original: address.state,
+                normalized: normalizeLocationName(address.state)
+            };
+        }
+        
+        if (address.region) {
+            return {
+                original: address.region,
+                normalized: normalizeLocationName(address.region)
+            };
+        }
+        
+        return {
+            original: 'No detectado',
+            normalized: ''
+        };
+    }
+
+    // Normalizar nombres en el frontend (similar al backend)
+    function normalizeLocationName(name) {
+        if (!name) return '';
+        
+        // Convertir a minúsculas
+        let normalized = name.toLowerCase().trim();
+        
+        // Eliminar prefijos comunes
+        const prefixes = ['parroquia', 'municipio', 'estado', 'municipal'];
+        prefixes.forEach(prefix => {
+            const regex = new RegExp(`^${prefix}\\s+|\\s+${prefix}\\s+`, 'gi');
+            normalized = normalized.replace(regex, ' ');
+        });
+        
+        // Eliminar espacios múltiples
+        normalized = normalized.replace(/\s+/g, ' ').trim();
+        
+        return normalized;
+    }
+
     // Nueva función para buscar parroquia en la base de datos
-    async function findAndAssignParish(parishName, municipalityName, stateName) {
+    async function findAndAssignParish(
+        parishNameNormalized, 
+        parishNameOriginal,
+        municipalityNameNormalized,
+        municipalityNameOriginal,
+        stateNameNormalized,
+        stateNameOriginal
+    ) {
         try {
             const response = await fetch('{{ route("polygons.find-parish-api") }}', {
                 method: 'POST',
@@ -364,9 +475,12 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({
-                    parish_name: parishName,
-                    municipality_name: municipalityName,
-                    state_name: stateName
+                    parish_name: parishNameNormalized,
+                    parish_name_original: parishNameOriginal, // Enviar original también
+                    municipality_name: municipalityNameNormalized,
+                    municipality_name_original: municipalityNameOriginal,
+                    state_name: stateNameNormalized,
+                    state_name_original: stateNameOriginal
                 })
             });
             
@@ -393,6 +507,11 @@
                 // No se encontró coincidencia
                 document.getElementById('parish-match-info').classList.add('hidden');
                 document.getElementById('parish-no-match-info').classList.remove('hidden');
+                
+                // Mostrar sugerencias si hay opciones similares
+                if (result.suggestions && result.suggestions.length > 0) {
+                    showSuggestions(result.suggestions);
+                }
                 
                 showMessage('⚠️ No se encontró parroquia coincidente. Selecciona una manualmente.', 'warning');
             }
@@ -431,6 +550,9 @@
         document.getElementById('centroid_lat').value = '';
         document.getElementById('centroid_lng').value = '';
         document.getElementById('location_data').value = '';
+
+        // Limpiar también el campo de geometría (usar cadena vacía para mayor consistencia)
+        document.getElementById('geometry').value = '';
         
         new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable();
     }
@@ -440,7 +562,7 @@
         drawnItems.clearLayers();
         currentPolygon = null;
         document.getElementById('detect-location').disabled = true;
-        document.getElementById('geometry').value = '[]';
+        document.getElementById('geometry').value = '';
         document.getElementById('location-info').classList.add('hidden');
         
         // Limpiar campos de ubicación
@@ -465,7 +587,8 @@
         // Validar antes de enviar el formulario
         document.getElementById('polygon-form').addEventListener('submit', function(e) {
             const geometry = document.getElementById('geometry').value;
-            if (geometry === '[]' || geometry === '') {
+            // Aceptar vacío o '[]' como no válido; también proteger contra 'null'
+            if (!geometry || geometry === '[]' || geometry === 'null') {
                 e.preventDefault();
                 showMessage('❌ Debes dibujar un polígono en el mapa', 'error');
                 return false;

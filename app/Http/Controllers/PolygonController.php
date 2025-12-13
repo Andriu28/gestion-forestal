@@ -6,11 +6,15 @@ namespace App\Http\Controllers;
 use App\Models\Polygon;
 use App\Models\Producer;
 use App\Models\Parish;
+use App\Models\Municipality;
+use App\Models\State;
+use App\Services\LocationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PolygonController extends Controller
 {
@@ -65,68 +69,128 @@ class PolygonController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    // En PolygonController.php - Actualizar el método store
+    
+
+    private function convertToPostGISGeometry(string $coordinatesJson): string
+    {
+        $coordinates = json_decode($coordinatesJson, true);
+        
+        if (!isset($coordinates[0]) || count($coordinates[0]) < 4) {
+            throw new \Exception('Se requieren al menos 4 puntos para un polígono válido');
+        }
+        
+        // Crear estructura GeoJSON para PostGIS
+        $geojson = [
+            'type' => 'Polygon',
+            'coordinates' => $coordinates,
+            'crs' => [
+                'type' => 'name',
+                'properties' => [
+                    'name' => 'EPSG:4326'
+                ]
+            ]
+        ];
+        
+        // PostGIS puede usar ST_GeomFromGeoJSON
+        return json_encode($geojson);
+    }
+
+    // En el método store():
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'geometry' => 'required|string',
+            'geometry' => 'required|string', // ahora recibimos GeoJSON string
             'producer_id' => 'nullable|exists:producers,id',
             'parish_id' => 'nullable|exists:parishes,id',
             'area_ha' => 'nullable|numeric|min:0',
             'detected_parish' => 'nullable|string|max:255',
-            'detected_municipality' => 'nullable|string|max:255', 
+            'detected_municipality' => 'nullable|string|max:255',
             'detected_state' => 'nullable|string|max:255',
-            'centroid_lat' => 'nullable|numeric',
-            'centroid_lng' => 'nullable|numeric',
-            'location_data' => 'nullable|json'
+            'centroid_lat' => 'nullable|numeric|between:-90,90',
+            'centroid_lng' => 'nullable|numeric|between:-180,180',
+            'location_data' => 'nullable|string'
         ]);
 
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
-            // Convertir coordenadas a formato WKT
-            $geometry = $this->coordinatesToWKT($validated['geometry']);
-            
-            // BUSCAR Y ASIGNAR PARROQUIA AUTOMÁTICAMENTE
-            $parishId = $validated['parish_id'];
-            
-            // Si no se seleccionó parroquia manualmente, buscar automáticamente
-            if (!$parishId && $validated['detected_parish'] && $validated['detected_municipality'] && $validated['detected_state']) {
-                $parishId = $this->findAndAssignParish(
-                    $validated['detected_parish'],
-                    $validated['detected_municipality'], 
-                    $validated['detected_state']
-                );
+            $geojsonString = $validated['geometry'] ?? null;
+            if (empty($geojsonString) || $geojsonString === '[]') {
+                throw new \Exception('La geometría del polígono no puede estar vacía');
             }
 
+            // Log corto para depuración (remover en producción)
+            \Log::debug('Polygon.store payload geometry (trunc): ' . substr($geojsonString, 0, 1000));
+
+            // Crear registro inicial sin geometry
             $polygon = Polygon::create([
                 'name' => $validated['name'],
-                'description' => $validated['description'],
-                'geometry' => DB::raw("ST_GeomFromText('$geometry')"),
-                'producer_id' => $validated['producer_id'],
-                'parish_id' => $parishId,
-                'area_ha' => $validated['area_ha'] ?? $this->calculateAreaFromCoordinates($validated['geometry']),
+                'description' => $validated['description'] ?? null,
+                'producer_id' => $validated['producer_id'] ?? null,
+                'parish_id' => $validated['parish_id'] ?? null,
+                'area_ha' => $validated['area_ha'] ?? null,
                 'is_active' => true,
-                'detected_parish' => $validated['detected_parish'],
-                'detected_municipality' => $validated['detected_municipality'],
-                'detected_state' => $validated['detected_state'],
-                'centroid_lat' => $validated['centroid_lat'],
-                'centroid_lng' => $validated['centroid_lng'],
-                'location_data' => $validated['location_data']
+                'detected_parish' => $validated['detected_parish'] ?? null,
+                'detected_municipality' => $validated['detected_municipality'] ?? null,
+                'detected_state' => $validated['detected_state'] ?? null,
+                'centroid_lat' => $validated['centroid_lat'] ?? null,
+                'centroid_lng' => $validated['centroid_lng'] ?? null,
+                'location_data' => !empty($validated['location_data']) ? json_decode($validated['location_data'], true) : null,
             ]);
+
+            // Insertar geometría usando ST_GeomFromGeoJSON (SRID 4326)
+            // Asegurarse que geojson es un objeto Feature o geometry; si es Feature, tomar .geometry
+            $geo = json_decode($geojsonString, true);
+            if (isset($geo['type']) && $geo['type'] === 'Feature') {
+                $geoForDb = json_encode($geo['geometry']);
+            } else {
+                $geoForDb = json_encode($geo);
+            }
+
+            // Log del fragmento GeoJSON que se insertará
+            \Log::debug('Polygon.store geoForDb (trunc): ' . substr($geoForDb, 0, 1000));
+
+            // Ejecutar update con ST_SetSRID(ST_GeomFromGeoJSON(...), 4326)
+            DB::statement("
+                UPDATE polygons
+                SET geometry = ST_SetSRID(ST_GeomFromGeoJSON(?), 4326)
+                WHERE id = ?
+            ", [$geoForDb, $polygon->id]);
+
+            // Calcular área y centroide y actualizar modelo
+            $res = DB::selectOne("
+                SELECT 
+                  ST_Area(geometry::geography) / 10000 AS area_ha,
+                  ST_AsGeoJSON(ST_Centroid(geometry)) AS centroid_geojson
+                FROM polygons
+                WHERE id = ?
+            ", [$polygon->id]);
+
+            if ($res) {
+                $polygon->area_ha = isset($res->area_ha) ? round((float)$res->area_ha, 2) : $polygon->area_ha;
+                if (!empty($res->centroid_geojson)) {
+                    $cj = json_decode($res->centroid_geojson, true);
+                    if (!empty($cj['coordinates'])) {
+                        $polygon->centroid_lat = $cj['coordinates'][1];
+                        $polygon->centroid_lng = $cj['coordinates'][0];
+                    }
+                }
+                $polygon->save();
+            }
 
             DB::commit();
 
-            $locationText = $this->getLocationConfirmationText($polygon);
-
             return redirect()->route('polygons.index')
-                ->with('success', "Polígono creado exitosamente. {$locationText}");
+                ->with('success', 'Polígono creado exitosamente.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Error al crear el polígono: ' . $e->getMessage())
-                        ->withInput();
+            \Log::error('Error creating polygon: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+            return back()->withInput()->with('error', 'Error al crear polígono: ' . $e->getMessage());
         }
     }
 
@@ -249,32 +313,42 @@ class PolygonController extends Controller
         $features = [];
         
         foreach ($polygons as $polygon) {
-            $wkt = DB::select("SELECT ST_AsText(geometry) as wkt FROM polygons WHERE id = ?", [$polygon->id])[0]->wkt;
-            
-            // Convertir WKT a GeoJSON coordinates
-            $coordinates = $this->wktToCoordinates($wkt);
-            
-            $features[] = [
-                'type' => 'Feature',
-                'properties' => [
-                    'id' => $polygon->id,
-                    'name' => $polygon->name,
-                    'producer' => $polygon->producer_name,
-                    'area_ha' => $polygon->area_ha,
-                    'description' => $polygon->description,
-                    'type' => $polygon->type
-                ],
-                'geometry' => [
-                    'type' => 'Polygon',
-                    'coordinates' => $coordinates
-                ]
-            ];
+            try {
+                $geojson = DB::selectOne("SELECT ST_AsGeoJSON(geometry) as geojson FROM polygons WHERE id = ?", [$polygon->id])->geojson ?? '{}';
+                $geometry = json_decode($geojson, true);
+                
+                // PostGIS devuelve [lng, lat], pero Leaflet necesita [lat, lng]
+                if (isset($geometry['coordinates'][0])) {
+                    // Convertir cada punto
+                    $convertedCoords = [];
+                    foreach ($geometry['coordinates'][0] as $point) {
+                        $convertedCoords[] = [$point[1], $point[0]]; // Invertir: [lat, lng]
+                    }
+                    $geometry['coordinates'] = [$convertedCoords];
+                }
+                
+                $features[] = [
+                    'type' => 'Feature',
+                    'properties' => [
+                        'id' => $polygon->id,
+                        'name' => $polygon->name,
+                        'producer' => $polygon->producer_name,
+                        'area_ha' => $polygon->area_ha,
+                        'description' => $polygon->description,
+                        'type' => $polygon->type
+                    ],
+                    'geometry' => $geometry
+                ];
+            } catch (\Exception $e) {
+                Log::error('Error al procesar polígono para GeoJSON:', [
+                    'polygon_id' => $polygon->id,
+                    'error' => $e->getMessage()
+                ]);
+                continue;
+            }
         }
 
-        return response()->json([
-            'type' => 'FeatureCollection',
-            'features' => $features
-        ]);
+        return response()->json(['type' => 'FeatureCollection', 'features' => $features]);
     }
 
     /**
@@ -286,9 +360,12 @@ class PolygonController extends Controller
         $municipalityName = $request->get('municipality_name');
         $stateName = $request->get('state_name');
         
-        $parish = Polygon::findParishByName($parishName, $municipalityName, $stateName);
+        $locationService = new LocationService();
+        $parishId = $locationService->findOrCreateLocation($parishName, $municipalityName, $stateName);
         
-        if ($parish) {
+        if ($parishId) {
+            $parish = Parish::with(['municipality.state'])->find($parishId);
+            
             return response()->json([
                 'success' => true,
                 'parish' => [
@@ -297,33 +374,97 @@ class PolygonController extends Controller
                     'municipality' => $parish->municipality->name,
                     'state' => $parish->municipality->state->name
                 ],
-                'message' => 'Parroquia encontrada en la base de datos'
+                'message' => 'Parroquia encontrada/creada en la base de datos'
             ]);
         }
+        
+        $suggestions = $this->getLocationSuggestions($parishName, $municipalityName, $stateName);
         
         return response()->json([
             'success' => false,
             'parish' => null,
+            'suggestions' => $suggestions,
             'message' => 'No se encontró parroquia coincidente en la base de datos'
         ]);
     }
 
-    /**
-     * Métodos auxiliares
-     */
-
-    /**
-     * Buscar parroquia en la base de datos y devolver el ID
-     */
-    private function findAndAssignParish($parishName, $municipalityName, $stateName): ?int
+    private function getLocationSuggestions($parishName, $municipalityName, $stateName)
     {
-        $parish = Polygon::findParishByName($parishName, $municipalityName, $stateName);
-        return $parish ? $parish->id : null;
+        $suggestions = [];
+        
+        // Buscar estados similares
+        $states = State::where('name', 'like', "%{$stateName}%")
+                    ->orWhereRaw('LOWER(name) = LOWER(?)', [$stateName])
+                    ->limit(3)
+                    ->get();
+        
+        foreach ($states as $state) {
+            // Buscar municipios en ese estado
+            $municipalities = Municipality::where('state_id', $state->id)
+                ->where('name', 'like', "%{$municipalityName}%")
+                ->orWhereRaw('LOWER(name) = LOWER(?)', [$municipalityName])
+                ->limit(3)
+                ->get();
+                
+            foreach ($municipalities as $municipality) {
+                // Buscar parroquias en ese municipio
+                $parishes = Parish::where('municipality_id', $municipality->id)
+                    ->where('name', 'like', "%{$parishName}%")
+                    ->orWhereRaw('LOWER(name) = LOWER(?)', [$parishName])
+                    ->limit(3)
+                    ->get();
+                    
+                foreach ($parishes as $parish) {
+                    $suggestions[] = [
+                        'id' => $parish->id,
+                        'name' => $parish->name,
+                        'municipality' => $municipality->name,
+                        'state' => $state->name,
+                        'full_name' => "{$parish->name}, {$municipality->name}, {$state->name}"
+                    ];
+                }
+            }
+        }
+        
+        return $suggestions;
     }
 
     /**
-     * Genera el texto de confirmación de ubicación
+     * Convierte el JSON de coordenadas recibido desde la vista a WKT.
+     * Espera un JSON como el producido por layer.toGeoJSON().geometry.coordinates
+     * @param string $coordinatesJson
+     * @return string WKT POLYGON
+     * @throws \Exception
      */
+    private function convertCoordinatesToWKT(string $coordinatesJson): string
+    {
+        $coords = json_decode($coordinatesJson, true);
+
+        if (empty($coords) || !isset($coords[0])) {
+            throw new \Exception('Coordenadas inválidas o vacías');
+        }
+
+        // Tomar primer anillo
+        $ring = $coords[0];
+
+        // Asegurar que cada punto tenga 2 elementos y cerrar el anillo
+        $processed = [];
+        foreach ($ring as $pt) {
+            if (!is_array($pt) || count($pt) < 2) {
+                throw new \Exception('Formato de punto inválido en coordenadas');
+            }
+            // Suponemos GeoJSON/Leaflet: [lng, lat]
+            $processed[] = [ (float)$pt[0], (float)$pt[1] ];
+        }
+
+        if ($processed[0][0] !== end($processed)[0] || $processed[0][1] !== end($processed)[1]) {
+            $processed[] = $processed[0];
+        }
+
+        $wktParts = array_map(fn($p) => "{$p[0]} {$p[1]}", $processed);
+        return 'POLYGON((' . implode(', ', $wktParts) . '))';
+    }
+
     private function getLocationConfirmationText(Polygon $polygon): string
     {
         if ($polygon->parish_id) {
@@ -332,83 +473,7 @@ class PolygonController extends Controller
         } elseif ($polygon->detected_parish) {
             return "Ubicación detectada: {$polygon->detected_parish}, {$polygon->detected_municipality} (No se encontró coincidencia exacta en la base de datos)";
         }
-        
+
         return "Ubicación no detectada";
-    }
-
-    /**
-     * Convert coordinates to WKT format
-     */
-    private function coordinatesToWKT(string $coordinatesJson): string
-    {
-        $coordinates = json_decode($coordinatesJson, true);
-        
-        if (!isset($coordinates[0])) {
-            throw new \Exception('Formato de coordenadas inválido');
-        }
-
-        $wktCoordinates = [];
-        foreach ($coordinates[0] as $coord) {
-            $wktCoordinates[] = "{$coord[0]} {$coord[1]}";
-        }
-
-        // Cerrar el polígono (primera y última coordenada iguales)
-        if ($wktCoordinates[0] !== end($wktCoordinates)) {
-            $wktCoordinates[] = $wktCoordinates[0];
-        }
-
-        return 'POLYGON((' . implode(', ', $wktCoordinates) . '))';
-    }
-
-    /**
-     * Convert WKT to coordinates array
-     */
-    private function wktToCoordinates(string $wkt): array
-    {
-        // Extraer coordenadas del WKT
-        preg_match('/POLYGON\(\((.*?)\)\)/', $wkt, $matches);
-        
-        if (!isset($matches[1])) {
-            return [];
-        }
-
-        $coords = [];
-        $points = explode(',', $matches[1]);
-        
-        foreach ($points as $point) {
-            $point = trim($point);
-            list($lng, $lat) = explode(' ', $point);
-            $coords[] = [(float)$lng, (float)$lat];
-        }
-
-        return [$coords];
-    }
-
-    /**
-     * Calculate area from coordinates (simplified)
-     */
-    private function calculateAreaFromCoordinates(string $coordinatesJson): float
-    {
-        $coordinates = json_decode($coordinatesJson, true);
-        
-        if (!isset($coordinates[0])) {
-            return 0.0;
-        }
-
-        // Cálculo simplificado del área (en un sistema real usarías una fórmula más precisa)
-        $area = 0.0;
-        $points = $coordinates[0];
-        $n = count($points);
-        
-        for ($i = 0; $i < $n; $i++) {
-            $j = ($i + 1) % $n;
-            $area += $points[$i][0] * $points[$j][1];
-            $area -= $points[$j][0] * $points[$i][1];
-        }
-        
-        $area = abs($area) / 2.0;
-        
-        // Convertir a hectáreas (aproximación)
-        return $area * 100; // Ajusta este factor según tu sistema de coordenadas
     }
 }

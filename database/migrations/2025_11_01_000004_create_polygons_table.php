@@ -13,14 +13,22 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->geometry('geometry', 'POLYGON', 4326);
-            $table->foreignId('producer_id')->constrained()->onDelete('cascade');
+            $table->foreignId('producer_id')->nullable()->constrained()->onDelete('set null'); // ← CAMBIAR
             $table->foreignId('parish_id')->nullable()->constrained()->onDelete('set null');
             $table->decimal('area_ha', 10, 2)->nullable();
+            $table->boolean('is_active')->default(true); // ← FALTABA
+            $table->string('detected_parish')->nullable();
+            $table->string('detected_municipality')->nullable();
+            $table->string('detected_state')->nullable();
+            $table->decimal('centroid_lat', 10, 8)->nullable();
+            $table->decimal('centroid_lng', 11, 8)->nullable();
+            $table->json('location_data')->nullable();
             $table->timestamps();
             $table->softDeletes();
             
             $table->index('producer_id');
             $table->index('parish_id');
+            $table->spatialIndex('geometry'); // ← AGREGAR ÍNDICE ESPACIAL
         });
     }
 
