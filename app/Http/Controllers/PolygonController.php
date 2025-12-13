@@ -321,28 +321,20 @@ class PolygonController extends Controller
             ->get();
 
         $features = [];
-        
+
         foreach ($polygons as $polygon) {
             try {
                 $geojson = DB::selectOne("SELECT ST_AsGeoJSON(geometry) as geojson FROM polygons WHERE id = ?", [$polygon->id])->geojson ?? '{}';
                 $geometry = json_decode($geojson, true);
-                
-                // PostGIS devuelve [lng, lat], pero Leaflet necesita [lat, lng]
-                if (isset($geometry['coordinates'][0])) {
-                    // Convertir cada punto
-                    $convertedCoords = [];
-                    foreach ($geometry['coordinates'][0] as $point) {
-                        $convertedCoords[] = [$point[1], $point[0]]; // Invertir: [lat, lng]
-                    }
-                    $geometry['coordinates'] = [$convertedCoords];
-                }
-                
+
+                // NO invertir coordenadas: ST_AsGeoJSON ya devuelve [lng,lat] correcto para GeoJSON
+                // Construir feature con la geometría tal cual
                 $features[] = [
                     'type' => 'Feature',
                     'properties' => [
                         'id' => $polygon->id,
                         'name' => $polygon->name,
-                        'producer' => $polygon->producer_name,
+                        'producer' => $polygon->producer_name ?? null,
                         'area_ha' => $polygon->area_ha,
                         'description' => $polygon->description,
                         'type' => $polygon->type

@@ -1,20 +1,7 @@
 {{-- [file name]: create.blade.php --}}
 <x-app-layout>
-    <div class="max-w-7xl mx-auto p-4">
-        {{-- Añadir panel de debug (temporal) justo arriba del formulario para ver datos enviados / respuesta del servidor --}}
-        @if(session('debug_info') || session('debug_error'))
-            <div class="max-w-7xl mx-auto p-4">
-                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                    <p class="font-semibold">DEBUG servidor</p>
-                    @if(session('debug_info'))
-                        <pre class="text-sm">{{ json_encode(session('debug_info')) }}</pre>
-                    @endif
-                    @if(session('debug_error'))
-                        <pre class="text-sm text-red-600">{{ session('debug_error') }}</pre>
-                    @endif
-                </div>
-            </div>
-        @endif
+    <div class="mx-auto">
+        
 
         <div class="bg-stone-100/90 dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-2xl p-6">
             <div class="text-gray-900 dark:text-gray-100">
@@ -141,10 +128,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <script>
-/* DEBUG: Añadidos puntos de alert/console para trazar flujo de creación y envío del polígono */
 document.addEventListener('DOMContentLoaded', () => {
-    alert('DEBUG: create.blade.js cargado'); console.log('DEBUG: script cargado');
-
     let map = L.map('map').setView([8.0, -66.0], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
 
@@ -168,7 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function showMessage(text, type = 'info') {
         const el = coordsDisplay;
         el.textContent = text;
-        el.classList.add(type === 'error' ? 'text-red-600' : 'text-green-700');
+        el.classList.toggle('text-red-600', type === 'error');
+        el.classList.toggle('text-green-700', type !== 'error');
         setTimeout(() => {
             if (!geometryInput.value) el.textContent = 'Lat: 0.000000 | Lng: 0.000000';
         }, 3000);
@@ -181,12 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         try {
             geometryInput.value = JSON.stringify(feature);
-            alert('DEBUG: GeoJSON guardado en input geometry (length: ' + geometryInput.value.length + ')');
-            console.log('DEBUG: geometry input value:', geometryInput.value);
         } catch (e) {
             geometryInput.value = '';
             console.error('Error serializing feature', e);
-            alert('DEBUG: Error serializing feature: ' + e.message);
         }
     }
 
@@ -206,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     drawBtn.addEventListener('click', () => {
-        alert('DEBUG: click Dibujar - iniciando L.Draw.Polygon');
         new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable();
     });
 
@@ -217,8 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('location-info').classList.add('hidden');
         coordsDisplay.textContent = 'Lat: 0.000000 | Lng: 0.000000';
         showMessage('Mapa limpio', 'info');
-        alert('DEBUG: Mapa limpiado y campo geometry vaciado');
-        console.log('DEBUG: cleared geometry input');
     });
 
     map.on(L.Draw.Event.CREATED, function (e) {
@@ -226,21 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
         drawnItems.clearLayers();
         drawnItems.addLayer(layer);
 
-        const feature = layer.toGeoJSON(); // Feature
+        const feature = layer.toGeoJSON();
         setFeatureToInput(feature);
 
         detectBtn.disabled = false;
         const centr = calcCentroidFromFeature(feature);
         if (centr) coordsDisplay.textContent = `Lat: ${centr.lat.toFixed(6)} | Lng: ${centr.lng.toFixed(6)}`;
-
-        // DEBUG: mostrar primer punto y tipo
-        try {
-            const coords0 = feature.geometry.coordinates[0] && feature.geometry.coordinates[0][0] ? feature.geometry.coordinates[0][0] : null;
-            alert('DEBUG: Polígono creado. type=' + feature.geometry.type + ' firstPoint=' + JSON.stringify(coords0));
-            console.log('DEBUG: feature creado', feature);
-        } catch (err) {
-            console.error('DEBUG: error al leer feature', err);
-        }
     });
 
     map.on('mousemove', (e) => {
@@ -248,15 +218,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     detectBtn.addEventListener('click', async () => {
-        alert('DEBUG: Detectar Ubicación clickeado');
         const val = geometryInput.value;
-        if (!val) { showMessage('Dibuja un polígono primero', 'error'); alert('DEBUG: detect abortado - geometry vacío'); return; }
+        if (!val) { showMessage('Dibuja un polígono primero', 'error'); return; }
 
         let feature;
-        try { feature = JSON.parse(val); } catch (e) { showMessage('GeoJSON inválido', 'error'); alert('DEBUG: JSON.parse geometry fallo: ' + e.message); return; }
+        try { feature = JSON.parse(val); } catch (e) { showMessage('GeoJSON inválido', 'error'); return; }
 
         const centroid = calcCentroidFromFeature(feature);
-        if (!centroid) { showMessage('No se pudo calcular centroid', 'error'); alert('DEBUG: centroid cálculo fallo'); return; }
+        if (!centroid) { showMessage('No se pudo calcular centroid', 'error'); return; }
 
         document.getElementById('centroid_lat').value = centroid.lat;
         document.getElementById('centroid_lng').value = centroid.lng;
@@ -266,14 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
         detectBtn.textContent = 'Detectando...';
 
         try {
-            alert('DEBUG: Llamando a Nominatim reverse con lat=' + centroid.lat + ' lng=' + centroid.lng);
             const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${centroid.lat}&lon=${centroid.lng}&zoom=18&addressdetails=1&accept-language=es`, {
                 headers: { 'User-Agent': 'DeforestationApp/1.0' }
             });
-            alert('DEBUG: Nominatim responded status=' + resp.status);
-            if (!resp.ok) throw new Error('Error en Nominatim: ' + resp.status);
+            if (!resp.ok) throw new Error('Error en Nominatim');
             const data = await resp.json();
-            alert('DEBUG: Nominatim JSON recibido (length: ' + JSON.stringify(data).length + ')');
             document.getElementById('location_data').value = JSON.stringify(data);
 
             const address = data.address || {};
@@ -293,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('location-info').classList.remove('hidden');
 
             try {
-                alert('DEBUG: Llamando API backend para asignar parroquia');
                 const assignResp = await fetch('{{ route("polygons.find-parish-api") }}', {
                     method: 'POST',
                     headers: {
@@ -306,25 +271,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         state_name: state ? state.toString().toLowerCase().trim() : ''
                     })
                 });
-                alert('DEBUG: backend find-parish-api status=' + assignResp.status);
                 const assignJson = await assignResp.json();
-                console.log('DEBUG: assignJson', assignJson);
                 if (assignJson.success && assignJson.parish) {
                     document.getElementById('parish_id').value = assignJson.parish.id;
                     showMessage('Parroquia encontrada y asignada', 'info');
-                    alert('DEBUG: Parroquia asignada id=' + assignJson.parish.id);
                 } else {
                     showMessage('No se encontró parroquia exacta. Selecciona manualmente.', 'info');
-                    alert('DEBUG: No se encontró parroquia en backend');
                 }
             } catch (e) {
                 console.warn('Asignación parroquia fallida', e);
-                alert('DEBUG: Error en assign parish API: ' + (e.message || e));
             }
         } catch (err) {
             console.error(err);
             showMessage('Error detectando ubicación', 'error');
-            alert('DEBUG: error detect location: ' + (err.message || err));
         } finally {
             detectBtn.disabled = false;
             detectBtn.textContent = originalText;
@@ -332,12 +291,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('polygon-form').addEventListener('submit', function (e) {
-        alert('DEBUG: Intentando enviar formulario - validando geometry');
         const val = geometryInput.value;
         if (!val) {
             e.preventDefault();
             showMessage('❌ Debes dibujar un polígono en el mapa', 'error');
-            alert('DEBUG: submit cancelado - geometry vacío');
             return false;
         }
         try {
@@ -347,24 +304,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!geom || !geom.type || !['Polygon', 'MultiPolygon'].includes(geom.type)) {
                 e.preventDefault();
                 showMessage('❌ La geometría debe ser Polygon o MultiPolygon', 'error');
-                alert('DEBUG: submit cancelado - geometría no válida: type=' + (geom?geom.type:'null'));
                 return false;
             }
-
-            // DEBUG: mostrar payload antes de submit (no bloquear envío)
-            const debugPayload = {
-                name: document.getElementById('name').value,
-                geometry: feature,
-                parish_id: document.getElementById('parish_id') ? document.getElementById('parish_id').value : null,
-                producer_id: document.getElementById('producer_id') ? document.getElementById('producer_id').value : null,
-            };
-            console.log('DEBUG: payload antes submit', debugPayload);
-            alert('DEBUG: formulario validado, enviando. geometry length=' + JSON.stringify(feature).length);
             return true;
         } catch (err) {
             e.preventDefault();
             showMessage('❌ Geometría inválida (JSON)', 'error');
-            alert('DEBUG: submit cancelado - JSON.parse error: ' + err.message);
             return false;
         }
     });
