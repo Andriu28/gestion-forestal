@@ -3,25 +3,15 @@
 ])
 
 @php
-    // --- LÓGICA DE CÁLCULO ENCAPSULADA ---
+
     $yearlyResults = $dataToPass['yearly_results'] ?? [];
     $polygonAreaHa = $dataToPass['polygon_area_ha'] ?? 0;
     $startYear = $dataToPass['start_year'] ?? 2020;
     $endYear = $dataToPass['end_year'] ?? 2024;
-    
-    $totalDeforestedArea = 0;
-    $validYears = 0;
-    
-    foreach ($yearlyResults as $year => $yearData) {
-        if (isset($yearData['area__ha']) && $yearData['status'] === 'success') {
-            $totalDeforestedArea += $yearData['area__ha'];
-            $validYears++;
-        }
-    }
-    
-    $totalPercentage = $polygonAreaHa > 0 ? ($totalDeforestedArea / $polygonAreaHa) * 100 : 0;
-    $totalYearsInRange = $endYear - $startYear + 1;
-    // --- FIN LÓGICA DE CÁLCULO ---
+    $validYears = $dataToPass['total_loss']['validYears'] ? $dataToPass['total_loss']['validYears'] : 0;
+    $totalPercentage = $dataToPass['total_loss']['totalPercentage'] ? $dataToPass['total_loss']['totalPercentage'] : 0;
+    $totalYearsInRange = $dataToPass['total_loss']['totalYearsInRange'] ? $dataToPass['total_loss']['totalYearsInRange'] : 0;
+
 @endphp
 
 <div class="bg-yellow-100 dark:bg-yellow-800/60 p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
@@ -33,7 +23,6 @@
     
     @if($validYears > 0)
     <div class="text-xs text-yellow-700 dark:text-yellow-300 mt-2 space-y-1">
-        <div>{{ number_format($totalDeforestedArea, 6, ',', '.') }} ha acumuladas</div>
         <div>{{ $validYears }}/{{ $totalYearsInRange }} años analizados</div>
     </div>
     @else
