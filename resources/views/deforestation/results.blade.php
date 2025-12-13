@@ -39,22 +39,17 @@
                     />
 
                     @php
-                        $areaHa = $dataToPass['area__ha'] ?? 0;
+                        $areaHa = $dataToPass['total_loss']['totalDeforestedArea'] ?? 0;
                         $polygonArea = $dataToPass['polygon_area_ha'] ?? 1;
                         $currentYearPercentage = $polygonArea > 0 ? ($areaHa / $polygonArea) * 100 : 0;
                     @endphp
 
                     <x-cards.stats-card 
-                        title="Área Deforestada {{ $dataToPass['end_year'] }}" 
+                        title="Área Deforestada {{ $dataToPass['start_year'] }} - {{ $dataToPass['end_year'] }}" 
                         color="red" 
                         value="{{ number_format($areaHa, 6, ',', '.') }}" 
                         unit="ha" 
                     >
-                        <x-slot name="footer">
-                            <p class="text-xs text-red-700 dark:text-red-300 mt-1">
-                                {{ number_format($currentYearPercentage, 2, ',', '.') }}% del área total
-                            </p>
-                        </x-slot>
                     </x-cards.stats-card>
 
                     <x-cards.total-loss-card :data-to-pass="$dataToPass" />
@@ -217,6 +212,143 @@
             </div>
         </div>
     </div>
+
+    <!-- Panel de depuración - SOLO PARA DESARROLLO -->
+<div class="mt-8 border-t border-red-300 pt-4">
+    <button onclick="toggleDebug()" 
+            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+        🔍 Mostrar/Ocultar Información de Depuración
+    </button>
+    
+    <div id="debug-panel" class="hidden mt-4 p-4 bg-gray-900 text-gray-100 rounded-lg overflow-auto max-h-96">
+        <h4 class="text-lg font-bold mb-2 text-yellow-300">📊 Datos de Depuración</h4>
+        
+        <!-- Información de $dataToPass -->
+        <div class="mb-4">
+            <h5 class="font-bold text-blue-300 mb-1">🔵 Variable: $dataToPass</h5>
+            <pre class="bg-gray-800 p-3 rounded text-sm overflow-auto">@json($dataToPass, JSON_PRETTY_PRINT)</pre>
+        </div>
+        
+        <!-- Variables específicas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <h5 class="font-bold text-green-300 mb-1">📋 Variables Disponibles:</h5>
+                <div class="bg-gray-800 p-3 rounded text-sm">
+                    <ul class="space-y-1">
+                        @php
+                            $definedVars = get_defined_vars();
+                            $viewVars = [];
+                            foreach ($definedVars as $key => $value) {
+                                if ($key !== '__env' && $key !== 'app' && !str_starts_with($key, '_')) {
+                                    $type = gettype($value);
+                                    $viewVars[$key] = $type;
+                                }
+                            }
+                        @endphp
+                        @foreach($viewVars as $varName => $varType)
+                            <li>
+                                <span class="font-mono text-yellow-200">{{ $varName }}</span>: 
+                                <span class="text-blue-200">{{ $varType }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+            
+            <div>
+                <h5 class="font-bold text-purple-300 mb-1">📈 Datos Específicos:</h5>
+                <div class="bg-gray-800 p-3 rounded text-sm">
+                    @php
+                        $specificData = [
+                            'polygon_area_ha' => $dataToPass['polygon_area_ha'] ?? 'N/A',
+                            'area__ha' => $dataToPass['area__ha'] ?? 'N/A',
+                            'start_year' => $dataToPass['start_year'] ?? 'N/A',
+                            'end_year' => $dataToPass['end_year'] ?? 'N/A',
+                            'status' => $dataToPass['status'] ?? 'N/A',
+                            'type' => $dataToPass['type'] ?? 'N/A',
+                        ];
+                    @endphp
+                    @foreach($specificData as $key => $value)
+                        <div class="flex justify-between py-1 border-b border-gray-700">
+                            <span class="text-gray-300">{{ $key }}:</span>
+                            <span class="font-bold text-white">{{ $value }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        
+        <!-- Datos anuales -->
+        @if(isset($dataToPass['yearly_results']) && is_array($dataToPass['yearly_results']))
+        <div class="mt-4">
+            <h5 class="font-bold text-cyan-300 mb-1">📅 Datos Anuales (yearly_results):</h5>
+            <div class="bg-gray-800 p-3 rounded text-sm overflow-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="bg-gray-700">
+                            <th class="px-2 py-1 text-left">Año</th>
+                            <th class="px-2 py-1 text-left">Área (ha)</th>
+                            <th class="px-2 py-1 text-left">Estado</th>
+                            <th class="px-2 py-1 text-left">Tipo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($dataToPass['yearly_results'] as $year => $data)
+                            @if(is_array($data))
+                            <tr class="border-b border-gray-700">
+                                <td class="px-2 py-1 font-bold">{{ $year }}</td>
+                                <td class="px-2 py-1">{{ $data['area__ha'] ?? 'N/A' }}</td>
+                                <td class="px-2 py-1">
+                                    <span class="px-2 py-1 rounded text-xs 
+                                        {{ ($data['status'] ?? '') === 'success' ? 'bg-green-500' : 'bg-red-500' }}">
+                                        {{ $data['status'] ?? 'N/A' }}
+                                    </span>
+                                </td>
+                                <td class="px-2 py-1">{{ $data['type'] ?? 'N/A' }}</td>
+                            </tr>
+                            @else
+                            <tr class="border-b border-gray-700">
+                                <td class="px-2 py-1 font-bold">{{ $year }}</td>
+                                <td colspan="3" class="px-2 py-1 text-red-300">
+                                    {{ is_string($data) ? $data : 'Dato no válido' }}
+                                </td>
+                            </tr>
+                            @endif
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+    </div>
+</div>
+
+<script>
+function toggleDebug() {
+    const panel = document.getElementById('debug-panel');
+    panel.classList.toggle('hidden');
+    
+    if (!panel.classList.contains('hidden')) {
+        // Forzar scroll al panel
+        panel.scrollIntoView({ behavior: 'smooth' });
+        
+        // Log en consola también
+        console.log('📊 DATOS DE DEPURACIÓN:');
+        console.log('dataToPass:', @json($dataToPass));
+        console.log('yearly_results:', @json($dataToPass['yearly_results'] ?? []));
+        
+        // Verificar estructura de datos
+        const yearly = @json($dataToPass['yearly_results'] ?? []);
+        console.log('Estructura de yearly_results:', Object.keys(yearly));
+        
+        Object.keys(yearly).forEach(year => {
+            console.log(`Año ${year}:`, yearly[year]);
+            console.log(`  area__ha:`, yearly[year]?.area__ha);
+            console.log(`  status:`, yearly[year]?.status);
+        });
+    }
+}
+</script>
 </x-app-layout>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -228,7 +360,7 @@ console.log('Yearly Data from PHP:', @json($dataToPass['yearly_results'] ?? []))
 
 // Datos para el gráfico de distribución
 const polygonArea = {{ $dataToPass['polygon_area_ha'] ?? 0 }};
-const deforestedArea = {{ $totalDeforestedArea ?? 0 }};
+const deforestedArea = {{ $dataToPass['total_loss']['totalDeforestedArea'] ?? 0 }};
 const conservedArea = polygonArea - deforestedArea;
 
 // Gráfico de distribución del área
@@ -262,7 +394,7 @@ new Chart(ctx, {
                     label: function(context) {
                         const value = context.parsed;
                         const percentage = ((value / polygonArea) * 100).toFixed(2);
-                        return `${context.label}: ${value.toFixed(2)} ha (${percentage}%)`;
+                        return `${context.label}: ${value.toFixed(4)} ha (${percentage}%)`;
                     }
                 }
             }

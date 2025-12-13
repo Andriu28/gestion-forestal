@@ -33,78 +33,80 @@ class DeforestationController extends Controller
     }
     
    /**
- * Procesa el análisis de deforestación
- */
-public function analyze(Request $request)
-{
-    // 1. Obtener los datos del Request y asignarlos a variables
-    $startYear = (int) $request->input('start_year');
-    $endYear = (int) $request->input('end_year');
-    $geometryString = $request->input('geometry');
-    $areaHa = (float) $request->input('area_ha');
-    $polygonName = $request->input('name', 'Área de Estudio'); // Obtener nombre aquí para consistencia
+     * Procesa el análisis de deforestación
+     */
+    public function analyze(Request $request)
+    {
+        // 1. Obtener los datos del Request y asignarlos a variables
+        $startYear = (int) $request->input('start_year');
+        $endYear = (int) $request->input('end_year');
+        $geometryString = $request->input('geometry');
+        $areaHa = (float) $request->input('area_ha');
+        $polygonName = $request->input('name', 'Área de Estudio'); // Obtener nombre aquí para consistencia
 
-    // Validar que el rango de años sea válido
-    if ($startYear > $endYear) {
-        return back()->withErrors(['error' => 'El año de inicio no puede ser mayor al año de fin.']);
-    }
-
-    // 2. Decodificación y Estructuración del GeoJSON
-    try {
-        $geometryGeoJson = json_decode($geometryString, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
+        // Validar que el rango de años sea válido
+        if ($startYear > $endYear) {
+            return back()->withErrors(['error' => 'El año de inicio no puede ser mayor al año de fin.']);
         }
 
-    } catch (\Exception $e) {
-        return back()->withErrors(['error' => 'Error procesando la geometría: ' . $e->getMessage()]);
+        // 2. Decodificación y Estructuración del GeoJSON
+        try {
+            $geometryGeoJson = json_decode($geometryString, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
+            }
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error procesando la geometría: ' . $e->getMessage()]);
+        }
+
+        // 3. CONSULTAS PARALELAS PARA EL RANGO DE AÑOS ESPECIFICADO
+        $yearsToAnalyze = range($startYear, $endYear);
+
+        // Realizar consultas paralelas para TODOS los años en el rango, incluyendo $endYear
+        $yearlyResults = $this->getParallelYearlyStats($geometryGeoJson, $yearsToAnalyze);
+
+        // Obtener las estadísticas del año final del array de resultados paralelos
+        $mainStatsForEndYear = $yearlyResults[$endYear] ?? ['area__ha' => 0, 'status' => 'error', 'year' => $endYear];
+        $mainStatsAreaHa = $mainStatsForEndYear['area__ha'] ?? 0;
+        $mainStatsStatus = $mainStatsForEndYear['status'] ?? 'error';
+        
+        // Ordenar por año
+        ksort($yearlyResults);
+
+        // 4. EJECUTAR CÁLCULO DE PÉRDIDA TOTAL ACUMULADA
+        $totalLossResults = $this->calculateTotalLossStats($yearlyResults, $areaHa, $startYear, $endYear);
+
+        // 5. Preparar datos para la vista
+        $dataToPass = [
+            'analysis_year' => $endYear, // Sigue siendo el punto focal del análisis
+            'start_year' => $startYear,
+            'end_year' => $endYear,
+            'original_geojson' => $geometryString,
+            'type' => $geometryGeoJson['type'],
+            'geometry' => $geometryGeoJson['coordinates'][0],
+            'area__ha' => $mainStatsAreaHa, // Usamos el dato del array paralelo
+            'polygon_area_ha' => $areaHa,
+            'status' => $mainStatsStatus, // Usamos el status del array paralelo
+            'polygon_name' => $polygonName,
+            'description' => $request->input('description', ''),
+            'yearly_results' => $yearlyResults,
+            'total_loss' => $totalLossResults, // Añadir el resultado del cálculo
+        ];
+
+        // Log para debugging
+        Log::info('Datos enviados a la vista:', [
+            'start_year' => $startYear,
+            'end_year' => $endYear,
+            'years_analyzed' => $yearsToAnalyze,
+            'yearly_results_count' => count($yearlyResults),
+            'total_deforested_area' => $totalLossResults['totalDeforestedArea'],
+            'main_stats_status' => $mainStatsStatus
+        ]);
+
+        return view('deforestation.results', compact('dataToPass'));
     }
-
-    // 3. (Eliminado: Consulta principal separada)
-
-    // 4. CONSULTAS PARALELAS PARA EL RANGO DE AÑOS ESPECIFICADO (Incluyendo el año final)
-    $yearsToAnalyze = range($startYear, $endYear);
-
-    // Realizar consultas paralelas para TODOS los años en el rango, incluyendo $endYear
-    // Asumimos que getParallelYearlyStats devuelve un array asociativo con el año como clave.
-    $yearlyResults = $this->getParallelYearlyStats($geometryGeoJson, $yearsToAnalyze);
-
-    // Obtener las estadísticas del año final del array de resultados paralelos
-    $mainStatsForEndYear = $yearlyResults[$endYear] ?? ['area__ha' => 0, 'status' => 'error', 'year' => $endYear];
-    $mainStatsAreaHa = $mainStatsForEndYear['area__ha'] ?? 0;
-    $mainStatsStatus = $mainStatsForEndYear['status'] ?? 'error';
-    
-    // Ordenar por año
-    ksort($yearlyResults);
-
-    // 5. Preparar datos para la vista
-    $dataToPass = [
-        'analysis_year' => $endYear, // Sigue siendo el punto focal del análisis
-        'start_year' => $startYear,
-        'end_year' => $endYear,
-        'original_geojson' => $geometryString,
-        'type' => $geometryGeoJson['type'],
-        'geometry' => $geometryGeoJson['coordinates'][0],
-        'area__ha' => $mainStatsAreaHa, // Usamos el dato del array paralelo
-        'polygon_area_ha' => $areaHa,
-        'status' => $mainStatsStatus, // Usamos el status del array paralelo
-        'polygon_name' => $polygonName,
-        'description' => $request->input('description', ''),
-        'yearly_results' => $yearlyResults,
-    ];
-
-    // Log para debugging
-    Log::info('Datos enviados a la vista:', [
-        'start_year' => $startYear,
-        'end_year' => $endYear,
-        'years_analyzed' => $yearsToAnalyze,
-        'yearly_results_count' => count($yearlyResults),
-        'main_stats_status' => $mainStatsStatus
-    ]);
-
-    return view('deforestation.results', compact('dataToPass'));
-}
 
 /**
  * Realiza consultas paralelas para múltiples años usando Guzzle
@@ -263,6 +265,34 @@ private function isPolygonClosed($coordinates)
         return view('deforestation.results', compact('polygon', 'analyses'));
     }
     
+
+    /**
+     * Calcula la pérdida total acumulada y el porcentaje de deforestación.
+     */
+    private function calculateTotalLossStats(array $yearlyResults, float $areaHa, int $startYear, int $endYear): array
+    {
+        $totalDeforestedArea = 0;
+        $validYears = 0;
+
+        foreach ($yearlyResults as $yearData) {
+            // Se utiliza 'fulfilled' para verificar que la promesa de Guzzle fue exitosa.
+            if (isset($yearData['area__ha']) && $yearData['status'] === 'success') {
+                $totalDeforestedArea += $yearData['area__ha'];
+                $validYears++;
+            }
+        }
+
+        $totalPercentage = $areaHa > 0 ? ($totalDeforestedArea / $areaHa) * 100 : 0;
+        $totalYearsInRange = $endYear - $startYear + 1;
+
+        return [
+            'totalDeforestedArea' => $totalDeforestedArea,
+            'totalPercentage' => $totalPercentage,
+            'validYears' => $validYears,
+            'totalYearsInRange' => $totalYearsInRange,
+        ];
+    }
+
     /**
      * Obtiene el historial de análisis en formato JSON para gráficos
      */
