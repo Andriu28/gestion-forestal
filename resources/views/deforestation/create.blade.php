@@ -6,7 +6,7 @@
             <div class="text-gray-900 dark:text-gray-100 ">
                 <h3 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
                     {{('Análisis de Deforestación') }}
-                </h2>
+                </h3>
    
                     <!-- CARGA DEL MAPA AQUÍ -->
                     <div id="map" style="height: 80vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">

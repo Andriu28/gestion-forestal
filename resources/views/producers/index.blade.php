@@ -2,8 +2,8 @@
     <div class=" mx-auto">
         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-8">
             <div class="text-gray-900 dark:text-gray-100">
-                <h2 class="font-semibold text-xl leading-tight mb-4">
-                    {{ __('Lista de productores') }}
+                <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
+                    {{ __('Gestión de productores') }}
                 </h2>
                 <div class="flex justify-end mb-4 space-x-4">
                     <a href="{{ route('producers.create') }}" class="px-4 py-2 bg-lime-600/90 text-white rounded-md hover:bg-lime-600">
@@ -121,8 +121,11 @@
                         {{ $producers->links() }}
                     </div>
                 @else
-                    <div class="alert alert-info">
-                        No se encontraron productores.
+                    <div class="text-center py-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="text-gray-600 dark:text-gray-400">No se encontraron productores.</p>
                     </div>
                 @endif
             </div>

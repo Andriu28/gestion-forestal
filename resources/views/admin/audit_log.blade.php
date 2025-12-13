@@ -1,15 +1,13 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Registro de Auditoría') }}
-        </h2>
-    </x-slot>
+   
 
     <div class="">
         <div class="mx-auto ">
             <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-8 ">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <h3 class="text-lg font-medium mb-4">Actividades Recientes</h3>
+                <div class="text-gray-900 dark:text-gray-100">
+                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
+                        Actividades Recientes
+                    </h2>
                     
                     <table id="audit-table" class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-stone-100/90 dark:bg-custom-gray ">

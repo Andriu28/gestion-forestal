@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="max-w-7xl mx-auto">
+    <div class="mx-auto">
         <div class="flex flex-col md:flex-row md:space-x-8">
             <div class="flex-1">
                 <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-soft p-6 mb-6">

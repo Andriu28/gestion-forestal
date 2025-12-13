@@ -3,8 +3,8 @@
         <div class=" mx-auto ">
             <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-8 ">
                 <div class="text-gray-900 dark:text-gray-100 ">
-                    <h2 class="font-semibold text-xl leading-tight ">
-                        {{ __('Lista de Usuarios') }}
+                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
+                        {{ __('Gestión de Usuarios') }}
                     </h2>
                     <div class="flex justify-end mb-4 space-x-4">
                         <a href="{{ route('admin.users.create') }}" class="px-4 py-2 bg-gradient-to-r from-lime-500/90 to-lime-600/90 dark:from-lime-700/70 dark:to-lime-800/70 hover:from-lime-600/90 hover:to-lime-700/90 dark:hover:from-lime-700 dark:hover:to-lime-800  text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-350 ease-out border border-lime-400/30 dark:border-lime-800/40">
