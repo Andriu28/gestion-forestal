@@ -131,7 +131,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/polygons/map', [PolygonController::class, 'map'])->name('polygons.map');
     Route::get('/polygons/geojson', [PolygonController::class, 'geojson'])->name('polygons.geojson');
     Route::post('/polygons/find-parish', [PolygonController::class, 'findParishApi'])->name('polygons.find-parish-api');
-    Route::patch('/polygons/{polygon}/toggle-status', [PolygonController::class, 'toggleStatus'])->name('polygons.toggle-status');
+    Route::post('/polygons/{polygon}/toggle-status', [PolygonController::class, 'toggleStatus'])->name('polygons.toggle-status');
     Route::post('/polygons/{id}/restore', [PolygonController::class, 'restore'])->name('polygons.restore');
 
     // LUEGO la ruta resource (genérica)
@@ -194,6 +194,6 @@ Route::middleware(['auth', 'verified', 'is.admin'])->prefix('admin')->name('admi
 });
 
 
-Route::get('/audit', [AuditLogController::class, 'showAuditLog'])->name('admin.audit');
+
 // Esta línea es la que importa las rutas de autenticación
 require __DIR__.'/auth.php';
