@@ -1,8 +1,6 @@
 <?php
 
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\TrustProxies;
 use App\Http\Middleware\IsAdmin;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -12,10 +10,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // ✅ Agrega esta línea para confiar en todos los proxies
+        $middleware->trustProxies(at: '*');
+        
         $middleware->alias([
             'is.admin' => IsAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })->create(); 
