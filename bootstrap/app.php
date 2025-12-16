@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Middleware\TrustProxies;
-use App\Http\Middleware\IsAdmin;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -9,14 +10,19 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        // ✅ Agrega esta línea para confiar en todos los proxies
+    ->withMiddleware(function (Middleware $middleware) {
+        // ⚠️ IMPORTANTE: trustProxies debe ir PRIMERO
         $middleware->trustProxies(at: '*');
         
+        // Luego tus otros middlewares
         $middleware->alias([
-            'is.admin' => IsAdmin::class,
+            'is.admin' => \App\Http\Middleware\IsAdmin::class,
+        ]);
+        
+        $middleware->web(append: [
+            // Si tienes otros middlewares web
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create(); 
+    })->create();
