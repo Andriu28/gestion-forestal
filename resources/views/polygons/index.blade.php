@@ -2,7 +2,7 @@
 <x-app-layout>
     <div class="">
         <div class=" mx-auto">
-            <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-8">
+            <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-8">
                 <div class="text-gray-900 dark:text-gray-100">
                     <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
                         {{ __('Gestión de Polígonos') }}
@@ -16,7 +16,7 @@
                                     <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
                                     <circle cx="12" cy="10" r="3"/>
                                 </svg>
-                                <span>{{ __('Ver en Mapa') }}</span>
+                                <span>{{ __('Mapa') }}</span>
                             </a>
                             <a href="{{ route('polygons.create') }}" class="px-4 py-2 bg-lime-600/90 text-white rounded-md hover:bg-lime-600 flex items-center space-x-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">

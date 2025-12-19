@@ -3,7 +3,7 @@
     <div class="mx-auto">
         
 
-        <div class="bg-stone-100/90 dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-2xl p-6">
+        <div class="bg-stone-100/90 dark:bg-gray-800 overflow-hidden shadow-sm rounded-2xl p-6">
             <div class="text-gray-900 dark:text-gray-100">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold"><i class="fas fa-draw-polygon mr-2"></i> Crear Nuevo Polígono</h2>

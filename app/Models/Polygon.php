@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Spatie\Activitylog\Traits\LogsActivity; // Añadir
+use Spatie\Activitylog\LogOptions; // Añadir
 
 class Polygon extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity; // Añadir LogsActivity
 
     protected $fillable = [
         'name',
@@ -36,6 +38,17 @@ class Polygon extends Model
         'centroid_lat' => 'double',
         'centroid_lng' => 'double',
     ];
+
+    // Añadir configuración del log
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'description', 'producer_id', 'parish_id', 'area_ha', 'is_active'])
+            ->logOnlyDirty()
+            ->setDescriptionForEvent(fn(string $eventName) => "Polígono {$eventName}")
+            ->dontSubmitEmptyLogs()
+            ->logExcept(['detected_parish', 'detected_municipality', 'detected_state', 'centroid_lat', 'centroid_lng', 'location_data']); // Excluir campos calculados
+    }
 
     // Relaciones
     public function producer()

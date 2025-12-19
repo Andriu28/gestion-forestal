@@ -55,8 +55,24 @@ class User extends Authenticatable implements MustVerifyEmail{
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email']) // Solo registra cambios en el nombre y email
-            ->logExcept(['remember_token', 'role'])
-            ->setDescriptionForEvent(fn(string $eventName) => "El usuario ha sido {$eventName}");
+            ->logOnly(['name', 'email', 'role']) // Añadir 'role'
+            ->logOnlyDirty()
+            ->setDescriptionForEvent(function(string $eventName) {
+                $userName = $this->name ?: 'Usuario #' . $this->id;
+                
+                switch($eventName) {
+                    case 'created':
+                        return "Usuario '{$userName}' fue creado";
+                    case 'updated':
+                        return "Usuario '{$userName}' fue actualizado su rol";
+                    case 'deleted':
+                        return "Usuario '{$userName}' fue deshabilitado";
+                    case 'restored':
+                        return "Usuario '{$userName}' fue habilitado";
+                    default:
+                        return "Usuario '{$userName}' fue {$eventName}";
+                }
+            })
+            ->dontSubmitEmptyLogs();
     }
 }
