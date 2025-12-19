@@ -21,13 +21,16 @@ class PolygonController extends Controller
     /**
      * Display a listing of the resource.
      */
+    // En PolygonController.php - método index()
     public function index(Request $request): View
     {
         $search = $request->get('search');
         $status = $request->get('status', 'all');
         $type = $request->get('type', 'all');
 
-        $query = Polygon::with(['producer', 'parish.municipality.state']);
+        // Iniciar query incluyendo soft deleted
+        $query = Polygon::with(['producer', 'parish.municipality.state'])
+            ->withTrashed(); // ← AÑADE ESTA LÍNEA
 
         // Aplicar búsqueda
         if ($search) {
@@ -36,18 +39,22 @@ class PolygonController extends Controller
 
         // Aplicar filtro de estado
         if ($status === 'active') {
-            $query->active();
+            $query->where('is_active', true)
+                ->whereNull('deleted_at'); // Solo activos no eliminados
         } elseif ($status === 'inactive') {
-            $query->where('is_active', false);
+            $query->where('is_active', false)
+                ->whereNull('deleted_at'); // Solo inactivos no eliminados
         } elseif ($status === 'deleted') {
-            $query->onlyTrashed();
+            $query->onlyTrashed(); // Solo eliminados
+        } else {
+            // 'all' - ya tenemos withTrashed() arriba, muestra todos incluyendo eliminados
         }
 
         // Aplicar filtro de tipo
         if ($type === 'with_producer') {
-            $query->withProducer();
+            $query->whereNotNull('producer_id');
         } elseif ($type === 'without_producer') {
-            $query->withoutProducer();
+            $query->whereNull('producer_id');
         }
 
         $polygons = $query->latest()->paginate(10);

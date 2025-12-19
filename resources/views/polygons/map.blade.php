@@ -1,12 +1,11 @@
 {{-- [file name]: map.blade.php --}}
 <x-app-layout>
-    <div class="">
-        <div class="mx-auto">
-            <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-8">
-                <div class="text-gray-900 dark:text-gray-100">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="font-semibold text-xl leading-tight">
-                            {{ __('Mapa de Polígonos') }}
+    <div class=" mx-auto ">
+        <div class="bg-stone-100/90 dark:bg-custom-gray  shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
+            <div class="text-gray-900 dark:text-gray-100 ">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
+                           {{ __('Mapa de Polígonos') }} 
                         </h2>
                         <a href="{{ route('polygons.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center space-x-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">

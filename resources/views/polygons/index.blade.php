@@ -76,8 +76,14 @@
                                             <td class="px-6 py-4 text-gray-900 dark:text-gray-400">
                                                 {{ Str::limit($polygon->description, 50) ?? 'Sin descripción' }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                {!! $polygon->status_badge !!}
+                                             <td class="px-6 py-4 whitespace-nowrap">
+                                                @if($polygon->trashed())
+                                                    <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">Eliminado</span>
+                                                @else
+                                                    <span class="inline-block px-3 py-1 text-xs font-semibold {{ $polygon->is_active ? 'bg-green-600 text-white' : 'bg-yellow-500 text-white' }} rounded-full">
+                                                        {{ $polygon->is_active ? 'Activo' : 'Inactivo' }}
+                                                    </span>
+                                                @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center gap-4">
@@ -147,7 +153,7 @@
                         </div>
                     @else
                         <div class="text-center py-8">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p class="text-gray-600 dark:text-gray-400">No se encontraron polígonos.</p>
