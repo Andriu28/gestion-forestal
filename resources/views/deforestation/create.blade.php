@@ -45,7 +45,7 @@
                                     {{-- // AGREGAR AQUÍ EL NUEVO CONTROL DE OPACIDAD // --}}
                                         <!-- Contenedor para controles de opacidad -->
                                         <div class="relative">
-                                            <button id="opacity-control-button" title="Ajustar Opacidad" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                            <button id="opacity-control-button" title="Ajustar Opacidad" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg ">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers w-6 h-6">
                                                     <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>
                                                     <path d="m22 17.46-8.58-3.91a2 2 0 0 0-1.66 0L3 17.46"/>
@@ -56,7 +56,7 @@
                                             <!-- Panel de control de opacidad -->
                                             <div id="opacity-control-panel" 
                                                 class="absolute mt-4 w-48 rounded-xl shadow-lg bg-gray-50 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 right-0
-                                                        transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none">
+                                                        transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none hidden">
                                                 <div class="absolute -top-2 right-6 w-4 h-2 z-100 pointer-events-none">
                                                     <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
                                                         <polygon points="8,0 16,8 0,8" fill="currentColor"/>
@@ -800,16 +800,15 @@ document.getElementById('fullscreen-toggle').addEventListener('click', function(
     }
 });
 
-// Función para mostrar/ocultar el panel de opacidad (igual que el de cambiar mapa)
 function toggleOpacityPanel(show) {
     const panel = document.getElementById('opacity-control-panel');
     
     if (show) {
-        panel.classList.remove('scale-95', 'opacity-0', 'pointer-events-none');
+        panel.classList.remove('hidden', 'scale-95', 'opacity-0', 'pointer-events-none');  // AGREGAR 'hidden'
         panel.classList.add('scale-100', 'opacity-100', 'pointer-events-auto', 'show');
     } else {
         panel.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto', 'show');
-        panel.classList.add('scale-95', 'opacity-0', 'pointer-events-none');
+        panel.classList.add('hidden','scale-95', 'opacity-0', 'pointer-events-none');
     }
 }
 
