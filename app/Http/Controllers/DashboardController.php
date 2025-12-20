@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Spatie\Activitylog\Models\Activity;
+use App\Models\Producer;
 
 class DashboardController extends Controller
 {
@@ -15,6 +16,11 @@ class DashboardController extends Controller
         
         // 1. Usuarios
         $totalUsers = User::count();
+        // 6. Usuarios por Estado
+$trashedUsers = User::onlyTrashed()->count();
+
+// Agregar esta línea para definir $activeUsers
+$activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
         $newUsersToday = User::whereDate('created_at', today())->count();
         $newUsersThisWeek = User::whereBetween('created_at', 
             [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count();
@@ -29,24 +35,30 @@ class DashboardController extends Controller
         $activitiesThisMonth = Activity::whereMonth('created_at', now()->month)
                                        ->whereYear('created_at', now()->year)->count();
         
-        // 3. Distribución de Roles
+        // 3. Productores (NUEVA MÉTRICA)
+        $totalProducers = Producer::count();
+        $activeProducers = Producer::where('is_active', true)->count();
+        $newProducersToday = Producer::whereDate('created_at', today())->count();
+        $newProducersThisWeek = Producer::whereBetween('created_at',
+            [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count();
+        
+        // 4. Distribución de Roles
         $roleDistribution = User::select('role', DB::raw('count(*) as count'))
             ->groupBy('role')
             ->get()
             ->pluck('count', 'role');
         
-        // 4. Actividades por Tipo
+        // 5. Actividades por Tipo
         $activityTypes = Activity::select('event', DB::raw('count(*) as count'))
             ->whereIn('event', ['created', 'updated', 'deleted', 'restored'])
             ->groupBy('event')
             ->get()
             ->pluck('count', 'event');
         
-        // 5. Usuarios por Estado
-        $activeUsers = User::count();
+        // 6. Usuarios por Estado
         $trashedUsers = User::onlyTrashed()->count();
         
-        // 6. Actividad por Hora (últimas 24h)
+        // 7. Actividad por Hora (últimas 24h)
         $hourlyActivity = Activity::select(
                 DB::raw("EXTRACT(HOUR FROM created_at) as hour"),
                 DB::raw('COUNT(*) as count')
@@ -56,13 +68,13 @@ class DashboardController extends Controller
             ->orderBy('hour')
             ->get();
         
-        // 7. Top Usuarios más Activos (últimos 7 días) - CORREGIDO
+        // 8. Top Usuarios más Activos (últimos 7 días)
         $topActiveUsers = Activity::select(
                 'causer_id',
                 DB::raw('COUNT(*) as activity_count'),
                 DB::raw('MAX(users.name) as user_name')
             )
-            ->where('activity_log.created_at', '>=', Carbon::now()->subDays(7)) // Especificar tabla
+            ->where('activity_log.created_at', '>=', Carbon::now()->subDays(7))
             ->whereNotNull('causer_id')
             ->leftJoin('users', 'activity_log.causer_id', '=', 'users.id')
             ->groupBy('causer_id')
@@ -70,7 +82,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
         
-        // 8. Actividad por Día de la Semana
+        // 9. Actividad por Día de la Semana
         $activityByDay = Activity::select(
                 DB::raw("EXTRACT(DOW FROM created_at) as day_of_week"),
                 DB::raw('COUNT(*) as count')
@@ -80,13 +92,15 @@ class DashboardController extends Controller
             ->orderBy('day_of_week')
             ->get();
         
-        // 9. Tendencias (comparación con período anterior)
+        // 10. Tendencias (comparación con período anterior)
         $lastWeekUsers = User::whereBetween('created_at', 
             [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()])->count();
         $lastWeekActivities = Activity::whereBetween('created_at',
             [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()])->count();
+        $lastWeekProducers = Producer::whereBetween('created_at',
+            [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()])->count();
         
-        // 10. Actividades por Mes
+        // 11. Actividades por Mes
         $monthlyActivity = Activity::select(
                 DB::raw("DATE_TRUNC('month', created_at) as month"),
                 DB::raw('COUNT(*) as count')
@@ -96,7 +110,7 @@ class DashboardController extends Controller
             ->orderBy('month')
             ->get();
         
-        // 11. Actividades recientes (para tabla)
+        // 12. Actividades recientes (para tabla)
         $recentActivities = Activity::with('causer')
             ->latest()
             ->take(10)
@@ -113,6 +127,11 @@ class DashboardController extends Controller
             ? round((($activitiesThisWeek - $lastWeekActivities) / $lastWeekActivities) * 100, 1)
             : ($activitiesThisWeek > 0 ? 100 : 0);
         
+        // Porcentaje de crecimiento de productores
+        $producerGrowthPercentage = $lastWeekProducers > 0 
+            ? round((($newProducersThisWeek - $lastWeekProducers) / $lastWeekProducers) * 100, 1)
+            : ($newProducersThisWeek > 0 ? 100 : 0);
+        
         // Porcentajes de distribución
         $adminPercentage = isset($roleDistribution['administrador']) && $totalUsers > 0
             ? round(($roleDistribution['administrador'] / $totalUsers) * 100, 1)
@@ -122,9 +141,14 @@ class DashboardController extends Controller
             ? round(($roleDistribution['basico'] / $totalUsers) * 100, 1)
             : 0;
         
+        // Porcentaje de productores activos
+        $activeProducersPercentage = $totalProducers > 0
+            ? round(($activeProducers / $totalProducers) * 100, 1)
+            : 0;
+        
         // Calcular tasa de actividad (actividades por usuario)
         $completionRate = $totalUsers > 0 
-            ? min(round(($activitiesThisMonth / ($totalUsers * 5)) * 100, 1), 100) // Meta: 5 actividades por usuario al mes
+            ? min(round(($activitiesThisMonth / ($totalUsers * 5)) * 100, 1), 100)
             : 0;
         
         // Tasa de actividad diaria promedio
@@ -163,12 +187,21 @@ class DashboardController extends Controller
         return view('dashboard', compact(
             // Métricas principales
             'totalUsers',
-            
             'totalActivities',
+            'totalProducers',
+            'activeProducers',
+            
+            // Métricas diarias
             'newUsersToday',
             'activitiesToday',
+            'newProducersToday',
+            
+            // Métricas semanales
             'newUsersThisWeek',
             'activitiesThisWeek',
+            'newProducersThisWeek',
+            
+            // Métricas mensuales
             'usersThisMonth',
             'activitiesThisMonth',
             
@@ -181,6 +214,8 @@ class DashboardController extends Controller
             // Porcentajes
             'userGrowthPercentage',
             'activityGrowthPercentage',
+            'producerGrowthPercentage',
+            'activeProducersPercentage',
             'adminPercentage',
             'basicPercentage',
             'completionRate',
@@ -199,6 +234,7 @@ class DashboardController extends Controller
             // Comparativas
             'lastWeekUsers',
             'lastWeekActivities',
+            'lastWeekProducers',
             
             // Actividades recientes
             'recentActivities'
@@ -216,11 +252,9 @@ class DashboardController extends Controller
     
     /**
      * Método alternativo más seguro para obtener usuarios activos
-     * Usando Eloquent en lugar de Query Builder directo
      */
     private function getTopActiveUsersAlternative()
     {
-        // Opción 1: Usando Eloquent con withCount
         $users = User::whereHas('activities', function($query) {
                 $query->where('created_at', '>=', Carbon::now()->subDays(7));
             })
@@ -256,7 +290,7 @@ class DashboardController extends Controller
                     'causer_id' => $activity->causer_id,
                     'activity_count' => $activity->count,
                     'user_name' => $user->name,
-                    'name' => $user->name // alias para compatibilidad
+                    'name' => $user->name
                 ]);
             }
         }
