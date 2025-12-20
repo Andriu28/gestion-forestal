@@ -391,16 +391,6 @@
     border: 1px solid #4b5563;
 }
 
-/* Menú de selección de mapas */
-#base-map-menu {
-    display: none;
-    z-index: 10000;
-}
-
-#base-map-menu.show {
-    display: block;
-}
-
 /* Estilos para modo oscuro del menú */
 .dark #base-map-menu {
     
@@ -421,13 +411,8 @@
     left: auto;
 }
 
-#base-map-menu {
-    display: none;
-    z-index: 1;
-}
-#base-map-menu.show {
-    display: block;
-}
+
+
 
 .dark #base-map-menu {
     border: 1px solid #374151;
@@ -490,17 +475,7 @@
     gap: 0.5rem;
 }
 
-/* Menú de selección de mapas */
-#base-map-menu {
-    display: none;
-    z-index: 1;
-    right: 0;
-    left: auto;
-}
 
-#base-map-menu.show {
-    display: block;
-}
 
 /* Menú de coordenadas manuales */
 #manual-polygon-menu {
@@ -839,5 +814,7 @@ li .h23 a:hover{
 #map:active {
     cursor: grabbing;
 }
+
+
 
 

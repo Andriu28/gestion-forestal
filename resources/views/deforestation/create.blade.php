@@ -55,9 +55,10 @@
                                             
                                             <!-- Panel de control de opacidad -->
                                             <div id="opacity-control-panel" 
-                                                class="absolute mt-4 w-48 rounded-xl shadow-lg bg-gray-50 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 right-0
-                                                        transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none hidden">
-                                                <div class="absolute -top-2 right-6 w-4 h-2 z-100 pointer-events-none">
+                                                class="absolute mt-3 w-48 rounded-xl shadow-lg bg-gray-50 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 
+                                                transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none hidden"
+                                                style="right: -97px;">
+                                                <div class="absolute -top-2 right-6 w-[6.4rem] h-2 z-100 pointer-events-none">
                                                     <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
                                                         <polygon points="8,0 16,8 0,8" fill="currentColor"/>
                                                     </svg>
@@ -111,18 +112,18 @@
                                             Mapas
                                         </button>
                                         
-                                        <!-- Menú de cambio de mapa - POSICIONADO RELATIVO AL BOTÓN -->
+                                        <!-- Menú de cambio de mapa - DEBE TENER ESTAS CLASES INICIALES -->
                                         <div id="base-map-menu"
-                                             class="absolute mt-4 w-40 rounded-xl shadow-lg bg-white dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-1 right-0
-                                                    transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none">
+                                            class="absolute mt-3 w-40 rounded-xl shadow-lg bg-gray-100 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 right-0
+                                                    transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none hidden">
                                             <!-- Flechita -->
-                                            <div class="absolute -top-2 right-6 w-4 h-2 z-100 pointer-events-none">
+                                            <div class="absolute -top-2 right-6 w-8 h-2 pointer-events-none">
                                                 <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
                                                     <polygon points="8,0 16,8 0,8" fill="currentColor"/>
                                                 </svg>
                                             </div>
                                             <!-- Menú -->
-                                             <div class="py-2 z-100" role="menu" aria-orientation="vertical">
+                                            <div class="py-2 " role="menu" aria-orientation="vertical">
                                                 <button data-layer="osm" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">OpenStreetMap</button>
                                                 <button data-layer="satellite" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Satélite Esri</button>
                                                 <button data-layer="maptiler_satellite" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">MapTiler Satélite</button>
@@ -461,6 +462,19 @@ document.getElementById('base-map-toggle').addEventListener('click', function(e)
     const menu = document.getElementById('base-map-menu');
     const isShowing = menu.classList.contains('show');
     
+    console.log('✅ Botón mapa clickeado');
+    console.log('   - Menu actual:', menu);
+    console.log('   - Clases actuales:', menu.className);
+    console.log('   - ¿Mostrando?', isShowing);
+    
+    // CERRAR EL PANEL DE OPACIDAD SI ESTÁ ABIERTO
+    const opacityPanel = document.getElementById('opacity-control-panel');
+    if (opacityPanel.classList.contains('show')) {
+        console.log('   - Cerrando panel de opacidad');
+        toggleOpacityPanel(false);
+    }
+    
+    console.log('   - Llamando toggleMenu con:', !isShowing);
     toggleMenu('base-map-menu', !isShowing);
 });
 
@@ -501,9 +515,17 @@ function closeCoordinateModal() {
 }
 
 // Abrir modal de coordenadas UTM
+// Abrir modal de coordenadas UTM - AGREGAR CIERRE DE OPACIDAD
 document.getElementById('manual-polygon-toggle').addEventListener('click', function(e) {
     e.stopPropagation();
     closeMenu('base-map-menu');
+    
+    // AGREGAR ESTO: Cerrar panel de opacidad si está abierto
+    const opacityPanel = document.getElementById('opacity-control-panel');
+    if (opacityPanel.classList.contains('show')) {
+        toggleOpacityPanel(false);
+    }
+    
     openCoordinateModal();
 });
 
@@ -718,28 +740,65 @@ function drawUniversalUTMPolygon(utmCoordinates) {
 // Funciones para los menús desplegables
 function toggleMenu(menuId, show) {
     const menu = document.getElementById(menuId);
+    
     if (show) {
+        // Quitar hidden INMEDIATAMENTE (sin setTimeout)
+        menu.classList.remove('hidden');
+        
+        // Forzar un reflow para que la animación funcione
+        void menu.offsetWidth;
+        
+        // Quitar clases de oculto y agregar clases para mostrar
         menu.classList.remove('scale-95', 'opacity-0', 'pointer-events-none');
         menu.classList.add('scale-100', 'opacity-100', 'pointer-events-auto', 'show');
     } else {
+        // Quitar clases para mostrar y agregar clases de animación
         menu.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto', 'show');
         menu.classList.add('scale-95', 'opacity-0', 'pointer-events-none');
+        
+        // Agregar 'hidden' después de la animación
+        setTimeout(() => {
+            if (menu.classList.contains('scale-95')) { // Verificar que aún está cerrado
+                menu.classList.add('hidden');
+            }
+        }, 400);
     }
 }
 
 function closeMenu(menuId) {
-    toggleMenu(menuId, false);
+    const menu = document.getElementById(menuId);
+    
+    // Usar la misma lógica que toggleOpacityPanel(false)
+    menu.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto', 'show');
+    menu.classList.add('scale-95', 'opacity-0', 'pointer-events-none');
+    
+    // Agregar 'hidden' después de la animación
+    setTimeout(() => {
+        if (menu.classList.contains('scale-95')) {
+            menu.classList.add('hidden');
+        }
+    }, 400);
 }
 
 // Cerrar menús al hacer clic fuera
+// Actualizar la función que cierra menús al hacer clic fuera
 document.addEventListener('click', function(e) {
     const baseMapToggle = document.getElementById('base-map-toggle');
     const baseMapMenu = document.getElementById('base-map-menu');
+    const opacityButton = document.getElementById('opacity-control-button');
+    const opacityPanel = document.getElementById('opacity-control-panel');
     const modal = document.getElementById('manual-polygon-modal');
     
+    // Solo procesar si el modal está cerrado
     if (modal.classList.contains('hidden')) {
+        // Cerrar menú de cambio de mapa si se hace clic fuera
         if (!baseMapToggle.contains(e.target) && !baseMapMenu.contains(e.target)) {
             closeMenu('base-map-menu');
+        }
+        
+        // Cerrar panel de opacidad si se hace clic fuera
+        if (!opacityButton.contains(e.target) && !opacityPanel.contains(e.target)) {
+            toggleOpacityPanel(false);
         }
     }
     
@@ -804,11 +863,26 @@ function toggleOpacityPanel(show) {
     const panel = document.getElementById('opacity-control-panel');
     
     if (show) {
-        panel.classList.remove('hidden', 'scale-95', 'opacity-0', 'pointer-events-none');  // AGREGAR 'hidden'
+        // Quitar hidden INMEDIATAMENTE (sin setTimeout)
+        panel.classList.remove('hidden');
+        
+        // Forzar un reflow para que la animación funcione
+        void panel.offsetWidth;
+        
+        // Quitar clases de oculto y agregar clases para mostrar
+        panel.classList.remove('scale-95', 'opacity-0', 'pointer-events-none');
         panel.classList.add('scale-100', 'opacity-100', 'pointer-events-auto', 'show');
     } else {
+        // Quitar clases para mostrar y agregar clases de animación
         panel.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto', 'show');
-        panel.classList.add('hidden','scale-95', 'opacity-0', 'pointer-events-none');
+        panel.classList.add('scale-95', 'opacity-0', 'pointer-events-none');
+        
+        // Agregar 'hidden' después de la animación
+        setTimeout(() => {
+            if (panel.classList.contains('scale-95')) { // Verificar que aún está cerrado
+                panel.classList.add('hidden');
+            }
+        }, 400);
     }
 }
 
@@ -1302,4 +1376,6 @@ function calculatePolygonArea(feature) {
 .ol-viewport {
     text-rendering: geometricPrecision;
 }
+
+
 </style>

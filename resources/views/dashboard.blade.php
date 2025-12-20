@@ -501,7 +501,7 @@
     
     @else
     <!-- Vista para usuarios no administradores -->
-    <div class="max-w-4xl mx-auto">
+    <div class=" mx-auto">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
             <div class="w-20 h-20 mx-auto mb-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                 <svg class="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
