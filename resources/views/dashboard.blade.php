@@ -93,6 +93,46 @@
                 </div>
             </div>
         </div>
+        <!-- Tarjeta: Productores Activos CON CÍRCULO ANIMADO -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Productores Activos</p>
+                    <h3 id="producer-count" class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $activeProducers }}</h3>
+                </div>
+                <div class="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-teal-600 dark:text-teal-400">
+                        <path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <div class="info">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Crecimiento semanal</p>
+                </div>
+                
+                <!-- Círculo de progreso ANIMADO -->
+                <div class="progresss relative w-20 h-20">
+                    <svg class="w-20 h-20 transform -rotate-90">
+                        <circle cx="40" cy="40" r="32" 
+                                class="fill-none stroke-teal-100 dark:stroke-gray-700" 
+                                stroke-width="11"></circle>
+                        <circle id="producer-growth-circle" cx="40" cy="40" r="32" 
+                                class="fill-none stroke-teal-600 dark:stroke-teal-400" 
+                                stroke-width="11" 
+                                stroke-dasharray="218" 
+                                stroke-dashoffset="218" 
+                                stroke-linecap="round"></circle>
+                    </svg>
+                    <div class="percentage absolute inset-0 flex items-center justify-center">
+                        <p id="producer-growth-percentage" class="text-sm font-semibold text-teal-600 dark:text-teal-400">
+                            {{ $activeProducersPercentage }}%
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Tarjeta: Actividad Hoy CON CÍRCULO ANIMADO -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
@@ -502,6 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
         activityGrowth: {{ $activityGrowthPercentage }},
         todayActivity: {{ $activitiesToday }},
         completionRate: {{ $completionRate }},
+        activeProducersPercentage: {{ $activeProducersPercentage }}, // Agregar esta línea
         // Calcular porcentaje para actividad de hoy (vs promedio diario del mes)
         todayPercentage: function() {
             const avgDailyActivity = {{ $activitiesThisMonth }} > 0 ? 
@@ -537,6 +578,12 @@ document.addEventListener('DOMContentLoaded', function() {
             percentage: Math.min(metrics.completionRate, 100),
             duration: 1600,
             colorClass: 'yellow'
+        },
+        {
+            id: 'producer-growth-circle', // Agregar este objeto
+            percentage: Math.min(metrics.activeProducersPercentage, 100),
+            duration: 1200,
+            colorClass: 'teal'
         }
     ];
 
