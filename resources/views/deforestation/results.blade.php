@@ -47,7 +47,7 @@
                     <x-cards.stats-card 
                         title="Área Deforestada {{ $dataToPass['start_year'] }} - {{ $dataToPass['end_year'] }}" 
                         color="red" 
-                        value="{{ number_format($areaHa, 6, ',', '.') }}" 
+                        value="{{ number_format($areaHa, 4, ',', '.') }}" 
                         unit="ha" 
                     >
                     </x-cards.stats-card>
@@ -67,12 +67,12 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600 dark:text-gray-300">Pérdida de cobertura:</span>
-                                <span class="font-medium text-red-600 dark:text-red-400">{{ number_format($dataToPass['area__ha'], 4, ',', '.') }} ha</span>
+                                <span class="font-medium text-red-600 dark:text-red-400">{{ number_format($dataToPass['total_loss']['totalDeforestedArea'], 4, ',', '.') }} ha</span>
                             </div>
                             <div class="flex justify-between border-t pt-2">
                                 <span class="text-gray-600 dark:text-gray-300">Área conservada:</span>
                                 @php
-                                    $conservedArea = $dataToPass['polygon_area_ha'] - $dataToPass['area__ha'];
+                                    $conservedArea = $dataToPass['polygon_area_ha'] - $dataToPass['total_loss']['totalDeforestedArea'];
                                 @endphp
                                 <span class="font-medium text-green-600 dark:text-green-400">{{ number_format($conservedArea, 4, ',', '.') }} ha</span>
                             </div>

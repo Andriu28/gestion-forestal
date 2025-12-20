@@ -25,6 +25,17 @@ class DeforestationMap {
         this.setupEventListeners();
         this.setupCoordinateDisplay();
         this.initializeGfWLayerToggle();
+
+        console.log('=== VERIFICACIÓN DE LIBRERÍAS ===');
+        console.log('OpenLayers cargado:', typeof ol !== 'undefined');
+        console.log('Turf.js cargado:', typeof turf !== 'undefined');
+        
+        if (typeof turf === 'undefined') {
+            console.error('ERROR: Turf.js no está cargado');
+            console.info('Por favor, agrega: <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>');
+        } else {
+            console.log('Turf.js disponible para cálculos precisos');
+        }
     }
 
     // =============================================
@@ -226,7 +237,7 @@ class DeforestationMap {
                 }),
                 // TEXTO DINÁMICO CON EL ÁREA
                 text: new ol.style.Text({
-                    text: areaHa > 0 ? `${areaHa.toFixed(2)} ha` : '',
+                    text: areaHa > 0 ? `${areaHa.toFixed(6)} ha` : '',
                     font: 'bold 14px Arial, sans-serif',
                     fill: new ol.style.Fill({
                         color: '#1f2937' // Color de texto oscuro
@@ -373,8 +384,8 @@ class DeforestationMap {
             if (this.isValidUTM(easting, northing, zone, hemisphere)) {
                 this.coordinateDisplay.textContent = 
                     `Zona ${zone}${hemisphere} | ` +
-                    `Este: ${easting.toFixed(2)} | ` +
-                    `Norte: ${northing.toFixed(2)}`;
+                    `Este: ${easting.toFixed(6)} | ` +
+                    `Norte: ${northing.toFixed(6)}`;
                 this.coordinateDisplay.style.display = 'block';
             } else {
                 this.coordinateDisplay.style.display = 'none';
@@ -415,18 +426,10 @@ class DeforestationMap {
             this.updateAreaDisplay(0);
         });
 
-        this.draw.on('drawadd', (evt) => {
-            if (this.drawingFeature) {
-                const areaHa = this.calculateArea(this.drawingFeature);
-                this.updateAreaDisplay(areaHa);
-            }
-        });
+        // Centralizamos la actualización del área durante el dibujo
+        this.draw.on('drawadd', () => this.refreshArea());
 
-        this.draw.on('drawabort', () => {
-            this.updateAreaDisplay(0);
-            this.drawingFeature = null;
-            
-        });
+        this.draw.on('drawabort', () => this.resetDrawingState());
 
         this.draw.on('drawend', (event) => {
             this.finalizeDrawing(event.feature);
@@ -434,25 +437,41 @@ class DeforestationMap {
     }
 
     /**
-     * Finaliza el proceso de dibujo
-     * @param {ol.Feature} feature 
+     * Calcula y actualiza el área basada en la feature actual
+     */
+    refreshArea(feature = this.drawingFeature) {
+        if (feature) {
+            const areaHa = this.calculateArea(feature);
+            this.updateAreaDisplay(areaHa);
+            return areaHa;
+        }
+        return 0;
+    }
+
+    /**
+     * Finaliza el proceso de dibujo y limpia la interacción
      */
     finalizeDrawing(feature) {
-        const areaHa = this.calculateArea(feature);
+        const areaHa = this.refreshArea(feature);
         
-        // Guardar el área en la feature para mostrarla en el texto
+        // Configuración de la feature
         feature.set('area', areaHa);
-        
-        // Aplicar estilo final con el área
         feature.setStyle(this.getPolygonStyle('finished', areaHa));
-        this.updateAreaDisplay(areaHa);
-        this.convertToGeoJSON(feature);
         
+        this.convertToGeoJSON(feature);
         this.showAlert(`Polígono completado.`, 'success');
-        this.drawingFeature = null;
         
         this.map.removeInteraction(this.draw);
         this.draw = null;
+        this.resetDrawingState();
+    }
+
+    /**
+     * Limpia el estado interno del dibujo
+     */
+    resetDrawingState() {
+        this.drawingFeature = null;
+        this.updateAreaDisplay(0);
     }
 
     /**
@@ -474,41 +493,51 @@ class DeforestationMap {
      * @returns {number}
      */
     calculateArea(feature) {
+        console.log('=== CÁLCULO DE ÁREA CON TURF.JS ===');
+        
         try {
             const geometry = feature.getGeometry();
-            if (!geometry || geometry.getType() !== 'Polygon') return 0;
-            
-            const polygon = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
-            const coordinates = polygon.getCoordinates()[0];
-            
-            if (coordinates.length < 3) return 0;
-            
-            let area = 0;
-            const n = coordinates.length;
-            
-            for (let i = 0; i < n; i++) {
-                const j = (i + 1) % n;
-                const xi = coordinates[i][0];
-                const yi = coordinates[i][1];
-                const xj = coordinates[j][0];
-                const yj = coordinates[j][1];
-                
-                area += xi * yj - xj * yi;
+            if (!geometry || geometry.getType() !== 'Polygon') {
+                console.warn('Geometría inválida para cálculo de área');
+                return 0;
             }
             
-            area = Math.abs(area) / 2;
+            // 1. Transformar a WGS84
+            const wgs84Geometry = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
+            const coordinates = wgs84Geometry.getCoordinates();
             
-            const avgLat = coordinates.reduce((sum, coord) => sum + coord[1], 0) / n;
-            const metersPerDegreeLat = 111320;
-            const metersPerDegreeLon = 111320 * Math.cos(avgLat * Math.PI / 180);
+            if (!coordinates || coordinates.length === 0 || coordinates[0].length < 3) {
+                console.warn('Coordenadas insuficientes');
+                return 0;
+            }
             
-            const areaM2 = area * metersPerDegreeLat * metersPerDegreeLon;
+            console.log('Número de puntos:', coordinates[0].length);
+            
+            // 2. Crear Feature de Turf.js
+            const turfPolygon = {
+                type: 'Feature',
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: coordinates
+                },
+                properties: {}
+            };
+            
+            // 3. Calcular área con Turf.js (en metros cuadrados)
+            const areaM2 = turf.area(turfPolygon);
             const areaHa = areaM2 / 10000;
             
-            return Math.abs(areaHa);
+            console.log('Resultado Turf.js:');
+            console.log('- Área en m²:', areaM2.toFixed(2));
+            console.log('- Área en ha:', areaHa.toFixed(6));
+            
+            return Math.max(0, parseFloat(areaHa.toFixed(6)));
+            
         } catch (error) {
-            console.error('Error calculando área:', error);
-            return 0;
+            console.error('Error calculando área con Turf.js:', error);
+            
+            // Fallback al método original
+            return this.calculateAreaOriginal(feature);
         }
     }
 
@@ -532,9 +561,9 @@ class DeforestationMap {
             document.getElementById('geometry').value = JSON.stringify(geojsonObj.geometry);
             
             const areaHa = this.calculateArea(feature);
-            document.getElementById('area_ha').value = areaHa.toFixed(2);
+            document.getElementById('area_ha').value = areaHa.toFixed(6);
             
-            this.showAlert(`Polígono guardado. Área: ${areaHa.toFixed(2)} ha`);
+            this.showAlert(`Polígono guardado. Área: ${areaHa.toFixed(6)} ha`);
         } catch (error) {
             console.error('Error al convertir GeoJSON:', error);
             this.showAlert('Error al guardar el polígono: ' + error.message, 'error');
@@ -655,7 +684,7 @@ class DeforestationMap {
         this.processMultiPolygonInfo(features);
 
         this.showAlert(
-            `${type === 'KML' ? features.length + ' áreas' : 'Áreas'} importadas correctamente. Área total: ${totalArea.toFixed(2)} ha`, 
+            `${type === 'KML' ? features.length + ' áreas' : 'Áreas'} importadas correctamente. Área total: ${totalArea.toFixed(6)} ha`, 
             'success'
         );
     }
@@ -772,7 +801,7 @@ class DeforestationMap {
         
         if (areaDisplay && areaValue) {
             if (areaHa > 0) {
-                areaValue.textContent = areaHa.toFixed(2);
+                areaValue.textContent = areaHa.toFixed(6);
                 areaDisplay.classList.remove('hidden');
             } else {
                 areaDisplay.classList.add('hidden');
@@ -885,7 +914,7 @@ class DeforestationMap {
                 <tr>
                     <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">${info.productor}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">${info.localidad}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">${info.area.toFixed(2)} Ha</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">${info.area.toFixed(6)} Ha</td>
                 </tr>
             `).join('');
             container.classList.remove('hidden');
@@ -985,7 +1014,7 @@ class DeforestationMap {
         const zonesText = zonesUsed.sort().join(', ');
         
         this.showAlert(
-            `Polígono dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(2)} ha`, 
+            `Polígono dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`, 
             'success'
         );
     }
