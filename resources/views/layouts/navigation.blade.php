@@ -214,8 +214,8 @@
                                 @csrf
                                 <a href="{{ route('logout') }}" 
                                 onclick="event.preventDefault(); this.closest('form').submit();"
-                                class="block px-4 md:px-6 py-2 md:py-3 text-sm text-red-600 hover:bg-red-100 rounded-lg transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-1">
-                                    {{ __('Cerrar Sección') }}
+                                class="block px-4 md:px-6 py-2 md:py-3 text-sm text-red-600 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-1">
+                                    {{ __('Cerrar Sesión') }}
                                 </a>
                             </form>
                         </div>
