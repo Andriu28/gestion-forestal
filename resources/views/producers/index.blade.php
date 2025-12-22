@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class=" mx-auto">
-        <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-8">
+        <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
                     {{ __('Gestión de productores') }}
@@ -43,12 +43,12 @@
                             <tbody class="bg-stone-100/90 dark:bg-custom-gray divide-y divide-gray-200">
                                 @foreach($producers as $producer)
                                     <tr id="producer-row-{{ $producer->id }}">
-                                        <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->lastname ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4 text-gray-900 dark:text-gray-400">
+                                        <td class="px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->name }}</td>
+                                        <td class="px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->lastname ?? 'N/A' }}</td>
+                                        <td class="px-6 py-2 text-gray-900 dark:text-gray-400">
                                             {{ Str::limit($producer->description, 50) ?? 'Sin descripción' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-6 py-2 whitespace-nowrap">
                                             @if($producer->deleted_at)
                                                 <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">Eliminado</span>
                                             @else
@@ -57,7 +57,7 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-6 py-2 whitespace-nowrap">
                                             <div class="flex items-center gap-4">
                                                 @if(!$producer->deleted_at)
                                                     <a href="{{ route('producers.show', $producer) }}" class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" title="Ver">

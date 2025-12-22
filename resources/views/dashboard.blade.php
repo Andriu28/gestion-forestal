@@ -13,7 +13,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         
         <!-- Tarjeta: Total Usuarios CON CÍRCULO ANIMADO -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-1 hover:transition-all hover:duration-300">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Usuarios</p>
@@ -54,7 +54,7 @@
         </div>
         
         <!-- Tarjeta: Total Actividades CON CÍRCULO ANIMADO -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-1 hover:transition-all hover:duration-300">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Actividades</p>
@@ -94,7 +94,7 @@
             </div>
         </div>
         <!-- Tarjeta: Productores Activos CON CÍRCULO ANIMADO -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-1 hover:transition-all hover:duration-300">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Productores Activos</p>
@@ -135,7 +135,7 @@
         </div>
         
         <!-- Tarjeta: Actividad Hoy CON CÍRCULO ANIMADO -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-1 hover:transition-all hover:duration-300">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Actividad Hoy</p>
@@ -176,7 +176,7 @@
         </div>
         
         <!-- Tarjeta: Tasa de Actividad CON CÍRCULO ANIMADO -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-1 hover:transition-all hover:duration-300">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tasa de Actividad</p>
@@ -222,7 +222,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         
         <!-- Distribución de Roles -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Distribución de Roles</h3>
                 <span class="text-sm text-gray-500">{{ $totalUsers }} usuarios</span>
@@ -268,7 +268,7 @@
         </div>
         
         <!-- Tipos de Actividad -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Tipos de Actividad</h3>
             
             <div class="space-y-4">
@@ -324,7 +324,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         
         <!-- Top Usuarios Más Activos -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Usuarios Más Activos (7 días)</h3>
             
             <div class="space-y-4">
@@ -357,7 +357,7 @@
         </div>
         
         <!-- Estadísticas Rápidas -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Estadísticas del Mes</h3>
             
             <div class="grid grid-cols-2 gap-4">
@@ -428,7 +428,7 @@
     </div>
     
     <!-- Cuarta Fila: Actividad Reciente -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+    <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Actividad Reciente</h3>
             <a href="{{ route('admin.audit') }}" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
@@ -502,7 +502,7 @@
     @else
     <!-- Vista para usuarios no administradores -->
     <div class=" mx-auto">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-8 text-center">
             <div class="w-20 h-20 mx-auto mb-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                 <svg class="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -676,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-/* Estilos para los círculos de progreso */
+    /* Estilos para los círculos de progreso */
 .progresss svg circle {
     transition: stroke-dashoffset 0.5s ease;
 }
@@ -702,21 +702,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .neutral {
     color: #6b7280; /* gray-500 */
-}
-
-
-/* Animaciones suaves para las tarjetas */
-.card-hover {
-    transition: all 0.3s ease;
-}
-
-.card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-.dark .card-hover:hover {
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
 /* Animación para los círculos de progreso */
@@ -749,24 +734,6 @@ document.addEventListener('DOMContentLoaded', function() {
     stroke: rgba(75, 85, 99, 0.5);
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-    .grid-cols-4 {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .text-2xl {
-        font-size: 1.5rem;
-    }
-    
-    .progresss {
-        width: 4rem;
-        height: 4rem;
-    }
-    
-    .progresss svg {
-        width: 4rem;
-        height: 4rem;
-    }
-}
+
 </style>
+
