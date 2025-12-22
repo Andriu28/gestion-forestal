@@ -66,17 +66,17 @@
                                 <tbody class="bg-stone-100/90 dark:bg-custom-gray divide-y divide-gray-200">
                                     @foreach($polygons as $polygon)
                                         <tr class=" hover:bg-gray-200/60 dark:hover:bg-gray-700 hover:shadow-lg p-6 hover:-translate-y-0.5 hover:transition-all hover:duration-300">
-                                            <td class="px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $polygon->name }}</td>
-                                            <td class="px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
+                                            <td class="hover:bg-gray-200 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $polygon->name }}</td>
+                                            <td class="hover:bg-gray-200 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                                 {{ $polygon->producer_name }}
                                             </td>
-                                            <td class="px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
+                                            <td class="hover:bg-gray-200 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                                 {{ $polygon->area_formatted }}
                                             </td>
-                                            <td class="px-6 py-2 text-gray-900 dark:text-gray-400">
+                                            <td class="hover:bg-gray-200 px-6 py-2 text-gray-900 dark:text-gray-400">
                                                 {{ Str::limit($polygon->description, 50) ?? 'Sin descripción' }}
                                             </td>
-                                             <td class="px-6 py-2 whitespace-nowrap">
+                                             <td class="hover:bg-gray-200 px-6 py-2 whitespace-nowrap">
                                                 @if($polygon->trashed())
                                                     <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">Eliminado</span>
                                                 @else
