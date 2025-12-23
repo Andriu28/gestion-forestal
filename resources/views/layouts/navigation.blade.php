@@ -149,7 +149,7 @@
         <header class="headi bg-stone-100/90 dark:bg-custom-gray px-4 md:px-6 lg:px-8 py-1 md:py-1  shadow-soft">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3 md:space-x-6">
-                    <button id="sidebarToggle" class="p-2 md:p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/70 transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_8px_25px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_8px_25px_rgba(0,0,0,0.4)]">
+                    <button id="sidebarToggle" class="p-2 md:p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700/70 transition-transform duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_8px_25px_rgba(0,0,0,0.4)]">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu-icon lucide-menu w-4 h-4 md:w-5 md:h-5">
                             <path d="M4 12h16"/><path d="M4 18h16"/><path d="M4 6h16"/>
                         </svg>
@@ -182,7 +182,7 @@
                     </div>
 
                     <div class="relative">
-                        <button id="userMenuToggle" class="flex items-center space-x-2 md:space-x-3 p-1 md:p-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700/50 transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_8px_25px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_8px_25px_rgba(0,0,0,0.4)]">
+                        <button id="userMenuToggle" class="flex items-center space-x-2 md:space-x-3 p-1 md:p-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700/50 transition-transform duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_8px_25px_rgba(0,0,0,0.4)]">
                             <img 
                                 src="{{ Vite::asset('resources/img/user.jpg') }}" 
                                 alt="Foto de perfil"

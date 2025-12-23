@@ -65,18 +65,18 @@
                                 </thead>
                                 <tbody class="bg-stone-100/90 dark:bg-custom-gray divide-y divide-gray-200">
                                     @foreach($polygons as $polygon)
-                                        <tr class=" hover:bg-gray-200/60 dark:hover:bg-gray-700 hover:shadow-lg p-6 hover:-translate-y-0.5 hover:transition-all hover:duration-300">
-                                            <td class="hover:bg-gray-200 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $polygon->name }}</td>
-                                            <td class="hover:bg-gray-200 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
+                                        <tr class=" hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
+                                            <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20  px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $polygon->name }}</td>
+                                            <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20  px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                                 {{ $polygon->producer_name }}
                                             </td>
-                                            <td class="hover:bg-gray-200 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
+                                            <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20  px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                                 {{ $polygon->area_formatted }}
                                             </td>
-                                            <td class="hover:bg-gray-200 px-6 py-2 text-gray-900 dark:text-gray-400">
+                                            <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 text-gray-900 dark:text-gray-400">
                                                 {{ Str::limit($polygon->description, 50) ?? 'Sin descripción' }}
                                             </td>
-                                             <td class="hover:bg-gray-200 px-6 py-2 whitespace-nowrap">
+                                             <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap">
                                                 @if($polygon->trashed())
                                                     <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">Eliminado</span>
                                                 @else
@@ -86,9 +86,9 @@
                                                 @endif
                                             </td>
                                             <td class="px-6 py-2 whitespace-nowrap">
-                                                <div class="flex items-center gap-4">
+                                                <div class="flex items-center gap-2">
                                                     @if(!$polygon->trashed())
-                                                        <a href="{{ route('polygons.show', $polygon) }}" class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors transition-all duration-300 hover:bg-opacity-10 hover:scale-110" title="Ver">
+                                                        <a href="{{ route('polygons.show', $polygon) }}" class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" title="Ver">
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 ">
                                                                 <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
                                                                 <circle cx="12" cy="12" r="3"/>
@@ -96,7 +96,7 @@
                                                         </a>
 
                                                         <a href="{{ route('polygons.edit', $polygon) }}" 
-                                                           class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
+                                                           class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                                            title="Editar">
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 ">
                                                                 <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
@@ -105,7 +105,7 @@
                                                 
                                                         <form action="{{ route('polygons.toggle-status', $polygon) }}" method="POST" class="inline">
                                                             @csrf
-                                                            <button type="submit" class="inline-flex items-center p-2 rounded-lg transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                            <button type="submit" class="inline-flex items-center transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                     title="Cambiar estado">
                                                                 @if($polygon->is_active)
                                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7 ">
@@ -125,7 +125,7 @@
                                                         <form action="{{ route('polygons.destroy', $polygon) }}" method="POST" class="inline sweet-confirm-form" data-action="eliminar">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="submit" class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors transition-all duration-300 hover:bg-opacity-10 hover:scale-110" title="Eliminar">
+                                                            <button type="submit" class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" title="Eliminar">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 ">
                                                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                                                                 </svg>
@@ -134,7 +134,7 @@
                                                     @else
                                                         <form action="{{ route('polygons.restore', $polygon->id) }}" method="POST" class="inline">
                                                             @csrf
-                                                            <button type="submit" class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors" title="Restaurar">
+                                                            <button type="submit" class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110 " title="Restaurar">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 ">
                                                                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
                                                                 </svg>

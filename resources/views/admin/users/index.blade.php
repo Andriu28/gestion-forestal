@@ -28,14 +28,14 @@
                         <tbody class="bg-stone-100/90 dark:bg-custom-gray divide-y divide-gray-200">
                            
                             @foreach($users as $user)
-                                <tr id="user-row-{{ $user->id }}">
+                                <tr id="user-row-{{ $user->id }}" class=" hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
                                     <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                         {{ $loop->iteration }}
                                     </td>
                                     
-                                    <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $user->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $user->email }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                                    <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $user->name }}</td>
+                                    <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $user->email }}</td>
+                                    <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
                                         <form action="{{ route('admin.users.update-role', $user) }}" method="POST">
                                             @csrf
                                             @method('PATCH')
@@ -55,9 +55,9 @@
                                         </form>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center gap-4">
+                                        <div class="flex items-center gap-2">
                                             <a href="{{ route('admin.users.edit', $user) }}" 
-                                               class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transform hover:-translate-y-0.5 transition-all duration-750 ease-out"
+                                               class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                                title="Editar">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-7 h-7 lucide-pencil-line">
                                                     <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
@@ -66,7 +66,7 @@
                                             
                                             @if (Auth::id() !== $user->id)
                                                 <button onclick="handleUserDisable({{ $user->id }}, '{{ $user->name }}')" 
-                                                class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transform hover:-translate-y-0.5 transition-all duration-750 ease-out"
+                                                class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                                 title="Deshabilitar">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-x-icon w-7 h-7 lucide-user-x">
                                                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>
