@@ -319,8 +319,10 @@
                     </div>
                         
                         <div class="mb-4">
-                            <label for="import-area" class="block text-sm font-medium text-gray-700 mb-1">Importar área (GeoJSON, KML, SHP):</label>
-                            <input type="file" id="import-area" accept=".geojson,.json,.kml,.shp,.zip,application/geo+json,application/vnd.google-earth.kml+xml,application/zip" class="block w-full text-sm text-gray-500" />
+                            <button type="button" id="import-geojson" class="btn-control">
+                                <i class="fas fa-file-import mr-2"></i> Importar GeoJSON
+                            </button>
+                            <input type="file" id="import-area" accept=".json,.geojson" style="display: none;">
                         </div>
                         
                         <input type="hidden" name="geometry" id="geometry">

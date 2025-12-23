@@ -13,6 +13,9 @@ class DeforestationMap {
         this.currentBaseLayer = null;
         this.gfwLossLayer = null;
         this.drawingFeature = null;
+
+        // Definir proyecciones adicionales
+        this.defineCustomProjections();
         
         // Constantes
         this.STORAGE_KEY = 'gfwLossLayerState';
@@ -35,6 +38,10 @@ class DeforestationMap {
             console.info('Por favor, agrega: <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>');
         } else {
             console.log('Turf.js disponible para cálculos precisos');
+        }
+
+        if (typeof proj4 !== 'undefined') {
+            proj4.defs('EPSG:2203', '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs');
         }
     }
 
@@ -449,22 +456,24 @@ class DeforestationMap {
     }
 
     /**
-     * Finaliza el proceso de dibujo y limpia la interacción
-     */
-    finalizeDrawing(feature) {
-        const areaHa = this.refreshArea(feature);
-        
-        // Configuración de la feature
-        feature.set('area', areaHa);
-        feature.setStyle(this.getPolygonStyle('finished', areaHa));
-        
-        this.convertToGeoJSON(feature);
-        this.showAlert(`Polígono completado.`, 'success');
-        
-        this.map.removeInteraction(this.draw);
-        this.draw = null;
-        this.resetDrawingState();
-    }
+ * Finaliza el proceso de dibujo y limpia la interacción
+ */
+finalizeDrawing(feature) {
+    // Calcular área una sola vez
+    const areaHa = this.refreshArea(feature);
+    
+    // Configuración de la feature
+    feature.set('area', areaHa);
+    feature.setStyle(this.getPolygonStyle('finished', areaHa));
+    
+    // Pasar área ya calculada para evitar recalcular
+    this.convertToGeoJSON(feature, areaHa);
+    this.showAlert(`Polígono completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
+    
+    this.map.removeInteraction(this.draw);
+    this.draw = null;
+    this.resetDrawingState();
+}
 
     /**
      * Limpia el estado interno del dibujo
@@ -488,184 +497,593 @@ class DeforestationMap {
     // =============================================
 
     /**
-     * Calcula el área de un polígono en hectáreas
-     * @param {ol.Feature} feature
-     * @returns {number}
-     */
-    calculateArea(feature) {
-        console.log('=== CÁLCULO DE ÁREA CON TURF.JS ===');
+ * Calcula área con Turf.js (versión optimizada)
+ * @param {ol.Feature} feature
+ * @returns {number}
+ */
+calculateArea(feature) {
+    console.log('=== CÁLCULO DE ÁREA CON TURF.JS ===');
+    
+    // Validar feature y geometría
+    if (!feature || !feature.getGeometry) {
+        console.warn('Feature no válida para cálculo de área');
+        return 0;
+    }
+    
+    const geometry = feature.getGeometry();
+    if (!geometry) {
+        console.warn('Feature sin geometría');
+        return 0;
+    }
+    
+    const geomType = geometry.getType();
+    
+    // Solo calcular área para polígonos
+    if (!['Polygon', 'MultiPolygon'].includes(geomType)) {
+        console.log(`Geometría ${geomType} no requiere cálculo de área`);
+        return 0;
+    }
+    
+    // Verificar disponibilidad de Turf.js
+    if (typeof turf === 'undefined') {
+        console.error('ERROR: Turf.js no está disponible');
+        this.showTurfJSError();
+        return 0;
+    }
+    
+    if (typeof turf.area !== 'function') {
+        console.error('ERROR: La función turf.area no está disponible');
+        this.showTurfJSError();
+        return 0;
+    }
+    
+    try {
+        // 1. Transformar a WGS84 (EPSG:4326) - requerido por Turf.js
+        const wgs84Geometry = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
         
-        try {
-            const geometry = feature.getGeometry();
-            if (!geometry || geometry.getType() !== 'Polygon') {
-                console.warn('Geometría inválida para cálculo de área');
+        // 2. Obtener coordenadas según el tipo de geometría
+        const coordinates = wgs84Geometry.getCoordinates();
+        
+        // 3. Crear feature de Turf.js
+        let turfFeature;
+        switch (geomType) {
+            case 'Polygon':
+                // Validar que el polígono esté cerrado
+                this.validatePolygonCoordinates(coordinates);
+                turfFeature = turf.polygon(coordinates);
+                break;
+                
+            case 'MultiPolygon':
+                // Validar cada polígono del multipolígono
+                coordinates.forEach(polygonCoords => {
+                    this.validatePolygonCoordinates(polygonCoords);
+                });
+                turfFeature = turf.multiPolygon(coordinates);
+                break;
+                
+            default:
                 return 0;
-            }
-            
-            // 1. Transformar a WGS84
-            const wgs84Geometry = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
-            const coordinates = wgs84Geometry.getCoordinates();
-            
-            if (!coordinates || coordinates.length === 0 || coordinates[0].length < 3) {
-                console.warn('Coordenadas insuficientes');
-                return 0;
-            }
-            
-            console.log('Número de puntos:', coordinates[0].length);
-            
-            // 2. Crear Feature de Turf.js
-            const turfPolygon = {
-                type: 'Feature',
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: coordinates
-                },
-                properties: {}
-            };
-            
-            // 3. Calcular área con Turf.js (en metros cuadrados)
-            const areaM2 = turf.area(turfPolygon);
-            const areaHa = areaM2 / 10000;
-            
-            console.log('Resultado Turf.js:');
-            console.log('- Área en m²:', areaM2.toFixed(2));
-            console.log('- Área en ha:', areaHa.toFixed(6));
-            
-            return Math.max(0, parseFloat(areaHa.toFixed(6)));
-            
-        } catch (error) {
-            console.error('Error calculando área con Turf.js:', error);
-            
-            // Fallback al método original
-            return this.calculateAreaOriginal(feature);
+        }
+        
+        // 4. Calcular área con Turf.js (en metros cuadrados)
+        const areaM2 = turf.area(turfFeature);
+        
+        // 5. Validar resultado
+        if (isNaN(areaM2) || areaM2 <= 0) {
+            console.warn('Área calculada no válida:', areaM2);
+            return 0;
+        }
+        
+        // 6. Convertir a hectáreas (1 ha = 10,000 m²)
+        const areaHa = areaM2 / 10000;
+        
+        // 7. Log detallado
+        console.log(`Cálculo completado:
+          - Tipo: ${geomType}
+          - Área: ${areaM2.toFixed(2)} m²
+          - Área: ${areaHa.toFixed(6)} ha
+          - Coordenadas: ${this.getCoordinateCount(coordinates)} puntos
+        `);
+        
+        // 8. Devolver redondeado a 6 decimales
+        return parseFloat(areaHa.toFixed(6));
+        
+    } catch (error) {
+        console.error('Error en cálculo de área:', error);
+        this.showAreaCalculationError(error);
+        return 0;
+    }
+}
+
+/**
+ * Muestra error cuando Turf.js no está disponible
+ */
+showTurfJSError() {
+    const errorMessage = 'Turf.js no está disponible. ' +
+        'Agrega en tu HTML: <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>';
+    
+    console.error(errorMessage);
+    
+    if (this.showAlert) {
+        this.showAlert(
+            'Error: Turf.js no está cargado. Los cálculos de área no están disponibles.',
+            'error'
+        );
+    } else {
+        alert('Error: Turf.js no está cargado. Los cálculos de área no están disponibles.');
+    }
+}
+
+/**
+ * Valida las coordenadas de un polígono
+ * @param {Array} coordinates - Coordenadas del polígono
+ */
+validatePolygonCoordinates(coordinates) {
+    if (!coordinates || !Array.isArray(coordinates)) {
+        throw new Error('Coordenadas del polígono no válidas');
+    }
+    
+    if (coordinates.length === 0) {
+        throw new Error('Polígono sin coordenadas');
+    }
+    
+    // Verificar que el polígono esté cerrado (primer y último punto iguales)
+    const firstRing = coordinates[0];
+    if (firstRing && firstRing.length > 0) {
+        const firstPoint = firstRing[0];
+        const lastPoint = firstRing[firstRing.length - 1];
+        
+        if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
+            console.warn('Polígono no cerrado. Asegurándose de cerrar el polígono.');
+            // No lanzamos error, solo registramos advertencia
         }
     }
+}
+
+/**
+ * Obtiene el conteo de coordenadas
+ * @param {Array} coordinates - Coordenadas
+ * @returns {number} - Número total de puntos
+ */
+getCoordinateCount(coordinates) {
+    if (!Array.isArray(coordinates)) return 0;
+    
+    let count = 0;
+    const countRecursive = (arr) => {
+        if (Array.isArray(arr[0]) && typeof arr[0][0] === 'number') {
+            count += arr.length;
+        } else {
+            arr.forEach(item => countRecursive(item));
+        }
+    };
+    
+    countRecursive(coordinates);
+    return count;
+}
+
+/**
+ * Muestra error de cálculo de área
+ * @param {Error} error - Error ocurrido
+ */
+showAreaCalculationError(error) {
+    console.error('Error detallado en cálculo de área:', error);
+    
+    const userMessage = error.message.includes('Turf.js') 
+        ? 'Error en la biblioteca de cálculos geográficos. Verifica la consola para más detalles.'
+        : 'Error al calcular el área. Verifica que el polígono sea válido.';
+    
+    if (this.showAlert) {
+        this.showAlert(userMessage, 'error');
+    }
+}
 
     /**
-     * Convierte la geometría a GeoJSON y la guarda en el input oculto
-     * @param {ol.Feature} feature
-     */
-    convertToGeoJSON(feature) {
-        try {
-            const format = new ol.format.GeoJSON();
-            const geojson = format.writeFeature(feature, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857'
-            });
-            const geojsonObj = JSON.parse(geojson);
-            
-            if (!geojsonObj.geometry) {
-                throw new Error('El polígono no tiene geometría válida');
-            }
-            
-            document.getElementById('geometry').value = JSON.stringify(geojsonObj.geometry);
-            
-            const areaHa = this.calculateArea(feature);
-            document.getElementById('area_ha').value = areaHa.toFixed(6);
-            
-            this.showAlert(`Polígono guardado. Área: ${areaHa.toFixed(6)} ha`);
-        } catch (error) {
-            console.error('Error al convertir GeoJSON:', error);
-            this.showAlert('Error al guardar el polígono: ' + error.message, 'error');
+ * Convierte la geometría a GeoJSON y la guarda en el input oculto
+ * @param {ol.Feature} feature
+ * @param {number} existingArea - Área ya calculada (opcional)
+ */
+convertToGeoJSON(feature, existingArea = null) {
+    try {
+        const format = new ol.format.GeoJSON();
+        const geojson = format.writeFeature(feature, {
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:3857'
+        });
+        const geojsonObj = JSON.parse(geojson);
+        
+        if (!geojsonObj.geometry) {
+            throw new Error('El polígono no tiene geometría válida');
         }
+        
+        document.getElementById('geometry').value = JSON.stringify(geojsonObj.geometry);
+        
+        // Usar área existente si se proporciona, de lo contrario calcular
+        const areaHa = existingArea !== null ? existingArea : feature.get('area') || this.calculateArea(feature);
+        document.getElementById('area_ha').value = areaHa.toFixed(6);
+        
+        // Solo mostrar alerta si no hay un área ya establecida
+        if (existingArea === null) {
+            this.showAlert(`Polígono guardado. Área: ${areaHa.toFixed(6)} ha`);
+        }
+        
+    } catch (error) {
+        console.error('Error al convertir GeoJSON:', error);
+        this.showAlert('Error al guardar el polígono: ' + error.message, 'error');
     }
+}
 
     // =============================================
     // 6. IMPORTACIÓN Y EXPORTACIÓN DE DATOS
     // =============================================
 
     /**
-     * Importa uno o varios polígonos desde GeoJSON
-     * @param {Object} geojson
+     * Importa uno o varios polígonos desde GeoJSON con soporte para EPSG:2203
+     * @param {Object|string} geojson - Objeto GeoJSON o string JSON
      */
     importGeoJSON(geojson) {
+        console.log('=== INICIANDO IMPORTACIÓN GEOJSON CON EPSG:2203 ===');
+        
         try {
-            this.clearMap();
-            const format = new ol.format.GeoJSON();
-            const features = format.readFeatures(geojson, {
-                featureProjection: 'EPSG:2203 '
-            });
+            // 1. Validar y parsear el input
+            let geojsonObj;
+            if (typeof geojson === 'string') {
+                try {
+                    geojsonObj = JSON.parse(geojson);
+                } catch (parseError) {
+                    throw new Error('El texto proporcionado no es un JSON válido');
+                }
+            } else if (typeof geojson === 'object' && geojson !== null) {
+                geojsonObj = geojson;
+            } else {
+                throw new Error('El parámetro debe ser un objeto GeoJSON o un string JSON');
+            }
 
-            if (features.length === 0) {
-                this.showAlert('El archivo no contiene geometría válida.', 'error');
+            // 2. Validar estructura GeoJSON básica
+            if (!geojsonObj.type) {
+                throw new Error('El objeto no tiene propiedad "type" (no es GeoJSON válido)');
+            }
+
+            // 3. Determinar si el GeoJSON tiene CRS personalizado
+            const hasCustomCRS = geojsonObj.crs && 
+                                geojsonObj.crs.properties && 
+                                geojsonObj.crs.properties.name && 
+                                geojsonObj.crs.properties.name.includes('EPSG::2203');
+            
+            console.log(`GeoJSON tiene CRS personalizado (EPSG:2203): ${hasCustomCRS}`);
+            console.log(`Tipo de geometrías: ${geojsonObj.features?.[0]?.geometry?.type || 'desconocido'}`);
+
+            // 4. Limpiar mapa antes de importar
+            this.clearMap();
+            
+            // 5. Crear formato y leer features con la proyección correcta
+            const format = new ol.format.GeoJSON();
+            let features;
+            
+            try {
+                if (hasCustomCRS) {
+                    // Caso 1: GeoJSON con EPSG:2203 (coordenadas en metros)
+                    console.log('Procesando GeoJSON con EPSG:2203...');
+                    features = this.readFeaturesFromEPSG2203(geojsonObj, format);
+                } else {
+                    // Caso 2: GeoJSON estándar (EPSG:4326)
+                    console.log('Procesando GeoJSON estándar (EPSG:4326)...');
+                    features = format.readFeatures(geojsonObj, {
+                        dataProjection: 'EPSG:4326',
+                        featureProjection: 'EPSG:3857'
+                    });
+                }
+            } catch (projectionError) {
+                console.warn('Error en conversión de proyección:', projectionError);
+                // Fallback: intentar leer sin transformación
+                try {
+                    features = format.readFeatures(geojsonObj);
+                } catch (fallbackError) {
+                    throw new Error(`No se pudo leer el GeoJSON: ${fallbackError.message}`);
+                }
+            }
+
+            // 6. Validar que se hayan leído features
+            if (!features || features.length === 0) {
+                this.showAlert('El archivo no contiene geometrías válidas.', 'error');
                 return;
             }
 
-            const totalArea = this.processImportedFeatures(features);
-            this.finalizeImport(features, geojson, totalArea, 'GeoJSON');
+            console.log(`Features importadas: ${features.length}`);
+            
+            // 7. Procesar features
+            const processedData = this.processImportedFeatures(features, 'geojson', geojsonObj);
+            
+            // 8. Finalizar importación
+            this.finalizeImport(features, geojsonObj, processedData.totalArea, 'GeoJSON');
             
         } catch (error) {
-            this.showAlert('Error al importar el área: ' + error.message, 'error');
+            console.error('Error completo en importGeoJSON:', error);
+            this.showAlert(`Error al importar GeoJSON: ${error.message}`, 'error');
         }
+    }
+
+    /**
+     * Lee features desde GeoJSON con EPSG:2203
+     * @param {Object} geojsonObj - Objeto GeoJSON
+     * @param {ol.format.GeoJSON} format - Formato GeoJSON de OpenLayers
+     * @returns {Array} Features procesadas
+     */
+    readFeaturesFromEPSG2203(geojsonObj, format) {
+        const features = [];
+        
+        // Verificar si proj4 está disponible para la transformación
+        if (typeof proj4 === 'undefined') {
+            throw new Error('Se requiere la biblioteca proj4 para transformar EPSG:2203 a WGS84');
+        }
+        
+        // Iterar sobre cada feature en el FeatureCollection
+        geojsonObj.features.forEach((featureData, index) => {
+            try {
+                const geometry = featureData.geometry;
+                const properties = featureData.properties || {};
+                
+                if (!geometry || !geometry.coordinates) {
+                    console.warn(`Feature ${index}: Sin geometría válida`);
+                    return;
+                }
+                
+                // Convertir coordenadas de EPSG:2203 a WGS84 (EPSG:4326)
+                const wgs84Coordinates = this.convertEPSG2203ToWGS84(geometry);
+                
+                // Crear la geometría en WGS84
+                let olGeometry;
+                if (geometry.type === 'MultiPolygon') {
+                    olGeometry = new ol.geom.MultiPolygon(wgs84Coordinates);
+                } else if (geometry.type === 'Polygon') {
+                    olGeometry = new ol.geom.Polygon(wgs84Coordinates);
+                } else {
+                    console.warn(`Feature ${index}: Tipo de geometría no soportado: ${geometry.type}`);
+                    return;
+                }
+                
+                // Transformar a la proyección del mapa (EPSG:3857)
+                olGeometry.transform('EPSG:4326', 'EPSG:3857');
+                
+                // Crear la feature
+                const feature = new ol.Feature({
+                    geometry: olGeometry
+                });
+                
+                // Agregar propiedades
+                feature.setProperties({
+                    id: properties.id || index,
+                    area: properties.Area_Ha || 0,
+                    productor: properties.Productor || 'Desconocido',
+                    label: properties.Productor || `Polígono ${index + 1}`
+                });
+                
+                features.push(feature);
+                
+            } catch (error) {
+                console.error(`Error procesando feature ${index}:`, error);
+            }
+        });
+        
+        return features;
+    }
+
+    /**
+     * Convierte coordenadas de EPSG:2203 a WGS84
+     * @param {Object} geometry - Geometría en EPSG:2203
+     * @returns {Array} Coordenadas convertidas a WGS84
+     */
+    convertEPSG2203ToWGS84(geometry) {
+        if (geometry.type === 'MultiPolygon') {
+            return geometry.coordinates.map(polygon =>
+                polygon.map(ring =>
+                    ring.map(coord => {
+                        // Transformar cada coordenada usando proj4
+                        const [x, y] = coord;
+                        // Transformar de EPSG:2203 a WGS84 (EPSG:4326)
+                        const transformed = proj4('EPSG:2203', 'EPSG:4326', [x, y]);
+                        return transformed;
+                    })
+                )
+            );
+        } else if (geometry.type === 'Polygon') {
+            return geometry.coordinates.map(ring =>
+                ring.map(coord => {
+                    const [x, y] = coord;
+                    const transformed = proj4('EPSG:2203', 'EPSG:4326', [x, y]);
+                    return transformed;
+                })
+            );
+        }
+        throw new Error(`Tipo de geometría no soportado: ${geometry.type}`);
     }
 
     /**
      * Importa uno o varios polígonos desde KML
-     * @param {string} kmlText
+     * @param {string} kmlText - Texto KML
      */
     importKML(kmlText) {
+        console.log('=== INICIANDO IMPORTACIÓN KML ===');
+        
         try {
-            this.clearMap();
-            const format = new ol.format.KML();
-            const features = format.readFeatures(kmlText, {
-                featureProjection: 'EPSG:3857'
-            });
+            // 1. Validar input
+            if (typeof kmlText !== 'string' || kmlText.trim() === '') {
+                throw new Error('El texto KML está vacío o no es válido');
+            }
 
-            if (features.length === 0) {
-                this.showAlert('El archivo KML no contiene geometría válida.', 'error');
+            // 2. Limpiar mapa
+            this.clearMap();
+            
+            // 3. Crear formato y leer features
+            const format = new ol.format.KML({
+                extractStyles: false, // No extraer estilos del KML
+                showPointNames: false // No mostrar nombres de puntos
+            });
+            
+            let features;
+            try {
+                features = format.readFeatures(kmlText, {
+                    dataProjection: 'EPSG:4326',      // KML usa WGS84
+                    featureProjection: 'EPSG:3857'    // Mapa usa Web Mercator
+                });
+            } catch (readError) {
+                console.warn('Error leyendo KML, intentando sin proyección:', readError);
+                features = format.readFeatures(kmlText);
+            }
+
+            // 4. Validar features
+            if (!features || features.length === 0) {
+                this.showAlert('El archivo KML no contiene geometrías válidas.', 'error');
                 return;
             }
 
-            const totalArea = this.processImportedFeatures(features, 'kml');
+            console.log(`Features KML importadas: ${features.length}`);
+            
+            // 5. Procesar features
+            const processedData = this.processImportedFeatures(features, 'kml');
+            
+            // 6. Crear FeatureCollection para el formulario
             const featureCollection = this.createFeatureCollection(features);
             
-            this.finalizeImport(features, featureCollection, totalArea, 'KML');
+            // 7. Finalizar importación
+            this.finalizeImport(features, featureCollection, processedData.totalArea, 'KML');
             
         } catch (error) {
-            this.showAlert('Error al importar el área KML: ' + error.message, 'error');
+            console.error('Error completo en importKML:', error);
+            this.showAlert(`Error al importar KML: ${error.message}`, 'error');
         }
     }
 
     /**
-     * Procesa features importadas
-     * @param {Array} features 
-     * @param {string} type 
-     * @returns {number}
-     */
-    processImportedFeatures(features, type = 'geojson') {
-        let totalArea = 0;
-        
-        features.forEach(feature => {
-            if (type === 'kml') {
-                const productor = this.extractKMLData(feature);
-                if (productor) {
-                    feature.set('label', productor);
-                    feature.set('productor', productor);
-                }
-            } else {
-                const name = feature.get('name') || feature.get('Nombre') || 
-                            feature.get('NOMBRE') || feature.get('title') || 
-                            feature.get('Productor');
-                if (name) {
-                    feature.set('label', name);
-                    feature.set('productor', name);
-                }
+ * Procesa features importadas con validación mejorada
+ * @param {Array} features - Features de OpenLayers
+ * @param {string} type - Tipo de archivo ('geojson' o 'kml')
+ * @param {Object} originalData - Datos originales (opcional)
+ * @returns {Object} {totalArea, validFeatures, invalidFeatures}
+ */
+processImportedFeatures(features, type = 'geojson', originalData = null) {
+    console.log(`=== PROCESANDO ${features.length} FEATURES (${type}) ===`);
+    
+    let totalArea = 0;
+    let validFeatures = 0;
+    let invalidFeatures = 0;
+    
+    features.forEach((feature, index) => {
+        try {
+            // 1. Obtener geometría y validarla
+            const geometry = feature.getGeometry();
+            if (!geometry) {
+                console.warn(`Feature ${index}: Sin geometría`);
+                invalidFeatures++;
+                return;
             }
             
-            // Calcular y guardar área para mostrar en el texto
-            if (feature.getGeometry().getType() === 'Polygon') {
-                const areaHa = this.calculateArea(feature);
-                feature.set('area', areaHa);
-                totalArea += areaHa;
+            const geomType = geometry.getType();
+            console.log(`Feature ${index}: Tipo ${geomType}`);
+            
+            // 2. Extraer metadatos según tipo y estructura
+            const props = feature.getProperties();
+            
+            // Para GeoJSON con estructura específica de Sistema Deforest
+            if (type === 'geojson') {
+                // Usar las propiedades ya establecidas en readFeaturesFromEPSG2203
+                const productor = props.productor || props.Productor;
+                const areaHa = props.area || props.Area_Ha || 0;
                 
-                // Aplicar estilo con área
-                feature.setStyle(this.getPolygonStyle('finished', areaHa));
+                if (productor && productor !== 'Desconocido' && productor !== 'null') {
+                    feature.set('label', String(productor));
+                    feature.set('productor', String(productor));
+                } else {
+                    feature.set('label', `Polígono ${index + 1}`);
+                    feature.set('productor', 'Sin productor');
+                }
+                
+                // Si ya tenemos área en las propiedades, usarla
+                if (areaHa && areaHa > 0) {
+                    feature.set('area', parseFloat(areaHa));
+                    totalArea += parseFloat(areaHa);
+                    validFeatures++;
+                    
+                    // Aplicar estilo con área
+                    feature.setStyle(this.getPolygonStyle('finished', areaHa));
+                } else {
+                    // Solo calcular si no tenemos área
+                    const calculatedArea = this.calculateArea(feature);
+                    if (!isNaN(calculatedArea) && calculatedArea > 0) {
+                        feature.set('area', calculatedArea);
+                        totalArea += calculatedArea;
+                        validFeatures++;
+                        feature.setStyle(this.getPolygonStyle('finished', calculatedArea));
+                    } else {
+                        console.warn(`Feature ${index}: Área inválida (${calculatedArea})`);
+                        invalidFeatures++;
+                        feature.setStyle(this.getPolygonStyle('default'));
+                    }
+                }
+                
+            } else {
+                // Para otros tipos (KML) usar extracción normal
+                const productor = props.productor || props.name || props.Productor || props.Nombre;
+                if (productor) {
+                    feature.set('label', String(productor));
+                    feature.set('productor', String(productor));
+                }
+                
+                // Calcular área para KML (no suele venir con área precalculada)
+                const calculatedArea = this.calculateArea(feature);
+                if (!isNaN(calculatedArea) && calculatedArea > 0) {
+                    feature.set('area', calculatedArea);
+                    totalArea += calculatedArea;
+                    validFeatures++;
+                    feature.setStyle(this.getPolygonStyle('finished', calculatedArea));
+                } else {
+                    console.warn(`Feature ${index}: Área inválida (${calculatedArea})`);
+                    invalidFeatures++;
+                    feature.setStyle(this.getPolygonStyle('default'));
+                }
             }
             
+            // Agregar etiqueta con productor y área
+            this.addLabelToFeature(feature, geometry);
+            
+            // 5. Agregar al mapa
             this.source.addFeature(feature);
-        });
-        
-        return totalArea;
+            
+        } catch (featureError) {
+            console.error(`Error procesando feature ${index}:`, featureError);
+            invalidFeatures++;
+        }
+    });
+    
+    console.log(`Procesamiento completado: ${validFeatures} válidas, ${invalidFeatures} inválidas`);
+    console.log(`Área total calculada: ${totalArea.toFixed(6)} ha`);
+    
+    return {
+        totalArea: parseFloat(totalArea.toFixed(6)),
+        validFeatures,
+        invalidFeatures
+    };
+}
+
+    /**
+     * Define proyecciones personalizadas necesarias
+     */
+    defineCustomProjections() {
+        if (typeof proj4 !== 'undefined') {
+            // EPSG:2203 - UTM Zone 20S (Venezuela)
+            proj4.defs('EPSG:2203', 
+                '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs'
+            );
+            
+            // EPSG:32620 - UTM Zone 20N (WGS84)
+            proj4.defs('EPSG:32620',
+                '+proj=utm +zone=20 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
+            );
+            
+            // Registrar las definiciones en OpenLayers
+            if (typeof ol !== 'undefined') {
+                ol.proj.proj4.register(proj4);
+            }
+        }
     }
 
     /**
@@ -862,25 +1280,63 @@ class DeforestationMap {
     }
 
     /**
-     * Extrae datos de KML
+     * Extrae datos de KML mejorado
      */
     extractKMLData(feature) {
         try {
             const kmlDescription = feature.get('description');
             if (!kmlDescription) return null;
             
+            // Intentar varios métodos de parseo
+            let doc;
             const parser = new DOMParser();
-            const doc = parser.parseFromString(kmlDescription, 'text/html');
-            const simpleDataElements = doc.querySelectorAll('simpledata');
-            const data = {};
             
-            simpleDataElements.forEach(el => {
-                const name = el.getAttribute('name');
-                const value = el.textContent;
-                if (name && value) data[name.toLowerCase()] = value;
-            });
+            // Método 1: Como XML
+            try {
+                doc = parser.parseFromString(kmlDescription, 'text/xml');
+                if (doc.querySelector('parsererror')) throw new Error('XML parsing error');
+            } catch (xmlError) {
+                // Método 2: Como HTML
+                try {
+                    doc = parser.parseFromString(kmlDescription, 'text/html');
+                } catch (htmlError) {
+                    console.warn('No se pudo parsear KML description:', htmlError);
+                    return null;
+                }
+            }
             
-            return data.productor || data.name || data.nombre || null;
+            // Buscar datos en múltiples ubicaciones
+            const dataSources = [
+                // ExtendedData > Data
+                ...Array.from(doc.querySelectorAll('ExtendedData Data')).map(el => ({
+                    name: el.getAttribute('name'),
+                    value: el.querySelector('value')?.textContent
+                })),
+                // SimpleData
+                ...Array.from(doc.querySelectorAll('SimpleData')).map(el => ({
+                    name: el.getAttribute('name'),
+                    value: el.textContent
+                })),
+                // SchemaData > SimpleData
+                ...Array.from(doc.querySelectorAll('SchemaData SimpleData')).map(el => ({
+                    name: el.getAttribute('name'),
+                    value: el.textContent
+                }))
+            ];
+            
+            // Buscar nombres comunes
+            const nameFields = ['productor', 'name', 'nombre', 'title', 'producer', 'owner'];
+            
+            for (const field of nameFields) {
+                const match = dataSources.find(ds => 
+                    ds.name && ds.value && 
+                    ds.name.toLowerCase() === field.toLowerCase()
+                );
+                if (match) return match.value;
+            }
+            
+            return null;
+            
         } catch (error) {
             console.warn('Error extrayendo datos KML:', error);
             return null;
@@ -888,19 +1344,22 @@ class DeforestationMap {
     }
 
     /**
-     * Procesa información de múltiples polígonos
-     */
-    processMultiPolygonInfo(features) {
-        const polygonsInfo = features
-            .filter(feature => feature.getGeometry().getType() === 'Polygon')
-            .map(feature => ({
-                productor: feature.get('productor') || feature.get('name') || 'Propietario desconocido',
-                localidad: feature.get('localidad') || feature.get('municipio') || 'No especificado',
-                area: this.calculateArea(feature)
-            }));
+ * Procesa información de múltiples polígonos
+ */
+processMultiPolygonInfo(features) {
+    const polygonsInfo = features
+        .filter(feature => {
+            const geometry = feature.getGeometry();
+            return geometry && geometry.getType() === 'Polygon';
+        })
+        .map(feature => ({
+            productor: feature.get('productor') || feature.get('name') || 'Propietario desconocido',
+            localidad: feature.get('localidad') || feature.get('municipio') || 'No especificado',
+            area: feature.get('area') || 0  // Usar área almacenada, no recalcular
+        }));
 
-        this.displayPolygonsInfo(polygonsInfo);
-    }
+    this.displayPolygonsInfo(polygonsInfo);
+}
 
     /**
      * Muestra información de polígonos en tabla
@@ -924,18 +1383,28 @@ class DeforestationMap {
     }
 
     /**
-     * Crea FeatureCollection desde features
+     * Crea FeatureCollection optimizado
      */
     createFeatureCollection(features) {
+        const format = new ol.format.GeoJSON();
+        
+        const geojsonFeatures = features.map(feature => {
+            try {
+                const geojsonStr = format.writeFeature(feature, {
+                    dataProjection: 'EPSG:4326',
+                    featureProjection: 'EPSG:3857',
+                    decimals: 6 // Precisión de 6 decimales
+                });
+                return JSON.parse(geojsonStr);
+            } catch (error) {
+                console.warn('Error convirtiendo feature:', error);
+                return null;
+            }
+        }).filter(f => f !== null);
+        
         return {
             type: 'FeatureCollection',
-            features: features.map(feature => {
-                const geoJSONFormat = new ol.format.GeoJSON();
-                return JSON.parse(geoJSONFormat.writeFeature(feature, {
-                    dataProjection: 'EPSG:4326',
-                    featureProjection: 'EPSG:3857'
-                }));
-            })
+            features: geojsonFeatures
         };
     }
 
@@ -982,42 +1451,44 @@ class DeforestationMap {
     }
 
     /**
-     * Crea polígono desde coordenadas
-     */
-    createPolygonFromCoordinates(wgs84Coordinates, utmCoordinates) {
-        const feature = new ol.Feature({
-            geometry: new ol.geom.Polygon([wgs84Coordinates]).transform('EPSG:4326', 'EPSG:3857')
-        });
-        
-        this.clearMap();
-        
-        // Calcular área y guardarla en la feature
-        const areaHa = this.calculateArea(feature);
-        feature.set('area', areaHa);
-        
-        // Aplicar estilo con área
-        feature.setStyle(this.getPolygonStyle('finished', areaHa));
-        
-        this.source.addFeature(feature);
-        this.updateAreaDisplay(areaHa);
-        
-        this.map.getView().fit(
-            feature.getGeometry().getExtent(),
-            { padding: [50, 50, 50, 50], duration: 1000 }
-        );
-        
-        this.convertToGeoJSON(feature);
-        
-        const zonesUsed = [...new Set(utmCoordinates.map(coord => 
-            `Zona ${coord[2]}${coord[3]}`
-        ))];
-        const zonesText = zonesUsed.sort().join(', ');
-        
-        this.showAlert(
-            `Polígono dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`, 
-            'success'
-        );
-    }
+ * Crea polígono desde coordenadas
+ */
+createPolygonFromCoordinates(wgs84Coordinates, utmCoordinates) {
+    const feature = new ol.Feature({
+        geometry: new ol.geom.Polygon([wgs84Coordinates]).transform('EPSG:4326', 'EPSG:3857')
+    });
+    
+    this.clearMap();
+    
+    // Calcular área una sola vez
+    const areaHa = this.calculateArea(feature);
+    feature.set('area', areaHa);
+    
+    // Aplicar estilo con área
+    feature.setStyle(this.getPolygonStyle('finished', areaHa));
+    
+    this.source.addFeature(feature);
+    this.updateAreaDisplay(areaHa);
+    
+    this.map.getView().fit(
+        feature.getGeometry().getExtent(),
+        { padding: [50, 50, 50, 50], duration: 1000 }
+    );
+    
+    // Pasar área ya calculada
+    this.convertToGeoJSON(feature, areaHa);
+    
+    const zonesUsed = [...new Set(utmCoordinates.map(coord => 
+        `Zona ${coord[2]}${coord[3]}`
+    ))];
+    const zonesText = zonesUsed.sort().join(', ');
+    
+    this.showAlert(
+        `Polígono dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`, 
+        'success'
+    );
+}
+
     /**
      * Muestra alertas al usuario
      */
@@ -1074,5 +1545,38 @@ class DeforestationMap {
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('map')) {
         window.deforestationMapInstance = new DeforestationMap();
+    }
+});
+
+// Manejar carga de archivo GeoJSON
+document.addEventListener('DOMContentLoaded', function() {
+    const importButton = document.getElementById('import-geojson');
+    const fileInput = document.getElementById('import-area');
+    
+    if (importButton && fileInput) {
+        importButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const geojson = JSON.parse(e.target.result);
+                    if (window.deforestationMapInstance) {
+                        window.deforestationMapInstance.importGeoJSON(geojson);
+                    }
+                } catch (error) {
+                    alert('Error al leer el archivo GeoJSON: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Limpiar input
+            event.target.value = '';
+        });
     }
 });
