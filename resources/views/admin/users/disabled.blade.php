@@ -31,11 +31,11 @@
                                 $i = 1;
                             @endphp
                             @foreach($users as $user)
-                                <tr id="disabled-user-row-{{ $user->id }}">
-                                    <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $i++ }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $user->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $user->email }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                                <tr id="disabled-user-row-{{ $user->id }}" class=" hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
+                                    <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $i++ }}</td>
+                                    <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $user->name }}</td>
+                                    <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $user->email }}</td>
+                                    <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
                                         <form action="{{ route('admin.users.update-role', $user) }}" method="POST">
                                             @csrf
                                             @method('PATCH')
@@ -57,7 +57,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <!-- Botón Habilitar -->
                                         <button onclick="handleUserEnable({{ $user->id }}, '{{ $user->name }}')" 
-                                        class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transform hover:-translate-y-0.5 transition-all duration-750 ease-out"
+                                        class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                         title="Habilitar">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-check-icon w-7 h-7 lucide-user-check">
                                                 <path d="m16 11 2 2 4-4"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
