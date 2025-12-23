@@ -426,6 +426,20 @@ function initResultMap() {
             zoom: 6
         })
     });
+
+    // Añadir capa GFW (INICIALMENTE VISIBLE)
+    const GFW_LOSS_URL = 'https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png';
+    
+    gfwLossLayer = new ol.layer.Tile({
+        source: new ol.source.XYZ({
+            url: GFW_LOSS_URL,
+            attributions: 'Hansen/UMD/Google/USGS/NASA | GFW',
+        }),
+        opacity: 0.75,
+        visible: true // Visible por defecto
+    });
+    
+    resultMap.addLayer(gfwLossLayer);
     
     // Añadir el polígono al mapa
     const format = new ol.format.GeoJSON();
@@ -465,19 +479,6 @@ function initResultMap() {
         });
     }
 
-    // Añadir capa GFW (INICIALMENTE VISIBLE)
-    const GFW_LOSS_URL = 'https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png';
-    
-    gfwLossLayer = new ol.layer.Tile({
-        source: new ol.source.XYZ({
-            url: GFW_LOSS_URL,
-            attributions: 'Hansen/UMD/Google/USGS/NASA | GFW',
-        }),
-        opacity: 0.75,
-        visible: true // Visible por defecto
-    });
-    
-    resultMap.addLayer(gfwLossLayer);
 }
 
 // Funciones para controles del mapa

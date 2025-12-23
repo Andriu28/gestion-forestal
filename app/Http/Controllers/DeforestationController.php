@@ -87,13 +87,14 @@ class DeforestationController extends Controller
             'type' => $geometryGeoJson['type'],
             'geometry' => $geometryGeoJson['coordinates'][0],
             'area__ha' => $mainStatsAreaHa, // Usamos el dato del array paralelo
-            'polygon_area_ha' => $areaHa,
+            'polygon_area_ha' => $areaHa < $totalLossResults['totalDeforestedArea'] ? $totalLossResults['totalDeforestedArea'] : $areaHa,
             'status' => $mainStatsStatus, // Usamos el status del array paralelo
             'polygon_name' => $polygonName,
             'description' => $request->input('description', ''),
             'yearly_results' => $yearlyResults,
             'total_loss' => $totalLossResults, // Añadir el resultado del cálculo
         ];
+
 
         // Log para debugging
         Log::info('Datos enviados a la vista:', [
@@ -282,9 +283,10 @@ private function isPolygonClosed($coordinates)
             }
         }
 
-        $totalDeforestedArea = $areaHa < $totalDeforestedArea ? $areaHa : $totalDeforestedArea;
+        $areaHa = $areaHa < $totalDeforestedArea ? $totalDeforestedArea : $areaHa;
         $totalPercentage = $areaHa > 0 ? ($totalDeforestedArea / $areaHa) * 100 : 0;
         $totalYearsInRange = $endYear - $startYear + 1;
+
 
         return [
             'totalDeforestedArea' => $totalDeforestedArea,
