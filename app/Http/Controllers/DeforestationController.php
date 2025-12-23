@@ -282,6 +282,7 @@ private function isPolygonClosed($coordinates)
             }
         }
 
+        $totalDeforestedArea = $areaHa < $totalDeforestedArea ? $areaHa : $totalDeforestedArea;
         $totalPercentage = $areaHa > 0 ? ($totalDeforestedArea / $areaHa) * 100 : 0;
         $totalYearsInRange = $endYear - $startYear + 1;
 
