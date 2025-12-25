@@ -12,12 +12,14 @@
     <!-- Grid de Métricas Principales CON CÍRCULOS DE PROGRESO ANIMADOS -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         
-        <!-- Tarjeta: Total Usuarios CON CÍRCULO ANIMADO -->
+        <!-- Tarjeta MODIFICADA: Usuarios Activos -->
         <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-1 hover:transition-all hover:duration-300">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Usuarios</p>
-                    <h3 id="user-count" class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $totalUsers }}</h3>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuarios Conectados</p>
+                    <h3 id="user-count" class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                        {{ $activeUsersCount }}<span class="text-lg text-gray-500">/{{ $totalUsers }}</span>
+                    </h3>
                 </div>
                 <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                     <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,25 +30,28 @@
             
             <div class="flex items-center justify-between">
                 <div class="info">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Crecimiento semanal</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Porcentaje activo</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        {{ $activeUsersCount }} de {{ $totalUsers }} usuarios
+                    </p>
                 </div>
                 
                 <!-- Círculo de progreso ANIMADO -->
                 <div class="progresss relative w-20 h-20">
                     <svg class="w-20 h-20 transform -rotate-90">
                         <circle cx="40" cy="40" r="32" 
-                                class="fill-none stroke-blue-100 dark:stroke-gray-700" 
+                                class="fill-none stroke-gray-200 dark:stroke-gray-700" 
                                 stroke-width="11"></circle>
-                        <circle id="user-growth-circle" cx="40" cy="40" r="32" 
-                                class="fill-none stroke-blue-600 dark:stroke-blue-400" 
+                        <circle id="user-activity-circle" cx="40" cy="40" r="32" 
+                                class="fill-none stroke-blue-600 dark:stroke-blue-400"
                                 stroke-width="11" 
                                 stroke-dasharray="218" 
                                 stroke-dashoffset="218" 
                                 stroke-linecap="round"></circle>
                     </svg>
                     <div class="percentage absolute inset-0 flex items-center justify-center">
-                        <p id="user-growth-percentage" class="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                            {{ $userGrowthPercentage >= 0 ? '+' : '' }}{{ $userGrowthPercentage }}%
+                        <p id="user-activity-percentage" class="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                            {{ $activeUsersPercentage }}%
                         </p>
                     </div>
                 </div>
@@ -255,10 +260,9 @@
                 <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div class="grid grid-cols-2 gap-4">
                         <div class="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <p class="text-sm text-gray-500">Activos</p>
-                            <p class="text-xl font-bold text-blue-600">{{ $activeUsers }}</p>
-                        </div>
-                        <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <p class="text-sm text-gray-500">Habilitados</p>
+                            <p class="text-xl font-bold text-blue-600">{{ $totalUsers }}</p>
+                        </div>                        <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                             <p class="text-sm text-gray-500">Deshabilitados</p>
                             <p class="text-xl font-bold text-red-600">{{ $trashedUsers }}</p>
                         </div>
@@ -538,11 +542,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Configuración de las métricas
     const metrics = {
-        userGrowth: {{ $userGrowthPercentage }},
+        // NUEVO: Porcentaje de usuarios activos
+
+        activeUsersPercentage: {{ $activeUsersPercentage }},
         activityGrowth: {{ $activityGrowthPercentage }},
         todayActivity: {{ $activitiesToday }},
         completionRate: {{ $completionRate }},
-        activeProducersPercentage: {{ $activeProducersPercentage }}, // Agregar esta línea
+        activeProducersPercentage: {{ $activeProducersPercentage }}, 
+
         // Calcular porcentaje para actividad de hoy (vs promedio diario del mes)
         todayPercentage: function() {
             const avgDailyActivity = {{ $activitiesThisMonth }} > 0 ? 
@@ -555,11 +562,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Configuración de las animaciones
     const progressCircles = [
-        {
-            id: 'user-growth-circle',
-            percentage: Math.min(Math.abs(metrics.userGrowth), 100),
+         {
+            id: 'user-activity-circle',  // ¡ESTE ES EL QUE FALTA!
+            percentage: Math.min(metrics.activeUsersPercentage, 100),
             duration: 1000,
-            colorClass: metrics.userGrowth >= 0 ? 'blue' : 'red'
+            colorClass: 'green'
         },
         {
             id: 'activity-growth-circle',

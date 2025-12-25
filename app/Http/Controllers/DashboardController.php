@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use Spatie\Activitylog\Models\Activity;
 use App\Models\Producer;
@@ -16,16 +17,24 @@ class DashboardController extends Controller
         
         // 1. Usuarios
         $totalUsers = User::count();
-        // 6. Usuarios por Estado
-$trashedUsers = User::onlyTrashed()->count();
-
-// Agregar esta línea para definir $activeUsers
-$activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
+        
+        // 1.1 NUEVO: Usuarios activos (con sesión abierta)
+        $activeUsersCount = $this->getActiveUsersCount();
+        $activeUsersPercentage = $totalUsers > 0 
+            ? round(($activeUsersCount / $totalUsers) * 100, 1)
+            : 0;
+        
+        // 1.2 Métricas existentes de usuarios
         $newUsersToday = User::whereDate('created_at', today())->count();
         $newUsersThisWeek = User::whereBetween('created_at', 
             [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count();
         $usersThisMonth = User::whereMonth('created_at', now()->month)
                                ->whereYear('created_at', now()->year)->count();
+        
+        // 1.3 Usuarios por estado (habilitados vs deshabilitados)
+        $trashedUsers = User::onlyTrashed()->count();
+        $enabledUsers = $totalUsers - $trashedUsers; // Usuarios habilitados
+        $activeUsers = $enabledUsers; // Para compatibilidad con la vista
         
         // 2. Actividades
         $totalActivities = Activity::count();
@@ -55,10 +64,7 @@ $activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
             ->get()
             ->pluck('count', 'event');
         
-        // 6. Usuarios por Estado
-        $trashedUsers = User::onlyTrashed()->count();
-        
-        // 7. Actividad por Hora (últimas 24h)
+        // 6. Actividad por Hora (últimas 24h)
         $hourlyActivity = Activity::select(
                 DB::raw("EXTRACT(HOUR FROM created_at) as hour"),
                 DB::raw('COUNT(*) as count')
@@ -68,7 +74,7 @@ $activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
             ->orderBy('hour')
             ->get();
         
-        // 8. Top Usuarios más Activos (últimos 7 días)
+        // 7. Top Usuarios más Activos (últimos 7 días)
         $topActiveUsers = Activity::select(
                 'causer_id',
                 DB::raw('COUNT(*) as activity_count'),
@@ -82,7 +88,7 @@ $activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
             ->limit(5)
             ->get();
         
-        // 9. Actividad por Día de la Semana
+        // 8. Actividad por Día de la Semana
         $activityByDay = Activity::select(
                 DB::raw("EXTRACT(DOW FROM created_at) as day_of_week"),
                 DB::raw('COUNT(*) as count')
@@ -92,7 +98,7 @@ $activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
             ->orderBy('day_of_week')
             ->get();
         
-        // 10. Tendencias (comparación con período anterior)
+        // 9. Tendencias (comparación con período anterior)
         $lastWeekUsers = User::whereBetween('created_at', 
             [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()])->count();
         $lastWeekActivities = Activity::whereBetween('created_at',
@@ -100,7 +106,7 @@ $activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
         $lastWeekProducers = Producer::whereBetween('created_at',
             [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()])->count();
         
-        // 11. Actividades por Mes
+        // 10. Actividades por Mes
         $monthlyActivity = Activity::select(
                 DB::raw("DATE_TRUNC('month', created_at) as month"),
                 DB::raw('COUNT(*) as count')
@@ -110,7 +116,7 @@ $activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
             ->orderBy('month')
             ->get();
         
-        // 12. Actividades recientes (para tabla)
+        // 11. Actividades recientes (para tabla)
         $recentActivities = Activity::with('causer')
             ->latest()
             ->take(10)
@@ -191,6 +197,15 @@ $activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
             'totalProducers',
             'activeProducers',
             
+            // NUEVAS: Métricas de usuarios activos (sesión)
+            'activeUsersCount',
+            'activeUsersPercentage',
+            
+            // Métricas de estado de usuarios
+            'enabledUsers',
+            'trashedUsers',
+            'activeUsers', // Para compatibilidad
+            
             // Métricas diarias
             'newUsersToday',
             'activitiesToday',
@@ -208,8 +223,6 @@ $activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
             // Distribuciones
             'roleDistribution',
             'activityTypes',
-            'activeUsers',
-            'trashedUsers',
             
             // Porcentajes
             'userGrowthPercentage',
@@ -248,6 +261,42 @@ $activeUsers = $totalUsers; // Esto es para compatibilidad con la vista
             ->paginate(50);
         
         return view('admin.audit_log', compact('activities'));
+    }
+    
+    /**
+     * Método para obtener usuarios activos (con sesión abierta)
+     */
+    private function getActiveUsersCount()
+    {
+        // Usuarios con actividad en los últimos 15 minutos
+        $activeThreshold = now()->subMinutes(15);
+        
+        // Opción 1: Si usas sesiones de base de datos (recomendado)
+        if (config('session.driver') === 'database') {
+            return DB::table('sessions')
+                ->where('last_activity', '>=', $activeThreshold->timestamp)
+                ->whereNotNull('user_id')
+                ->distinct('user_id')
+                ->count('user_id');
+        }
+        
+        // Opción 2: Si tienes campo 'last_seen_at' o 'last_login_at' en users
+        if (Schema::hasColumn('users', 'last_seen_at')) {
+            return User::where('last_seen_at', '>=', $activeThreshold)->count();
+        }
+        
+        if (Schema::hasColumn('users', 'last_login_at')) {
+            return User::where('last_login_at', '>=', $activeThreshold)->count();
+        }
+        
+        // Opción 3: Usar actividad reciente (últimas 2 horas)
+        // Para equipos pequeños de 4 personas
+        return User::whereHas('activities', function($query) use ($activeThreshold) {
+                $query->where('created_at', '>=', $activeThreshold);
+            })
+            ->orWhere('updated_at', '>=', $activeThreshold)
+            ->distinct()
+            ->count();
     }
     
     /**

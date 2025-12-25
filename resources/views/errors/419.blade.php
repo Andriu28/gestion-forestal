@@ -10,10 +10,8 @@ Tu sesión ha expirado por inactividad. Por seguridad, debes volver a iniciar se
 
 @section('buttons')
 
-     ">
-        Recargar Página
     </button>
-     <a href="{{ route('') }}" class="px-6 py-3 bg-amber-500 text-amber-900 border-2 border-amber-700 rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:-translate-y-0.5">
+     <a href="{{ route('login') }}" class="px-6 py-3 bg-amber-500 text-amber-900 border-2 border-amber-700 rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:-translate-y-0.5">
         Volver al Inicio
     </a>
 
