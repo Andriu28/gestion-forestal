@@ -60,8 +60,21 @@ class UserController extends Controller
         try {
             // Buscar el usuario incluyendo deshabilitados
             $user = User::withTrashed()->findOrFail($userId);
+            $oldRole = $user->role;
             
+            // Actualizar el rol
             $user->update(['role' => $request->role]);
+
+            // Registrar la actividad de manera personalizada
+            activity()
+                ->performedOn($user)
+                ->causedBy(auth()->user())
+                ->withProperties([
+                    'old_role' => $oldRole,
+                    'new_role' => $request->role,
+                    'updated_fields' => ['role']
+                ])
+                ->log("Usuario '{$user->name}' fue actualizado su rol");
 
             // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
@@ -95,7 +108,7 @@ class UserController extends Controller
             ]);
         }
     }
-    
+        
    public function destroy(Request $request, User $user)
     {
         // No permitimos que un usuario se elimine a sí mismo

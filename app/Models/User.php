@@ -55,7 +55,7 @@ class User extends Authenticatable implements MustVerifyEmail{
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email', 'role']) // Añadir 'role'
+            ->logOnly(['name', 'email', 'role', 'password'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(function(string $eventName) {
                 $userName = $this->name ?: 'Usuario #' . $this->id;
@@ -64,7 +64,18 @@ class User extends Authenticatable implements MustVerifyEmail{
                     case 'created':
                         return "Usuario '{$userName}' fue creado";
                     case 'updated':
-                        return "Usuario '{$userName}' fue actualizado su rol";
+                        // Verificar qué campos específicos cambiaron
+                        $changed = $this->getDirty();
+                        
+                        if (isset($changed['role'])) {
+                            return "Rol de '{$userName}' fue actualizado";
+                        } elseif (isset($changed['email'])) {
+                            return "Correo de '{$userName}' fue actualizado";
+                        } elseif (isset($changed['name'])) {
+                            return "Nombre de '{$userName}' fue actualizado";
+                        } else {
+                            return "Usuario '{$userName}' fue actualizado";
+                        }
                     case 'deleted':
                         return "Usuario '{$userName}' fue deshabilitado";
                     case 'restored':
@@ -73,6 +84,7 @@ class User extends Authenticatable implements MustVerifyEmail{
                         return "Usuario '{$userName}' fue {$eventName}";
                 }
             })
-            ->dontSubmitEmptyLogs();
+            ->dontSubmitEmptyLogs()
+            ->dontLogIfAttributesChangedOnly(['updated_at', 'remember_token', 'email_verified_at']);
     }
 }

@@ -94,8 +94,7 @@ class EditUser extends Component
         // Registrar la actividad y redirigir
         activity()
             ->causedBy(auth()->user())
-            ->performedOn($this->user)
-            ->log('actualizó un usuario');
+            ->performedOn($this->user);
     
         return redirect()->route('admin.users.index')
             ->with('swal', [

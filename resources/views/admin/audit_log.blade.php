@@ -30,23 +30,45 @@
                                         {{ $activity->causer ? $activity->causer->name : 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <!-- traduccion para las descriciones -->
                                         @php
                                             $translations = [
-                                                
                                                 // Usuarios
                                                 'El usuario ha sido updated' => 'El usuario ha sido actualizado',
                                                 'El usuario ha sido restored' => 'El usuario ha sido restaurado',
                                                 'El usuario ha sido created' => 'El usuario ha sido creado',
                                                 'El usuario ha sido deleted' => 'El usuario ha sido eliminado',
-                                                
                                             ];
                                             
                                             // Buscar traducción exacta primero
                                             $translated = $translations[$activity->description] ?? null;
                                             
-                                            echo $translated ?? $activity->description;
+                                            if ($translated) {
+                                                // Si es una traducción genérica, verificar si hay propiedades específicas
+                                                if (str_contains($activity->description, 'updated') && $activity->properties) {
+                                                    $props = $activity->properties->toArray();
+                                                    if (isset($props['updated_fields']) && in_array('role', $props['updated_fields'])) {
+                                                        echo "Rol de usuario actualizado";
+                                                    } elseif (isset($props['updated_fields']) && in_array('email', $props['updated_fields'])) {
+                                                        echo "Correo de usuario actualizado";
+                                                    } else {
+                                                        echo $translated;
+                                                    }
+                                                } else {
+                                                    echo $translated;
+                                                }
+                                            } elseif (str_contains($activity->description, 'fue actualizado su rol')) {
+                                                echo $activity->description;
+                                            } else {
+                                                // Si no hay traducción, mostrar la descripción original
+                                                echo $activity->description;
+                                            }
                                         @endphp
+                                        
+                                        @if($activity->properties && $activity->properties->has('old_role') && $activity->properties->has('new_role'))
+                                            <br><small class="text-gray-400">
+                                                (De: {{ $activity->properties['old_role'] }} a: {{ $activity->properties['new_role'] }})
+                                            </small>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $activity->created_at->format('d/m/Y H:i:s') }}
