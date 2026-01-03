@@ -178,24 +178,12 @@ async function handleToggleStatus(producerId, producerName, isCurrentlyActive) {
     );
     
     if (result.isConfirmed) {
-        // Mostrar loading
-        Swal.fire({
-            title: `${action.charAt(0).toUpperCase() + action.slice(1)}...`,
-            text: 'Por favor espere',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            customClass: {
-                popup: 'rounded-xl shadow-lg bg-stone-100/95 dark:bg-custom-gray border border-gray-200 dark:border-gray-700'
-            },
-            didOpen: () => Swal.showLoading()
-        });
         
         const data = await makeRequest(`/producers/${producerId}/toggle-status`, 'POST');
-        Swal.close();
-        
+    
         if (data.success) {
             // Actualizar interfaz
-            updateProducerStatusUI(producerId, producerName, data.is_active);
+            updateProducerStatusUI(producerId, producerName, data.is_active, data.status_text);
             showCustomAlert('success', 'Éxito', `Productor ${action} exitosamente.`);
         } else {
             showCustomAlert('error', 'Error', data.message);
@@ -203,31 +191,48 @@ async function handleToggleStatus(producerId, producerName, isCurrentlyActive) {
     }
 }
 
-// Función para actualizar la UI del estado
-function updateProducerStatusUI(producerId, producerName, isActive) {
+// Función para actualizar la UI del estado - CORREGIDA
+function updateProducerStatusUI(producerId, producerName, isActive, statusText = null) {
     const row = document.getElementById(`producer-row-${producerId}`);
     if (!row) return;
     
-    const statusBadge = document.getElementById(`status-badge-${producerId}`);
+    // Encontrar la celda de estado (4ta columna)
+    const statusCell = row.querySelector('td:nth-child(4)');
     const toggleButton = row.querySelector('button[onclick*="handleToggleStatus"]');
+    const buttonForm = row.querySelector('.toggle-status-form button');
     
-    if (statusBadge) {
+    // Actualizar badge de estado
+    if (statusCell) {
         if (isActive) {
-            statusBadge.innerHTML = 'Activo';
-            statusBadge.className = 'inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full';
-            if (toggleButton) {
-                toggleButton.innerHTML = `/* Icono desactivar */`;
-                toggleButton.setAttribute('onclick', `handleToggleStatus(${producerId}, '${producerName.replace(/'/g, "\\'")}', true)`);
-                toggleButton.setAttribute('title', 'Desactivar');
-            }
+            statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">Activo</span>';
         } else {
-            statusBadge.innerHTML = 'Inactivo';
-            statusBadge.className = 'inline-block px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-full';
-            if (toggleButton) {
-                toggleButton.innerHTML = `/* Icono activar */`;
-                toggleButton.setAttribute('onclick', `handleToggleStatus(${producerId}, '${producerName.replace(/'/g, "\\'")}', false)`);
-                toggleButton.setAttribute('title', 'Activar');
-            }
+            statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-full">Inactivo</span>';
+        }
+    }
+    
+    // Actualizar botón de toggle
+    if (toggleButton && buttonForm) {
+        if (isActive) {
+            // Cambiar a icono de desactivar (X rojo)
+            buttonForm.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
+                    <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
+                    <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
+                    <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
+                </svg>
+            `;
+            toggleButton.setAttribute('title', 'Desactivar');
+            toggleButton.setAttribute('onclick', `handleToggleStatus(${producerId}, '${producerName.replace(/'/g, "\\'")}', true)`);
+        } else {
+            // Cambiar a icono de activar (check verde)
+            buttonForm.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
+                    <circle cx="12" cy="12" r="10" class="fill-green-100"/>
+                    <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
+                </svg>
+            `;
+            toggleButton.setAttribute('title', 'Activar');
+            toggleButton.setAttribute('onclick', `handleToggleStatus(${producerId}, '${producerName.replace(/'/g, "\\'")}', false)`);
         }
     }
 }
@@ -241,22 +246,11 @@ async function handleDisableProducer(producerId, producerName) {
     );
     
     if (result.isConfirmed) {
-        Swal.fire({
-            title: 'Deshabilitando...',
-            text: 'Por favor espere',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            customClass: {
-                popup: 'rounded-xl shadow-lg bg-stone-100/95 dark:bg-custom-gray border border-gray-200 dark:border-gray-700'
-            },
-            didOpen: () => Swal.showLoading()
-        });
         
         const data = await makeRequest(`/producers/${producerId}`, 'DELETE');
-        Swal.close();
         
         if (data.success) {
-            removeProducerRow(producerId);
+            updateRowForDeleted(producerId, producerName);
             showCustomAlert('success', 'Éxito', 'Productor deshabilitado exitosamente.');
         } else {
             showCustomAlert('error', 'Error', data.message);
@@ -272,22 +266,11 @@ async function handleRestoreProducer(producerId, producerName) {
     );
     
     if (result.isConfirmed) {
-        Swal.fire({
-            title: 'Restaurando...',
-            text: 'Por favor espere',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            customClass: {
-                popup: 'rounded-xl shadow-lg bg-stone-100/95 dark:bg-custom-gray border border-gray-200 dark:border-gray-700'
-            },
-            didOpen: () => Swal.showLoading()
-        });
         
         const data = await makeRequest(`/producers/${producerId}/restore`, 'POST');
-        Swal.close();
         
         if (data.success) {
-            removeProducerRow(producerId);
+            updateRowForRestored(producerId, producerName, data.is_active);
             showCustomAlert('success', 'Éxito', 'Productor habilitado exitosamente.');
         } else {
             showCustomAlert('error', 'Error', data.message);
@@ -295,17 +278,99 @@ async function handleRestoreProducer(producerId, producerName) {
     }
 }
 
-// Función para remover fila con animación
-function removeProducerRow(producerId) {
+// Función para actualizar fila cuando se deshabilita
+function updateRowForDeleted(producerId, producerName) {
     const row = document.getElementById(`producer-row-${producerId}`);
-    if (row) {
-        row.style.transition = 'all 0.3s ease';
-        row.style.opacity = '0';
-        row.style.transform = 'translateX(-100px)';
-        setTimeout(() => {
-            row.remove();
-            checkEmptyTable();
-        }, 300);
+    if (!row) return;
+    
+    // Actualizar estado a "Eliminado"
+    const statusCell = row.querySelector('td:nth-child(4)');
+    if (statusCell) {
+        statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">Eliminado</span>';
+    }
+    
+    // Actualizar acciones
+    const actionsCell = row.querySelector('td:nth-child(5)');
+    if (actionsCell) {
+        actionsCell.innerHTML = `
+            <div class="flex items-center gap-2">
+                <button type="button" 
+                        class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                        title="Restaurar"
+                        onclick="handleRestoreProducer(${producerId}, '${producerName.replace(/'/g, "\\'")}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw-icon w-7 h-7 lucide-rotate-ccw">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Función para actualizar fila cuando se restaura
+function updateRowForRestored(producerId, producerName, isActive = true) {
+    const row = document.getElementById(`producer-row-${producerId}`);
+    if (!row) return;
+    
+    // Actualizar estado
+    const statusCell = row.querySelector('td:nth-child(4)');
+    if (statusCell) {
+        if (isActive) {
+            statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">Activo</span>';
+        } else {
+            statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-full">Inactivo</span>';
+        }
+    }
+    
+    // Actualizar acciones
+    const actionsCell = row.querySelector('td:nth-child(5)');
+    if (actionsCell) {
+        const activeStatus = isActive ? 'true' : 'false';
+        actionsCell.innerHTML = `
+            <div class="flex items-center gap-2">
+                <a href="/producers/${producerId}" class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" title="Ver">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-icon w-7 h-7 lucide-eye">
+                        <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </a>
+
+                <a href="/producers/${producerId}/edit" 
+                   class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
+                   title="Editar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-7 h-7 lucide-pencil-line">
+                        <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+                    </svg>
+                </a>
+        
+                <form action="/producers/${producerId}/toggle-status" method="POST" class="inline toggle-status-form">
+                    <input type="hidden" name="_token" value="${csrfToken}">
+                    <button type="button" class="inline-flex items-center transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                            title="${isActive ? 'Desactivar' : 'Activar'}"
+                            onclick="handleToggleStatus(${producerId}, '${producerName.replace(/'/g, "\\'")}', ${activeStatus})">
+                        ${isActive ? 
+                            `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
+                                <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
+                                <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
+                                <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
+                            </svg>` :
+                            `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
+                                <circle cx="12" cy="12" r="10" class="fill-green-100"/>
+                                <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
+                            </svg>`
+                        }
+                    </button>
+                </form>
+
+                <button type="button" 
+                        class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                        title="Deshabilitar"
+                        onclick="handleDisableProducer(${producerId}, '${producerName.replace(/'/g, "\\'")}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-x-icon w-7 h-7 lucide-user-x">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>
+                    </svg>
+                </button>
+            </div>
+        `;
     }
 }
 
