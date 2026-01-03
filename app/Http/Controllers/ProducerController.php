@@ -59,7 +59,7 @@ class ProducerController extends Controller
                 ->with('swal', [
                     'icon' => 'success',
                     'title' => 'Éxito',
-                    'text' => 'productor creado exitosamente.'
+                    'text' => 'Productor creado exitosamente.'
                 ]);
         } catch (\Exception $e) {
             // Alerta de error con SweetAlert2
@@ -102,7 +102,7 @@ class ProducerController extends Controller
                 ->with('swal', [
                     'icon' => 'success',
                     'title' => 'Éxito',
-                    'text' => 'productor actualizado exitosamente.'
+                    'text' => 'Productor actualizado exitosamente.'
                 ]);
         } catch (\Exception $e) {
             // Alerta de error con SweetAlert2
@@ -119,20 +119,37 @@ class ProducerController extends Controller
     /**
      * Elimina (soft delete) un productor.
      */
-    public function destroy(Producer $producer)
+    public function destroy(Request $request, Producer $producer)
     {
         try {
             $producer->delete();
 
-            // Alerta de éxito con SweetAlert2
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Productor deshabilitado exitosamente.',
+                    'producer_id' => $producer->id
+                ]);
+            }
+
+            // Respuesta tradicional
             return redirect()->route('producers.index')
                 ->with('swal', [
                     'icon' => 'success',
                     'title' => 'Éxito',
-                    'text' => 'productor eliminado exitosamente.'
+                    'text' => 'Productor deshabilitado exitosamente.'
                 ]);
         } catch (\Exception $e) {
-            // Alerta de error con SweetAlert2
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al eliminar el productor: ' . $e->getMessage()
+                ], 500);
+            }
+
+            // Respuesta tradicional
             return redirect()->back()
                 ->with('swal', [
                     'icon' => 'error',
@@ -145,21 +162,38 @@ class ProducerController extends Controller
     /**
      * Restaura un productor eliminado.
      */
-    public function restore($id)
+    public function restore(Request $request, $id)
     {
         try {
             $producer = Producer::withTrashed()->findOrFail($id);
             $producer->restore();
 
-            // Alerta de éxito con SweetAlert2
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Productor habilitado exitosamente.',
+                    'producer_id' => $producer->id
+                ]);
+            }
+
+            // Respuesta tradicional
             return redirect()->route('producers.index')
                 ->with('swal', [
                     'icon' => 'success',
                     'title' => 'Éxito',
-                    'text' => 'productor restaurado exitosamente.'
+                    'text' => 'Productor habilitado exitosamente.'
                 ]);
         } catch (\Exception $e) {
-            // Alerta de error con SweetAlert2
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al restaurar el productor: ' . $e->getMessage()
+                ], 500);
+            }
+
+            // Respuesta tradicional
             return redirect()->back()
                 ->with('swal', [
                     'icon' => 'error',
@@ -172,21 +206,38 @@ class ProducerController extends Controller
     /**
      * Elimina permanentemente un productor.
      */
-    public function forceDelete($id)
+    public function forceDelete(Request $request, $id)
     {
         try {
             $producer = Producer::withTrashed()->findOrFail($id);
             $producer->forceDelete();
 
-            // Alerta de éxito con SweetAlert2
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Productor eliminado permanentemente.',
+                    'producer_id' => $producer->id
+                ]);
+            }
+
+            // Respuesta tradicional
             return redirect()->route('producers.index')
                 ->with('swal', [
                     'icon' => 'success',
                     'title' => 'Éxito',
-                    'text' => 'productor eliminado permanentemente.'
+                    'text' => 'Productor eliminado permanentemente.'
                 ]);
         } catch (\Exception $e) {
-            // Alerta de error con SweetAlert2
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al eliminar permanentemente el productor: ' . $e->getMessage()
+                ], 500);
+            }
+
+            // Respuesta tradicional
             return redirect()->back()
                 ->with('swal', [
                     'icon' => 'error',
@@ -199,22 +250,43 @@ class ProducerController extends Controller
     /**
      * Cambia el estado (activo/inactivo) de un productor.
      */
-    public function toggleStatus(Producer $producer)
+    public function toggleStatus(Request $request, Producer $producer)
     {
         try {
+            $oldStatus = $producer->is_active;
             $producer->update(['is_active' => !$producer->is_active]);
+            
+            $newStatus = $producer->is_active;
+            $statusText = $producer->is_active ? 'activado' : 'desactivado';
 
-            $status = $producer->is_active ? 'activado' : 'desactivado';
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Productor {$statusText} exitosamente.",
+                    'is_active' => $newStatus,
+                    'status_text' => $producer->is_active ? 'Activo' : 'Inactivo',
+                    'producer_id' => $producer->id
+                ]);
+            }
 
-            // Alerta de éxito con SweetAlert2
+            // Respuesta tradicional
             return redirect()->back()
                 ->with('swal', [
                     'icon' => 'success',
                     'title' => 'Éxito',
-                    'text' => "productor {$status} exitosamente."
+                    'text' => "Productor {$statusText} exitosamente."
                 ]);
         } catch (\Exception $e) {
-            // Alerta de error con SweetAlert2
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al cambiar el estado del productor: ' . $e->getMessage()
+                ], 500);
+            }
+
+            // Respuesta tradicional
             return redirect()->back()
                 ->with('swal', [
                     'icon' => 'error',

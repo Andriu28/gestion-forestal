@@ -75,10 +75,12 @@
                                                         </svg>
                                                     </a>
                                             
-                                                    <form action="{{ route('producers.toggle-status', $producer) }}" method="POST" class="inline">
+                                                    <!-- Botón Cambiar Estado (activo/inactivo) - AJAX -->
+                                                    <form action="{{ route('producers.toggle-status', $producer) }}" method="POST" class="inline toggle-status-form">
                                                         @csrf
-                                                        <button type="submit" class="inline-flex items-center transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
-                                                                title="Cambiar estado">
+                                                        <button type="button" class="inline-flex items-center transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                                title="{{ $producer->is_active ? 'Desactivar' : 'Activar' }}"
+                                                                onclick="handleToggleStatus({{ $producer->id }}, '{{ $producer->name }}', {{ $producer->is_active ? 'true' : 'false' }})">
                                                             @if($producer->is_active)
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
                                                                     <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
@@ -94,24 +96,25 @@
                                                         </button>
                                                     </form>
 
-                                                    <form action="{{ route('producers.destroy', $producer) }}" method="POST" class="inline sweet-confirm-form" data-action="deshabilitar">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" title="Eliminar">
-                                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-x-icon w-7 h-7 lucide-user-x">
-                                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>
-                                                            </svg>
-                                                        </button>
-                                                    </form>
+                                                    <!-- Botón Deshabilitar (soft delete) - AJAX -->
+                                                    <button type="button" 
+                                                            class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                            title="Deshabilitar"
+                                                            onclick="handleDisableProducer({{ $producer->id }}, '{{ addslashes($producer->name) }}')">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-x-icon w-7 h-7 lucide-user-x">
+                                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>
+                                                        </svg>
+                                                    </button>
                                                 @else
-                                                    <form action="{{ route('producers.restore', $producer->id) }}" method="POST" class="inline">
-                                                        @csrf
-                                                        <button type="submit" class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" title="Restaurar">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw-icon w-7 h-7 lucide-rotate-ccw">
-                                                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
-                                                            </svg>
-                                                        </button>
-                                                    </form>
+                                                    <!-- Para productores eliminados (soft deleted) -->
+                                                    <button type="button" 
+                                                            class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                            title="Restaurar"
+                                                            onclick="handleRestoreProducer({{ $producer->id }}, '{{ addslashes($producer->name) }}')">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw-icon w-7 h-7 lucide-rotate-ccw">
+                                                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                                                        </svg>
+                                                    </button>
                                                 @endif
                                             </div>
                                         </td>
@@ -135,3 +138,203 @@
         </div>
     </div>
 </x-app-layout>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// JavaScript para manejar las acciones asíncronas
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+// Función para cambiar estado (activo/inactivo)
+function handleToggleStatus(producerId, producerName, isCurrentlyActive) {
+    const action = isCurrentlyActive ? 'desactivar' : 'activar';
+    
+    Swal.fire({
+        title: `¿${action.charAt(0).toUpperCase() + action.slice(1)} productor?`,
+        text: `¿Estás seguro de que deseas ${action} al productor ${producerName}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: `Sí, ${action}`,
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const url = `/producers/${producerId}/toggle-status`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar la interfaz
+                    const row = document.getElementById(`producer-row-${producerId}`);
+                    if (row) {
+                        const statusCell = row.querySelector('td:nth-child(4)');
+                        const toggleButton = row.querySelector('.toggle-status-form button');
+                        
+                        if (statusCell) {
+                            if (data.is_active) {
+                                statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">Activo</span>';
+                                toggleButton.title = 'Desactivar';
+                                toggleButton.innerHTML = `
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
+                                        <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
+                                        <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
+                                        <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
+                                    </svg>
+                                `;
+                            } else {
+                                statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-full">Inactivo</span>';
+                                toggleButton.title = 'Activar';
+                                toggleButton.innerHTML = `
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
+                                        <circle cx="12" cy="12" r="10" class="fill-green-100"/>
+                                        <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
+                                    </svg>
+                                `;
+                            }
+                        }
+                    }
+                    
+                    showSwalAlert('success', 'Éxito', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showSwalAlert('error', 'Error', 'Hubo un problema al cambiar el estado.');
+            });
+        }
+    });
+}
+
+// Función para deshabilitar productor (soft delete)
+function handleDisableProducer(producerId, producerName) {
+    Swal.fire({
+        title: '¿Deshabilitar productor?',
+        html: `¿Estás seguro de que deseas deshabilitar al productor <strong>${producerName}</strong>?<br><br>
+               <small>El productor será movido a la lista de deshabilitados.</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, deshabilitar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const url = `/producers/${producerId}`;
+            
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remover la fila de la tabla
+                    const row = document.getElementById(`producer-row-${producerId}`);
+                    if (row) {
+                        row.remove();
+                    }
+                    
+                    // Verificar si la tabla está vacía
+                    checkEmptyTable();
+                    
+                    showSwalAlert('success', 'Éxito', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showSwalAlert('error', 'Error', 'Hubo un problema al deshabilitar el productor.');
+            });
+        }
+    });
+}
+
+// Función para restaurar productor
+function handleRestoreProducer(producerId, producerName) {
+    Swal.fire({
+        title: '¿Restaurar productor?',
+        html: `¿Estás seguro de que deseas restaurar al productor <strong>${producerName}</strong>?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, restaurar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const url = `/producers/${producerId}/restore`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remover la fila de la tabla
+                    const row = document.getElementById(`producer-row-${producerId}`);
+                    if (row) {
+                        row.remove();
+                    }
+                    
+                    // Verificar si la tabla está vacía
+                    checkEmptyTable();
+                    
+                    showSwalAlert('success', 'Éxito', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showSwalAlert('error', 'Error', 'Hubo un problema al restaurar el productor.');
+            });
+        }
+    });
+}
+
+// Función para verificar si la tabla está vacía
+function checkEmptyTable() {
+    const table = document.querySelector('#producers-table tbody');
+    if (table && table.children.length === 0) {
+        const emptyMessage = document.createElement('tr');
+        emptyMessage.innerHTML = `
+            <td colspan="5" class="text-center py-8">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-gray-600 dark:text-gray-400">No se encontraron productores.</p>
+            </td>
+        `;
+        table.appendChild(emptyMessage);
+    }
+}
+
+// Función para mostrar alertas
+function showSwalAlert(icon, title, text) {
+    Swal.fire({
+        icon: icon,
+        title: title,
+        text: text,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+    });
+}
+</script>
