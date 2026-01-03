@@ -139,202 +139,190 @@
     </div>
 </x-app-layout>
 
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// JavaScript para manejar las acciones asíncronas
+// JavaScript para manejar las acciones asíncronas usando TUS funciones globales
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-// Función para cambiar estado (activo/inactivo)
-function handleToggleStatus(producerId, producerName, isCurrentlyActive) {
-    const action = isCurrentlyActive ? 'desactivar' : 'activar';
-    
-    Swal.fire({
-        title: `¿${action.charAt(0).toUpperCase() + action.slice(1)} productor?`,
-        text: `¿Estás seguro de que deseas ${action} al productor ${producerName}?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: `Sí, ${action}`,
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const url = `/producers/${producerId}/toggle-status`;
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Actualizar la interfaz
-                    const row = document.getElementById(`producer-row-${producerId}`);
-                    if (row) {
-                        const statusCell = row.querySelector('td:nth-child(4)');
-                        const toggleButton = row.querySelector('.toggle-status-form button');
-                        
-                        if (statusCell) {
-                            if (data.is_active) {
-                                statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">Activo</span>';
-                                toggleButton.title = 'Desactivar';
-                                toggleButton.innerHTML = `
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
-                                        <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
-                                        <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
-                                        <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
-                                    </svg>
-                                `;
-                            } else {
-                                statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-full">Inactivo</span>';
-                                toggleButton.title = 'Activar';
-                                toggleButton.innerHTML = `
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
-                                        <circle cx="12" cy="12" r="10" class="fill-green-100"/>
-                                        <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
-                                    </svg>
-                                `;
-                            }
-                        }
-                    }
-                    
-                    showSwalAlert('success', 'Éxito', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showSwalAlert('error', 'Error', 'Hubo un problema al cambiar el estado.');
-            });
+// Función auxiliar para hacer peticiones fetch
+async function makeRequest(url, method = 'POST', data = null) {
+    try {
+        const options = {
+            method: method,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            }
+        };
+        
+        if (data) {
+            options.body = JSON.stringify(data);
+            options.headers['Content-Type'] = 'application/json';
         }
-    });
+        
+        const response = await fetch(url, options);
+        return await response.json();
+    } catch (error) {
+        console.error('Fetch error:', error);
+        return { success: false, message: 'Error de conexión' };
+    }
 }
 
-// Función para deshabilitar productor (soft delete)
-function handleDisableProducer(producerId, producerName) {
-    Swal.fire({
-        title: '¿Deshabilitar productor?',
-        html: `¿Estás seguro de que deseas deshabilitar al productor <strong>${producerName}</strong>?<br><br>
-               <small>El productor será movido a la lista de deshabilitados.</small>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Sí, deshabilitar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const url = `/producers/${producerId}`;
-            
-            fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Remover la fila de la tabla
-                    const row = document.getElementById(`producer-row-${producerId}`);
-                    if (row) {
-                        row.remove();
-                    }
-                    
-                    // Verificar si la tabla está vacía
-                    checkEmptyTable();
-                    
-                    showSwalAlert('success', 'Éxito', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showSwalAlert('error', 'Error', 'Hubo un problema al deshabilitar el productor.');
-            });
+// Función para cambiar estado (activo/inactivo)
+async function handleToggleStatus(producerId, producerName, isCurrentlyActive) {
+    const action = isCurrentlyActive ? 'desactivar' : 'activar';
+    
+    const result = await showCustomConfirmation(
+        !isCurrentlyActive, // isEnable: true para activar, false para desactivar
+        `¿Estás seguro de que deseas ${action} al productor <b>${producerName}</b>?`
+    );
+    
+    if (result.isConfirmed) {
+        // Mostrar loading
+        Swal.fire({
+            title: `${action.charAt(0).toUpperCase() + action.slice(1)}...`,
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            customClass: {
+                popup: 'rounded-xl shadow-lg bg-stone-100/95 dark:bg-custom-gray border border-gray-200 dark:border-gray-700'
+            },
+            didOpen: () => Swal.showLoading()
+        });
+        
+        const data = await makeRequest(`/producers/${producerId}/toggle-status`, 'POST');
+        Swal.close();
+        
+        if (data.success) {
+            // Actualizar interfaz
+            updateProducerStatusUI(producerId, producerName, data.is_active);
+            showCustomAlert('success', 'Éxito', `Productor ${action} exitosamente.`);
+        } else {
+            showCustomAlert('error', 'Error', data.message);
         }
-    });
+    }
+}
+
+// Función para actualizar la UI del estado
+function updateProducerStatusUI(producerId, producerName, isActive) {
+    const row = document.getElementById(`producer-row-${producerId}`);
+    if (!row) return;
+    
+    const statusBadge = document.getElementById(`status-badge-${producerId}`);
+    const toggleButton = row.querySelector('button[onclick*="handleToggleStatus"]');
+    
+    if (statusBadge) {
+        if (isActive) {
+            statusBadge.innerHTML = 'Activo';
+            statusBadge.className = 'inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full';
+            if (toggleButton) {
+                toggleButton.innerHTML = `/* Icono desactivar */`;
+                toggleButton.setAttribute('onclick', `handleToggleStatus(${producerId}, '${producerName.replace(/'/g, "\\'")}', true)`);
+                toggleButton.setAttribute('title', 'Desactivar');
+            }
+        } else {
+            statusBadge.innerHTML = 'Inactivo';
+            statusBadge.className = 'inline-block px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-full';
+            if (toggleButton) {
+                toggleButton.innerHTML = `/* Icono activar */`;
+                toggleButton.setAttribute('onclick', `handleToggleStatus(${producerId}, '${producerName.replace(/'/g, "\\'")}', false)`);
+                toggleButton.setAttribute('title', 'Activar');
+            }
+        }
+    }
+}
+
+// Función para deshabilitar productor
+async function handleDisableProducer(producerId, producerName) {
+    const result = await showCustomConfirmation(
+        false,
+        `¿Estás seguro de que deseas deshabilitar al productor <b>${producerName}</b>?<br><br>
+         <small>El productor será movido a la lista de deshabilitados.</small>`
+    );
+    
+    if (result.isConfirmed) {
+        Swal.fire({
+            title: 'Deshabilitando...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            customClass: {
+                popup: 'rounded-xl shadow-lg bg-stone-100/95 dark:bg-custom-gray border border-gray-200 dark:border-gray-700'
+            },
+            didOpen: () => Swal.showLoading()
+        });
+        
+        const data = await makeRequest(`/producers/${producerId}`, 'DELETE');
+        Swal.close();
+        
+        if (data.success) {
+            removeProducerRow(producerId);
+            showCustomAlert('success', 'Éxito', 'Productor deshabilitado exitosamente.');
+        } else {
+            showCustomAlert('error', 'Error', data.message);
+        }
+    }
 }
 
 // Función para restaurar productor
-function handleRestoreProducer(producerId, producerName) {
-    Swal.fire({
-        title: '¿Restaurar productor?',
-        html: `¿Estás seguro de que deseas restaurar al productor <strong>${producerName}</strong>?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, restaurar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const url = `/producers/${producerId}/restore`;
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Remover la fila de la tabla
-                    const row = document.getElementById(`producer-row-${producerId}`);
-                    if (row) {
-                        row.remove();
-                    }
-                    
-                    // Verificar si la tabla está vacía
-                    checkEmptyTable();
-                    
-                    showSwalAlert('success', 'Éxito', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showSwalAlert('error', 'Error', 'Hubo un problema al restaurar el productor.');
-            });
+async function handleRestoreProducer(producerId, producerName) {
+    const result = await showCustomConfirmation(
+        true,
+        `¿Estás seguro de que deseas restaurar al productor <b>${producerName}</b>?`
+    );
+    
+    if (result.isConfirmed) {
+        Swal.fire({
+            title: 'Restaurando...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            customClass: {
+                popup: 'rounded-xl shadow-lg bg-stone-100/95 dark:bg-custom-gray border border-gray-200 dark:border-gray-700'
+            },
+            didOpen: () => Swal.showLoading()
+        });
+        
+        const data = await makeRequest(`/producers/${producerId}/restore`, 'POST');
+        Swal.close();
+        
+        if (data.success) {
+            removeProducerRow(producerId);
+            showCustomAlert('success', 'Éxito', 'Productor habilitado exitosamente.');
+        } else {
+            showCustomAlert('error', 'Error', data.message);
         }
-    });
+    }
+}
+
+// Función para remover fila con animación
+function removeProducerRow(producerId) {
+    const row = document.getElementById(`producer-row-${producerId}`);
+    if (row) {
+        row.style.transition = 'all 0.3s ease';
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(-100px)';
+        setTimeout(() => {
+            row.remove();
+            checkEmptyTable();
+        }, 300);
+    }
 }
 
 // Función para verificar si la tabla está vacía
 function checkEmptyTable() {
     const table = document.querySelector('#producers-table tbody');
     if (table && table.children.length === 0) {
-        const emptyMessage = document.createElement('tr');
-        emptyMessage.innerHTML = `
-            <td colspan="5" class="text-center py-8">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p class="text-gray-600 dark:text-gray-400">No se encontraron productores.</p>
-            </td>
+        table.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-gray-600 dark:text-gray-400">No se encontraron productores.</p>
+                </td>
+            </tr>
         `;
-        table.appendChild(emptyMessage);
     }
-}
-
-// Función para mostrar alertas
-function showSwalAlert(icon, title, text) {
-    Swal.fire({
-        icon: icon,
-        title: title,
-        text: text,
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true
-    });
 }
 </script>
