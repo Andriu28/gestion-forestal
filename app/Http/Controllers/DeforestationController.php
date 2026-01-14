@@ -106,8 +106,25 @@ class DeforestationController extends Controller
             'main_stats_status' => $mainStatsStatus
         ]);
 
-        return view('deforestation.results', compact('dataToPass'));
+        $result = DB::insert(
+            "INSERT INTO polygons 
+                (name, description, geometry, area_ha, created_at, updated_at)
+             VALUES 
+                (?, ?, ?, ?, ?, ?)",
+            [
+                $dataToPass['polygon_name'],
+                $dataToPass['description'],
+                $dataToPass['original_geojson'],
+                $dataToPass['polygon_area_ha'],
+                now(),
+                now(),
+            ]
+        );
+        
+       return view('deforestation.results', compact('dataToPass'));
     }
+
+    
 
 /**
  * Realiza consultas paralelas para múltiples años usando Guzzle

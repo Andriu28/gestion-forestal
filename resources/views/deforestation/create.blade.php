@@ -464,7 +464,7 @@ document.getElementById('base-map-toggle').addEventListener('click', function(e)
     const menu = document.getElementById('base-map-menu');
     const isShowing = menu.classList.contains('show');
     
-    console.log('✅ Botón mapa clickeado');
+    console.log(' Botón mapa clickeado');
     console.log('   - Menu actual:', menu);
     console.log('   - Clases actuales:', menu.className);
     console.log('   - ¿Mostrando?', isShowing);
@@ -1158,91 +1158,46 @@ function hideEnhancedLoader() {
 
 // Manejar el envío del formulario con AJAX
 document.getElementById('analysis-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const submitButton = document.getElementById('submit-button');
-    const buttonText = document.getElementById('button-text');
-    const spinner = document.getElementById('loading-spinner');
-    const resultsDiv = document.getElementById('results');
-    
     // Validar que haya un polígono dibujado
     const geometry = document.getElementById('geometry').value;
     if (!geometry) {
-        window.deforestationMapInstance.showAlert('Debe dibujar un polígono en el mapa antes de analizar.', 'warning');
-        return;
+        e.preventDefault();
+        showAlert('Debe dibujar un polígono en el mapa antes de analizar.', 'warning');
+        return false;
     }
     
-    // Mostrar loader
-    showEnhancedLoader();
+    // Validar que el área sea mayor a 0
+    const areaHa = parseFloat(document.getElementById('area_ha').value);
+    if (!areaHa || areaHa <= 0) {
+        e.preventDefault();
+        showAlert('El área debe ser mayor a 0 hectáreas.', 'warning');
+        return false;
+    }
     
-    // Deshabilitar el botón y mostrar spinner en el botón
+    // Validar rango de años
+    const startYear = parseInt(document.getElementById('start_year').value);
+    const endYear = parseInt(document.getElementById('end_year').value);
+    if (startYear > endYear) {
+        e.preventDefault();
+        showAlert('El año de inicio no puede ser mayor al año de fin.', 'warning');
+        return false;
+    }
+    
+    // Deshabilitar el botón de envío para evitar múltiples clics
+    const submitButton = document.getElementById('submit-button');
     submitButton.disabled = true;
+    const buttonText = document.getElementById('button-text');
+    const spinner = document.getElementById('loading-spinner');
+    
+    // Mostrar spinner en el botón
     spinner.classList.remove('hidden');
     buttonText.textContent = 'Analizando...';
     
-    // Recoger datos del formulario
-    const formData = new FormData(this);
+    // Mostrar loader overlay (opcional, puedes mantenerlo si quieres)
+    showEnhancedLoader();
     
-    // Enviar con fetch
-    fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Error en la red');
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Ocultar loader
-        hideEnhancedLoader();
-        
-        // Habilitar el botón y ocultar spinner en el botón
-        submitButton.disabled = false;
-        spinner.classList.add('hidden');
-        buttonText.textContent = 'Analizar Deforestación';
-        
-        if (data.success) {
-            resultsDiv.innerHTML = `<div class="mt-4 p-4 bg-green-100 text-green-800 rounded-md">${data.message}</div>`;
-            
-            // Si hay datos de productores, mostrarlos
-            if (data.producers && data.producers.length > 0) {
-                const producersInfo = document.getElementById('producers-info');
-                const producersList = document.getElementById('producers-list');
-                
-                producersList.innerHTML = '';
-                data.producers.forEach(producer => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${producer.name}</td>
-                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${producer.location}</td>
-                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${producer.area_ha.toFixed(2)}</td>
-                    `;
-                    producersList.appendChild(row);
-                });
-                
-                producersInfo.classList.remove('hidden');
-            }
-        } else {
-            resultsDiv.innerHTML = `<div class="mt-4 p-4 bg-red-100 text-red-800 rounded-md">${data.message}</div>`;
-        }
-    })
-    .catch(error => {
-        // Ocultar loader
-        hideEnhancedLoader();
-        
-        // Habilitar el botón y ocultar spinner en el botón
-        submitButton.disabled = false;
-        spinner.classList.add('hidden');
-        buttonText.textContent = 'Analizar Deforestación';
-        
-        resultsDiv.innerHTML = `<div class="mt-4 p-4 bg-red-100 text-red-800 rounded-md">Error: ${error.message}</div>`;
-    });
+    // El formulario se enviará de manera tradicional
+    return true; // Permitir el envío normal del formulario
 });
 
 // Función para calcular área en hectáreas desde coordenadas WGS84
