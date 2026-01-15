@@ -164,3 +164,30 @@
         </div>
     </div>
 </x-app-layout>
+
+<script>
+// Mostrar alertas de éxito/error de Laravel (PolygonController)
+document.addEventListener('DOMContentLoaded', function() {
+    @if(session('success'))
+        showCustomAlert('success', 'Éxito', '{{ session('success') }}');
+    @endif
+    
+    @if(session('error'))
+        showCustomAlert('error', 'Error', '{{ session('error') }}');
+    @endif
+    
+    @if(session('swal')) // Por si algún método de Polygon usa swal también
+        Swal.fire({
+            position: "top-end",
+            icon: '{{ session('swal')['icon'] }}',
+            title: '{{ session('swal')['title'] }}',
+            text: '{{ session('swal')['text'] }}',
+            showConfirmButton: false,
+            timer: 3700,
+            timerProgressBar: true,
+            toast: true,
+            width: '380px'
+        });
+    @endif
+});
+</script>
