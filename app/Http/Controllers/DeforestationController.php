@@ -29,7 +29,20 @@ class DeforestationController extends Controller
      */
     public function create(): View
     {
-        return view('deforestation.create');
+        // Obtener la preferencia guardada de la sesión (si existe)
+        $oldSaveAnalysis = old('save_analysis');
+    
+        if ($oldSaveAnalysis !== null) {
+            // Si hay un valor old (de un envío previo con error)
+            $saveByDefault = ($oldSaveAnalysis === '1' || $oldSaveAnalysis === true || $oldSaveAnalysis === 1);
+        } else {
+            // Si no hay valor old, usar la sesión o el valor por defecto
+            $saveByDefault = session('save_analysis_by_default', true);
+        }
+        
+        return view('deforestation.create', [
+            'saveByDefault' => $saveByDefault
+        ]);
     }
     
    /**
@@ -43,6 +56,10 @@ class DeforestationController extends Controller
         $geometryString = $request->input('geometry');
         $areaHa = (float) $request->input('area_ha');
         $polygonName = $request->input('name', 'Área de Estudio'); // Obtener nombre aquí para consistencia
+        $saveAnalysis = $request->boolean('save_analysis'); // Obtener si se debe guardar
+        $description = $request->input('description', '');
+
+         session(['save_analysis_by_default' => $saveAnalysis]);
 
         // Validar que el rango de años sea válido
         if ($startYear > $endYear) {
@@ -90,7 +107,7 @@ class DeforestationController extends Controller
             'polygon_area_ha' => $areaHa < $totalLossResults['totalDeforestedArea'] ? $totalLossResults['totalDeforestedArea'] : $areaHa,
             'status' => $mainStatsStatus, // Usamos el status del array paralelo
             'polygon_name' => $polygonName,
-            'description' => $request->input('description', ''),
+            'description' => $description,
             'yearly_results' => $yearlyResults,
             'total_loss' => $totalLossResults, // Añadir el resultado del cálculo
         ];
@@ -103,23 +120,39 @@ class DeforestationController extends Controller
             'years_analyzed' => $yearsToAnalyze,
             'yearly_results_count' => count($yearlyResults),
             'total_deforested_area' => $totalLossResults['totalDeforestedArea'],
-            'main_stats_status' => $mainStatsStatus
+            'main_stats_status' => $mainStatsStatus,
+            'save_analysis' => $saveAnalysis
         ]);
 
-        $result = DB::insert(
-            "INSERT INTO polygons 
-                (name, description, geometry, area_ha, created_at, updated_at)
-             VALUES 
-                (?, ?, ?, ?, ?, ?)",
-            [
-                $dataToPass['polygon_name'],
-                $dataToPass['description'],
-                $dataToPass['original_geojson'],
-                $dataToPass['polygon_area_ha'],
-                now(),
-                now(),
-            ]
-        );
+        // 6. GUARDAR EN BASE DE DATOS SOLO SI EL USUARIO LO PERMITE
+        if ($saveAnalysis) {
+            try {
+                $result = DB::insert(
+                    "INSERT INTO polygons 
+                        (name, description, geometry, area_ha, created_at, updated_at)
+                     VALUES 
+                        (?, ?, ?, ?, ?, ?)",
+                    [
+                        $dataToPass['polygon_name'],
+                        $dataToPass['description'],
+                        $dataToPass['original_geojson'],
+                        $dataToPass['polygon_area_ha'],
+                        now(),
+                        now(),
+                    ]
+                );
+                
+                Log::info('Análisis guardado en base de datos exitosamente');
+                
+            } catch (\Exception $e) {
+                Log::error('Error al guardar en base de datos: ' . $e->getMessage());
+                // Continuamos con el análisis aunque falle el guardado, pero informamos al usuario
+                $dataToPass['save_error'] = 'No se pudo guardar el análisis: ' . $e->getMessage();
+            }
+        } else {
+            Log::info('Análisis NO guardado por solicitud del usuario');
+            $dataToPass['save_message'] = 'Este análisis no fue guardado en el historial.';
+        }
         
        return view('deforestation.results', compact('dataToPass'));
     }

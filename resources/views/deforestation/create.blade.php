@@ -317,6 +317,23 @@
                             </select>
                         </div>
                     </div>
+
+                    <div class="mt-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" 
+                                id="save_analysis" 
+                                name="save_analysis" 
+                                value="1" 
+                                class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                {{ old('save_analysis', $saveByDefault) ? 'checked' : '' }}>
+                            <label for="save_analysis" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                                Guardar análisis
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Si desactivas esta opción, el análisis se mostrará pero no se guardará.
+                        </p>
+                    </div>
                         
                         <div class="mb-4">
                             <button type="button" id="import-geojson" class="btn-control">
