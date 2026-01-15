@@ -285,9 +285,18 @@
                         @csrf
                         
                         <div class="mt-4">
-                            <x-input-label for="name" :value="__('Nombre del Área:')" />
-                            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" autocomplete="name" placeholder="Ej: Reserva Natural XYZ" />
-                            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                            <x-input-label for="name" :value="__('Nombre del Área:') " />
+                            <x-text-input 
+                            id="name" 
+                            class="block mt-1 w-full" 
+                            type="text" 
+                            name="name" 
+                            :value="old('name')" 
+                            autocomplete="name" 
+                            placeholder="Ej: Reserva Natural XYZ"
+                            data-required-when-saving="true" />
+                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                        <div id="name-error" class="text-red-600 text-sm mt-1 hidden"></div>
                         </div>
 
                         <div class="mt-4">
@@ -325,14 +334,17 @@
                                 name="save_analysis" 
                                 value="1" 
                                 class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                {{ old('save_analysis', $saveByDefault) ? 'checked' : '' }}>
+                                {{ old('save_analysis', session('save_analysis_by_default', false)) ? 'checked' : '' }}>
                             <label for="save_analysis" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
                                 Guardar análisis
                             </label>
                         </div>
+
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Si desactivas esta opción, el análisis se mostrará pero no se guardará.
+                            <span id="name-required-hint" class="font-semibold text-green-600 hidden"> (Nombre requerido)</span>
                         </p>
+                        
                     </div>
                         
                         <div class="mb-4">
@@ -345,14 +357,21 @@
                         <input type="hidden" name="geometry" id="geometry">
                         <input type="hidden" name="area_ha" id="area_ha">
                         
-                        <button type="submit" id="submit-button" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center">
-                            <span id="loading-spinner" class="hidden mr-2">
-                                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                </svg>
-                            </span>
-                            <span id="button-text">Analizar Deforestación</span>
-                        </button>
+                        <button type="submit" id="submit-button" 
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                            disabled>
+                        <span id="loading-spinner" class="hidden mr-2">
+                            <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </span>
+                        <span id="button-text">Analizar Deforestación</span>
+                    </button>
+
+                    <!-- Agrega este pequeño indicador visual debajo del botón: -->
+                    <div id="button-status" class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center hidden">
+                        Completa los datos requeridos para habilitar el análisis
+                    </div>
                     </form>
                     <!-- create.blade.php - Añadir después del formulario -->
                     <div id="producers-info" class="mt-6 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg hidden">
@@ -1174,6 +1193,77 @@ function hideEnhancedLoader() {
 }
 
 // Manejar el envío del formulario con AJAX
+// Reemplaza el manejador de envío del formulario actual con este:
+
+// Función para validar el formulario en tiempo real
+function validateSaveOption() {
+    const saveCheckbox = document.getElementById('save_analysis');
+    const nameInput = document.getElementById('name');
+    const nameValue = nameInput.value.trim();
+    const nameErrorDiv = document.getElementById('name-error');
+    const nameRequiredHint = document.getElementById('name-required-hint');
+    const submitButton = document.getElementById('submit-button');
+    
+    // Si la casilla de guardar está activada
+    if (saveCheckbox.checked) {
+        // Mostrar indicador de requerido
+        nameRequiredHint.classList.remove('hidden');
+        
+        // Validar que el nombre no esté vacío
+        if (!nameValue) {
+            // Mostrar error
+            nameErrorDiv.textContent = 'Para guardar el análisis, debes ingresar un nombre para el área.';
+            nameErrorDiv.classList.remove('hidden');
+            nameInput.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+            
+            // Deshabilitar el botón de envío
+            submitButton.disabled = true;
+            submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+            return false;
+        } else {
+            // Ocultar error si el nombre está completo
+            nameErrorDiv.classList.add('hidden');
+            nameInput.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+            
+            // Habilitar el botón de envío
+            submitButton.disabled = false;
+            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            return true;
+        }
+    } else {
+        // Si la casilla NO está activada, ocultar mensajes
+        nameRequiredHint.classList.add('hidden');
+        nameErrorDiv.classList.add('hidden');
+        nameInput.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+        
+        // Habilitar el botón de envío (aunque el nombre esté vacío)
+        submitButton.disabled = false;
+        submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        return true;
+    }
+}
+
+// Evento cuando cambia la casilla de guardar
+document.getElementById('save_analysis').addEventListener('change', function(e) {
+    validateSaveOption();
+    
+    // Si se activa y el nombre está vacío, enfocar el campo
+    if (e.target.checked) {
+        const nameValue = document.getElementById('name').value.trim();
+        if (!nameValue) {
+            document.getElementById('name').focus();
+        }
+    }
+});
+
+// Evento cuando se escribe en el campo nombre
+document.getElementById('name').addEventListener('input', function(e) {
+    if (document.getElementById('save_analysis').checked) {
+        validateSaveOption();
+    }
+});
+
+// ===== MANEJADOR DE ENVÍO DEL FORMULARIO ACTUALIZADO =====
 document.getElementById('analysis-form').addEventListener('submit', function(e) {
     // Validar que haya un polígono dibujado
     const geometry = document.getElementById('geometry').value;
@@ -1200,21 +1290,75 @@ document.getElementById('analysis-form').addEventListener('submit', function(e) 
         return false;
     }
     
+    // Validar la casilla de guardar y el nombre
+    const saveCheckbox = document.getElementById('save_analysis');
+    const nameInput = document.getElementById('name');
+    const nameValue = nameInput.value.trim();
+    
+    if (saveCheckbox.checked && !nameValue) {
+        e.preventDefault();
+        nameInput.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+        nameInput.focus();
+        
+        showAlert('Para guardar el análisis, debes ingresar un nombre para el área.', 'warning');
+        return false;
+    }
+    
+    
     // Deshabilitar el botón de envío para evitar múltiples clics
     const submitButton = document.getElementById('submit-button');
-    submitButton.disabled = true;
     const buttonText = document.getElementById('button-text');
     const spinner = document.getElementById('loading-spinner');
     
-    // Mostrar spinner en el botón
+    submitButton.disabled = true;
     spinner.classList.remove('hidden');
-    buttonText.textContent = 'Analizando...';
+    buttonText.textContent = saveCheckbox.checked ? 'Analizando y guardando...' : 'Analizando...';
     
-    // Mostrar loader overlay (opcional, puedes mantenerlo si quieres)
+    // Mostrar loader overlay
     showEnhancedLoader();
     
-    // El formulario se enviará de manera tradicional
-    return true; // Permitir el envío normal del formulario
+    return true;
+});
+
+// ===== INICIALIZACIÓN AL CARGAR LA PÁGINA =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Ejecutar validación inicial
+    validateSaveOption();
+    
+    // Guardar la preferencia en localStorage para persistencia del lado del cliente
+    const savedPreference = localStorage.getItem('saveAnalysisPreference');
+    if (savedPreference !== null) {
+        const checkbox = document.getElementById('save_analysis');
+        checkbox.checked = (savedPreference === 'true');
+        validateSaveOption();
+    }
+    
+    // Guardar preferencia cuando cambie el checkbox
+    document.getElementById('save_analysis').addEventListener('change', function(e) {
+        localStorage.setItem('saveAnalysisPreference', e.target.checked);
+    });
+});
+
+// Validación cuando el usuario escribe en el campo nombre
+document.getElementById('name').addEventListener('input', function(e) {
+    const saveCheckbox = document.getElementById('save_analysis');
+    const nameValue = e.target.value.trim();
+    const nameErrorDiv = document.getElementById('name-error');
+    const nameRequiredHint = document.getElementById('name-required-hint');
+    
+    if (saveCheckbox.checked) {
+        if (!nameValue) {
+            nameInput.classList.add('border-yellow-300', 'ring-1', 'ring-yellow-200');
+            nameErrorDiv.textContent = 'Por favor, ingresa un nombre para el área.';
+            nameErrorDiv.classList.remove('hidden');
+            nameRequiredHint.classList.remove('hidden');
+        } else {
+            nameInput.classList.remove('border-yellow-300', 'ring-1', 'ring-yellow-200', 
+                                       'border-red-500', 'ring-2', 'ring-red-200');
+            nameErrorDiv.classList.add('hidden');
+            nameRequiredHint.classList.remove('hidden');
+        }
+    }
 });
 
 // Función para calcular área en hectáreas desde coordenadas WGS84
@@ -1351,5 +1495,42 @@ function calculatePolygonArea(feature) {
     text-rendering: geometricPrecision;
 }
 
+/* Estilos para campos de formulario */
+.border-red-500 {
+    border-color: #ef4444 !important;
+}
+
+.border-yellow-300 {
+    border-color: #fcd34d !important;
+}
+
+.ring-red-200 {
+    --tw-ring-color: rgba(254, 202, 202, 0.5);
+}
+
+.ring-yellow-200 {
+    --tw-ring-color: rgba(254, 240, 199, 0.5);
+}
+
+/* Transición suave para cambios de estado */
+input[type="text"], textarea, select {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Indicador visual de campo requerido */
+.required-field::after {
+    content: " *";
+    color: #ef4444;
+}
+
+/* Estilo para el mensaje de error */
+#name-error {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 </style>

@@ -37,7 +37,7 @@ class DeforestationController extends Controller
             $saveByDefault = ($oldSaveAnalysis === '1' || $oldSaveAnalysis === true || $oldSaveAnalysis === 1);
         } else {
             // Si no hay valor old, usar la sesión o el valor por defecto
-            $saveByDefault = session('save_analysis_by_default', true);
+            $saveByDefault = session('save_analysis_by_default', false);
         }
         
         return view('deforestation.create', [
@@ -50,13 +50,44 @@ class DeforestationController extends Controller
      */
     public function analyze(Request $request)
     {
+        // Obtener datos
+        $saveAnalysis = $request->boolean('save_analysis');
+        
+        // Validar que si se guarda, el nombre sea obligatorio
+        if ($saveAnalysis) {
+            $request->validate([
+                'name' => 'required|string|min:3|max:255',
+                'start_year' => 'required|integer|min:2001|max:2024',
+                'end_year' => 'required|integer|min:2001|max:2024|gte:start_year',
+                'geometry' => 'required|string',
+                'area_ha' => 'required|numeric|min:0.01',
+                'description' => 'nullable|string|max:1000',
+                'save_analysis' => 'boolean'
+            ], [
+                'name.required' => 'El nombre del área es obligatorio cuando se guarda el análisis.',
+                'name.min' => 'El nombre debe tener al menos 3 caracteres.',
+                'geometry.required' => 'Debe dibujar un polígono en el mapa.',
+                'area_ha.min' => 'El área debe ser mayor a 0 hectáreas.',
+                'end_year.gte' => 'El año de fin debe ser mayor o igual al año de inicio.'
+            ]);
+        } else {
+            $request->validate([
+                'name' => 'nullable|string|max:255',
+                'start_year' => 'required|integer|min:2001|max:2024',
+                'end_year' => 'required|integer|min:2001|max:2024|gte:start_year',
+                'geometry' => 'required|string',
+                'area_ha' => 'required|numeric|min:0.01',
+                'description' => 'nullable|string|max:1000',
+                'save_analysis' => 'boolean'
+            ]);
+        }
+
         // 1. Obtener los datos del Request y asignarlos a variables
         $startYear = (int) $request->input('start_year');
         $endYear = (int) $request->input('end_year');
         $geometryString = $request->input('geometry');
         $areaHa = (float) $request->input('area_ha');
-        $polygonName = $request->input('name', 'Área de Estudio'); // Obtener nombre aquí para consistencia
-        $saveAnalysis = $request->boolean('save_analysis'); // Obtener si se debe guardar
+        $polygonName = $request->input('name', 'Área de Estudio');
         $description = $request->input('description', '');
 
          session(['save_analysis_by_default' => $saveAnalysis]);
