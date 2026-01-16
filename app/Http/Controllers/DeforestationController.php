@@ -181,22 +181,24 @@ class DeforestationController extends Controller
 
                 $newPolygonId = $polygonRow->id;
 
-                // 2. Insertar en la tabla de deforestación usando el ID obtenido
-                DB::insert(
-                    "INSERT INTO deforestation 
-                        (polygon_id, start_year, end_year, deforested_area_ha, percentage_loss, created_at, updated_at)
-                    VALUES 
-                        (?, ?, ?, ?, ?, ?, ?)",
-                    [
-                        $newPolygonId,
-                        $dataToPass['start_year'], 
-                        $dataToPass['end_year'],   
-                        $dataToPass['total_loss']['totalDeforestedArea'],
-                        $dataToPass['total_loss']['totalPercentage'],
-                        now(),
-                        now(),
-                    ]
-                );
+                // 2. Insertar en la tabla de deforestación cada año individualmente
+                foreach ($dataToPass['total_loss']['yearlyBreakdown'] as $yearData) {
+                    
+                    DB::insert(
+                        "INSERT INTO deforestation 
+                            (polygon_id, year, deforested_area_ha, percentage_loss, created_at, updated_at)
+                        VALUES 
+                            (?, ?, ?, ?, ?, ?)",
+                        [
+                            $newPolygonId,
+                            $yearData['year'],           // El año (ej: 2021)
+                            $yearData['area_ha'],        // Hectáreas de ese año
+                            $yearData['percentage'],     // Porcentaje de ese año
+                            now(),
+                            now(),
+                        ]
+                    );
+                }
 
                 Log::info("Análisis guardado exitosamente. Polígono ID: {$newPolygonId}");
             });
@@ -378,28 +380,49 @@ private function isPolygonClosed($coordinates)
      * Calcula la pérdida total acumulada y el porcentaje de deforestación.
      */
     private function calculateTotalLossStats(array $yearlyResults, float $areaHa, int $startYear, int $endYear): array
-    {
+    {   
         $totalDeforestedArea = 0;
         $validYears = 0;
+        $yearlyBreakdown = []; // Arreglo para guardar la deforestación por cada año
 
-        foreach ($yearlyResults as $yearData) {
-            // Se utiliza 'fulfilled' para verificar que la promesa de Guzzle fue exitosa.
+        foreach ($yearlyResults as $year => $yearData) {
+            // Verificamos que la consulta fue exitosa para ese año
             if (isset($yearData['area__ha']) && $yearData['status'] === 'success') {
-                $totalDeforestedArea += $yearData['area__ha'];
+                $currentArea = $yearData['area__ha'];
+                
+                $totalDeforestedArea += $currentArea;
                 $validYears++;
+
+                // Guardamos el detalle de este año específico
+                $yearlyBreakdown[$year] = [
+                    'year' => $year,
+                    'area_ha' => $currentArea,
+                    // Calculamos el porcentaje relativo al área total solo para este año
+                    'percentage' => $areaHa < $currentArea ? 100 : ($currentArea / $areaHa) * 100
+                ];
+            } else {
+                // Opcional: Registrar años que fallaron o no tienen datos
+                $yearlyBreakdown[$year] = [
+                    'year' => $year,
+                    'area_ha' => 0,
+                    'percentage' => 0,
+                    'status' => 'no_data'
+                ];
             }
         }
 
+        // Ajuste de seguridad: el área total no puede ser menor a lo deforestado
         $areaHa = $areaHa < $totalDeforestedArea ? $totalDeforestedArea : $areaHa;
+        
         $totalPercentage = $areaHa > 0 ? ($totalDeforestedArea / $areaHa) * 100 : 0;
         $totalYearsInRange = $endYear - $startYear + 1;
-
 
         return [
             'totalDeforestedArea' => $totalDeforestedArea,
             'totalPercentage' => $totalPercentage,
             'validYears' => $validYears,
             'totalYearsInRange' => $totalYearsInRange,
+            'yearlyBreakdown' => $yearlyBreakdown, 
         ];
     }
 
