@@ -158,24 +158,50 @@ class DeforestationController extends Controller
         // 6. GUARDAR EN BASE DE DATOS SOLO SI EL USUARIO LO PERMITE
         if ($saveAnalysis) {
             try {
-                $result = DB::insert(
+            // Usamos transaction para asegurar la integridad de los datos
+            DB::transaction(function () use ($dataToPass) {
+                
+                // 1. Insertar Polígono y obtener el ID generado
+                // Usamos ST_GeomFromGeoJSON para que PostGIS entienda el mapa
+                $polygonRow = DB::selectOne(
                     "INSERT INTO polygons 
                         (name, description, geometry, area_ha, created_at, updated_at)
-                     VALUES 
-                        (?, ?, ?, ?, ?, ?)",
+                    VALUES 
+                        (?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?, ?)
+                    RETURNING id",
                     [
                         $dataToPass['polygon_name'],
                         $dataToPass['description'],
-                        $dataToPass['original_geojson'],
+                        $dataToPass['original_geojson'], // Debe ser un string JSON
                         $dataToPass['polygon_area_ha'],
                         now(),
                         now(),
                     ]
                 );
-                
-                Log::info('Análisis guardado en base de datos exitosamente');
-                
-            } catch (\Exception $e) {
+
+                $newPolygonId = $polygonRow->id;
+
+                // 2. Insertar en la tabla de deforestación usando el ID obtenido
+                DB::insert(
+                    "INSERT INTO deforestation 
+                        (polygon_id, start_year, end_year, deforested_area_ha, percentage_loss, created_at, updated_at)
+                    VALUES 
+                        (?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        $newPolygonId,
+                        $dataToPass['start_year'], 
+                        $dataToPass['end_year'],   
+                        $dataToPass['total_loss']['totalDeforestedArea'],
+                        $dataToPass['total_loss']['totalPercentage'],
+                        now(),
+                        now(),
+                    ]
+                );
+
+                Log::info("Análisis guardado exitosamente. Polígono ID: {$newPolygonId}");
+            });
+
+        } catch (\Exception $e) {
                 Log::error('Error al guardar en base de datos: ' . $e->getMessage());
                 // Continuamos con el análisis aunque falle el guardado, pero informamos al usuario
                 $dataToPass['save_error'] = 'No se pudo guardar el análisis: ' . $e->getMessage();

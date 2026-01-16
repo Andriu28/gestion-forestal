@@ -15,7 +15,7 @@ return new class extends Migration
             $table->geometry('geometry', 'POLYGON', 4326);
             $table->foreignId('producer_id')->nullable()->constrained()->onDelete('set null'); // ← CAMBIAR
             $table->foreignId('parish_id')->nullable()->constrained()->onDelete('set null');
-            $table->decimal('area_ha', 10, 2)->nullable();
+            $table->decimal('area_ha', 12, 4)->nullable();
             $table->boolean('is_active')->default(true); // ← FALTABA
             $table->string('detected_parish')->nullable();
             $table->string('detected_municipality')->nullable();

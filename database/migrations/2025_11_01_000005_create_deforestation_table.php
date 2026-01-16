@@ -11,14 +11,21 @@ return new class extends Migration
         Schema::create('deforestation', function (Blueprint $table) {
             $table->id();
             $table->foreignId('polygon_id')->constrained()->onDelete('cascade');
-            $table->integer('year');
-            $table->decimal('deforested_area_ha', 10, 2);
+            
+            // Aquí el orden físico que deseas
+            $table->integer('start_year');
+            $table->integer('end_year');
+            
+            // Actualizamos a 4 decimales de una vez
+            $table->decimal('deforested_area_ha', 12, 4);
             $table->decimal('percentage_loss', 5, 2);
+            
             $table->timestamps();
             $table->softDeletes();
             
-            $table->unique(['polygon_id', 'year']);
-            $table->index(['polygon_id', 'year']);
+            // Actualizamos los índices para que coincidan con los nuevos nombres
+            $table->unique(['polygon_id', 'start_year', 'end_year'], 'deforestation_period_unique');
+            $table->index(['polygon_id', 'start_year'], 'deforestation_start_index');
         });
     }
 
