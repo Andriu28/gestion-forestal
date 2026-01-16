@@ -26,11 +26,13 @@ class AuditLogController extends Controller
                   ->orWhereHas('causer', function($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
-                  });
+                  })
+                  // Buscar actividades de sesión
+                  ->orWhere('description', 'like', '%sesión%');
             });
         }
         
-        // Paginar resultados (20 por página)
+        // Paginar resultados (10 por página)
         $activities = $query->paginate(10);
         
         // Si hay búsqueda, mantener el parámetro en los links de paginación
