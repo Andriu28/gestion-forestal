@@ -277,44 +277,52 @@
             
             <div class="space-y-4">
                 @php
-                    $totalActivityTypes = $activityTypes->sum();
                     $activityColors = [
                         'created' => 'bg-green-500',
                         'updated' => 'bg-blue-500',
                         'deleted' => 'bg-red-500',
-                        'restored' => 'bg-yellow-500'
+                        'restored' => 'bg-yellow-500',
+                        'login' => 'bg-purple-500',
+                        'logout' => 'bg-orange-500'
                     ];
+                    
                     $activityLabels = [
                         'created' => 'Creados',
                         'updated' => 'Actualizados',
                         'deleted' => 'Eliminados',
-                        'restored' => 'Restaurados'
+                        'restored' => 'Restaurados',
+                        'login' => 'Inicios de sesión',
+                        'logout' => 'Cierres de sesión'
                     ];
+                    
+                    $totalActivityTypes = $activityTypes->sum();
                 @endphp
                 
                 @foreach($activityTypes as $event => $count)
-                @if($totalActivityTypes > 0)
-                @php
-                    $percentage = round(($count / $totalActivityTypes) * 100, 1);
-                @endphp
-                <div>
-                    <div class="flex justify-between mb-1">
-                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
-                            <span class="w-3 h-3 {{ $activityColors[$event] ?? 'bg-gray-500' }} rounded-full mr-2"></span>
-                            {{ $activityLabels[$event] ?? ucfirst($event) }}
-                        </span>
-                        <span class="text-sm font-bold text-gray-900 dark:text-white">
-                            {{ $count }} ({{ $percentage }}%)
-                        </span>
-                    </div>
-                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div class="{{ $activityColors[$event] ?? 'bg-gray-500' }} h-2 rounded-full" style="width: {{ $percentage }}%"></div>
-                    </div>
-                </div>
-                @endif
+                    @if($count > 0 && isset($activityColors[$event]))
+                        @php
+                            $percentage = $totalActivityTypes > 0 
+                                ? round(($count / $totalActivityTypes) * 100, 1) 
+                                : 0;
+                        @endphp
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                                    <span class="w-3 h-3 {{ $activityColors[$event] }} rounded-full mr-2"></span>
+                                    {{ $activityLabels[$event] }}
+                                </span>
+                                <span class="text-sm font-bold text-gray-900 dark:text-white">
+                                    {{ $count }} ({{ $percentage }}%)
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="{{ $activityColors[$event] }} h-2 rounded-full" style="width: {{ $percentage }}%"></div>
+                            </div>
+                        </div>
+                    @endif
                 @endforeach
                 
-                @if($activityTypes->isEmpty())
+                @if($totalActivityTypes == 0)
                 <div class="text-center py-8 text-gray-500">
                     No hay datos de actividad disponibles
                 </div>
@@ -467,23 +475,46 @@
                         </td>
                         <td class="py-3">
                             @php
+                                // DETECTAR TIPO DE ACTIVIDAD - ACTUALIZADO
+                                $activityType = 'other';
+                                $activityText = '';
+                                
+                                if ($activity->event) {
+                                    // Para actividades de modelos
+                                    $activityType = $activity->event;
+                                } else {
+                                    // Para actividades de sesión
+                                    if (str_contains($activity->description, 'ha iniciado sesión')) {
+                                        $activityType = 'login';
+                                    } elseif (str_contains($activity->description, 'ha cerrado sesión')) {
+                                        $activityType = 'logout';
+                                    }
+                                }
+                                
+                                // Configurar colores y textos
                                 $badgeColors = [
                                     'created' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
                                     'updated' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
                                     'deleted' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-                                    'restored' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                    'restored' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+                                    'login' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+                                    'logout' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
                                 ];
+                                
                                 $eventLabels = [
                                     'created' => 'Creado',
                                     'updated' => 'Actualizado',
                                     'deleted' => 'Eliminado',
-                                    'restored' => 'Restaurado'
+                                    'restored' => 'Restaurado',
+                                    'login' => 'Inicio de sesión',
+                                    'logout' => 'Cierre de sesión'
                                 ];
                             @endphp
-                            <span class="text-xs px-2 py-1 rounded-full {{ $badgeColors[$activity->event] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
-                                {{ $eventLabels[$activity->event] ?? ucfirst($activity->event) }}
+                            <span class="text-xs px-2 py-1 rounded-full {{ $badgeColors[$activityType] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
+                                {{ $eventLabels[$activityType] ?? 'Actividad' }}
                             </span>
                         </td>
+
                         <td class="py-3 text-sm text-gray-600 dark:text-gray-400">
                             {{ class_basename($activity->subject_type ?? 'Sistema') }}
                         </td>

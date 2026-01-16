@@ -58,11 +58,29 @@ class DashboardController extends Controller
             ->pluck('count', 'role');
         
         // 5. Actividades por Tipo
-        $activityTypes = Activity::select('event', DB::raw('count(*) as count'))
-            ->whereIn('event', ['created', 'updated', 'deleted', 'restored'])
-            ->groupBy('event')
+        // 5. Actividades por Tipo - ACTUALIZADO PARA INCLUIR SESIONES
+        $activityTypesRaw = Activity::select(
+                DB::raw("CASE 
+                    WHEN event IS NOT NULL AND event IN ('created', 'updated', 'deleted', 'restored') THEN event
+                    WHEN description LIKE '%ha iniciado sesión%' THEN 'login'
+                    WHEN description LIKE '%ha cerrado sesión%' THEN 'logout'
+                    ELSE 'other'
+                END as activity_type"),
+                DB::raw('COUNT(*) as count')
+            )
+            ->groupBy('activity_type')
             ->get()
-            ->pluck('count', 'event');
+            ->pluck('count', 'activity_type');
+
+        // Organizar en el orden deseado
+        $activityTypes = collect([
+            'created' => $activityTypesRaw['created'] ?? 0,
+            'updated' => $activityTypesRaw['updated'] ?? 0,
+            'deleted' => $activityTypesRaw['deleted'] ?? 0,
+            'restored' => $activityTypesRaw['restored'] ?? 0,
+            'login' => $activityTypesRaw['login'] ?? 0,
+            'logout' => $activityTypesRaw['logout'] ?? 0
+        ]);
         
         // 6. Actividad por Hora (últimas 24h)
         $hourlyActivity = Activity::select(
@@ -117,7 +135,8 @@ class DashboardController extends Controller
             ->get();
         
         // 11. Actividades recientes (para tabla)
-        $recentActivities = Activity::with('causer')
+        // 11. Actividades recientes (para tabla) - SIN FILTROS
+        $recentActivities = Activity::with(['causer', 'subject'])
             ->latest()
             ->take(10)
             ->get();
