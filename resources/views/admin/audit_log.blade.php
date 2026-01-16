@@ -13,7 +13,7 @@
                                placeholder="Buscar por usuario o actividad..." value="{{ $search ?? '' }}">
                         <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Filtrar</button>
                         @if(request('search'))
-                            <a href="{{ route('admin.audit-log') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</a>
+                            <a href="{{ route('admin.audit') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</a>
                         @endif
                     </div>
                 </form>
