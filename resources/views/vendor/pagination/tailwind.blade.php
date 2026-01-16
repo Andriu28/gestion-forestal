@@ -2,7 +2,7 @@
     <nav role="navigation" aria-label="{{ __('Pagination Navigation') }}" class="flex items-center justify-between">
         <div class="flex justify-between flex-1 sm:hidden">
             @if ($paginator->onFirstPage())
-                <span class="relative inline-flex items-center px-3 hover:bg-gray-300/20 hover:dark:bg-gray-600/30 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 cursor-default leading-5 rounded-md dark:text-gray-600 dark:bg-gray-800/30 dark:border-gray-600">
+                <span class="relative inline-flex items-center px-3 hover:bg-gray-300/20 hover:dark:bg-gray-600/30 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 cursor-default leading-5 rounded-md dark:text-gray-100 dark:bg-gray-800/30 dark:border-gray-600">
                     {!! __('pagination.previous') !!}
                 </span>
             @else
@@ -66,7 +66,7 @@
 
                     {{-- Primera página --}}
                     @if ($currentPage == 1)
-                        <span aria-current="page" class="relative inline-flex items-center px-3 hover:bg-gray-300/20 hover:bg-gray-300/40 hover:dark:bg-gray-500/40 py-2 -ml-px text-sm font-medium text-gray-900 bg-gray-300/20 border border-gray-300 cursor-default leading-5 dark:bg-gray-700/70 dark:border-gray-600">
+                        <span aria-current="page" class="relative inline-flex items-center px-3 hover:bg-gray-300/20 hover:bg-gray-300/40 hover:dark:bg-gray-500/40 py-2 -ml-px text-sm font-medium text-gray-900 dark:text-gray-100 bg-gray-300/20 border border-gray-300 cursor-default leading-5 dark:bg-gray-700/70 dark:border-gray-600">
                             1
                         </span>
                     @else
@@ -113,7 +113,7 @@
                     {{-- Última página (si es diferente de la primera) --}}
                     @if ($lastPage > 1)
                         @if ($currentPage == $lastPage)
-                            <span aria-current="page" class="relative inline-flex items-center px-3 hover:bg-gray-300/40 hover:dark:bg-gray-500/40 py-2 -ml-px text-sm font-medium text-gray-900 bg-gray-300/20 border border-gray-300 cursor-default leading-5 dark:bg-gray-700/70 dark:border-gray-600">
+                            <span aria-current="page" class="relative inline-flex items-center px-3 hover:bg-gray-300/40 hover:dark:bg-gray-500/40 py-2 -ml-px text-sm font-medium text-gray-900 dark:text-gray-100 bg-gray-300/20 border border-gray-300 cursor-default leading-5 dark:bg-gray-700/70 dark:border-gray-600">
                                 {{ $lastPage }}
                             </span>
                         @else
