@@ -141,7 +141,7 @@
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2">
                                             @if($activity->properties && $activity->properties->has('old_role') && $activity->properties->has('new_role'))
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                                    Rol: {{ $activity->properties['old_role'] }} → {{ $activity->properties['new_role'] }}
+                                                    Rol: {{ $activity->properties['old_role'] }} -> {{ $activity->properties['new_role'] }}
                                                 </span>
                                             @elseif($activity->properties && $activity->properties->has('updated_fields'))
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">

@@ -170,54 +170,7 @@
         'resources/js/DashFunctions.js'
     ])
     
-    @if(session('swal'))
-    <script>
-        /**
-         * Muestra una alerta tipo toast usando SweetAlert2
-         */
-        document.addEventListener('DOMContentLoaded', function() {
-            const swalData = @json(session('swal'));
-            Swal.fire({
-                position: "top-end",
-                icon: swalData.icon,
-                title: swalData.title,
-                showConfirmButton: false,
-                timer: 3700,
-                timerProgressBar: true,
-                toast: true,
-                width: '380px',
-                padding: '1rem',
-                html: `<div class="text-center">
-                         <p class="text-sm text-gray-700 dark:text-gray-300">${swalData.text ?? ''}</p>
-                       </div>`,
-                customClass: {
-                    popup: 'rounded-xl shadow-lg bg-stone-100/95 dark:bg-custom-gray border border-gray-200 dark:border-gray-700',
-                    title: 'text-lg font-semibold text-gray-900 dark:text-white mb-1',
-                    htmlContainer: 'text-sm text-gray-600 dark:text-gray-300',
-                    timerProgressBar: 'bg-gradient-to-r from-emerald-400 to-emerald-600'
-                },
-                showClass: {
-                    popup: 'animate__animated animate__fadeInRight animate__faster'
-                },
-                hideClass: {
-                    popup: 'animate__animated animate__fadeOutRight animate__faster'
-                },
-                didOpen: (toast) => {
-                    toast.addEventListener('mouseenter', Swal.stopTimer);
-                    toast.addEventListener('mouseleave', Swal.resumeTimer);
-                }
-            });
-            // Limpiar la sesión flash después de mostrar
-            fetch('/clear-swal-session', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json'
-                }
-            });
-        });
-    </script>
-    @endif
+   <!-- quite unos script de aqui y parece que no pasa nada per etare al pendiente -->
     
     @livewireScripts
     

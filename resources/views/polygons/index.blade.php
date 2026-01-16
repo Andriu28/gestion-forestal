@@ -47,6 +47,10 @@
                             </select>
                             
                             <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Filtrar</button>
+
+                            @if(request('search') || (request('status') != 'all' && request()->has('status')) || (request('type') != 'all' && request()->has('type')))
+                                <a href="{{ route('polygons.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</a>
+                            @endif
                         </div>
                     </form>
 

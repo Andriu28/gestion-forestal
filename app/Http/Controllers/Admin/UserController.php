@@ -7,35 +7,63 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth; // <-- Asegúrate de tener esta importación
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
     /**
      * Display a listing of the resource, priorizando el usuario actual.
      */
-    public function index()
+    public function index(Request $request)
     {
+        // Obtener parámetros de filtro
+        $search = $request->get('search');
+        $role = $request->get('role', 'all');
+        $status = $request->get('status', 'active');
+        
         // 1. Obtener el ID del usuario autenticado
         $currentUserId = Auth::id();
         
-        // 2. Obtener los demás usuarios (excluyendo el actual) y paginarlos
-        $otherUsersPaginator = User::where('id', '!=', $currentUserId)
-                                   ->paginate(15);
-
-        // 3. Obtener el objeto del usuario actual
+        // 2. Iniciar query excluyendo el usuario actual
+        $query = User::where('id', '!=', $currentUserId);
+        
+        // Aplicar filtro de búsqueda
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        // Aplicar filtro de rol
+        if ($role !== 'all') {
+            $query->where('role', $role);
+        }
+        
+        // Aplicar filtro de estado
+        if ($status === 'active') {
+            $query->whereNull('deleted_at');
+        } elseif ($status === 'disabled') {
+            $query->onlyTrashed();
+        }
+        // 'all' no necesita filtro especial
+        
+        // 3. Paginar resultados
+        $otherUsersPaginator = $query->paginate(15);
+        
+        // 4. Obtener el objeto del usuario actual
         $currentUser = User::find($currentUserId);
         
-        // 4. Insertar el usuario actual al comienzo de la colección de la página actual
+        // 5. Insertar el usuario actual al comienzo de la colección de la página actual
         // Solo lo hacemos si estamos en la primera página para evitar duplicados en otras páginas.
         if ($otherUsersPaginator->currentPage() === 1 && $currentUser) {
             $otherUsersPaginator->getCollection()->prepend($currentUser);
         }
-
-        // 5. La variable $users ahora contiene el paginador con el usuario actual primero (en la pág. 1)
+        
+        // 6. La variable $users ahora contiene el paginador con el usuario actual primero (en la pág. 1)
         $users = $otherUsersPaginator;
-
-        return view('admin.users.index', compact('users'));
+        
+        return view('admin.users.index', compact('users', 'search', 'role', 'status'));
     }
 
     /**
@@ -148,32 +176,49 @@ class UserController extends Controller
 
    public function enableUser(Request $request, $userId)
     {
-        // USAR withTrashed() para buscar usuarios deshabilitados
-        $user = User::withTrashed()->findOrFail($userId);
-        
-        $user->restore();
+    // USAR withTrashed() para buscar usuarios deshabilitados
+    $user = User::withTrashed()->findOrFail($userId);
 
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Usuario habilitado exitosamente.',
-                'user_id' => $user->id
-            ]);
-        }
+    $user->restore();
 
-        return redirect()->route('admin.users.disabled')
-            ->with('swal', [
-                'icon' => 'success',
-                'title' => 'Éxito',
-                'text' => 'Usuario habilitado exitosamente.'
-            ]);
+    if ($request->ajax()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Usuario habilitado exitosamente.',
+            'user_id' => $user->id
+        ]);
     }
 
-   
+    return redirect()->route('admin.users.disabled')
+        ->with('swal', [
+            'icon' => 'success',
+            'title' => 'Éxito',
+            'text' => 'Usuario habilitado exitosamente.'
+        ]);
+    }
 
-    public function listDisabledUsers()
+     public function listDisabledUsers(Request $request)
     {
-        $users = User::onlyTrashed()->paginate(15); // Obtiene solo los usuarios deshabilitados
-        return view('admin.users.disabled', compact('users'));
+        $search = $request->get('search');
+        $role = $request->get('role', 'all');
+        
+        $query = User::onlyTrashed();
+        
+        // Aplicar filtro de búsqueda
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        // Aplicar filtro de rol
+        if ($role !== 'all') {
+            $query->where('role', $role);
+        }
+        
+        $users = $query->paginate(15);
+        
+        return view('admin.users.disabled', compact('users', 'search', 'role'));
     }
 }
