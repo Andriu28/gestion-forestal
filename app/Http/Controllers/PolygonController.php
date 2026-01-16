@@ -262,15 +262,34 @@ class PolygonController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Polygon $polygon): RedirectResponse
+    public function destroy(Request $request, Polygon $polygon): JsonResponse|RedirectResponse
     {
         try {
             $polygon->delete();
             
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Polígono eliminado exitosamente.',
+                    'polygon_id' => $polygon->id
+                ]);
+            }
+            
+            // Respuesta tradicional
             return redirect()->route('polygons.index')
                 ->with('success', 'Polígono eliminado exitosamente.');
                 
         } catch (\Exception $e) {
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al eliminar el polígono: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            // Respuesta tradicional
             return back()->with('error', 'Error al eliminar el polígono: ' . $e->getMessage());
         }
     }
@@ -278,16 +297,36 @@ class PolygonController extends Controller
     /**
      * Restore the specified soft deleted resource.
      */
-    public function restore($id): RedirectResponse
+    public function restore(Request $request, $id): JsonResponse|RedirectResponse
     {
         try {
             $polygon = Polygon::withTrashed()->findOrFail($id);
             $polygon->restore();
             
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Polígono restaurado exitosamente.',
+                    'polygon_id' => $polygon->id,
+                    'is_active' => $polygon->is_active
+                ]);
+            }
+            
+            // Respuesta tradicional
             return redirect()->route('polygons.index')
                 ->with('success', 'Polígono restaurado exitosamente.');
                 
         } catch (\Exception $e) {
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al restaurar el polígono: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            // Respuesta tradicional
             return back()->with('error', 'Error al restaurar el polígono: ' . $e->getMessage());
         }
     }
@@ -295,17 +334,38 @@ class PolygonController extends Controller
     /**
      * Toggle the active status of the polygon.
      */
-    public function toggleStatus(Polygon $polygon): RedirectResponse
+    public function toggleStatus(Request $request, Polygon $polygon): JsonResponse|RedirectResponse
     {
         try {
             $polygon->update(['is_active' => !$polygon->is_active]);
             
             $status = $polygon->is_active ? 'activado' : 'desactivado';
             
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Polígono {$status} exitosamente.",
+                    'is_active' => $polygon->is_active,
+                    'status_text' => $polygon->is_active ? 'Activo' : 'Inactivo',
+                    'polygon_id' => $polygon->id
+                ]);
+            }
+            
+            // Respuesta tradicional
             return redirect()->route('polygons.index')
                 ->with('success', "Polígono {$status} exitosamente.");
                 
         } catch (\Exception $e) {
+            // Respuesta para AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al cambiar el estado del polígono: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            // Respuesta tradicional
             return back()->with('error', 'Error al cambiar el estado del polígono: ' . $e->getMessage());
         }
     }
