@@ -351,6 +351,8 @@ class DeforestationMap {
         }
     }
 
+    
+
     // =============================================
     // 6. MANEJO DE EVENTOS
     // =============================================
@@ -1112,15 +1114,13 @@ class DeforestationMap {
         if (!toggleButton) return;
 
         let storedState = localStorage.getItem(this.STORAGE_KEY);
-        let isLayerVisible = storedState === 'false' ? false : true;
+        let isLayerVisible = storedState !== 'false'; // true por defecto excepto si es 'false'
         
         this.applyGfwLayerState(isLayerVisible);
-        toggleButton.classList.remove('invisible');
-
+        
         toggleButton.addEventListener('click', () => {
-            isLayerVisible = !isLayerVisible;
-            this.applyGfwLayerState(isLayerVisible);
-            localStorage.setItem(this.STORAGE_KEY, isLayerVisible.toString());
+            const newState = this.toggleGFWVisibility();
+            this.applyGfwLayerState(newState);
         });
     }
 
@@ -1130,17 +1130,64 @@ class DeforestationMap {
      * USADO EN: initializeGfWLayerToggle()
      */
     applyGfwLayerState(isVisible) {
+        if (this.gfwLossLayer) {
+            this.gfwLossLayer.setVisible(isVisible);
+        }
+        
+        // Actualizar iconos en la interfaz
         const iconVisible = document.getElementById('icon-eye-open');
         const iconHidden = document.getElementById('icon-eye-closed');
         
         if (iconVisible && iconHidden) {
-            iconVisible.style.display = isVisible ? 'inline-block' : 'none';
-            iconHidden.style.display = isVisible ? 'none' : 'inline-block';
+            if (isVisible) {
+                iconVisible.classList.remove('hidden');
+                iconHidden.classList.add('hidden');
+            } else {
+                iconVisible.classList.add('hidden');
+                iconHidden.classList.remove('hidden');
+            }
         }
+    }
 
-        if (this.gfwLossLayer) {
-            this.gfwLossLayer.setVisible(isVisible);
+    toggleGFWVisibility() {
+        if (!this.gfwLossLayer) return;
+        
+        const isVisible = !this.gfwLossLayer.getVisible();
+        this.gfwLossLayer.setVisible(isVisible);
+        
+        // Guardar estado en localStorage
+        localStorage.setItem(this.STORAGE_KEY, isVisible.toString());
+        
+        return isVisible;
+    }
+
+    /**
+     * CAMBIA LA CAPA BASE ACTIVA
+     * @param {string} layerKey - Clave de la capa base ('osm', 'satellite', etc.)
+     * USADO EN: Interfaz de usuario (botones de cambio de capa)
+     */
+    changeBaseLayer(layerKey) {
+        console.log(`Cambiando a capa base: ${layerKey}`);
+        
+        // Verificar que la capa exista
+        if (!this.baseLayers[layerKey]) {
+            console.error(`Capa base no encontrada: ${layerKey}`);
+            this.showAlert(`Capa base no encontrada: ${layerKey}`, 'error');
+            return;
         }
+        
+        // Ocultar todas las capas base
+        Object.values(this.baseLayers).forEach(layer => {
+            layer.setVisible(false);
+        });
+        
+        // Mostrar la nueva capa base
+        this.baseLayers[layerKey].setVisible(true);
+        this.currentBaseLayer = this.baseLayers[layerKey];
+        
+        console.log(`Capa base cambiada a: ${layerKey}`);
+        // Opcional: mostrar un mensaje al usuario
+        // this.showAlert(`Capa base cambiada a: ${this.baseLayers[layerKey].get('title')}`, 'success');
     }
 
     // =============================================
