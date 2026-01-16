@@ -22,16 +22,16 @@
                                     <div class="relative">
                                         <button id="visibility-toggle-button" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                             
-                                            {{-- 1. OJO ABIERTO: AHORA OCULTO POR DEFECTO --}}
-                                            <span id="icon-eye-open" class="hidden"> 
+                                            {{-- 1. OJO ABIERTO: VISIBLE POR DEFECTO (porque la capa GFW está visible por defecto) --}}
+                                            <span id="icon-eye-open">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye w-6 h-6">
                                                     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                                                     <circle cx="12" cy="12" r="3"/>
                                                 </svg>
                                             </span>
-                                            
-                                            {{-- 2. OJO CERRADO: AHORA VISIBLE POR DEFECTO --}}
-                                            <span id="icon-eye-closed"> 
+
+                                            {{-- 2. OJO CERRADO: OCULTO POR DEFECTO --}}
+                                            <span id="icon-eye-closed" class="hidden">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off w-6h-6">
                                                     <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
                                                     <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
@@ -1099,24 +1099,7 @@ document.getElementById('clear-map').addEventListener('click', function() {
     }
 });
 
-// Toggle visibilidad de áreas en deforestación
-document.getElementById('visibility-toggle-button').addEventListener('click', function() {
-    if (window.deforestationMapInstance) {
-        window.deforestationMapInstance.toggleGFWVisibility();
-        
-        // Alternar iconos de ojo abierto/cerrado
-        const iconOpen = document.getElementById('icon-eye-open');
-        const iconClosed = document.getElementById('icon-eye-closed');
-        
-        if (iconOpen.classList.contains('hidden')) {
-            iconOpen.classList.remove('hidden');
-            iconClosed.classList.add('hidden');
-        } else {
-            iconOpen.classList.add('hidden');
-            iconClosed.classList.remove('hidden');
-        }
-    }
-});
+
 
 // ===== LOADER DURANTE LA CONSULTA =====
 
@@ -1531,6 +1514,14 @@ input[type="text"], textarea, select {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+#icon-eye-open, #icon-eye-closed {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.hidden {
+    display: none !important;
 }
 
 </style>

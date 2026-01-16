@@ -1108,21 +1108,49 @@ class DeforestationMap {
      * CONFIGURA TOGGLE DE CAPA GFW
      * USADO EN: Constructor
      */
-    initializeGfWLayerToggle() {
-        const toggleButton = document.getElementById('visibility-toggle-button');
-        
-        if (!toggleButton) return;
-
-        let storedState = localStorage.getItem(this.STORAGE_KEY);
-        let isLayerVisible = storedState !== 'false'; // true por defecto excepto si es 'false'
-        
-        this.applyGfwLayerState(isLayerVisible);
-        
-        toggleButton.addEventListener('click', () => {
-            const newState = this.toggleGFWVisibility();
-            this.applyGfwLayerState(newState);
-        });
+    /**
+ /**
+ * CONFIGURA TOGGLE DE CAPA GFW
+ * USADO EN: Constructor
+ */
+initializeGfWLayerToggle() {
+    const toggleButton = document.getElementById('visibility-toggle-button');
+    
+    if (!toggleButton) {
+        console.warn('Botón de visibilidad GFW no encontrado');
+        return;
     }
+
+    // Leer estado guardado (true = visible, false = oculta)
+    let storedState = localStorage.getItem(this.STORAGE_KEY);
+    let isLayerVisible = true; // Por defecto visible
+    
+    if (storedState !== null) {
+        isLayerVisible = storedState === 'true';
+    } else {
+        // Si no hay estado guardado, guardar el estado por defecto
+        localStorage.setItem(this.STORAGE_KEY, isLayerVisible.toString());
+    }
+
+    console.log(`Estado inicial GFW: ${isLayerVisible ? 'VISIBLE' : 'OCULTA'}`);
+    
+    // Aplicar estado inicial a la capa
+    if (this.gfwLossLayer) {
+        this.gfwLossLayer.setVisible(isLayerVisible);
+    }
+    
+    // Actualizar iconos INMEDIATAMENTE con ambas técnicas
+    this.updateGfwIcons(isLayerVisible);
+    
+    // Configurar event listener para el botón
+    toggleButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const newVisibility = this.toggleGFWVisibility();
+        console.log('Nueva visibilidad después de toggle:', newVisibility);
+    });
+    
+    console.log('Toggle GFW configurado correctamente');
+}
 
     /**
      * APLICA ESTADO DE VISIBILIDAD A CAPA GFW
@@ -1147,18 +1175,6 @@ class DeforestationMap {
                 iconHidden.classList.remove('hidden');
             }
         }
-    }
-
-    toggleGFWVisibility() {
-        if (!this.gfwLossLayer) return;
-        
-        const isVisible = !this.gfwLossLayer.getVisible();
-        this.gfwLossLayer.setVisible(isVisible);
-        
-        // Guardar estado en localStorage
-        localStorage.setItem(this.STORAGE_KEY, isVisible.toString());
-        
-        return isVisible;
     }
 
     /**
@@ -1189,6 +1205,87 @@ class DeforestationMap {
         // Opcional: mostrar un mensaje al usuario
         // this.showAlert(`Capa base cambiada a: ${this.baseLayers[layerKey].get('title')}`, 'success');
     }
+
+    /**
+ /**
+ * TOGGLE DE VISIBILIDAD DE CAPA GFW
+ * Alterna la visibilidad de la capa de deforestación GFW
+ * @returns {boolean} Nueva visibilidad
+ * USADO EN: initializeGfWLayerToggle()
+ */
+toggleGFWVisibility() {
+    console.log('=== TOGGLE GFW VISIBILIDAD ===');
+    
+    if (!this.gfwLossLayer) {
+        console.error('Capa GFW no disponible');
+        this.showAlert('La capa de deforestación no está disponible', 'error');
+        return false;
+    }
+    
+    // Obtener visibilidad actual
+    const currentVisibility = this.gfwLossLayer.getVisible();
+    const newVisibility = !currentVisibility;
+    
+    console.log(`Cambiando visibilidad de ${currentVisibility} a ${newVisibility}`);
+    
+    // Cambiar visibilidad en la capa
+    this.gfwLossLayer.setVisible(newVisibility);
+    
+    // Guardar estado en localStorage
+    localStorage.setItem(this.STORAGE_KEY, newVisibility.toString());
+    
+    // Actualizar iconos con FORZADO doble
+    this.updateGfwIcons(newVisibility);
+    
+    // Verificación adicional después de un breve delay
+    setTimeout(() => {
+        const iconOpen = document.getElementById('icon-eye-open');
+        const iconClosed = document.getElementById('icon-eye-closed');
+        console.log('Verificación después de actualizar:');
+        console.log('- iconOpen.display:', iconOpen?.style?.display, 'hidden class:', iconOpen?.classList?.contains('hidden'));
+        console.log('- iconClosed.display:', iconClosed?.style?.display, 'hidden class:', iconClosed?.classList?.contains('hidden'));
+    }, 100);
+    
+    // Mostrar mensaje al usuario
+    const message = newVisibility 
+        ? 'Capa de deforestación GFW ACTIVADA' 
+        : 'Capa de deforestación GFW DESACTIVADA';
+    this.showAlert(message, newVisibility ? 'success' : 'info');
+    
+    return newVisibility;
+}
+
+/**
+ * ACTUALIZA ICONOS DE VISIBILIDAD GFW
+ * @param {boolean} isVisible - Estado de visibilidad
+ * USADO EN: toggleGFWVisibility(), initializeGfWLayerToggle()
+ */
+updateGfwIcons(isVisible) {
+    const iconOpen = document.getElementById('icon-eye-open');
+    const iconClosed = document.getElementById('icon-eye-closed');
+    
+    if (iconOpen && iconClosed) {
+        console.log(`Actualizando iconos - isVisible: ${isVisible}`);
+        
+        if (isVisible) {
+            // Mostrar ojo abierto, ocultar ojo cerrado
+            iconOpen.style.display = 'block';
+            iconClosed.style.display = 'none';
+            iconOpen.classList.remove('hidden');
+            iconClosed.classList.add('hidden');
+        } else {
+            // Mostrar ojo cerrado, ocultar ojo abierto
+            iconOpen.style.display = 'none';
+            iconClosed.style.display = 'block';
+            iconOpen.classList.add('hidden');
+            iconClosed.classList.remove('hidden');
+        }
+        
+        console.log(`Estado después: iconOpen.display=${iconOpen.style.display}, iconClosed.display=${iconClosed.style.display}`);
+    } else {
+        console.error('No se encontraron los iconos de visibilidad:', { iconOpen, iconClosed });
+    }
+}
 
     // =============================================
     // 13. UTILIDADES
