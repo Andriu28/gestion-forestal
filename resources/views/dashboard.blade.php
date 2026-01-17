@@ -630,12 +630,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const circle = document.getElementById(circleId);
         if (!circle) return;
         
-        const circumference = 220; // 2 * π * r (35 * 2 * 3.14 ≈ 220)
+        const circumference = 235; // 2 * π * r (35 * 2 * 3.14 ≈ 220)
         const offset = circumference - (percentage / 100) * circumference;
         
         // Animar con requestAnimationFrame para suavidad
         let start = null;
-        const startOffset = 220;
+        const startOffset = 235;
         const endOffset = offset;
         
         const animate = (timestamp) => {

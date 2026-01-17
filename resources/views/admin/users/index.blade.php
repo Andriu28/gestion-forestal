@@ -74,9 +74,6 @@
                                                     <div class="text-sm font-medium text-gray-900 dark:text-gray-400">
                                                         {{ $user->name }}
                                                     </div>
-                                                    <div class="text-xs text-gray-500 dark:text-gray-500">
-                                                        ID: {{ $user->id }}
-                                                    </div>
                                                 </div>
                                             </div>
                                         </td>

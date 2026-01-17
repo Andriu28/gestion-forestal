@@ -137,6 +137,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // LUEGO la ruta resource (genérica)
     Route::resource('polygons', PolygonController::class);
 
+    Route::get('/polygons/{polygon}/details', [PolygonController::class, 'details'])
+    ->name('polygons.details')
+    ->middleware('auth');
+
        // Grupo de rutas para deforestación - CORREGIDO
     Route::prefix('deforestation')->name('deforestation.')->group(function () {
         
