@@ -181,8 +181,7 @@
                 'profile.*' => [
                     'title' => 'Perfil de Usuario',
                     'sections' => [
-                        'profile.edit' => 'Editar perfil',
-                        'profile.update' => 'Actualizar perfil'
+                        'profile' => 'Editar perfil'
                     ]
                 ]
             ];
