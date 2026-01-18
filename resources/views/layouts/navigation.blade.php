@@ -132,7 +132,10 @@
             $routeNames = [
                 'dashboard' => 'Inicio',
                 'admin.users.*' => 'Usuarios',
-                'profile.*' => 'Pefil de Usuario',
+                'polygons*' => 'Poligonos',
+                'producers*' => 'Productores',
+                'deforestation*' => 'Deforestación',
+                'profile.*' => 'Perfil de Usuario',
                 'admin.audit' => 'Historial', // Aplica a cualquier ruta que empiece con "posts."
             ];
             
