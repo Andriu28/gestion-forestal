@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Polygon;
 use App\Services\DeforestationService;
+use App\Models\Deforestation;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
@@ -156,62 +157,79 @@ class DeforestationController extends Controller
         ]);
 
         // 6. GUARDAR EN BASE DE DATOS SOLO SI EL USUARIO LO PERMITE
-        if ($saveAnalysis) {
-            try {
-            // Usamos transaction para asegurar la integridad de los datos
-            DB::transaction(function () use ($dataToPass) {
-                
-                // 1. Insertar Polígono y obtener el ID generado
-                // Usamos ST_GeomFromGeoJSON para que PostGIS entienda el mapa
-                $polygonRow = DB::selectOne(
-                    "INSERT INTO polygons 
-                        (name, description, geometry, area_ha, created_at, updated_at)
+        // En el método analyze(), dentro de la condición if ($saveAnalysis):
+if ($saveAnalysis) {
+    try {
+        // Declarar la variable fuera de la transacción
+        $newPolygonId = null;
+        
+        DB::transaction(function () use ($dataToPass, &$newPolygonId) { // Usar & para pasar por referencia
+            
+            // 1. Insertar Polígono
+            $polygonRow = DB::selectOne(
+                "INSERT INTO polygons 
+                    (name, description, geometry, area_ha, created_at, updated_at)
+                VALUES 
+                    (?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?, ?)
+                RETURNING id",
+                [
+                    $dataToPass['polygon_name'],
+                    $dataToPass['description'],
+                    $dataToPass['original_geojson'],
+                    $dataToPass['polygon_area_ha'],
+                    now(),
+                    now(),
+                ]
+            );
+
+            $newPolygonId = $polygonRow->id;
+
+            // 2. Insertar análisis de deforestación
+            foreach ($dataToPass['total_loss']['yearlyBreakdown'] as $yearData) {
+                DB::insert(
+                    "INSERT INTO deforestation 
+                        (polygon_id, year, deforested_area_ha, percentage_loss, created_at, updated_at)
                     VALUES 
-                        (?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?, ?)
-                    RETURNING id",
+                        (?, ?, ?, ?, ?, ?)",
                     [
-                        $dataToPass['polygon_name'],
-                        $dataToPass['description'],
-                        $dataToPass['original_geojson'], // Debe ser un string JSON
-                        $dataToPass['polygon_area_ha'],
+                        $newPolygonId,
+                        $yearData['year'],
+                        $yearData['area_ha'],
+                        $yearData['percentage'],
                         now(),
                         now(),
                     ]
                 );
-
-                $newPolygonId = $polygonRow->id;
-
-                // 2. Insertar en la tabla de deforestación cada año individualmente
-                foreach ($dataToPass['total_loss']['yearlyBreakdown'] as $yearData) {
-                    
-                    DB::insert(
-                        "INSERT INTO deforestation 
-                            (polygon_id, year, deforested_area_ha, percentage_loss, created_at, updated_at)
-                        VALUES 
-                            (?, ?, ?, ?, ?, ?)",
-                        [
-                            $newPolygonId,
-                            $yearData['year'],           // El año (ej: 2021)
-                            $yearData['area_ha'],        // Hectáreas de ese año
-                            $yearData['percentage'],     // Porcentaje de ese año
-                            now(),
-                            now(),
-                        ]
-                    );
-                }
-
-                Log::info("Análisis guardado exitosamente. Polígono ID: {$newPolygonId}");
-            });
-
-        } catch (\Exception $e) {
-                Log::error('Error al guardar en base de datos: ' . $e->getMessage());
-                // Continuamos con el análisis aunque falle el guardado, pero informamos al usuario
-                $dataToPass['save_error'] = 'No se pudo guardar el análisis: ' . $e->getMessage();
             }
+
+            Log::info("Análisis guardado. Polígono ID: {$newPolygonId}");
+        });
+
+        // IMPORTANTE: Verificar que $newPolygonId fue asignado
+        if ($newPolygonId) {
+            // Guardar el ID en $dataToPass
+            $dataToPass['polygon_id'] = $newPolygonId;
+            
+            // Guardar también en sesión para uso posterior
+            session(['last_polygon_id' => $newPolygonId]);
+            
+            session()->flash('save_success', 'Análisis guardado exitosamente. ID: ' . $newPolygonId);
+            
+            Log::info("Polígono ID asignado a dataToPass: {$newPolygonId}");
         } else {
-            Log::info('Análisis NO guardado por solicitud del usuario');
-            $dataToPass['save_message'] = 'Este análisis no fue guardado en el historial.';
+            throw new \Exception("No se pudo obtener el ID del polígono insertado");
         }
+
+    } catch (\Exception $e) {
+        Log::error('Error al guardar en base de datos: ' . $e->getMessage());
+        Log::error('Trace completo: ' . $e->getTraceAsString());
+        
+        $dataToPass['save_error'] = 'No se pudo guardar el análisis: ' . $e->getMessage();
+    }
+} else {
+    Log::info('Análisis NO guardado por solicitud del usuario');
+    $dataToPass['save_message'] = 'Este análisis no fue guardado en el historial.';
+}
         
        return view('deforestation.results', compact('dataToPass'));
     }
@@ -446,12 +464,85 @@ private function isPolygonClosed($coordinates)
         return response()->json(['message' => 'Export functionality to be implemented']);
     }
     
-    /**
-     * Genera reporte PDF (placeholder)
+   /**
+     * Genera reporte PDF de los resultados
      */
     public function report($polygonId)
     {
-        // Implementar lógica de reporte PDF
-        return response()->json(['message' => 'PDF report functionality to be implemented']);
+        try {
+            $polygon = Polygon::with('deforestationAnalyses')->findOrFail($polygonId);
+            
+            // Verificar que haya análisis guardados
+            if ($polygon->deforestationAnalyses->isEmpty()) {
+                if (request()->expectsJson()) {
+                    return response()->json([
+                        'error' => 'No hay datos de análisis disponibles para este polígono. 
+                                Primero debe ejecutar y guardar un análisis.'
+                    ], 404);
+                }
+                
+                return back()->withErrors(['error' => 'No hay datos de análisis disponibles para este polígono.']);
+            }
+            
+            // Obtener análisis ordenados por año
+            $analyses = $polygon->deforestationAnalyses->sortBy('year');
+            
+            // Calcular estadísticas
+            $startYear = $analyses->min('year');
+            $endYear = $analyses->max('year');
+            $totalDeforestedArea = $analyses->sum('deforested_area_ha');
+            $polygonArea = $polygon->area_ha ?? 0;
+            $totalPercentage = $polygonArea > 0 ? ($totalDeforestedArea / $polygonArea) * 100 : 0;
+            $conservedArea = max(0, $polygonArea - $totalDeforestedArea);
+            
+            // Preparar datos para la vista
+            $data = [
+                'polygon' => $polygon,
+                'analyses' => $analyses->values(),
+                'start_year' => $startYear,
+                'end_year' => $endYear,
+                'totalDeforestedArea' => $totalDeforestedArea,
+                'totalPercentage' => $totalPercentage,
+                'conservedArea' => $conservedArea,
+                'report_date' => now()->format('d/m/Y H:i:s'),
+                'isFromSaved' => true,
+            ];
+
+            Log::info('Generando PDF para polígono:', [
+                'polygon_id' => $polygonId,
+                'analyses_count' => $analyses->count(),
+                'total_area' => $totalDeforestedArea,
+                'polygon_area' => $polygonArea
+            ]);
+
+            // Generar PDF
+            $pdf = \PDF::loadView('deforestation.report-pdf', $data)
+                ->setPaper('a4', 'portrait')
+                ->setOptions([
+                    'defaultFont' => 'sans-serif',
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => true,
+                    'chroot' => public_path(),
+                ]);
+            
+            // Limpiar nombre para el archivo
+            $cleanName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $polygon->name);
+            $filename = "reporte-deforestacion-{$cleanName}-" . now()->format('Y-m-d') . '.pdf';
+            
+            // Descargar el PDF
+            return $pdf->download($filename);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al generar PDF: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'error' => 'Error al generar el reporte: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return back()->withErrors(['error' => 'Error al generar el reporte PDF: ' . $e->getMessage()]);
+        }
     }
 }

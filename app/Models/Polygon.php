@@ -205,4 +205,15 @@ class Polygon extends Model
         }
         return null;
     }
+
+    public function deforestationAnalyses()
+    {
+        return $this->hasMany(Deforestation::class, 'polygon_id');
+    }
+
+    // También deberías tener una relación alias para mantener compatibilidad
+    public function analyses()
+    {
+        return $this->hasMany(Deforestation::class, 'polygon_id');
+    }
 }

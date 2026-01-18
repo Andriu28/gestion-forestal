@@ -1,4 +1,26 @@
 <x-app-layout>
+    @if(session('save_success'))
+    <div class="save-message success">
+        <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            {{ session('save_success') }}
+        </div>
+    </div>
+@endif
+
+@if(isset($dataToPass['save_message']))
+    <div class="save-message info">
+        {{ $dataToPass['save_message'] }}
+    </div>
+@endif
+
+@if(isset($dataToPass['save_error']))
+    <div class="save-message error">
+        {{ $dataToPass['save_error'] }}
+    </div>
+@endif
     <div class="mx-auto ">
         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-8 ">
             @if (session('success'))
@@ -205,123 +227,46 @@
                 </div>
 
                 <div class="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <a href="{{ route('deforestation.create') }}" class="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white  bg-blue-600 dark:bg-blue-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                        Iniciar un Nuevo Análisis
-                    </a>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="{{ route('deforestation.create') }}" 
+                        class="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 dark:bg-blue-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                            Iniciar un Nuevo Análisis
+                        </a>
+                        
+                        <!-- Botón para descargar PDF -->
+                        @if(isset($dataToPass['polygon_id']) && $dataToPass['polygon_id'])
+                            <a href="{{ route('deforestation.report', ['polygon' => $dataToPass['polygon_id']]) }}" 
+                            target="_blank"
+                            class="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Descargar PDF
+                            </a>
+                        @elseif(session('last_polygon_id'))
+                            <a href="{{ route('deforestation.report', ['polygon' => session('last_polygon_id')]) }}" 
+                            target="_blank"
+                            class="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Descargar PDF
+                            </a>
+                        @else
+                            <button onclick="alert('Para descargar el PDF, primero debe guardar el análisis.');"
+                                    class="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-gray-400 cursor-not-allowed">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Guarde el análisis para descargar PDF
+                            </button>
+                        @endif
+                        
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Panel de depuración - SOLO PARA DESARROLLO -->
-<div class="mt-8 border-t border-red-300 pt-4">
-    <button onclick="toggleDebug()" 
-            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-        🔍 Mostrar/Ocultar Información de Depuración
-    </button>
-    
-    <div id="debug-panel" class="hidden mt-4 p-4 bg-gray-900 text-gray-100 rounded-lg overflow-auto max-h-96">
-        <h4 class="text-lg font-bold mb-2 text-yellow-300">📊 Datos de Depuración</h4>
-        
-        <!-- Información de $dataToPass -->
-        <div class="mb-4">
-            <h5 class="font-bold text-blue-300 mb-1">🔵 Variable: $dataToPass</h5>
-            <pre class="bg-gray-800 p-3 rounded text-sm overflow-auto">@json($dataToPass, JSON_PRETTY_PRINT)</pre>
-        </div>
-        
-        <!-- Variables específicas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <h5 class="font-bold text-green-300 mb-1">📋 Variables Disponibles:</h5>
-                <div class="bg-gray-800 p-3 rounded text-sm">
-                    <ul class="space-y-1">
-                        @php
-                            $definedVars = get_defined_vars();
-                            $viewVars = [];
-                            foreach ($definedVars as $key => $value) {
-                                if ($key !== '__env' && $key !== 'app' && !str_starts_with($key, '_')) {
-                                    $type = gettype($value);
-                                    $viewVars[$key] = $type;
-                                }
-                            }
-                        @endphp
-                        @foreach($viewVars as $varName => $varType)
-                            <li>
-                                <span class="font-mono text-yellow-200">{{ $varName }}</span>: 
-                                <span class="text-blue-200">{{ $varType }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
-            
-            <div>
-                <h5 class="font-bold text-purple-300 mb-1">📈 Datos Específicos:</h5>
-                <div class="bg-gray-800 p-3 rounded text-sm">
-                    @php
-                        $specificData = [
-                            'polygon_area_ha' => $dataToPass['polygon_area_ha'] ?? 'N/A',
-                            'area__ha' => $dataToPass['area__ha'] ?? 'N/A',
-                            'start_year' => $dataToPass['start_year'] ?? 'N/A',
-                            'end_year' => $dataToPass['end_year'] ?? 'N/A',
-                            'status' => $dataToPass['status'] ?? 'N/A',
-                            'type' => $dataToPass['type'] ?? 'N/A',
-                        ];
-                    @endphp
-                    @foreach($specificData as $key => $value)
-                        <div class="flex justify-between py-1 border-b border-gray-700">
-                            <span class="text-gray-300">{{ $key }}:</span>
-                            <span class="font-bold text-white">{{ $value }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-        
-        <!-- Datos anuales -->
-        @if(isset($dataToPass['yearly_results']) && is_array($dataToPass['yearly_results']))
-        <div class="mt-4">
-            <h5 class="font-bold text-cyan-300 mb-1">📅 Datos Anuales (yearly_results):</h5>
-            <div class="bg-gray-800 p-3 rounded text-sm overflow-auto">
-                <table class="min-w-full">
-                    <thead>
-                        <tr class="bg-gray-700">
-                            <th class="px-2 py-1 text-left">Año</th>
-                            <th class="px-2 py-1 text-left">Área (ha)</th>
-                            <th class="px-2 py-1 text-left">Estado</th>
-                            <th class="px-2 py-1 text-left">Tipo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($dataToPass['yearly_results'] as $year => $data)
-                            @if(is_array($data))
-                            <tr class="border-b border-gray-700">
-                                <td class="px-2 py-1 font-bold">{{ $year }}</td>
-                                <td class="px-2 py-1">{{ $data['area__ha'] ?? 'N/A' }}</td>
-                                <td class="px-2 py-1">
-                                    <span class="px-2 py-1 rounded text-xs 
-                                        {{ ($data['status'] ?? '') === 'success' ? 'bg-green-500' : 'bg-red-500' }}">
-                                        {{ $data['status'] ?? 'N/A' }}
-                                    </span>
-                                </td>
-                                <td class="px-2 py-1">{{ $data['type'] ?? 'N/A' }}</td>
-                            </tr>
-                            @else
-                            <tr class="border-b border-gray-700">
-                                <td class="px-2 py-1 font-bold">{{ $year }}</td>
-                                <td colspan="3" class="px-2 py-1 text-red-300">
-                                    {{ is_string($data) ? $data : 'Dato no válido' }}
-                                </td>
-                            </tr>
-                            @endif
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        @endif
-    </div>
-</div>
 
 <script>
 function toggleDebug() {
@@ -1063,5 +1008,55 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
+/* Estilos para botones de acción */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-button:active {
+    transform: translateY(0);
+}
+
+/* Estilos para mensajes de estado */
+.save-message {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.save-message.success {
+    background-color: #d1fae5;
+    border: 1px solid #10b981;
+    color: #065f46;
+}
+
+.save-message.error {
+    background-color: #fee2e2;
+    border: 1px solid #ef4444;
+    color: #991b1b;
+}
+
+.save-message.info {
+    background-color: #dbeafe;
+    border: 1px solid #3b82f6;
+    color: #1e40af;
+}
 /* fin de los estilos para la edicion de años */
 </style>
