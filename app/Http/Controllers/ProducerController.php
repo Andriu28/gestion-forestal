@@ -295,4 +295,43 @@ class ProducerController extends Controller
                 ]);
         }
     }
+
+    /**
+ * Obtiene los detalles de un productor para mostrar en modal.
+ */
+public function details(Request $request, $id)
+{
+    try {
+        $producer = Producer::withTrashed()->findOrFail($id);
+        
+        // Contar polígonos asociados (si tienes la relación)
+        $polygonsCount = 0;
+        if (method_exists($producer, 'polygons')) {
+            $polygonsCount = $producer->polygons()->count();
+        }
+        
+        $producerData = [
+            'id' => $producer->id,
+            'name' => $producer->name,
+            'lastname' => $producer->lastname,
+            'description' => $producer->description,
+            'is_active' => $producer->is_active,
+            'deleted_at' => $producer->deleted_at,
+            'created_at' => $producer->created_at,
+            'updated_at' => $producer->updated_at,
+            'polygons_count' => $polygonsCount,
+        ];
+        
+        return response()->json([
+            'success' => true,
+            'producer' => $producerData
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al cargar los detalles del productor: ' . $e->getMessage()
+        ], 500);
+    }
+}
 }

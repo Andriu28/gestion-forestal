@@ -141,6 +141,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     ->name('polygons.details')
     ->middleware('auth');
 
+    Route::get('/producers/{producer}/details', [ProducerController::class, 'details'])
+    ->name('producers.details');
+
        // Grupo de rutas para deforestación - CORREGIDO
     Route::prefix('deforestation')->name('deforestation.')->group(function () {
         

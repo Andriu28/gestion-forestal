@@ -673,6 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Detectar ubicación
+    // Detectar ubicación
     detectBtn.addEventListener('click', async () => {
         const val = geometryInput.value;
         if (!val) { showMessage('Dibuja un polígono primero', 'error'); return; }
@@ -700,22 +701,29 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('location_data').value = JSON.stringify(data);
 
             const address = data.address || {};
-            const parish = address.county || address.suburb || address.village || address.town || address.city || '';
-            const municipality = address.municipality || address.county || address.city || '';
+            const municipality = address.county || address.suburb || address.village || address.town || address.city || '';
+            const parish = address.municipality || address.county || address.city || '';
             const state = address.state || address.region || '';
 
-            document.getElementById('detected_parish').value = parish;
-            document.getElementById('detected_municipality').value = municipality;
-            document.getElementById('detected_state').value = state;
+            // Limpiar prefijos de las variables
+            const cleanParish = parish ? parish.toString().replace('Parroquia ', '').replace('Municipio ', '').trim() : '';
+            const cleanMunicipality = municipality ? municipality.toString().replace('Municipio ', '').trim() : '';
+            const cleanState = state ? state.toString().replace('Estado ', '').trim() : '';
 
-            document.getElementById('detected-parish-text').textContent = parish || 'No detectado';
-            document.getElementById('detected-municipality-text').textContent = municipality || 'No detectado';
-            document.getElementById('detected-state-text').textContent = state || 'No detectado';
+            // CORRECCIÓN: Asignar las variables LIMPIAS a los campos ocultos
+            document.getElementById('detected_parish').value = cleanParish;
+            document.getElementById('detected_municipality').value = cleanMunicipality;
+            document.getElementById('detected_state').value = cleanState;
+
+            // Actualizar la interfaz con los valores limpios
+            document.getElementById('detected-parish-text').textContent = cleanParish || 'No detectado';
+            document.getElementById('detected-municipality-text').textContent = cleanMunicipality || 'No detectado';
+            document.getElementById('detected-state-text').textContent = cleanState || 'No detectado';
             document.getElementById('detected-coords-text').textContent = `${centroid.lat.toFixed(6)}, ${centroid.lng.toFixed(6)}`;
 
             document.getElementById('location-info').classList.remove('hidden');
 
-            // Intentar asignar parroquia automáticamente
+            // Intentar asignar parroquia automáticamente con los valores limpios
             try {
                 const assignResp = await fetch('{{ route("polygons.find-parish-api") }}', {
                     method: 'POST',
@@ -723,10 +731,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
+                    // CORRECCIÓN: Usar los valores limpios
                     body: JSON.stringify({
-                        parish_name: parish ? parish.toString().toLowerCase().trim() : '',
-                        municipality_name: municipality ? municipality.toString().toLowerCase().trim() : '',
-                        state_name: state ? state.toString().toLowerCase().trim() : ''
+                        parish_name: cleanParish ? cleanParish.toLowerCase().trim() : '',
+                        municipality_name: cleanMunicipality ? cleanMunicipality.toLowerCase().trim() : '',
+                        state_name: cleanState ? cleanState.toLowerCase().trim() : ''
                     })
                 });
                 const assignJson = await assignResp.json();
