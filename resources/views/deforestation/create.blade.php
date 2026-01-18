@@ -1520,8 +1520,4 @@ input[type="text"], textarea, select {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.hidden {
-    display: none !important;
-}
-
 </style>

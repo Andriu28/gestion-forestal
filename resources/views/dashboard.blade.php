@@ -3,7 +3,7 @@
     
     <!-- Header del Dashboard -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Panel de Control</h1>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Panel de Inicio</h1>
         <p class="text-gray-600 dark:text-gray-400">
             {{ now()->translatedFormat('l, d \\d\\e F \\d\\e Y') }}
         </p>
@@ -23,7 +23,7 @@
                 </div>
                 <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                     <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-8A8.5 8.5 0 1112 3.5a8.5 8.5 0 018.5 8.5z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16 11 2 2 4-4"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle stroke-linecap="round" stroke-linejoin="round" stroke-width="2" cx="9" cy="7" r="4"/>
                     </svg>
                 </div>
             </div>
@@ -630,12 +630,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const circle = document.getElementById(circleId);
         if (!circle) return;
         
-        const circumference = 220; // 2 * π * r (35 * 2 * 3.14 ≈ 220)
+        const circumference = 235; // 2 * π * r (35 * 2 * 3.14 ≈ 220)
         const offset = circumference - (percentage / 100) * circumference;
         
         // Animar con requestAnimationFrame para suavidad
         let start = null;
-        const startOffset = 220;
+        const startOffset = 235;
         const endOffset = offset;
         
         const animate = (timestamp) => {
