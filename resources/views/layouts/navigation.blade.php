@@ -129,26 +129,89 @@
     <div class="flex-1 flex flex-col overflow-hidden">
         <!-- Este codigo usa un arreglo para  especificar segun la ruta en la cabecera donde esta ubicado -->
         @php
-            $routeNames = [
-                'dashboard' => 'Inicio',
-                'admin.users.*' => 'Usuarios',
-                'polygons*' => 'Poligonos',
-                'producers*' => 'Productores',
-                'deforestation*' => 'Deforestación',
-                'profile.*' => 'Perfil de Usuario',
-                'admin.audit' => 'Historial', // Aplica a cualquier ruta que empiece con "posts."
+            $routeHierarchy = [
+                'dashboard' => [
+                    'title' => 'Inicio',
+                    'sections' => [
+                        'dashboard' => 'Resumen'
+                    ]
+                ],
+                'admin.users.*' => [
+                    'title' => 'Usuarios',
+                    'sections' => [
+                        'admin.users.index' => 'Lista de habilitados',
+                        'admin.users.disabled' => 'Lista de deshabilitados',
+                        'admin.users.create' => 'Crear',
+                        'admin.users.edit' => 'Editar usuario',
+                        'admin.users.show' => 'Ver usuario'
+                    ]
+                ],
+                'polygons*' => [
+                    'title' => 'Polígonos',
+                    'sections' => [
+                        'polygons.index' => 'Resumen',
+                        'polygons.create' => 'Crear',
+                        'polygons.edit' => 'Editar polígono',
+                        'polygons.map' => 'Mapa de polígonos',
+                        'polygons.show' => 'Ver polígono'
+                    ]
+                ],
+                'producers*' => [
+                    'title' => 'Productores',
+                    'sections' => [
+                        'producers.index' => 'Resumen',
+                        'producers.create' => 'Crear',
+                        'producers.edit' => 'Editar',
+                        'producers.show' => 'Ver productor'
+                    ]
+                ],
+                'deforestation*' => [
+                    'title' => 'Deforestación',
+                    'sections' => [
+                        'deforestation.create' => 'Análisis',
+                        'deforestation.analyze' => 'Resultados'
+                    ]
+                ],
+                'admin.audit' => [
+                    'title' => 'Historial',
+                    'sections' => [
+                        'admin.audit' => 'Registros de auditoría'
+                    ]
+                ],
+                'profile.*' => [
+                    'title' => 'Perfil de Usuario',
+                    'sections' => [
+                        'profile.edit' => 'Editar perfil',
+                        'profile.update' => 'Actualizar perfil'
+                    ]
+                ]
             ];
             
-            $currentRouteName = 'Página Principal'; // Valor por defecto
+            $currentRoute = Route::currentRouteName();
+            $currentTitle = 'Página Principal';
+            $currentSection = 'Resumen';
             
-            foreach ($routeNames as $route => $name) {
-                if (request()->routeIs($route)) {
-                    $currentRouteName = $name;
+            foreach ($routeHierarchy as $routePattern => $routeData) {
+                if (request()->routeIs($routePattern)) {
+                    $currentTitle = $routeData['title'];
+                    
+                    // Buscar la sección específica
+                    foreach ($routeData['sections'] as $sectionRoute => $sectionName) {
+                        if (request()->routeIs($sectionRoute)) {
+                            $currentSection = $sectionName;
+                            break;
+                        }
+                    }
+                    
+                    // Si no encontramos una sección específica, usar la primera
+                    if ($currentSection === 'Resumen' && !empty($routeData['sections'])) {
+                        $currentSection = reset($routeData['sections']);
+                    }
                     break;
                 }
             }
         @endphp
-<!-- Cabecera del sistema -->
+        <!-- Cabecera del sistema -->
         <header class="headi bg-stone-100/90 dark:bg-custom-gray px-4 md:px-6 lg:px-8 py-1 md:py-1  shadow-soft">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3 md:space-x-6">
@@ -158,11 +221,15 @@
                         </svg>
                     </button>
                     <nav class="hidden sm:flex items-center space-x-2 md:space-x-3 text-sm">
-                        <a href="#" class="text-gray-800 dark:text-custom-gold-medium hover:text-gray-950  px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700/50">{{ $currentRouteName }}</a>
+                        <div class="text-gray-800 dark:text-custom-gold-medium hover:text-gray-950 px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700/50">
+                            {{ $currentTitle }}
+                        </div>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon w-3 h-3 md:w-4 md:h-4 text-gray-400 lucide-chevron-right">
                             <path d="m9 18 6-6-6-6"/>
                         </svg>
-                        <span class="text-gray-900 px-2 md:px-3 py-1 md:py-2 bg-stone-200 dark:bg-stone-400 rounded-lg font-medium">Resumen</span>
+                        <span class="text-gray-900 px-2 md:px-3 py-1 md:py-2 bg-stone-200 dark:bg-stone-400 rounded-lg font-medium">
+                            {{ $currentSection }}
+                        </span>
                     </nav>
                 </div>
                 <div class="flex items-center space-x-2 md:space-x-4">
