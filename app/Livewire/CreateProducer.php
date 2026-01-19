@@ -16,8 +16,8 @@ class CreateProducer extends Component
     {
         return [
             'name' => ['required', 'string', 'min:3'],
-            'lastname' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'lastname' => ['required', 'string', 'max:255','min:3'],
+            'description' => ['required', 'string'],
             'is_active' => ['boolean'],
         ];
     }
