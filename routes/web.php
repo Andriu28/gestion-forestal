@@ -28,6 +28,24 @@ Route::get('/run-seeders', function() {
     }
 });
 
+// RUTA TEMPORAL PARA EJECUTAR SEEDERS DE PRODUCTORES - ELIMINAR DESPUÉS
+Route::get('/run-producers', function() {
+    try {
+        // Opcional: Limpiar la tabla antes de sembrar
+        \App\Models\Producer::truncate();
+        
+        \Artisan::call('db:seed', [
+            '--class' => 'ProducersSeeder',
+            '--force' => true
+        ]);
+        
+        $producerCount = \App\Models\Producer::count();
+        return "Seeder ProducersSeeder ejecutado exitosamente. Productores en la base de datos: $producerCount";
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+});
+
 
 // RUTA PARA VERIFICAR CONFIGURACIÓN DE CORREO
 Route::get('/check-mail-config', function() {
