@@ -195,7 +195,7 @@
             </td>
             <td style="width: 50%; vertical-align: top;">
                 <strong>Descripción:</strong> {{ $polygon->description ?? 'N/A' }}<br>
-                <strong>Coordenadas:</strong> Ver anexo cartográfico
+                
             </td>
         </tr>
     </table>

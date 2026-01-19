@@ -213,7 +213,7 @@ if ($saveAnalysis) {
             // Guardar también en sesión para uso posterior
             session(['last_polygon_id' => $newPolygonId]);
             
-            session()->flash('save_success', 'Análisis guardado exitosamente. ID: ' . $newPolygonId);
+            session()->flash('save_success', 'Análisis guardado exitosamente.');
             
             Log::info("Polígono ID asignado a dataToPass: {$newPolygonId}");
         } else {

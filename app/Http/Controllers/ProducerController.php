@@ -334,4 +334,48 @@ public function details(Request $request, $id)
         ], 500);
     }
 }
+
+/**
+ * Genera un PDF con la lista de productores aplicando los mismos filtros.
+ */
+public function generatePdf(Request $request)
+{
+    $search = $request->input('search');
+    $status = $request->input('status', 'all');
+
+    $query = Producer::query()
+        ->when($search, function ($query, $search) {
+            return $query->search($search);
+        });
+
+    match ($status) {
+        'active'   => $query->where('is_active', true),
+        'inactive' => $query->where('is_active', false),
+        'deleted'  => $query->onlyTrashed(),
+        'all'      => $query->withTrashed(),
+        default    => $query,
+    };
+
+    $producers = $query
+        ->orderBy('name')
+        ->get();
+
+    // Datos para el PDF
+    $filters = [
+        'search' => $search,
+        'status' => $status,
+        'total' => $producers->count(),
+        'generated_at' => now()->format('d/m/Y H:i:s'),
+    ];
+
+    $pdf = \PDF::loadView('producers.pdf', [
+        'producers' => $producers,
+        'filters' => $filters,
+    ]);
+
+    $pdf->setPaper('A4', 'landscape');
+    
+    return $pdf->download('productores_' . now()->format('Y-m-d_H-i') . '.pdf');
+}
+
 }

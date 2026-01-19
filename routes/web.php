@@ -57,6 +57,8 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
+Route::get('/producers/generate-pdf', [ProducerController::class, 'generatePdf'])
+    ->name('producers.generate.pdf');
 
 // Rutas accesibles para cualquier usuario autenticado (básico o administrador)
 Route::middleware(['auth', 'verified'])->group(function () {
