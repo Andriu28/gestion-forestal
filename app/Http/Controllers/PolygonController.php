@@ -105,130 +105,130 @@ class PolygonController extends Controller
 
     // En el método store():
     public function store(\Illuminate\Http\Request $request): \Illuminate\Http\RedirectResponse
-{
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'geometry' => 'required|string',
-        'producer_id' => 'nullable|exists:producers,id',
-        'parish_id' => 'nullable|exists:parishes,id',
-        'area_ha' => 'nullable|numeric|min:0',
-        'detected_parish' => 'nullable|string|max:255',
-        'detected_municipality' => 'nullable|string|max:255',
-        'detected_state' => 'nullable|string|max:255',
-        'centroid_lat' => 'nullable|numeric|between:-90,90',
-        'centroid_lng' => 'nullable|numeric|between:-180,180',
-        'location_data' => 'nullable|string'
-    ]);
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'geometry' => 'required|string',
+            'producer_id' => 'nullable|exists:producers,id',
+            'parish_id' => 'nullable|exists:parishes,id',
+            'area_ha' => 'nullable|numeric|min:0',
+            'detected_parish' => 'nullable|string|max:255',
+            'detected_municipality' => 'nullable|string|max:255',
+            'detected_state' => 'nullable|string|max:255',
+            'centroid_lat' => 'nullable|numeric|between:-90,90',
+            'centroid_lng' => 'nullable|numeric|between:-180,180',
+            'location_data' => 'nullable|string'
+        ]);
 
-    DB::beginTransaction();
-    try {
-        // Normalizar GeoJSON
-        $geojsonRaw = $validated['geometry'] ?? null;
-        if (empty($geojsonRaw)) throw new \Exception('La geometría no puede estar vacía.');
-        $decoded = json_decode($geojsonRaw, true);
-        if ($decoded === null) throw new \Exception('GeoJSON inválido (no se pudo parsear).');
-        $geometryObj = (isset($decoded['type']) && $decoded['type'] === 'Feature') ? ($decoded['geometry'] ?? null) : $decoded;
-        if (empty($geometryObj) || empty($geometryObj['type']) || empty($geometryObj['coordinates'])) {
-            throw new \Exception('GeoJSON geometry inválido o incompleto.');
+        DB::beginTransaction();
+        try {
+            // Normalizar GeoJSON
+            $geojsonRaw = $validated['geometry'] ?? null;
+            if (empty($geojsonRaw)) throw new \Exception('La geometría no puede estar vacía.');
+            $decoded = json_decode($geojsonRaw, true);
+            if ($decoded === null) throw new \Exception('GeoJSON inválido (no se pudo parsear).');
+            $geometryObj = (isset($decoded['type']) && $decoded['type'] === 'Feature') ? ($decoded['geometry'] ?? null) : $decoded;
+            if (empty($geometryObj) || empty($geometryObj['type']) || empty($geometryObj['coordinates'])) {
+                throw new \Exception('GeoJSON geometry inválido o incompleto.');
+            }
+            if (!in_array($geometryObj['type'], ['Polygon','MultiPolygon'])) {
+                throw new \Exception('Solo se permiten Polygon o MultiPolygon.');
+            }
+            $geoForDb = json_encode($geometryObj, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+            // Insertar con SQL pero después registrar actividad manualmente
+            $now = now();
+            $locationData = !empty($validated['location_data']) ? $validated['location_data'] : null;
+
+            $row = DB::selectOne(
+                "INSERT INTO polygons
+                    (name, description, producer_id, parish_id, area_ha, is_active, detected_parish, detected_municipality, detected_state, centroid_lat, centroid_lng, location_data, geometry, created_at, updated_at)
+                VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?)
+                RETURNING id",
+                [
+                    $validated['name'],
+                    $validated['description'] ?? null,
+                    $validated['producer_id'] ?? null,
+                    $validated['parish_id'] ?? null,
+                    $validated['area_ha'] ?? null,
+                    true,
+                    $validated['detected_parish'] ?? null,
+                    $validated['detected_municipality'] ?? null,
+                    $validated['detected_state'] ?? null,
+                    $validated['centroid_lat'] ?? null,
+                    $validated['centroid_lng'] ?? null,
+                    $locationData,
+                    $geoForDb,
+                    $now,
+                    $now
+                ]
+            );
+
+            if (!isset($row->id)) {
+                throw new \Exception('No se pudo insertar polígono (no se obtuvo id).');
+            }
+
+            // Obtener el polígono creado
+            $polygon = Polygon::find($row->id);
+
+            // Calcular área y centroide
+            $res = DB::selectOne("
+                SELECT 
+                ST_Area(geometry::geography) / 10000 AS area_ha,
+                ST_AsGeoJSON(ST_Centroid(geometry)) AS centroid_geojson
+                FROM polygons
+                WHERE id = ?
+            ", [$polygon->id]);
+
+            if ($res) {
+                // Actualizar SIN usar save() para evitar evento "updated"
+                DB::table('polygons')->where('id', $polygon->id)->update([
+                    'area_ha' => isset($res->area_ha) ? round((float)$res->area_ha, 2) : null,
+                    'centroid_lat' => !empty($res->centroid_geojson) ? 
+                        json_decode($res->centroid_geojson, true)['coordinates'][1] ?? null : null,
+                    'centroid_lng' => !empty($res->centroid_geojson) ? 
+                        json_decode($res->centroid_geojson, true)['coordinates'][0] ?? null : null,
+                    'updated_at' => now()
+                ]);
+                
+                $polygon->refresh();
+            }
+
+            // REGISTRAR LA ACTIVIDAD "created" MANUALMENTE
+            // Esto es lo que hace Producer::create() automáticamente
+            if (class_exists('Spatie\Activitylog\Models\Activity')) {
+                activity()
+                    ->performedOn($polygon)
+                    ->causedBy(auth()->user())
+                    ->withProperties([
+                        'attributes' => [
+                            'name' => $polygon->name,
+                            'area_ha' => $polygon->area_ha,
+                            'producer_id' => $polygon->producer_id,
+                            'parish_id' => $polygon->parish_id,
+                            'is_active' => $polygon->is_active
+                        ]
+                    ])
+                
+                    ->event('created')
+                    ->log("Polígono '{$polygon->name}' fue creado");
+            }
+
+            DB::commit();
+
+            \Log::info('Polígono creado exitosamente id=' . $polygon->id);
+
+            return redirect()->route('polygons.index')->with('success', 'Polígono creado exitosamente.')
+                ->with('debug_info', ['polygon_id' => $polygon->id]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al crear polígono: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Error al crear polígono: ' . $e->getMessage());
         }
-        if (!in_array($geometryObj['type'], ['Polygon','MultiPolygon'])) {
-            throw new \Exception('Solo se permiten Polygon o MultiPolygon.');
-        }
-        $geoForDb = json_encode($geometryObj, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-
-        // Insertar con SQL pero después registrar actividad manualmente
-        $now = now();
-        $locationData = !empty($validated['location_data']) ? $validated['location_data'] : null;
-
-        $row = DB::selectOne(
-            "INSERT INTO polygons
-                (name, description, producer_id, parish_id, area_ha, is_active, detected_parish, detected_municipality, detected_state, centroid_lat, centroid_lng, location_data, geometry, created_at, updated_at)
-             VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?)
-             RETURNING id",
-            [
-                $validated['name'],
-                $validated['description'] ?? null,
-                $validated['producer_id'] ?? null,
-                $validated['parish_id'] ?? null,
-                $validated['area_ha'] ?? null,
-                true,
-                $validated['detected_parish'] ?? null,
-                $validated['detected_municipality'] ?? null,
-                $validated['detected_state'] ?? null,
-                $validated['centroid_lat'] ?? null,
-                $validated['centroid_lng'] ?? null,
-                $locationData,
-                $geoForDb,
-                $now,
-                $now
-            ]
-        );
-
-        if (!isset($row->id)) {
-            throw new \Exception('No se pudo insertar polígono (no se obtuvo id).');
-        }
-
-        // Obtener el polígono creado
-        $polygon = Polygon::find($row->id);
-
-        // Calcular área y centroide
-        $res = DB::selectOne("
-            SELECT 
-              ST_Area(geometry::geography) / 10000 AS area_ha,
-              ST_AsGeoJSON(ST_Centroid(geometry)) AS centroid_geojson
-            FROM polygons
-            WHERE id = ?
-        ", [$polygon->id]);
-
-        if ($res) {
-            // Actualizar SIN usar save() para evitar evento "updated"
-            DB::table('polygons')->where('id', $polygon->id)->update([
-                'area_ha' => isset($res->area_ha) ? round((float)$res->area_ha, 2) : null,
-                'centroid_lat' => !empty($res->centroid_geojson) ? 
-                    json_decode($res->centroid_geojson, true)['coordinates'][1] ?? null : null,
-                'centroid_lng' => !empty($res->centroid_geojson) ? 
-                    json_decode($res->centroid_geojson, true)['coordinates'][0] ?? null : null,
-                'updated_at' => now()
-            ]);
-            
-            $polygon->refresh();
-        }
-
-        // REGISTRAR LA ACTIVIDAD "created" MANUALMENTE
-        // Esto es lo que hace Producer::create() automáticamente
-        if (class_exists('Spatie\Activitylog\Models\Activity')) {
-            activity()
-                ->performedOn($polygon)
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'attributes' => [
-                        'name' => $polygon->name,
-                        'area_ha' => $polygon->area_ha,
-                        'producer_id' => $polygon->producer_id,
-                        'parish_id' => $polygon->parish_id,
-                        'is_active' => $polygon->is_active
-                    ]
-                ])
-               
-                ->event('created')
-                ->log("Polígono '{$polygon->name}' fue creado");
-        }
-
-        DB::commit();
-
-        \Log::info('Polígono creado exitosamente id=' . $polygon->id);
-
-        return redirect()->route('polygons.index')->with('success', 'Polígono creado exitosamente.')
-            ->with('debug_info', ['polygon_id' => $polygon->id]);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        \Log::error('Error al crear polígono: ' . $e->getMessage());
-        return back()->withInput()->with('error', 'Error al crear polígono: ' . $e->getMessage());
     }
-}
 
     /**
      * Display the specified resource.
@@ -255,26 +255,160 @@ class PolygonController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    // En PolygonController.php - Método update() corregido
     public function update(Request $request, Polygon $polygon): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'geometry' => 'required|string', // Añadir esta validación
             'producer_id' => 'nullable|exists:producers,id',
             'parish_id' => 'nullable|exists:parishes,id',
             'area_ha' => 'nullable|numeric|min:0',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'detected_parish' => 'nullable|string|max:255', // Añadir
+            'detected_municipality' => 'nullable|string|max:255', // Añadir
+            'detected_state' => 'nullable|string|max:255', // Añadir
+            'centroid_lat' => 'nullable|numeric|between:-90,90', // Añadir
+            'centroid_lng' => 'nullable|numeric|between:-180,180', // Añadir
+            'location_data' => 'nullable|string' // Añadir
         ]);
 
+        DB::beginTransaction();
         try {
-            $polygon->update($validated);
+            // Normalizar GeoJSON (igual que en store())
+            $geojsonRaw = $validated['geometry'] ?? null;
+            if (empty($geojsonRaw)) throw new \Exception('La geometría no puede estar vacía.');
             
+            $decoded = json_decode($geojsonRaw, true);
+            if ($decoded === null) throw new \Exception('GeoJSON inválido (no se pudo parsear).');
+            
+            $geometryObj = (isset($decoded['type']) && $decoded['type'] === 'Feature') 
+                ? ($decoded['geometry'] ?? null) 
+                : $decoded;
+            
+            if (empty($geometryObj) || empty($geometryObj['type']) || empty($geometryObj['coordinates'])) {
+                throw new \Exception('GeoJSON geometry inválido o incompleto.');
+            }
+            
+            if (!in_array($geometryObj['type'], ['Polygon','MultiPolygon'])) {
+                throw new \Exception('Solo se permiten Polygon o MultiPolygon.');
+            }
+            
+            $geoForDb = json_encode($geometryObj, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+            // Preparar datos para actualización
+            $updateData = [
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
+                'producer_id' => $validated['producer_id'] ?? null,
+                'parish_id' => $validated['parish_id'] ?? null,
+                'is_active' => $validated['is_active'] ?? true,
+                'detected_parish' => $validated['detected_parish'] ?? null,
+                'detected_municipality' => $validated['detected_municipality'] ?? null,
+                'detected_state' => $validated['detected_state'] ?? null,
+                'centroid_lat' => $validated['centroid_lat'] ?? null,
+                'centroid_lng' => $validated['centroid_lng'] ?? null,
+                'location_data' => !empty($validated['location_data']) ? $validated['location_data'] : null,
+                'updated_at' => now()
+            ];
+
+            // Si se proporcionó area_ha manualmente, usarla
+            if (isset($validated['area_ha'])) {
+                $updateData['area_ha'] = $validated['area_ha'];
+            }
+
+            // Actualizar la geometría usando consulta SQL directa
+            DB::update(
+                "UPDATE polygons SET 
+                    name = ?, 
+                    description = ?, 
+                    producer_id = ?, 
+                    parish_id = ?, 
+                    area_ha = ?, 
+                    is_active = ?, 
+                    detected_parish = ?, 
+                    detected_municipality = ?, 
+                    detected_state = ?, 
+                    centroid_lat = ?, 
+                    centroid_lng = ?, 
+                    location_data = ?, 
+                    geometry = ST_SetSRID(ST_GeomFromGeoJSON(?), 4326),
+                    updated_at = ?
+                WHERE id = ?",
+                [
+                    $updateData['name'],
+                    $updateData['description'],
+                    $updateData['producer_id'],
+                    $updateData['parish_id'],
+                    $updateData['area_ha'] ?? null,
+                    $updateData['is_active'],
+                    $updateData['detected_parish'],
+                    $updateData['detected_municipality'],
+                    $updateData['detected_state'],
+                    $updateData['centroid_lat'],
+                    $updateData['centroid_lng'],
+                    $updateData['location_data'],
+                    $geoForDb,
+                    $updateData['updated_at'],
+                    $polygon->id
+                ]
+            );
+
+            // Si no se proporcionó area_ha manualmente, calcularla desde la nueva geometría
+            if (!isset($validated['area_ha'])) {
+                $res = DB::selectOne("
+                    SELECT ST_Area(geometry::geography) / 10000 AS area_ha
+                    FROM polygons
+                    WHERE id = ?
+                ", [$polygon->id]);
+
+                if ($res && isset($res->area_ha)) {
+                    DB::table('polygons')->where('id', $polygon->id)->update([
+                        'area_ha' => round((float)$res->area_ha, 2),
+                        'updated_at' => now()
+                    ]);
+                }
+            }
+
+            // También actualizar centroide si no se proporcionó
+            if (!$validated['centroid_lat'] || !$validated['centroid_lng']) {
+                $centroidRes = DB::selectOne("
+                    SELECT ST_AsGeoJSON(ST_Centroid(geometry)) AS centroid_geojson
+                    FROM polygons
+                    WHERE id = ?
+                ", [$polygon->id]);
+
+                if ($centroidRes && !empty($centroidRes->centroid_geojson)) {
+                    $centroid = json_decode($centroidRes->centroid_geojson, true);
+                    if (isset($centroid['coordinates'])) {
+                        DB::table('polygons')->where('id', $polygon->id)->update([
+                            'centroid_lng' => $centroid['coordinates'][0] ?? null,
+                            'centroid_lat' => $centroid['coordinates'][1] ?? null,
+                            'updated_at' => now()
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+
+            // Refrescar el modelo
+            $polygon->refresh();
+
+            \Log::info('Polígono actualizado exitosamente id=' . $polygon->id);
+
             return redirect()->route('polygons.index')
-                ->with('success', 'Polígono actualizado exitosamente.');
-                
+                ->with('success', 'Polígono actualizado exitosamente.')
+                ->with('debug_info', ['polygon_id' => $polygon->id]);
+
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al actualizar el polígono: ' . $e->getMessage())
-                        ->withInput();
+            DB::rollBack();
+            \Log::error('Error al actualizar polígono: ' . $e->getMessage());
+            
+            return back()
+                ->with('error', 'Error al actualizar el polígono: ' . $e->getMessage())
+                ->withInput();
         }
     }
 
