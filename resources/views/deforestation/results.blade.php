@@ -84,11 +84,11 @@
                         <h4 class="font-semibold text-lg text-gray-900 dark:text-gray-100 mb-3">Resumen del Área</h4>
                         <div class="space-y-2">
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-300">Área total analizada:</span>
+                                <span class="text-gray-600 dark:text-gray-300">Área total del poligono:</span>
                                 <span class="font-medium text-gray-900 dark:text-gray-100">{{ number_format($dataToPass['polygon_area_ha'], 4, ',', '.') }} ha</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-600 dark:text-gray-300">Pérdida de cobertura:</span>
+                                <span class="text-gray-600 dark:text-gray-300">Area deforestada:</span>
                                 <span class="font-medium text-red-600 dark:text-red-400">{{ number_format($dataToPass['total_loss']['totalDeforestedArea'], 4, ',', '.') }} ha</span>
                             </div>
                             <div class="flex justify-between border-t pt-2">
@@ -216,9 +216,33 @@
                         <h3 class="font-semibold text-xl text-gray-900 dark:text-gray-100 mb-3">
                             Evolución de la Deforestación ({{ $dataToPass['start_year'] }}-{{ $dataToPass['end_year'] }})
                         </h3>
-                        <div class="bg-gray-100 dark:bg-gray-800/40 p-4 rounded-lg shadow-inner" style="height: 400px;">
-                            <canvas id="deforestation-evolution-chart"></canvas>
+                        
+                        <div class="flex flex-col md:flex-row gap-4 w-full items-stretch">
+                            
+                            <div class="w-full md:flex-[2] bg-gray-100 dark:bg-gray-800/40 p-4 rounded-lg shadow-inner" style="height: 400px;">
+                                <canvas id="deforestation-evolution-chart"></canvas>
+                            </div>
+
+                            
                         </div>
+                    </div>
+                    <div id="panel-detalle" 
+                        class="invisible opacity-0 translate-x-4 w-full md:flex-1 bg-white dark:bg-gray-900 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg flex flex-col transition-all duration-500 ease-out" 
+                        style="height: 400px;">
+                        
+                        <div class="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3 mb-4">
+                            <h4 class="font-bold text-lg text-gray-800 dark:text-gray-100">
+                                Reporte Anual: <span id="detalle-year" class="text-blue-600 dark:text-blue-400"></span>
+                            </h4>
+                            <button onclick="cerrarPanel()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div id="detalle-contenido" class="overflow-y-auto h-full pr-2 custom-scrollbar">
+                            </div>
                     </div>
                 </div>
 
@@ -230,7 +254,7 @@
                     <div class="flex flex-wrap gap-4">
                         <a href="{{ route('deforestation.create') }}" 
                         class="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 dark:bg-blue-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                            Iniciar un Nuevo Análisis
+                            Nuevo Análisis
                         </a>
                         
                         <!-- Botón para descargar PDF -->
@@ -268,40 +292,12 @@
         </div>
     </div>
 
-<script>
-function toggleDebug() {
-    const panel = document.getElementById('debug-panel');
-    panel.classList.toggle('hidden');
-    
-    if (!panel.classList.contains('hidden')) {
-        // Forzar scroll al panel
-        panel.scrollIntoView({ behavior: 'smooth' });
-        
-        // Log en consola también
-        console.log('📊 DATOS DE DEPURACIÓN:');
-        console.log('dataToPass:', @json($dataToPass));
-        console.log('yearly_results:', @json($dataToPass['yearly_results'] ?? []));
-        
-        // Verificar estructura de datos
-        const yearly = @json($dataToPass['yearly_results'] ?? []);
-        console.log('Estructura de yearly_results:', Object.keys(yearly));
-        
-        Object.keys(yearly).forEach(year => {
-            console.log(`Año ${year}:`, yearly[year]);
-            console.log(`  area__ha:`, yearly[year]?.area__ha);
-            console.log(`  status:`, yearly[year]?.status);
-        });
-    }
-}
-</script>
 </x-app-layout>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js"></script>
 
 <script>
-    // Mostrar datos de debug en consola
-console.log('Yearly Data from PHP:', @json($dataToPass['yearly_results'] ?? []));
 
 // Datos para el gráfico de distribución
 const polygonArea = {{ $dataToPass['polygon_area_ha'] ?? 0 }};
@@ -342,6 +338,11 @@ new Chart(ctx, {
                         return `${context.label}: ${value.toFixed(4)} ha (${percentage}%)`;
                     }
                 }
+            },
+            title: {
+                display: true,
+                text: 'Estado Actual del Predio',
+                font: { size: 18 }
             }
         }
     }
@@ -592,7 +593,7 @@ function initEvolutionChart() {
                             if (value === 0) return '0 ha';
                             if (value < 0.01) return value.toFixed(6) + ' ha';
                             if (value < 1) return value.toFixed(4) + ' ha';
-                            return value.toFixed(2) + ' ha';
+                            return value.toFixed(4) + ' ha';
                         }
                     }
                 },
@@ -606,6 +607,24 @@ function initEvolutionChart() {
             animation: {
                 duration: 1000,
                 easing: 'easeInOutQuart'
+            },
+            onClick: (event, elements, chart) => {
+                // 1. Verificar si el usuario hizo clic en un punto (elemento)
+                if (elements.length > 0) {
+                    const index = elements[0].index; // Índice del punto clickeado
+                    const year = chart.data.labels[index]; // El año
+                    const value = chart.data.datasets[0].data[index]; // Las hectáreas
+                    
+                    // 2. Obtener datos extra que ya tienes en tu objeto yearlyData
+                    const extraInfo = yearlyData[year]; 
+                    
+                    // 3. Llamar a una función para mostrar el detalle
+                    mostrarDetalleAnual(year, value, extraInfo);
+                }
+            },
+            //opcion para que el cursor cambie a una mano
+            onHover: (event, elements) => {
+                event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
             }
         }
     });
@@ -685,6 +704,66 @@ function updateProgress(loadedCount) {
             progressText.textContent = `${loadedCount}/${totalYears} años cargados`;
         }
     }
+}
+
+function mostrarDetalleAnual(year, area, info) {
+    const panel = document.getElementById('panel-detalle');
+    const txtYear = document.getElementById('detalle-year');
+    const txtContenido = document.getElementById('detalle-contenido');
+
+    panel.classList.remove('hidden');
+    txtYear.innerText = year;
+
+    // Generar las filas de datos técnicos dinámicamente
+    let filasTecnicas = '';
+    if (info) {
+        Object.entries(info).forEach(([key, value]) => {
+            // Saltamos valores que ya mostramos arriba o que son muy largos
+            if (key === 'year' || key === 'area') return;
+
+            filasTecnicas += `
+                <div class="flex justify-between items-center p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 mb-2 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-all">
+                    <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">${key.replace('_', ' ')}</span>
+                    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">${value}</span>
+                </div>
+            `;
+        });
+    }
+
+    txtContenido.innerHTML = `
+        <div class="flex flex-col gap-4 animate-fade-in-up">
+            <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
+                <p class="text-xs text-blue-600 dark:text-blue-400 uppercase font-bold tracking-wider">Superficie Perdida</p>
+                <p class="text-2xl font-black text-blue-900 dark:text-blue-100">
+                    ${area.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} 
+                    <span class="text-sm font-normal text-blue-500">ha</span>
+                </p>
+            </div>
+
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase mb-3 px-1">Atributos del registro</p>
+                ${filasTecnicas || '<p class="text-gray-500 italic text-xs">No hay datos adicionales</p>'}
+            </div>
+            
+            <div class="mt-2 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border-l-4 border-yellow-400">
+                <p class="text-[11px] text-yellow-700 dark:text-yellow-500 leading-tight">
+                    * Estos datos corresponden al análisis satelital consolidado del periodo seleccionado.
+                </p>
+            </div>
+        </div>
+    `;
+
+    // 2. Activar la animación
+    // Quitamos los estados ocultos y activamos los visibles
+    panel.classList.remove('invisible', 'opacity-0', 'translate-x-4');
+    panel.classList.add('visible', 'opacity-100', 'translate-x-0');
+}
+
+// Función para cerrar con animación de salida
+function cerrarPanel() {
+    const panel = document.getElementById('panel-detalle');
+    panel.classList.remove('visible', 'opacity-100', 'translate-x-0');
+    panel.classList.add('invisible', 'opacity-0', 'translate-x-4');
 }
 
 /* comienzo del script de edicion de año */
@@ -1057,6 +1136,21 @@ input[type="number"] {
     background-color: #dbeafe;
     border: 1px solid #3b82f6;
     color: #1e40af;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.4s ease-out forwards;
 }
 /* fin de los estilos para la edicion de años */
 </style>

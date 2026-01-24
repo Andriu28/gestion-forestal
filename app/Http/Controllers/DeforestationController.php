@@ -228,7 +228,7 @@ if ($saveAnalysis) {
     }
 } else {
     Log::info('Análisis NO guardado por solicitud del usuario');
-    $dataToPass['save_message'] = 'Este análisis no fue guardado en el historial.';
+    $dataToPass['save_message'] = 'Este análisis no fue guardado.';
 }
         
        return view('deforestation.results', compact('dataToPass'));
