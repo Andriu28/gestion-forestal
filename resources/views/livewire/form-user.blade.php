@@ -1,11 +1,13 @@
-
 <div>
     <form wire:submit="store">
         @csrf
 
         <div class="mt-4">
             <x-input-label for="name" :value="__('Nombre')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" wire:model.live.debounce.250ms="name" autofocus />
+            <x-text-input id="name" class="block mt-1 w-full" type="text" 
+                wire:model.live.debounce.250ms="name" 
+                autofocus
+                oninput="if(this.value.length === 1) this.value = this.value.toUpperCase();" />
             <x-input-error :messages="$errors->first('name')" class="mt-2" />
         </div>
     

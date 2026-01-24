@@ -108,7 +108,7 @@
 
                     <!-- Recordarme y olvidé contraseña -->
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1.5 sm:space-y-0 pt-0.5">
-                        <div class="flex items-center space-x-1.5">
+                        <!-- <div class="flex items-center space-x-1.5">
                             <input
                                 name="remember"
                                 type="checkbox"
@@ -117,7 +117,7 @@
                             <label for="remember" class="text-xs text-amber-700 dark:text-custom-gold-light transition-colors">
                                 Recordarme
                             </label>
-                        </div>
+                        </div> -->
                         <button type="button" class="text-xs text-custom-gold-darker dark:text-custom-gold-medium hover:text-amber-800 dark:hover:text-amber-200 hover:underline transition-colors text-left sm:text-right">
                                 
                             @if (Route::has('password.request'))

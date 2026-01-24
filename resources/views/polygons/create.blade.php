@@ -156,7 +156,7 @@
                                 </div>
 
                                 <!-- Coordenadas en tiempo real -->
-                                <div class="absolute left-1/2 bottom-4 transform -translate-x-1/2 z-40 bg-white/90 dark:bg-gray-800 p-2 rounded text-sm shadow">
+                                <div class="absolute left-1/2 bottom-4 transform -translate-x-1/2 z-40 bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm shadow">
                                     <span id="coordinates-display">Lat: 0.000000 | Lng: 0.000000</span>
                                 </div>
                             </div>
@@ -172,7 +172,7 @@
                                     <div>
                                         <x-input-label for="name" :value="__('Nombre del Polígono *')" />
                                         <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
-                                            :value="old('name')" required autofocus placeholder="Ej: Finca La Esperanza" />
+                                            :value="old('name')" required placeholder="Ej: Finca La Esperanza" />
                                         <x-input-error class="mt-2" :messages="$errors->get('name')" />
                                     </div>
 
@@ -1048,16 +1048,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .z-50 {
     z-index: 50;
-}
-
-.bg-white\/90 {
-    background-color: rgba(255, 255, 255, 0.9);
-}
-
-.dark\:bg-gray-800 {
-    @media (prefers-color-scheme: dark) {
-        background-color: #1f2937;
-    }
 }
 
 /* Animaciones suaves */

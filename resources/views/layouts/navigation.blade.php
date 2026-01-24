@@ -117,14 +117,14 @@
                 </div>
             </nav>
             <!-- Sidebar Footer -->
-            <div class="sidebar-header" style="padding-bottom:2rem;">
+            <!-- <div class="sidebar-header" style="padding-bottom:2rem;">
                 <a href="#" class="nav-item transition-all duration-300 ease-in-out hover:font-bold hover:shadow-md group">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-icon lucide-settings transition-all duration-500 group-hover:scale-[1.15] group-hover-ml-2">
                         <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>
                     </svg>
                     <span class="sidebar-text">Configuración.X</span>
                 </a>
-            </div>
+            </div> -->
         </aside>
     <div class="flex-1 flex flex-col overflow-hidden">
         <!-- Este codigo usa un arreglo para  especificar segun la ruta en la cabecera donde esta ubicado -->
@@ -276,8 +276,12 @@
                            
                             <a href="{{ route('profile.edit') }}" class="block px-4 md:px-6 py-2 md:py-3 text-sm text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 rounded-lg mx-2 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-1">Perfil</a>
                                                     
-                            <a href="#" class="block px-4 md:px-6 py-2 md:py-3 text-sm text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 rounded-lg mx-2 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-1">Configuración</a>
-                            <a href="#" class="block px-4 md:px-6 py-2 md:py-3 text-sm text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 rounded-lg mx-2 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-1">Soporte</a>
+                            
+                            <a href="{{ asset('docs/manual.pdf') }}" 
+                                target="_blank"
+                                class="block px-4 md:px-6 py-2 md:py-3 text-sm text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 rounded-lg mx-2 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-1">
+                                Soporte
+                            </a>
                             <div class="border-t border-gray-400/70 dark:border-gray-700 my-2"></div>
                             <form method="POST" action="{{ route('logout') }}" class="mx-2">
                                 @csrf
