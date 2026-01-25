@@ -11,7 +11,7 @@
                     @csrf
                     @method('PUT')
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 gap-6">
                         <!-- Columna del Mapa -->
                         <div>
                             <x-input-label for="map" />
@@ -289,548 +289,152 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Inicializar mapa
-    let map = L.map('map').setView([8.0, -66.0], 6);
-    
-    // Capa base simple
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-        attribution: '© OpenStreetMap contributors' 
-    }).addTo(map);
 
-    const drawnItems = new L.FeatureGroup().addTo(map);
-    let currentPolygonLayer = null;
+<!-- Estilos y librerías -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
+
+<!-- Cargar utilidades primero -->
+
+<script src="{{ asset('js/polygon/polygon-map-utils.js') }}"></script>
+
+
+<script>
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Inicializar gestor del mapa
+    const mapManager = new PolygonMapManager('map', {
+        geometryInput: document.getElementById('geometry'),
+        coordsDisplay: document.getElementById('coordinates-display'),
+        detectBtn: document.getElementById('detect-location'),
+        areaInput: document.getElementById('area_ha')
+    });
     
-    // Cargar el polígono existente
-    let existingPolygonGeoJSON = null;
+    // Cargar polígono existente si está disponible
     @if($polygon->getGeometryGeoJson())
-        existingPolygonGeoJSON = @json($polygon->getGeometryGeoJson());
+        const existingPolygonGeoJSON = @json($polygon->getGeometryGeoJson());
+        const loaded = mapManager.loadExistingPolygon(existingPolygonGeoJSON);
+        
+        if (loaded) {
+            // Habilitar el botón de detección ya que hay un polígono cargado
+            document.getElementById('detect-location').disabled = false;
+        }
     @endif
     
-    // Dibujar polígono existente si hay datos
-    if (existingPolygonGeoJSON) {
-        try {
-            // Crear feature a partir del GeoJSON
-            const geoJsonLayer = L.geoJSON(existingPolygonGeoJSON, {
-                style: {
-                    color: '#2b6cb0',
-                    fillColor: '#2b6cb0',
-                    fillOpacity: 0.25,
-                    weight: 3
-                }
-            }).addTo(drawnItems);
-            
-            // Ajustar vista al polígono
-            map.fitBounds(geoJsonLayer.getBounds());
-            
-            // Configurar como capa actual
-            currentPolygonLayer = geoJsonLayer;
-            
-            // Llenar el campo geometry
-            const feature = geoJsonLayer.toGeoJSON();
-            document.getElementById('geometry').value = JSON.stringify(feature);
-            
-            // Actualizar área
-            updateArea(feature);
-            
-            // Habilitar botón de detección
-            document.getElementById('detect-location').disabled = false;
-            
-            // Mostrar coordenadas del centroide si están disponibles
-            const centroid = calcCentroidFromFeature(feature);
-            if (centroid) {
-                document.getElementById('coordinates-display').textContent = 
-                    `Lat: ${centroid.lat.toFixed(6)} | Lng: ${centroid.lng.toFixed(6)}`;
-            }
-            
-        } catch (error) {
-            console.error('Error al cargar polígono existente:', error);
-            showMessage('Error al cargar el polígono existente', 'error');
-        }
-    }
+    // Inicializar detector de ubicación
+    const locationDetector = new LocationDetector({
+        csrfToken: '{{ csrf_token() }}',
+        findParishUrl: '{{ route("polygons.find-parish-api") }}'
+    });
     
-    // Configurar controles de dibujo
-    const drawControl = new L.Control.Draw({
-        draw: {
-            polygon: { 
-                allowIntersection: false, 
-                showArea: true, 
-                shapeOptions: { 
-                    color: '#2b6cb0', 
-                    fillColor: '#2b6cb0', 
-                    fillOpacity: 0.25, 
-                    weight: 3 
-                } 
-            },
-            polyline: false, 
-            rectangle: false, 
-            circle: false, 
-            circlemarker: false, 
-            marker: false
-        },
-        edit: { 
-            featureGroup: drawnItems,
-            edit: {
-                selectedPathOptions: {
-                    maintainColor: true
-                }
-            }
+    // Inicializar modal UTM
+    const utmModal = new UTMModalManager({
+        modalId: 'manual-polygon-modal',
+        onDrawPolygon: (utmCoordinates) => {
+            drawUTMPolygonFromUTM(utmCoordinates, mapManager);
         }
     });
-
-    map.addControl(drawControl);
-
+    
+    // Configurar el modal UTM (funciones específicas del modal)
+    setupUTMModal(utmModal);
+    
     // Referencias a elementos
     const drawBtn = document.getElementById('draw-polygon');
     const detectBtn = document.getElementById('detect-location');
     const clearBtn = document.getElementById('clear-map');
-    const geometryInput = document.getElementById('geometry');
-    const coordsDisplay = document.getElementById('coordinates-display');
-
-    function showMessage(text, type = 'info') {
-        const el = coordsDisplay;
-        el.textContent = text;
-        el.classList.toggle('text-red-600', type === 'error');
-        el.classList.toggle('text-green-700', type === 'success');
-        setTimeout(() => {
-            if (!geometryInput.value) el.textContent = 'Lat: 0.000000 | Lng: 0.000000';
-            el.classList.remove('text-red-600', 'text-green-700');
-        }, 3000);
-    }
-
-    function setFeatureToInput(feature) {
-        if (!feature) {
-            geometryInput.value = '';
-            return;
-        }
-        try {
-            geometryInput.value = JSON.stringify(feature);
-        } catch (e) {
-            geometryInput.value = '';
-            console.error('Error serializing feature', e);
-        }
-    }
-
-    function calcCentroidFromFeature(feature) {
-        try {
-            const coords = feature.geometry.coordinates;
-            let ring = null;
-            if (feature.geometry.type === 'Polygon') ring = coords[0];
-            else if (feature.geometry.type === 'MultiPolygon') ring = coords[0][0];
-            if (!ring || ring.length === 0) return null;
-            let latSum = 0, lngSum = 0, count = 0;
-            ring.forEach(pt => { lngSum += pt[0]; latSum += pt[1]; count++; });
-            return { lat: latSum / count, lng: lngSum / count };
-        } catch (e) {
-            return null;
-        }
-    }
-
-    // Función para calcular área
-    function calculateArea(feature) {
-        if (!feature || !feature.geometry) return 0;
-        
-        const coords = feature.geometry.coordinates[0];
-        if (!coords || coords.length < 3) return 0;
-        
-        let area = 0;
-        const n = coords.length;
-        
-        for (let i = 0; i < n; i++) {
-            const j = (i + 1) % n;
-            const xi = coords[i][1]; // latitud
-            const yi = coords[i][0]; // longitud
-            const xj = coords[j][1];
-            const yj = coords[j][0];
-            
-            area += xi * yj - xj * yi;
-        }
-        
-        area = Math.abs(area) / 2;
-        
-        const avgLat = coords.reduce((sum, coord) => sum + coord[1], 0) / n;
-        const kmPerDegreeLat = 111.32;
-        const kmPerDegreeLon = 111.32 * Math.cos(avgLat * Math.PI / 180);
-        
-        const areaKm2 = area * kmPerDegreeLat * kmPerDegreeLon;
-        const areaHa = areaKm2 * 100;
-        
-        return Math.round(areaHa * 100) / 100;
-    }
-
-    // Actualizar área en el formulario
-    function updateArea(feature) {
-        const areaHaInput = document.getElementById('area_ha');
-        if (feature) {
-            const area = calculateArea(feature);
-            areaHaInput.value = area;
-        } else {
-            areaHaInput.value = '';
-        }
-    }
-
-    // Event Listeners para controles de mapa
+    
+    // Event Listeners para controles básicos
     drawBtn.addEventListener('click', () => {
-        new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable();
+        new L.Draw.Polygon(mapManager.map, DrawConfig.polygon).enable();
     });
-
+    
     clearBtn.addEventListener('click', () => {
-        drawnItems.clearLayers();
-        geometryInput.value = '';
-        detectBtn.disabled = true;
-        document.getElementById('area_ha').value = '';
-        coordsDisplay.textContent = 'Lat: 0.000000 | Lng: 0.000000';
-        currentPolygonLayer = null;
-        showMessage('Mapa limpiado', 'info');
+        mapManager.clearMap();
+        // Ocultar información de ubicación al limpiar
+        document.getElementById('location-info').classList.add('hidden');
     });
-
-    // Evento de creación de polígono
-    map.on(L.Draw.Event.CREATED, function (e) {
-        const layer = e.layer;
-        drawnItems.clearLayers();
-        drawnItems.addLayer(layer);
-
-        const feature = layer.toGeoJSON();
-        setFeatureToInput(feature);
-        updateArea(feature);
-
-        detectBtn.disabled = false;
-        const centroid = calcCentroidFromFeature(feature);
-        if (centroid) coordsDisplay.textContent = `Lat: ${centroid.lat.toFixed(6)} | Lng: ${centroid.lng.toFixed(6)}`;
-        
-        currentPolygonLayer = layer;
-        showMessage('Polígono dibujado', 'success');
-    });
-
-    // Evento de edición de polígono
-    map.on(L.Draw.Event.EDITED, function (e) {
-        const layers = e.layers;
-        layers.eachLayer(function (layer) {
-            const feature = layer.toGeoJSON();
-            setFeatureToInput(feature);
-            updateArea(feature);
-            
-            detectBtn.disabled = false;
-            const centroid = calcCentroidFromFeature(feature);
-            if (centroid) coordsDisplay.textContent = `Lat: ${centroid.lat.toFixed(6)} | Lng: ${centroid.lng.toFixed(6)}`;
-            
-            currentPolygonLayer = layer;
-            showMessage('Polígono editado', 'success');
-        });
-    });
-
-    map.on('mousemove', (e) => {
-        if (!geometryInput.value) {
-            coordsDisplay.textContent = `Lat: ${e.latlng.lat.toFixed(6)} | Lng: ${e.latlng.lng.toFixed(6)}`;
-        }
-    });
-
-    // Detectar ubicación - FUNCIÓN CORREGIDA
+    
+    // Detectar ubicación
     detectBtn.addEventListener('click', async () => {
-        const val = geometryInput.value;
-        if (!val) { 
-            showMessage('❌ Debes tener un polígono en el mapa', 'error'); 
-            return; 
-        }
-
-        let feature;
-        try { 
-            feature = JSON.parse(val); 
-        } catch (e) { 
-            showMessage('❌ GeoJSON inválido', 'error'); 
-            return; 
-        }
-
-        const centroid = calcCentroidFromFeature(feature);
-        if (!centroid) { 
-            showMessage('❌ No se pudo calcular el centroide', 'error'); 
-            return; 
-        }
-
-        // Actualizar campos ocultos con el nuevo centroide
-        document.getElementById('centroid_lat').value = centroid.lat;
-        document.getElementById('centroid_lng').value = centroid.lng;
-
-        detectBtn.disabled = true;
-        const detectButtonText = document.getElementById('detect-button-text');
-        const originalText = detectButtonText.textContent;
-        detectButtonText.textContent = 'Detectando...';
-
-        try {
-            const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${centroid.lat}&lon=${centroid.lng}&zoom=18&addressdetails=1&accept-language=es`, {
-                headers: { 
-                    'User-Agent': 'PolygonApp/1.0',
-                    'Accept': 'application/json'
-                }
-            });
-            
-            if (!resp.ok) throw new Error('Error en Nominatim');
-            
-            const data = await resp.json();
-            console.log('Datos de Nominatim:', data);
-
-            const address = data.address || {};
-            const municipality = address.county || address.suburb || address.village || address.town || address.city || '';
-            const parish = address.municipality || address.county || address.city || '';
-            const state = address.state || address.region || '';
-
-            // Limpiar prefijos de las variables
-            const cleanParish = parish ? parish.toString().replace('Parroquia ', '').replace('Municipio ', '').trim() : '';
-            const cleanMunicipality = municipality ? municipality.toString().replace('Municipio ', '').trim() : '';
-            const cleanState = state ? state.toString().replace('Estado ', '').trim() : '';
-
-            // Actualizar campos ocultos
-            document.getElementById('detected_parish').value = cleanParish;
-            document.getElementById('detected_municipality').value = cleanMunicipality;
-            document.getElementById('detected_state').value = cleanState;
-
-            // Actualizar la interfaz
-            document.getElementById('detected-parish-text').textContent = cleanParish || 'No detectado';
-            document.getElementById('detected-municipality-text').textContent = cleanMunicipality || 'No detectado';
-            document.getElementById('detected-state-text').textContent = cleanState || 'No detectado';
-            document.getElementById('detected-coords-text').textContent = `${centroid.lat.toFixed(6)}, ${centroid.lng.toFixed(6)}`;
-
-            document.getElementById('location-info').classList.remove('hidden');
-
-            // Intentar asignar parroquia automáticamente
-            try {
-                const assignResp = await fetch('{{ route("polygons.find-parish-api") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        parish_name: cleanParish ? cleanParish.toLowerCase().trim() : '',
-                        municipality_name: cleanMunicipality ? cleanMunicipality.toLowerCase().trim() : '',
-                        state_name: cleanState ? cleanState.toLowerCase().trim() : ''
-                    })
-                });
-                
-                const assignJson = await assignResp.json();
-                if (assignJson.success && assignJson.parish) {
-                    document.getElementById('parish_id').value = assignJson.parish.id;
-                    showMessage('✅ Parroquia encontrada y asignada', 'success');
-                } else {
-                    showMessage('ℹ️ No se encontró parroquia exacta. Selecciona manualmente.', 'info');
-                }
-            } catch (e) {
-                console.warn('Asignación parroquia fallida', e);
-                showMessage('⚠️ No se pudo asignar parroquia automáticamente', 'warning');
-            }
-        } catch (err) {
-            console.error('Error detectando ubicación:', err);
-            showMessage('❌ Error detectando ubicación', 'error');
-        } finally {
-            detectBtn.disabled = false;
-            detectButtonText.textContent = originalText;
-        }
+        await handleLocationDetection(mapManager, locationDetector);
     });
-
-    // Dibujar polígono desde coordenadas UTM
-    function drawUTMPolygon(utmCoordinates) {
-        if (!utmCoordinates || utmCoordinates.length < 3) {
-            showMessage('Se necesitan al menos 3 coordenadas', 'error');
-            return;
-        }
-        
-        try {
-            // Convertir coordenadas UTM a WGS84
-            const wgs84Coords = utmCoordinates.map(coord => {
-                const [easting, northing, zone, hemisphere] = coord;
-                const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
-                
-                if (!proj4.defs(epsgCode)) {
-                    const proj4String = `+proj=utm +zone=${zone} +${hemisphere === 'S' ? '+south ' : ''}datum=WGS84 +units=m +no_defs`;
-                    proj4.defs(epsgCode, proj4String);
-                }
-                
-                const wgs84 = proj4('WGS84');
-                const utm = proj4(epsgCode);
-                const point = proj4(utm, wgs84, [easting, northing]);
-                
-                return [point[0], point[1]]; // [lng, lat]
-            });
-            
-            // Crear polígono cerrado
-            if (wgs84Coords[0][0] !== wgs84Coords[wgs84Coords.length-1][0] || 
-                wgs84Coords[0][1] !== wgs84Coords[wgs84Coords.length-1][1]) {
-                wgs84Coords.push(wgs84Coords[0]);
-            }
-            
-            // Limpiar mapa existente
-            drawnItems.clearLayers();
-            
-            // Crear y añadir polígono
-            const polygon = L.polygon(wgs84Coords, {
-                color: '#2b6cb0',
-                fillColor: '#2b6cb0',
-                fillOpacity: 0.25,
-                weight: 3
-            }).addTo(drawnItems);
-            
-            // Ajustar vista
-            map.fitBounds(polygon.getBounds());
-            
-            // Crear feature GeoJSON
-            const feature = {
-                type: 'Feature',
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [wgs84Coords]
-                },
-                properties: {}
-            };
-            
-            setFeatureToInput(feature);
-            updateArea(feature);
-            detectBtn.disabled = false;
-            
-            // Actualizar coordenadas del centroide
-            const centroid = calcCentroidFromFeature(feature);
-            if (centroid) {
-                coordsDisplay.textContent = `Lat: ${centroid.lat.toFixed(6)} | Lng: ${centroid.lng.toFixed(6)}`;
-            }
-            
-            currentPolygonLayer = polygon;
-            showMessage('Polígono dibujado desde coordenadas UTM', 'success');
-            
-        } catch (error) {
-            console.error('Error dibujando polígono UTM:', error);
-            showMessage('Error dibujando polígono', 'error');
-        }
-    }
-
+    
     // Validación del formulario
     document.getElementById('polygon-form').addEventListener('submit', function (e) {
-        const val = geometryInput.value;
-        if (!val) {
+        if (!validatePolygonForm(mapManager, this)) {
             e.preventDefault();
-            showMessage('❌ Debes tener un polígono en el mapa', 'error');
-            return false;
-        }
-        
-        const nameInput = document.getElementById('name');
-        if (!nameInput.value.trim()) {
-            e.preventDefault();
-            nameInput.focus();
-            showMessage('❌ El nombre del polígono es requerido', 'error');
-            return false;
-        }
-        
-        try {
-            const parsed = JSON.parse(val);
-            const feature = (parsed.type && parsed.type === 'Feature') ? parsed : { type: 'Feature', geometry: parsed };
-            const geom = feature.geometry;
-            if (!geom || !geom.type || !['Polygon', 'MultiPolygon'].includes(geom.type)) {
-                e.preventDefault();
-                showMessage('❌ La geometría debe ser Polygon o MultiPolygon', 'error');
-                return false;
-            }
-            
-            // Mostrar carga
-            const submitBtn = document.getElementById('submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Actualizando...';
-            
-            return true;
-        } catch (err) {
-            e.preventDefault();
-            showMessage('❌ Geometría inválida (JSON)', 'error');
-            return false;
         }
     });
 });
 
-// ===== CÓDIGO PARA EL MODAL DE COORDENADAS MANUALES =====
-let coordinatesList = [];
 
-function setupUTMProjection(zone, hemisphere) {
-    const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
-    
-    if (!proj4.defs(epsgCode)) {
-        const proj4String = `+proj=utm +zone=${zone} +${hemisphere === 'S' ? '+south ' : ''}datum=WGS84 +units=m +no_defs`;
-        proj4.defs(epsgCode, proj4String);
+function drawUTMPolygonFromUTM(utmCoordinates, mapManager) {
+    if (!utmCoordinates || utmCoordinates.length < 3) {
+        mapManager.showMessage('Se necesitan al menos 3 coordenadas', 'error');
+        return;
     }
     
-    return epsgCode;
+    try {
+        // Convertir coordenadas UTM a WGS84
+        const wgs84Coords = UTMCoordinates.convertToWGS84(utmCoordinates);
+        
+        // Crear polígono cerrado
+        if (wgs84Coords[0][0] !== wgs84Coords[wgs84Coords.length-1][0] || 
+            wgs84Coords[0][1] !== wgs84Coords[wgs84Coords.length-1][1]) {
+            wgs84Coords.push(wgs84Coords[0]);
+        }
+        
+        // Limpiar mapa existente
+        mapManager.drawnItems.clearLayers();
+        
+        // Crear y añadir polígono
+        const polygon = L.polygon(wgs84Coords, {
+            color: '#2b6cb0',
+            fillColor: '#2b6cb0',
+            fillOpacity: 0.25,
+            weight: 3
+        }).addTo(mapManager.drawnItems);
+        
+        // Ajustar vista
+        mapManager.map.fitBounds(polygon.getBounds());
+        
+        // Crear feature GeoJSON
+        const feature = {
+            type: 'Feature',
+            geometry: {
+                type: 'Polygon',
+                coordinates: [wgs84Coords]
+            },
+            properties: {}
+        };
+        
+        mapManager.updatePolygonData(polygon);
+        mapManager.currentPolygonLayer = polygon;
+        mapManager.showMessage('Polígono dibujado desde coordenadas UTM', 'success');
+        
+    } catch (error) {
+        console.error('Error dibujando polígono UTM:', error);
+        mapManager.showMessage('Error dibujando polígono', 'error');
+    }
 }
 
-function validateUTMCoordinates(zone, hemisphere, easting, northing) {
-    if (zone < 1 || zone > 60) {
-        return 'Zona UTM debe estar entre 1 y 60';
-    }
-    
-    if (hemisphere !== 'N' && hemisphere !== 'S') {
-        return 'Hemisferio debe ser N (Norte) o S (Sur)';
-    }
-    
-    if (easting < 0 || easting > 1000000) {
-        return 'Este (Easting) debe estar entre 0 y 1,000,000';
-    }
-    
-    if (hemisphere === 'N') {
-        if (northing < 0 || northing > 10000000) {
-            return 'Norte (Northing) en hemisferio Norte debe estar entre 0 y 10,000,000';
-        }
-    } else {
-        if (northing < 1000000 || northing > 10000000) {
-            return 'Norte (Northing) en hemisferio Sur debe estar entre 1,000,000 y 10,000,000';
-        }
-    }
-    
-    return null;
-}
 
-// Inicialización del modal
-document.addEventListener('DOMContentLoaded', function() {
-    // Modal functionality
-    const modal = document.getElementById('manual-polygon-modal');
-    const openModalBtn = document.getElementById('manual-polygon-toggle');
-    const closeModalBtn = document.getElementById('close-modal');
-    const cancelModalBtn = document.getElementById('cancel-modal');
+function setupUTMModal(utmModal) {
     const methodSingleBtn = document.getElementById('method-single');
     const methodBulkBtn = document.getElementById('method-bulk');
     const singleInput = document.getElementById('single-input');
     const bulkInput = document.getElementById('bulk-input');
-    const coordsList = document.getElementById('coords-list');
-    const coordsContainer = document.getElementById('coords-container');
     const addCoordBtn = document.getElementById('add-coord');
     const clearListBtn = document.getElementById('clear-list');
     const manualForm = document.getElementById('manual-polygon-form');
-
-    // Open modal
-    openModalBtn.addEventListener('click', () => {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        setTimeout(() => modal.classList.add('opacity-100'), 10);
-    });
-
-    // Close modal
-    function closeModal() {
-        modal.classList.remove('opacity-100');
-        setTimeout(() => {
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-            coordinatesList = [];
-            updateCoordsList();
-            singleInput.classList.remove('hidden');
-            bulkInput.classList.add('hidden');
-            methodSingleBtn.classList.add('bg-blue-600', 'text-white');
-            methodSingleBtn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-            methodBulkBtn.classList.remove('bg-blue-600', 'text-white');
-            methodBulkBtn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-        }, 300);
-    }
-
-    closeModalBtn.addEventListener('click', closeModal);
-    cancelModalBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
-
-    // Switch between input methods
+    const bulkCoordsTextarea = document.getElementById('bulk-coords');
+    
+    if (!methodSingleBtn || !methodBulkBtn) return;
+    
+    // Cambiar entre métodos de entrada
     methodSingleBtn.addEventListener('click', () => {
         methodSingleBtn.classList.add('bg-blue-600', 'text-white');
         methodSingleBtn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
@@ -839,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
         singleInput.classList.remove('hidden');
         bulkInput.classList.add('hidden');
     });
-
+    
     methodBulkBtn.addEventListener('click', () => {
         methodBulkBtn.classList.add('bg-blue-600', 'text-white');
         methodBulkBtn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
@@ -848,30 +452,37 @@ document.addEventListener('DOMContentLoaded', function() {
         bulkInput.classList.remove('hidden');
         singleInput.classList.add('hidden');
     });
-
-    // Add coordinate from single input
-    addCoordBtn.addEventListener('click', () => {
-        const zone = parseInt(document.getElementById('single-zone').value);
-        const hemisphere = document.getElementById('single-hemisphere').value;
-        const easting = parseFloat(document.getElementById('single-easting').value);
-        const northing = parseFloat(document.getElementById('single-northing').value);
-
-        const error = validateUTMCoordinates(zone, hemisphere, easting, northing);
-        if (error) {
-            alert(error);
-            return;
-        }
-
-        coordinatesList.push([easting, northing, zone, hemisphere]);
-        updateCoordsList();
+    
+    // Agregar coordenada individual
+    if (addCoordBtn) {
+        addCoordBtn.addEventListener('click', () => {
+            const zone = parseInt(document.getElementById('single-zone').value);
+            const hemisphere = document.getElementById('single-hemisphere').value;
+            const easting = parseFloat(document.getElementById('single-easting').value);
+            const northing = parseFloat(document.getElementById('single-northing').value);
+            
+            const error = UTMCoordinates.validate(zone, hemisphere, easting, northing);
+            if (error) {
+                alert(error);
+                return;
+            }
+            
+            utmModal.coordinatesList.push([easting, northing, zone, hemisphere]);
+            updateCoordsList(utmModal.coordinatesList);
+            
+            // Limpiar inputs
+            document.getElementById('single-easting').value = '';
+            document.getElementById('single-northing').value = '';
+        });
+    }
+    
+    // Actualizar lista de coordenadas
+    function updateCoordsList(coordinatesList) {
+        const coordsList = document.getElementById('coords-list');
+        const coordsContainer = document.getElementById('coords-container');
         
-        // Clear inputs
-        document.getElementById('single-easting').value = '';
-        document.getElementById('single-northing').value = '';
-    });
-
-    // Update coordinates list display
-    function updateCoordsList() {
+        if (!coordsList || !coordsContainer) return;
+        
         coordsContainer.innerHTML = '';
         
         if (coordinatesList.length === 0) {
@@ -899,79 +510,216 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             coordsContainer.appendChild(div);
         });
-
-        // Add remove event listeners
+        
+        // Agregar event listeners para eliminar
         coordsContainer.querySelectorAll('button[data-index]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const index = parseInt(e.target.closest('button').dataset.index);
                 coordinatesList.splice(index, 1);
-                updateCoordsList();
+                updateCoordsList(coordinatesList);
             });
         });
     }
-
-    // Clear list
-    clearListBtn.addEventListener('click', () => {
-        coordinatesList = [];
-        updateCoordsList();
-    });
-
-    // Handle form submission
-    manualForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        if (methodSingleBtn.classList.contains('bg-blue-600')) {
-            // Using single input method
-            if (coordinatesList.length < 3) {
-                alert('Se necesitan al menos 3 coordenadas para formar un polígono');
-                return;
-            }
+    
+    // Limpiar lista
+    if (clearListBtn) {
+        clearListBtn.addEventListener('click', () => {
+            utmModal.coordinatesList = [];
+            updateCoordsList(utmModal.coordinatesList);
+        });
+    }
+    
+    // Manejar envío del formulario
+    if (manualForm) {
+        manualForm.addEventListener('submit', (e) => {
+            e.preventDefault();
             
-            // Draw polygon from single coordinates
-            if (typeof drawUTMPolygon === 'function') {
-                drawUTMPolygon(coordinatesList);
-                closeModal();
-            }
-        } else {
-            // Using bulk input method
-            const bulkText = document.getElementById('bulk-coords').value.trim();
-            if (!bulkText) {
-                alert('Ingresa coordenadas en el área de texto');
-                return;
-            }
-            
-            const lines = bulkText.split('\n').filter(line => line.trim());
-            const bulkCoords = [];
-            
-            for (const line of lines) {
-                const parts = line.split(',').map(part => part.trim());
-                if (parts.length !== 4) continue;
-                
-                const [zoneStr, hemisphere, eastingStr, northingStr] = parts;
-                const zone = parseInt(zoneStr);
-                const easting = parseFloat(eastingStr);
-                const northing = parseFloat(northingStr);
-                
-                const error = validateUTMCoordinates(zone, hemisphere, easting, northing);
-                if (error) {
-                    alert(`Error en línea: ${line}\n${error}`);
+            if (methodSingleBtn.classList.contains('bg-blue-600')) {
+                // Método individual
+                if (utmModal.coordinatesList.length < 3) {
+                    alert('Se necesitan al menos 3 coordenadas para formar un polígono');
                     return;
                 }
                 
-                bulkCoords.push([easting, northing, zone, hemisphere]);
+                utmModal.drawPolygon(utmModal.coordinatesList);
+                utmModal.close();
+            } else {
+                // Método por lote
+                const bulkText = bulkCoordsTextarea.value.trim();
+                if (!bulkText) {
+                    alert('Ingresa coordenadas en el área de texto');
+                    return;
+                }
+                
+                const lines = bulkText.split('\n').filter(line => line.trim());
+                const bulkCoords = [];
+                
+                for (const line of lines) {
+                    const parts = line.split(',').map(part => part.trim());
+                    if (parts.length !== 4) continue;
+                    
+                    const [zoneStr, hemisphere, eastingStr, northingStr] = parts;
+                    const zone = parseInt(zoneStr);
+                    const easting = parseFloat(eastingStr);
+                    const northing = parseFloat(northingStr);
+                    
+                    const error = UTMCoordinates.validate(zone, hemisphere, easting, northing);
+                    if (error) {
+                        alert(`Error en línea: ${line}\n${error}`);
+                        return;
+                    }
+                    
+                    bulkCoords.push([easting, northing, zone, hemisphere]);
+                }
+                
+                if (bulkCoords.length < 3) {
+                    alert('Se necesitan al menos 3 coordenadas válidas');
+                    return;
+                }
+                
+                utmModal.drawPolygon(bulkCoords);
+                utmModal.close();
             }
-            
-            if (bulkCoords.length < 3) {
-                alert('Se necesitan al menos 3 coordenadas válidas');
-                return;
-            }
-            
-            // Draw polygon from bulk coordinates
-            if (typeof drawUTMPolygon === 'function') {
-                drawUTMPolygon(bulkCoords);
-                closeModal();
-            }
+        });
+    }
+}
+
+/**
+ * Manejar detección de ubicación
+ */
+async function handleLocationDetection(mapManager, locationDetector) {
+    const val = mapManager.geometryInput?.value;
+    if (!val) {
+        mapManager.showMessage('❌ Debes tener un polígono en el mapa', 'error');
+        return;
+    }
+    
+    let feature;
+    try {
+        feature = JSON.parse(val);
+    } catch (e) {
+        mapManager.showMessage('❌ GeoJSON inválido', 'error');
+        return;
+    }
+    
+    const centroid = mapManager.calculateCentroid(feature);
+    if (!centroid) {
+        mapManager.showMessage('❌ No se pudo calcular el centroide', 'error');
+        return;
+    }
+    
+    // Actualizar campos ocultos
+    document.getElementById('centroid_lat').value = centroid.lat;
+    document.getElementById('centroid_lng').value = centroid.lng;
+    
+    // Deshabilitar botón y mostrar carga
+    const detectBtn = document.getElementById('detect-location');
+    const detectButtonText = document.getElementById('detect-button-text');
+    const originalText = detectButtonText.textContent;
+    detectButtonText.textContent = 'Detectando...';
+    detectBtn.disabled = true;
+    
+    try {
+        const data = await locationDetector.detectLocation(centroid.lat, centroid.lng);
+        
+        const address = data.address || {};
+        const municipality = address.county || address.suburb || address.village || address.town || address.city || '';
+        const parish = address.municipality || address.county || address.city || '';
+        const state = address.state || address.region || '';
+        
+        // Limpiar nombres
+        const cleanParish = locationDetector.cleanLocationString(parish);
+        const cleanMunicipality = locationDetector.cleanLocationString(municipality);
+        const cleanState = locationDetector.cleanLocationString(state);
+        
+        // Actualizar campos ocultos
+        document.getElementById('detected_parish').value = cleanParish;
+        document.getElementById('detected_municipality').value = cleanMunicipality;
+        document.getElementById('detected_state').value = cleanState;
+        
+        // Actualizar interfaz
+        updateLocationInfoUI(cleanParish, cleanMunicipality, cleanState, centroid);
+        
+        // Intentar asignar parroquia
+        const assignResult = await locationDetector.findAndAssignParish(
+            cleanParish,
+            cleanMunicipality,
+            cleanState
+        );
+        
+        if (assignResult.success && assignResult.parish) {
+            document.getElementById('parish_id').value = assignResult.parish.id;
+            mapManager.showMessage('✅ Parroquia encontrada y asignada', 'success');
+        } else {
+            mapManager.showMessage('ℹ️ No se encontró parroquia exacta. Selecciona manualmente.', 'info');
         }
-    });
-});
+        
+    } catch (error) {
+        console.error('Error en detección de ubicación:', error);
+        mapManager.showMessage('❌ Error detectando ubicación', 'error');
+    } finally {
+        detectBtn.disabled = false;
+        detectButtonText.textContent = originalText;
+    }
+}
+
+/**
+ * Actualizar UI de información de ubicación
+ */
+function updateLocationInfoUI(parish, municipality, state, centroid) {
+    // Actualizar texto en la interfaz
+    document.getElementById('detected-parish-text').textContent = parish || 'No detectado';
+    document.getElementById('detected-municipality-text').textContent = municipality || 'No detectado';
+    document.getElementById('detected-state-text').textContent = state || 'No detectado';
+    
+    if (centroid) {
+        document.getElementById('detected-coords-text').textContent = 
+            `${centroid.lat.toFixed(6)}, ${centroid.lng.toFixed(6)}`;
+    }
+    
+    // Mostrar el contenedor de información
+    document.getElementById('location-info').classList.remove('hidden');
+}
+
+/**
+ * Validación del formulario
+ */
+function validatePolygonForm(mapManager, form) {
+    const val = mapManager.geometryInput?.value;
+    if (!val) {
+        mapManager.showMessage('❌ Debes tener un polígono en el mapa', 'error');
+        return false;
+    }
+    
+    const nameInput = document.getElementById('name');
+    if (!nameInput.value.trim()) {
+        nameInput.focus();
+        mapManager.showMessage('❌ El nombre del polígono es requerido', 'error');
+        return false;
+    }
+    
+    try {
+        const parsed = JSON.parse(val);
+        const feature = (parsed.type && parsed.type === 'Feature') ? 
+            parsed : { type: 'Feature', geometry: parsed };
+        const geom = feature.geometry;
+        
+        if (!geom || !geom.type || !['Polygon', 'MultiPolygon'].includes(geom.type)) {
+            mapManager.showMessage('❌ La geometría debe ser Polygon o MultiPolygon', 'error');
+            return false;
+        }
+        
+        // Mostrar carga en el botón de envío
+        const submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Actualizando...';
+        }
+        
+        return true;
+    } catch (err) {
+        mapManager.showMessage('❌ Geometría inválida (JSON)', 'error');
+        return false;
+    }
+}
 </script>
