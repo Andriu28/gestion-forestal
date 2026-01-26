@@ -23,9 +23,6 @@ class Polygon extends Model
         'parish_id',
         'area_ha',
         'is_active',
-        'detected_parish',
-        'detected_municipality',
-        'detected_state',
         'centroid_lat',
         'centroid_lng',
         'location_data'
@@ -128,23 +125,21 @@ class Polygon extends Model
     public function scopeSearch(Builder $query, string $search): Builder
     {
         return $query->where('name', 'like', "%{$search}%")
-                     ->orWhere('description', 'like', "%{$search}%")
-                     ->orWhere('detected_parish', 'like', "%{$search}%")
-                     ->orWhere('detected_municipality', 'like', "%{$search}%")
-                     ->orWhere('detected_state', 'like', "%{$search}%")
-                     ->orWhereHas('producer', function($q) use ($search) {
-                         $q->where('name', 'like', "%{$search}%")
-                           ->orWhere('lastname', 'like', "%{$search}%");
-                     })
-                     ->orWhereHas('parish', function($q) use ($search) {
-                         $q->where('name', 'like', "%{$search}%")
-                           ->orWhereHas('municipality', function($q2) use ($search) {
-                               $q2->where('name', 'like', "%{$search}%")
-                                  ->orWhereHas('state', function($q3) use ($search) {
-                                      $q3->where('name', 'like', "%{$search}%");
-                                  });
-                           });
-                     });
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('location_data', 'like', "%{$search}%")  // Buscar en el JSON
+                    ->orWhereHas('producer', function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('lastname', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('parish', function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                        ->orWhereHas('municipality', function($q2) use ($search) {
+                            $q2->where('name', 'like', "%{$search}%")
+                                ->orWhereHas('state', function($q3) use ($search) {
+                                    $q3->where('name', 'like', "%{$search}%");
+                                });
+                        });
+                    });
     }
 
     // Accesores útiles
@@ -177,17 +172,14 @@ class Polygon extends Model
         return "<span class=\"inline-block px-3 py-1 text-xs font-semibold {$bgColor} text-white rounded-full\">{$text}</span>";
     }
 
-    public function getDetectedLocationAttribute(): string
+    public function getFullLocationAttribute(): string
     {
-        if ($this->detected_parish && $this->detected_municipality && $this->detected_state) {
-            return "{$this->detected_parish}, {$this->detected_municipality}, {$this->detected_state}";
-        }
-
         if ($this->parish) {
+            $this->loadMissing('parish.municipality.state');
             return "{$this->parish->name}, {$this->parish->municipality->name}, {$this->parish->municipality->state->name}";
         }
 
-        return 'Ubicación no detectada';
+        return 'Ubicación no asignada';
     }
 
     /**
@@ -215,5 +207,67 @@ class Polygon extends Model
     public function analyses()
     {
         return $this->hasMany(Deforestation::class, 'polygon_id');
+    }
+
+    // En Polygon.php - agregar estos métodos al final de la clase
+
+    /**
+     * Accesor para obtener la parroquia detectada desde location_data
+     */
+    public function getDetectedParishAttribute(): ?string
+    {
+        $locationData = $this->location_data;
+        if (is_array($locationData) && isset($locationData['detected_parish'])) {
+            return $locationData['detected_parish'];
+        }
+        
+        if (is_string($locationData)) {
+            $decoded = json_decode($locationData, true);
+            if ($decoded && isset($decoded['detected_parish'])) {
+                return $decoded['detected_parish'];
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Accesor para obtener el municipio detectado desde location_data
+     */
+    public function getDetectedMunicipalityAttribute(): ?string
+    {
+        $locationData = $this->location_data;
+        if (is_array($locationData) && isset($locationData['detected_municipality'])) {
+            return $locationData['detected_municipality'];
+        }
+        
+        if (is_string($locationData)) {
+            $decoded = json_decode($locationData, true);
+            if ($decoded && isset($decoded['detected_municipality'])) {
+                return $decoded['detected_municipality'];
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Accesor para obtener el estado detectado desde location_data
+     */
+    public function getDetectedStateAttribute(): ?string
+    {
+        $locationData = $this->location_data;
+        if (is_array($locationData) && isset($locationData['detected_state'])) {
+            return $locationData['detected_state'];
+        }
+        
+        if (is_string($locationData)) {
+            $decoded = json_decode($locationData, true);
+            if ($decoded && isset($decoded['detected_state'])) {
+                return $decoded['detected_state'];
+            }
+        }
+        
+        return null;
     }
 }

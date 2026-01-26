@@ -104,8 +104,9 @@ class PolygonController extends Controller
     }
 
     // En el método store():
-    public function store(\Illuminate\Http\Request $request): \Illuminate\Http\RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
+        // AGREGAR los campos detected_* para poder crear las ubicaciones
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -113,22 +114,100 @@ class PolygonController extends Controller
             'producer_id' => 'nullable|exists:producers,id',
             'parish_id' => 'nullable|exists:parishes,id',
             'area_ha' => 'nullable|numeric|min:0',
-            'detected_parish' => 'nullable|string|max:255',
-            'detected_municipality' => 'nullable|string|max:255',
-            'detected_state' => 'nullable|string|max:255',
             'centroid_lat' => 'nullable|numeric|between:-90,90',
             'centroid_lng' => 'nullable|numeric|between:-180,180',
-            'location_data' => 'nullable|string'
+            'location_data' => 'nullable|string',
+            'detected_parish' => 'nullable|string',      // Para crear nueva ubicación
+            'detected_municipality' => 'nullable|string', // Para crear nueva ubicación
+            'detected_state' => 'nullable|string'         // Para crear nueva ubicación
         ]);
 
         DB::beginTransaction();
         try {
-            // Normalizar GeoJSON
+            $parishId = $validated['parish_id'] ?? null;
+            
+            // Si NO hay parish_id pero SÍ hay datos detectados, CREAR la ubicación
+            if (!$parishId && !empty($validated['detected_parish']) && 
+                !empty($validated['detected_municipality']) && !empty($validated['detected_state'])) {
+                
+                $locationService = new LocationService();
+                $parishId = $locationService::createOrUpdateLocation(
+                    $validated['detected_parish'],
+                    $validated['detected_municipality'],
+                    $validated['detected_state']
+                );
+                
+                if ($parishId) {
+                    \Log::info('Creada nueva ubicación desde datos detectados', [
+                        'parish_id' => $parishId,
+                        'parish' => $validated['detected_parish'],
+                        'municipality' => $validated['detected_municipality'],
+                        'state' => $validated['detected_state']
+                    ]);
+                }
+            }
+            
+            // Si todavía no hay parish_id pero tenemos location_data (OSM), procesarlo
+            if (!$parishId && !empty($validated['location_data'])) {
+                $locationData = json_decode($validated['location_data'], true);
+                if ($locationData && isset($locationData['address'])) {
+                    $locationService = new LocationService();
+                    $result = $locationService->processOSMData($locationData);
+                    
+                    // Intentar con datos procesados de OSM
+                    if (!empty($result['parish_id'])) {
+                        $parishId = $result['parish_id'];
+                        \Log::info('Parroquia encontrada desde OSM: ' . $parishId);
+                    } 
+                    // Si OSM no encontró match PERO tiene datos detectados, CREAR la ubicación
+                    else if (!empty($result['detected_parish']) && 
+                            !empty($result['detected_municipality']) && 
+                            !empty($result['detected_state'])) {
+                        
+                        $parishId = $locationService::createOrUpdateLocation(
+                            $result['detected_parish'],
+                            $result['detected_municipality'],
+                            $result['detected_state']
+                        );
+                        
+                        if ($parishId) {
+                            \Log::info('Creada nueva ubicación desde OSM', [
+                                'parish_id' => $parishId,
+                                'parish' => $result['detected_parish'],
+                                'municipality' => $result['detected_municipality'],
+                                'state' => $result['detected_state']
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            // Construir location_data para registro
+            $locationDataJson = null;
+            if (!empty($validated['location_data'])) {
+                $locationData = json_decode($validated['location_data'], true);
+                if ($locationData) {
+                    // Guardar datos de creación
+                    $locationData['created_info'] = [
+                        'has_detected_data' => !empty($validated['detected_parish']),
+                        'detected_parish' => $validated['detected_parish'] ?? null,
+                        'detected_municipality' => $validated['detected_municipality'] ?? null,
+                        'detected_state' => $validated['detected_state'] ?? null,
+                        'assigned_parish_id' => $parishId,
+                        'created_at' => now()->toISOString()
+                    ];
+                    $locationDataJson = json_encode($locationData, JSON_UNESCAPED_UNICODE);
+                }
+            }
+
+            // Normalizar GeoJSON (tu código existente)
             $geojsonRaw = $validated['geometry'] ?? null;
             if (empty($geojsonRaw)) throw new \Exception('La geometría no puede estar vacía.');
             $decoded = json_decode($geojsonRaw, true);
             if ($decoded === null) throw new \Exception('GeoJSON inválido (no se pudo parsear).');
-            $geometryObj = (isset($decoded['type']) && $decoded['type'] === 'Feature') ? ($decoded['geometry'] ?? null) : $decoded;
+            $geometryObj = (isset($decoded['type']) && $decoded['type'] === 'Feature') 
+                ? ($decoded['geometry'] ?? null) 
+                : $decoded;
             if (empty($geometryObj) || empty($geometryObj['type']) || empty($geometryObj['coordinates'])) {
                 throw new \Exception('GeoJSON geometry inválido o incompleto.');
             }
@@ -137,29 +216,28 @@ class PolygonController extends Controller
             }
             $geoForDb = json_encode($geometryObj, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-            // Insertar con SQL pero después registrar actividad manualmente
+            // Insertar con SQL - SOLO parish_id
             $now = now();
-            $locationData = !empty($validated['location_data']) ? $validated['location_data'] : null;
 
             $row = DB::selectOne(
                 "INSERT INTO polygons
-                    (name, description, producer_id, parish_id, area_ha, is_active, detected_parish, detected_municipality, detected_state, centroid_lat, centroid_lng, location_data, geometry, created_at, updated_at)
+                    (name, description, producer_id, parish_id, area_ha, is_active, 
+                    centroid_lat, centroid_lng, location_data, geometry, 
+                    created_at, updated_at)
                 VALUES
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?)
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, 
+                    ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?)
                 RETURNING id",
                 [
                     $validated['name'],
                     $validated['description'] ?? null,
                     $validated['producer_id'] ?? null,
-                    $validated['parish_id'] ?? null,
+                    $parishId,  // ¡AHORA SIEMPRE tendrá un valor (si se detectó ubicación)!
                     $validated['area_ha'] ?? null,
                     true,
-                    $validated['detected_parish'] ?? null,
-                    $validated['detected_municipality'] ?? null,
-                    $validated['detected_state'] ?? null,
                     $validated['centroid_lat'] ?? null,
                     $validated['centroid_lng'] ?? null,
-                    $locationData,
+                    $locationDataJson,
                     $geoForDb,
                     $now,
                     $now
@@ -170,10 +248,10 @@ class PolygonController extends Controller
                 throw new \Exception('No se pudo insertar polígono (no se obtuvo id).');
             }
 
-            // Obtener el polígono creado
-            $polygon = Polygon::find($row->id);
+            // Obtener el polígono creado con sus relaciones
+            $polygon = Polygon::with(['parish.municipality.state'])->find($row->id);
 
-            // Calcular área y centroide
+            // Calcular área y centroide automáticamente
             $res = DB::selectOne("
                 SELECT 
                 ST_Area(geometry::geography) / 10000 AS area_ha,
@@ -183,7 +261,6 @@ class PolygonController extends Controller
             ", [$polygon->id]);
 
             if ($res) {
-                // Actualizar SIN usar save() para evitar evento "updated"
                 DB::table('polygons')->where('id', $polygon->id)->update([
                     'area_ha' => isset($res->area_ha) ? round((float)$res->area_ha, 2) : null,
                     'centroid_lat' => !empty($res->centroid_geojson) ? 
@@ -196,8 +273,7 @@ class PolygonController extends Controller
                 $polygon->refresh();
             }
 
-            // REGISTRAR LA ACTIVIDAD "created" MANUALMENTE
-            // Esto es lo que hace Producer::create() automáticamente
+            // Registrar actividad
             if (class_exists('Spatie\Activitylog\Models\Activity')) {
                 activity()
                     ->performedOn($polygon)
@@ -208,20 +284,36 @@ class PolygonController extends Controller
                             'area_ha' => $polygon->area_ha,
                             'producer_id' => $polygon->producer_id,
                             'parish_id' => $polygon->parish_id,
-                            'is_active' => $polygon->is_active
+                            'is_active' => $polygon->is_active,
+                            'location' => $polygon->parish ? 
+                                "{$polygon->parish->name}, {$polygon->parish->municipality->name}, {$polygon->parish->municipality->state->name}" : 
+                                'Sin ubicación'
                         ]
                     ])
-                
                     ->event('created')
                     ->log("Polígono '{$polygon->name}' fue creado");
             }
 
             DB::commit();
 
-            \Log::info('Polígono creado exitosamente id=' . $polygon->id);
+            \Log::info('Polígono creado exitosamente', [
+                'id' => $polygon->id,
+                'name' => $polygon->name,
+                'parish_id' => $polygon->parish_id,
+                'has_location' => !is_null($polygon->parish_id),
+                'location_full' => $polygon->parish ? 
+                    "{$polygon->parish->name}, {$polygon->parish->municipality->name}, {$polygon->parish->municipality->state->name}" : 
+                    null
+            ]);
 
             return redirect()->route('polygons.index')->with('success', 'Polígono creado exitosamente.')
-                ->with('debug_info', ['polygon_id' => $polygon->id]);
+                ->with('debug_info', [
+                    'polygon_id' => $polygon->id,
+                    'parish_id' => $polygon->parish_id,
+                    'location' => $polygon->parish ? 
+                        "{$polygon->parish->name}, {$polygon->parish->municipality->name}" : 
+                        'Sin ubicación'
+                ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -261,22 +353,59 @@ class PolygonController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'geometry' => 'required|string', // Añadir esta validación
+            'geometry' => 'required|string',
             'producer_id' => 'nullable|exists:producers,id',
             'parish_id' => 'nullable|exists:parishes,id',
             'area_ha' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
-            'detected_parish' => 'nullable|string|max:255', // Añadir
-            'detected_municipality' => 'nullable|string|max:255', // Añadir
-            'detected_state' => 'nullable|string|max:255', // Añadir
-            'centroid_lat' => 'nullable|numeric|between:-90,90', // Añadir
-            'centroid_lng' => 'nullable|numeric|between:-180,180', // Añadir
-            'location_data' => 'nullable|string' // Añadir
+            'detected_parish' => 'nullable|string|max:255',
+            'detected_municipality' => 'nullable|string|max:255',
+            'detected_state' => 'nullable|string|max:255',
+            'centroid_lat' => 'nullable|numeric|between:-90,90',
+            'centroid_lng' => 'nullable|numeric|between:-180,180',
+            'location_data' => 'nullable|string'
         ]);
 
         DB::beginTransaction();
         try {
-            // Normalizar GeoJSON (igual que en store())
+            // ============================================
+            // NUEVO: Procesar ubicación detectada en UPDATE
+            // ============================================
+            $parishId = $validated['parish_id'] ?? $polygon->parish_id;
+            
+            // Si hay nuevos datos detectados, procesarlos para obtener parish_id
+            if (!empty($validated['detected_parish']) && 
+                !empty($validated['detected_municipality']) && 
+                !empty($validated['detected_state'])) {
+                
+                $locationService = new LocationService();
+                $newParishId = $locationService->findOrCreateLocation(
+                    $validated['detected_parish'],
+                    $validated['detected_municipality'],
+                    $validated['detected_state']
+                );
+                
+                if ($newParishId) {
+                    $parishId = $newParishId;
+                    \Log::info('Update: LocationService encontró parish_id: ' . $parishId);
+                }
+            }
+            
+            // Si tenemos location_data (JSON de OSM), también procesarlo
+            if (!$parishId && !empty($validated['location_data'])) {
+                $locationData = json_decode($validated['location_data'], true);
+                if ($locationData && isset($locationData['address'])) {
+                    $locationService = new LocationService();
+                    $result = $locationService->processOSMData($locationData);
+                    
+                    if (!empty($result['parish_id'])) {
+                        $parishId = $result['parish_id'];
+                        \Log::info('Update: Procesado location_data OSM, parish_id: ' . $parishId);
+                    }
+                }
+            }
+
+            // Normalizar GeoJSON (código existente)
             $geojsonRaw = $validated['geometry'] ?? null;
             if (empty($geojsonRaw)) throw new \Exception('La geometría no puede estar vacía.');
             
@@ -302,7 +431,7 @@ class PolygonController extends Controller
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
                 'producer_id' => $validated['producer_id'] ?? null,
-                'parish_id' => $validated['parish_id'] ?? null,
+                'parish_id' => $parishId, // ← ¡USA EL parish_id PROCESADO!
                 'is_active' => $validated['is_active'] ?? true,
                 'detected_parish' => $validated['detected_parish'] ?? null,
                 'detected_municipality' => $validated['detected_municipality'] ?? null,
@@ -340,7 +469,7 @@ class PolygonController extends Controller
                     $updateData['name'],
                     $updateData['description'],
                     $updateData['producer_id'],
-                    $updateData['parish_id'],
+                    $updateData['parish_id'], // ← ¡PARISH_ID CORRECTO!
                     $updateData['area_ha'] ?? null,
                     $updateData['is_active'],
                     $updateData['detected_parish'],
@@ -355,7 +484,7 @@ class PolygonController extends Controller
                 ]
             );
 
-            // Si no se proporcionó area_ha manualmente, calcularla desde la nueva geometría
+            // Cálculo de área y centroide (código existente)
             if (!isset($validated['area_ha'])) {
                 $res = DB::selectOne("
                     SELECT ST_Area(geometry::geography) / 10000 AS area_ha
@@ -371,7 +500,6 @@ class PolygonController extends Controller
                 }
             }
 
-            // También actualizar centroide si no se proporcionó
             if (!$validated['centroid_lat'] || !$validated['centroid_lng']) {
                 $centroidRes = DB::selectOne("
                     SELECT ST_AsGeoJSON(ST_Centroid(geometry)) AS centroid_geojson
@@ -396,11 +524,15 @@ class PolygonController extends Controller
             // Refrescar el modelo
             $polygon->refresh();
 
-            \Log::info('Polígono actualizado exitosamente id=' . $polygon->id);
+            \Log::info('Polígono actualizado exitosamente id=' . $polygon->id . 
+                    ', parish_id=' . $polygon->parish_id);
 
             return redirect()->route('polygons.index')
                 ->with('success', 'Polígono actualizado exitosamente.')
-                ->with('debug_info', ['polygon_id' => $polygon->id]);
+                ->with('debug_info', [
+                    'polygon_id' => $polygon->id,
+                    'parish_id' => $polygon->parish_id
+                ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
