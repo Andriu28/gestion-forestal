@@ -117,9 +117,7 @@ class PolygonController extends Controller
             'centroid_lat' => 'nullable|numeric|between:-90,90',
             'centroid_lng' => 'nullable|numeric|between:-180,180',
             'location_data' => 'nullable|string',
-            'detected_parish' => 'nullable|string',      // Para crear nueva ubicación
-            'detected_municipality' => 'nullable|string', // Para crear nueva ubicación
-            'detected_state' => 'nullable|string'         // Para crear nueva ubicación
+            
         ]);
 
         DB::beginTransaction();
