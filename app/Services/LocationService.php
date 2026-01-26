@@ -14,36 +14,46 @@ class LocationService
      * Busca o crea una ubicación completa (Estado → Municipio → Parroquia)
      */
     // En LocationService.php - agregar este método
-public static function createOrUpdateLocation(
-    string $parishName,
-    string $municipalityName,
-    string $stateName
-): ?int {
-    try {
-        // 1. Buscar o crear Estado
-        $state = self::findOrCreateState($stateName);
-        
-        if (!$state) {
+    public static function createOrUpdateLocation(
+        string $parishName,
+        string $municipalityName,
+        string $stateName
+    ): ?int {
+        try {
+            // 1. Buscar o crear Estado
+            $state = self::findOrCreateState($stateName);
+            
+            if (!$state) {
+                return null;
+            }
+            
+            // 2. Buscar o crear Municipio (dentro del estado)
+            $municipality = self::findOrCreateMunicipality($municipalityName, $state->id);
+            
+            if (!$municipality) {
+                return null;
+            }
+            
+            // 3. Buscar o crear Parroquia (dentro del municipio)
+            $parish = self::findOrCreateParish($parishName, $municipality->id);
+            
+            return $parish ? $parish->id : null;
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en createOrUpdateLocation: ' . $e->getMessage());
             return null;
         }
-        
-        // 2. Buscar o crear Municipio (dentro del estado)
-        $municipality = self::findOrCreateMunicipality($municipalityName, $state->id);
-        
-        if (!$municipality) {
-            return null;
-        }
-        
-        // 3. Buscar o crear Parroquia (dentro del municipio)
-        $parish = self::findOrCreateParish($parishName, $municipality->id);
-        
-        return $parish ? $parish->id : null;
-        
-    } catch (\Exception $e) {
-        \Log::error('Error en createOrUpdateLocation: ' . $e->getMessage());
-        return null;
     }
-}
+
+    // En LocationService.php - agregar este método
+    public static function findOrCreateLocation(
+        string $parishName,
+        string $municipalityName,
+        string $stateName
+    ): ?int {
+        // Este método es un alias para createOrUpdateLocation
+        return self::createOrUpdateLocation($parishName, $municipalityName, $stateName);
+    }
     
     /**
      * Busca o crea un estado
