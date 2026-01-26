@@ -157,7 +157,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // LUEGO la ruta resource (genérica)
     Route::resource('polygons', PolygonController::class);
 
-    Route::resource('polygons', PolygonController::class);
+    
     Route::get('polygons/{polygon}/edit', [PolygonController::class, 'edit'])->name('polygons.edit');
     Route::put('polygons/{polygon}', [PolygonController::class, 'update'])->name('polygons.update');
 
