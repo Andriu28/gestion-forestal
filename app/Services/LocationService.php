@@ -13,7 +13,8 @@ class LocationService
     /**
      * Busca o crea una ubicación completa (Estado → Municipio → Parroquia)
      */
-    public static function findOrCreateLocation(
+    // En LocationService.php - agregar este método
+    public static function createOrUpdateLocation(
         string $parishName,
         string $municipalityName,
         string $stateName
@@ -39,9 +40,19 @@ class LocationService
             return $parish ? $parish->id : null;
             
         } catch (\Exception $e) {
-            \Log::error('Error en LocationService: ' . $e->getMessage());
+            \Log::error('Error en createOrUpdateLocation: ' . $e->getMessage());
             return null;
         }
+    }
+
+    // En LocationService.php - agregar este método
+    public static function findOrCreateLocation(
+        string $parishName,
+        string $municipalityName,
+        string $stateName
+    ): ?int {
+        // Este método es un alias para createOrUpdateLocation
+        return self::createOrUpdateLocation($parishName, $municipalityName, $stateName);
     }
     
     /**

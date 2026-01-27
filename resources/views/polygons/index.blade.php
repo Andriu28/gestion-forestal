@@ -419,14 +419,15 @@ function updatePolygonRowForRestored(polygonId, polygonName, isActive = true) {
         
         actionsCell.innerHTML = `
             <div class="flex items-center gap-2">
-                <a href="/polygons/${polygonId}" 
-                   class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
-                   title="Ver">
+                <button type="button" 
+                        class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                        title="Ver detalles"
+                        onclick="showPolygonDetails({{ $polygon->id }})">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                         <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
                         <circle cx="12" cy="12" r="3"/>
                     </svg>
-                </a>
+                </button>
 
                 <a href="/polygons/${polygonId}/edit" 
                    class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
@@ -575,7 +576,7 @@ function formatPolygonDetails(polygon) {
                 </div>
 
                 <!-- Grid de información -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-6">
                     <!-- Información del productor -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
                         <div class="flex items-center mb-2">
@@ -623,7 +624,7 @@ function formatPolygonDetails(polygon) {
                                 <h4 class="font-semibold text-gray-700 dark:text-gray-300">Coordenadas</h4>
                                 <p class="text-gray-900 dark:text-white text-sm font-medium mt-1">
                                     ${polygon.centroid_lat && polygon.centroid_lng ? 
-                                        `${parseFloat(polygon.centroid_lat).toFixed(6)}, ${parseFloat(polygon.centroid_lng).toFixed(6)}` : 
+                                        `Lat:&nbsp;${parseFloat(polygon.centroid_lat).toFixed(5)} Lon:&nbsp;${parseFloat(polygon.centroid_lng).toFixed(5)}` : 
                                         'No disponibles'}
                                 </p>
                             </div>
@@ -643,9 +644,55 @@ function formatPolygonDetails(polygon) {
                     </div>
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Descripción</h3>
                 </div>
-                <div class="prose prose-gray dark:prose-invert max-w-none">
-                    <p class="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">${polygon.description}</p>
-                </div>
+               
+
+                
+
+                <!-- Detección automática -->
+                    <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                        <p class="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">${polygon.description}</p>
+                    </div>
+                        ${polygon.parish ? `
+                        <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <div class="flex items-center">
+                                <!-- Icono de cruz para parroquia -->
+                                <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">  
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
+                                </svg>
+
+                                <span class="text-blue-700 dark:text-blue-300">Parroquia:&nbsp;</span>
+                            </div>
+                            <span class="font-medium text-blue-900 dark:text-blue-200"> ${polygon.parish.name}</span>
+                        </div>
+                        ` : ''}
+
+                        ${polygon.parish.municipality ? `
+                        <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <div class="flex items-center">
+                                <!-- Icono de edificios para municipio -->
+                                <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                </svg>
+                                <span class="text-blue-700 dark:text-blue-300">Municipio:&nbsp;</span>
+                            </div>
+                            <span class="font-medium text-blue-900 dark:text-blue-200">${polygon.parish.municipality.name}</span>
+                        </div>
+                        ` : ''}
+
+                        ${polygon.parish.municipality.state ? `
+                        <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <div class="flex items-center">
+                                <!-- Icono de bandera para estado -->
+                                <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                                </svg>
+                                <span class="text-blue-700 dark:text-blue-300">Estado:&nbsp;</span>
+                            </div>
+                            <span class="font-medium text-blue-900 dark:text-blue-200">${polygon.parish.municipality.state.name}</span>
+                        </div>
+                        ` : ''}
+                    </div>
             </div>
             ` : ''}
 
@@ -653,7 +700,9 @@ function formatPolygonDetails(polygon) {
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Información del Sistema</h3>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4">
+                    
+                
                     <!-- Fechas -->
                     <div class="space-y-3">
                         <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
@@ -675,49 +724,6 @@ function formatPolygonDetails(polygon) {
                             </div>
                             <span class="font-medium text-gray-900 dark:text-white">${formatDate(polygon.updated_at)}</span>
                         </div>
-                    </div>
-                    
-                    <!-- Detección automática -->
-                    <div class="space-y-3">
-                        ${polygon.detected_parish ? `
-                        <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <div class="flex items-center">
-                                <!-- Icono de cruz para parroquia -->
-                                <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">  
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
-                                </svg>
-
-                                <span class="text-blue-700 dark:text-blue-300">Parroquia:&nbsp;</span>
-                            </div>
-                            <span class="font-medium text-blue-900 dark:text-blue-200"> ${polygon.detected_parish}</span>
-                        </div>
-                        ` : ''}
-
-                        ${polygon.detected_municipality ? `
-                        <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <div class="flex items-center">
-                                <!-- Icono de edificios para municipio -->
-                                <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                </svg>
-                                <span class="text-blue-700 dark:text-blue-300">Municipio:&nbsp;</span>
-                            </div>
-                            <span class="font-medium text-blue-900 dark:text-blue-200">${polygon.detected_municipality}</span>
-                        </div>
-                        ` : ''}
-
-                        ${polygon.detected_state ? `
-                        <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <div class="flex items-center">
-                                <!-- Icono de bandera para estado -->
-                                <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
-                                </svg>
-                                <span class="text-blue-700 dark:text-blue-300">Estado:&nbsp;</span>
-                            </div>
-                            <span class="font-medium text-blue-900 dark:text-blue-200">${polygon.detected_state}</span>
-                        </div>
-                        ` : ''}
                     </div>
                 </div>
             </div>

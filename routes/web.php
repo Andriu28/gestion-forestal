@@ -145,25 +145,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 
-      // ========== RUTAS PARA POLÍGONOS - ORDEN CORREGIDO ==========
-    
-    // PRIMERO las rutas personalizadas (específicas)
-    Route::get('/polygons/map', [PolygonController::class, 'map'])->name('polygons.map');
-    Route::get('/polygons/geojson', [PolygonController::class, 'geojson'])->name('polygons.geojson');
-    Route::post('/polygons/find-parish', [PolygonController::class, 'findParishApi'])->name('polygons.find-parish-api');
-    Route::post('/polygons/{polygon}/toggle-status', [PolygonController::class, 'toggleStatus'])->name('polygons.toggle-status');
-    Route::post('/polygons/{id}/restore', [PolygonController::class, 'restore'])->name('polygons.restore');
+    // ========== RUTAS PARA POLÍGONOS - VERSIÓN CORRECTA SIN DUPLICADOS ==========
 
-    // LUEGO la ruta resource (genérica)
-    Route::resource('polygons', PolygonController::class);
+        // PRIMERO las rutas personalizadas (específicas)
+        Route::get('/polygons/map', [PolygonController::class, 'map'])->name('polygons.map');
+        Route::get('/polygons/geojson', [PolygonController::class, 'geojson'])->name('polygons.geojson');
+        Route::post('/polygons/find-parish', [PolygonController::class, 'findParishApi'])->name('polygons.find-parish-api');
+        Route::get('/polygons/{polygon}/details', [PolygonController::class, 'details'])
+            ->name('polygons.details')
+            ->middleware('auth');
 
-    Route::resource('polygons', PolygonController::class);
-    Route::get('polygons/{polygon}/edit', [PolygonController::class, 'edit'])->name('polygons.edit');
-    Route::put('polygons/{polygon}', [PolygonController::class, 'update'])->name('polygons.update');
+        // RUTAS DE ESTADO Y RESTAURACIÓN
+        Route::post('/polygons/{polygon}/toggle-status', [PolygonController::class, 'toggleStatus'])->name('polygons.toggle-status');
+        Route::post('/polygons/{id}/restore', [PolygonController::class, 'restore'])->name('polygons.restore');
 
-    Route::get('/polygons/{polygon}/details', [PolygonController::class, 'details'])
-    ->name('polygons.details')
-    ->middleware('auth');
+        // RUTA RESOURCE - SIN definir manualmente edit y update
+        Route::resource('polygons', PolygonController::class);
+
+        // ========== FIN RUTAS POLÍGONOS ==========
 
     Route::get('/producers/{producer}/details', [ProducerController::class, 'details'])
     ->name('producers.details');
