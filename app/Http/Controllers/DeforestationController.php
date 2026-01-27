@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Polygon;
 use App\Services\DeforestationService;
+use App\Services\PdfService;
 use App\Models\Deforestation;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,6 +12,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Services\GFWService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use PDF;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
 
@@ -18,11 +21,13 @@ class DeforestationController extends Controller
 {
     protected $deforestationService;
     protected $gfwService;
+    protected $pdfService;
     
-    public function __construct(DeforestationService $deforestationService, GFWService $gfwService)
+    public function __construct(DeforestationService $deforestationService, GFWService $gfwService, PdfService $pdfService)
     {
         $this->deforestationService = $deforestationService;
         $this->gfwService = $gfwService;
+        $this->pdfService = $pdfService;
     }
 
     /**
@@ -464,58 +469,51 @@ private function isPolygonClosed($coordinates)
         return response()->json(['message' => 'Export functionality to be implemented']);
     }
     
-   /**
-     * Genera reporte PDF de los resultados
-     */
-    public function report($polygonId)
+   public function report(Request $request)
     {
+        \Log::info('Datos recibidos para PDF:', ['data' => $request->all()]);
+        \Log::info('JSON decodificado:', ['dataToPass' => $dataToPass]);
         try {
-            $polygon = Polygon::with('deforestationAnalyses')->findOrFail($polygonId);
-            
-            // Verificar que haya análisis guardados
-            if ($polygon->deforestationAnalyses->isEmpty()) {
-                if (request()->expectsJson()) {
-                    return response()->json([
-                        'error' => 'No hay datos de análisis disponibles para este polígono. 
-                                Primero debe ejecutar y guardar un análisis.'
-                    ], 404);
-                }
-                
-                return back()->withErrors(['error' => 'No hay datos de análisis disponibles para este polígono.']);
+            $rawData = $request->input('report_data');
+            $dataToPass = is_string($rawData) ? json_decode($rawData, true) : $rawData;
+
+            if (!$dataToPass) {
+                return redirect()->route('deforestation.create')
+                    ->withErrors(['error' => 'No se recibieron datos para el reporte.']);
             }
-            
-            // Obtener análisis ordenados por año
-            $analyses = $polygon->deforestationAnalyses->sortBy('year');
-            
-            // Calcular estadísticas
-            $startYear = $analyses->min('year');
-            $endYear = $analyses->max('year');
-            $totalDeforestedArea = $analyses->sum('deforested_area_ha');
-            $polygonArea = $polygon->area_ha ?? 0;
-            $totalPercentage = $polygonArea > 0 ? ($totalDeforestedArea / $polygonArea) * 100 : 0;
-            $conservedArea = max(0, $polygonArea - $totalDeforestedArea);
-            
-            // Preparar datos para la vista
+
+            // 1. Extraer variables clave
+            $polygonArea = (float) ($dataToPass['polygon_area_ha'] ?? 0);
+            $totalLossData = $dataToPass['total_loss'] ?? [];
+
+            // 2. Mapear y transformar los análisis anuales
+            $analyses = collect($dataToPass['yearly_results'] ?? [])->map(function($item) use ($polygonArea) {
+                $area = (float) ($item['area__ha'] ?? 0);
+                return (object)[
+                    'year' => $item['year'],
+                    'deforested_area_ha' => $area,
+                    'percentage_loss' => $polygonArea > 0 ? ($area / $polygonArea) * 100 : 0
+                ];
+            })->sortBy('year')->values();
+
+            // 3. Preparar el paquete de datos final
             $data = [
-                'polygon' => $polygon,
-                'analyses' => $analyses->values(),
-                'start_year' => $startYear,
-                'end_year' => $endYear,
-                'totalDeforestedArea' => $totalDeforestedArea,
-                'totalPercentage' => $totalPercentage,
-                'conservedArea' => $conservedArea,
+                'polygon' => (object)[
+                    'name' => $dataToPass['polygon_name'] ?? 'Área sin nombre',
+                    'area_ha' => $polygonArea,
+                    'description' => $dataToPass['description'] ?? '',
+                ],
+                'analyses' => $analyses,
+                'start_year' => $dataToPass['start_year'] ?? null,
+                'end_year' => $dataToPass['end_year'] ?? null,
+                'totalDeforestedArea' => (float) ($totalLossData['totalDeforestedArea'] ?? 0),
+                'totalPercentage' => (float) ($totalLossData['totalPercentage'] ?? 0),
+                'conservedArea' => $polygonArea - (float) ($totalLossData['totalDeforestedArea'] ?? 0),
                 'report_date' => now()->format('d/m/Y H:i:s'),
-                'isFromSaved' => true,
+                'isFromSaved' => false,
             ];
 
-            Log::info('Generando PDF para polígono:', [
-                'polygon_id' => $polygonId,
-                'analyses_count' => $analyses->count(),
-                'total_area' => $totalDeforestedArea,
-                'polygon_area' => $polygonArea
-            ]);
-
-            // Generar PDF
+            // 4. Generación del PDF - CORREGIDO
             $pdf = \PDF::loadView('deforestation.report-pdf', $data)
                 ->setPaper('a4', 'portrait')
                 ->setOptions([
@@ -524,25 +522,21 @@ private function isPolygonClosed($coordinates)
                     'isRemoteEnabled' => true,
                     'chroot' => public_path(),
                 ]);
-            
-            // Limpiar nombre para el archivo
-            $cleanName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $polygon->name);
-            $filename = "reporte-deforestacion-{$cleanName}-" . now()->format('Y-m-d') . '.pdf';
-            
-            // Descargar el PDF
+
+            // Limpiar búfer
+            if (ob_get_length()) ob_end_clean();
+
+            // CORRECCIÓN: Usar Str::slug y acceder correctamente al array
+            $filename = "reporte-" . \Illuminate\Support\Str::slug($data['polygon']->name) . "-" . now()->format('Ymd') . ".pdf";
+
             return $pdf->download($filename);
-            
+
         } catch (\Exception $e) {
-            Log::error('Error al generar PDF: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
+            \Log::error('Error en PDF: ' . $e->getMessage());
+            \Log::error('Trace completo: ' . $e->getTraceAsString());
             
-            if (request()->expectsJson()) {
-                return response()->json([
-                    'error' => 'Error al generar el reporte: ' . $e->getMessage()
-                ], 500);
-            }
-            
-            return back()->withErrors(['error' => 'Error al generar el reporte PDF: ' . $e->getMessage()]);
+            return redirect()->route('deforestation.create')
+                ->withErrors(['error' => 'Ocurrió un error técnico al generar el PDF: ' . $e->getMessage()]);
         }
     }
 }

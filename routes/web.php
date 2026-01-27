@@ -192,7 +192,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('export');
         
         // Generar reporte PDF
-        Route::get('/report/{polygon}', [DeforestationController::class, 'report'])
+        Route::post('/generar-report', [DeforestationController::class, 'report'])
             ->name('report');
         
         // API para obtener datos del análisis (para gráficos)

@@ -181,7 +181,7 @@
             <td class="header-title">Reporte Técnico de Monitoreo</td>
             <td class="header-date">
                 Generado: {{ $report_date }}<br>
-                ID Análisis: #POL-{{ $polygon->id }}
+                
             </td>
         </tr>
     </table>
