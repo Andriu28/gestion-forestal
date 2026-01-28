@@ -23,8 +23,10 @@ class DeforestationMap {
 
         // Constantes de configuración
         this.STORAGE_KEY = 'gfwLossLayerState'; // Key para localStorage
-        this.INITIAL_CENTER = [-63.26716, 10.63673]; // Venezuela (lon, lat)
-        this.INITIAL_ZOOM = 12;
+        this.INITIAL_CENTER = [-63.172905251869125, 10.555594747510682]; // Venezuela (lon, lat)
+        this.INITIAL_ZOOM = 15;
+        this.MINZOOM = 5;
+        this.MAXZOOM = 20;
         this.GFW_LOSS_URL = 'https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png';
 
         // =============================================
@@ -112,9 +114,12 @@ class DeforestationMap {
     setupBaseLayers() {
         this.baseLayers = {
             osm: new ol.layer.Tile({
-                source: new ol.source.OSM(), 
+                title: 'OpenStreetMap',
                 visible: true,
-                title: 'OpenStreetMap' 
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                    attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                })
             }),
             satellite: new ol.layer.Tile({
                 source: new ol.source.XYZ({
@@ -202,7 +207,10 @@ class DeforestationMap {
             layers: [baseLayerGroup, this.gfwLossLayer, this.vectorLayer],
             view: new ol.View({
                 center: initialCenter,
-                zoom: this.INITIAL_ZOOM
+                zoom: this.INITIAL_ZOOM,
+                minZoom: this.MINZOOM,
+                maxZoom: this.MAXZOOM,
+                smoothResolutionConstraint: true
             })
         });
 
