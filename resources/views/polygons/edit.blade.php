@@ -501,8 +501,8 @@ function createPointMarker(point, index) {
                 <div class="point-marker-label">${index + 1}</div>
             </div>
         `,
-        iconSize: [40, 50],
-        iconAnchor: [20, 50],
+        iconSize: [40, 40],
+        iconAnchor: [20, 43],
         popupAnchor: [0, -45]
     });
     
@@ -578,7 +578,7 @@ function createPointMarker(point, index) {
         }, 100);
     });
     
-    // Evento para arrastrar marcador
+    // Evento para arrastrar marcador - CORREGIDO
     if (isEditModeActive) {
         marker.on('dragend', function(e) {
             const newLatLng = e.target.getLatLng();
@@ -588,7 +588,7 @@ function createPointMarker(point, index) {
             polygonPoints[pointIndex].lat = newLatLng.lat;
             polygonPoints[pointIndex].lng = newLatLng.lng;
             
-            // Actualizar polígono
+            // Actualizar polígono - LLAMADA CORREGIDA
             updatePolygonFromPoints(polygonPoints);
             
             // Actualizar lista
@@ -857,7 +857,6 @@ function createPointElement(point, index) {
                 const iconElement = marker.getElement();
                 if (iconElement) {
                     iconElement.style.filter = 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.8))';
-                    iconElement.style.transform = 'scale(1.1)';
                     iconElement.style.transition = 'all 0.3s ease';
                 }
             }
@@ -947,41 +946,88 @@ function extractPointsFromPolygon(polygonLayer) {
 }
 
 /**
- * Actualizar polígono desde array de puntos
+ * Actualizar polígono desde array de puntos - FUNCIÓN CORREGIDA
  */
 function updatePolygonFromPoints(points) {
-    if (!mapManager || !mapManager.currentPolygonLayer || points.length < 3) return;
+    if (!mapManager || !mapManager.currentPolygonLayer || points.length < 3) return false;
     
-    // Crear array de coordenadas
-    const latLngs = points.map(point => [point.lat, point.lng]);
-    
-    // Cerrar el polígono (último punto = primer punto)
-    latLngs.push([points[0].lat, points[0].lng]);
-    
-    // Actualizar polígono en el mapa
-    mapManager.currentPolygonLayer.setLatLngs([latLngs]);
-    
-    // Actualizar campo oculto
-    const geoJSON = mapManager.currentPolygonLayer.toGeoJSON();
-    if (mapManager.geometryInput) {
-        mapManager.geometryInput.value = JSON.stringify(geoJSON.geometry);
-    }
-    
-    // Recalcular área
-    if (mapManager.areaInput) {
-        const area = mapManager.calculateArea(geoJSON.geometry);
-        if (area) {
-            mapManager.areaInput.value = area.toFixed(2);
+    try {
+        // Crear array de coordenadas
+        const latLngs = points.map(point => [point.lat, point.lng]);
+        
+        // Cerrar el polígono (último punto = primer punto)
+        latLngs.push([points[0].lat, points[0].lng]);
+        
+        // Actualizar polígono en el mapa
+        mapManager.currentPolygonLayer.setLatLngs([latLngs]);
+        
+        // Sincronizar con los puntos de edición de Leaflet
+        if (mapManager.currentPolygonLayer.editing) {
+            const editHandler = mapManager.currentPolygonLayer.editing;
+            
+            // Obtener los handlers de vértices
+            if (editHandler._verticesHandlers && editHandler._verticesHandlers.length > 0) {
+                const vertexHandler = editHandler._verticesHandlers[0];
+                
+                // Actualizar las posiciones de los marcadores de edición
+                if (vertexHandler && vertexHandler._markerGroup) {
+                    // Limpiar marcadores existentes
+                    vertexHandler._markerGroup.clearLayers();
+                    
+                    // Agregar nuevos marcadores en las posiciones actualizadas
+                    latLngs.forEach((latLng, index) => {
+                        if (index < latLngs.length - 1) { // No agregar el último punto duplicado
+                            const marker = L.marker(latLng, {
+                                icon: L.divIcon({
+                                    className: 'leaflet-edit-move-icon',
+                                    iconSize: [20, 20],
+                                    iconAnchor: [10, 10]
+                                }),
+                                draggable: true,
+                                zIndexOffset: 10
+                            });
+                            
+                            // Mantener el comportamiento de arrastre de Leaflet
+                            vertexHandler._markerGroup.addLayer(marker);
+                        }
+                    });
+                    
+                    // Re-conectar los eventos de Leaflet
+                    vertexHandler._initMarkers();
+                }
+            }
+            
+            // Forzar actualización del polígono en Leaflet
+            mapManager.currentPolygonLayer.fire('edit');
         }
+        
+        // Actualizar campo oculto
+        const geoJSON = mapManager.currentPolygonLayer.toGeoJSON();
+        if (mapManager.geometryInput) {
+            mapManager.geometryInput.value = JSON.stringify(geoJSON.geometry);
+        }
+        
+        // Recalcular área
+        if (mapManager.areaInput) {
+            const area = mapManager.calculateArea(geoJSON.geometry);
+            if (area) {
+                mapManager.areaInput.value = area.toFixed(2);
+            }
+        }
+        
+        // Actualizar marcadores personalizados
+        updatePointMarkers();
+        
+        // Actualizar resumen
+        updatePolygonSummary(points);
+        
+        return true;
+        
+    } catch (error) {
+        console.error('Error actualizando polígono desde puntos:', error);
+        showMessage('Error actualizando polígono: ' + error.message, 'error');
+        return false;
     }
-    
-    // Actualizar marcadores
-    updatePointMarkers();
-    
-    // Actualizar resumen
-    updatePolygonSummary(points);
-    
-    return true;
 }
 
 /**
@@ -1948,16 +1994,16 @@ function validatePolygonForm(mapManager, form) {
 }
 
 .point-marker-icon {
-    width: 30px;
-    height: 40px;
-    color: #ef4444; /* Rojo para el ícono de ubicación */
+    width: 44px;
+    height: 44px;
+    color: #456deeff; /* Rojo para el ícono de ubicación */
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     transition: all 0.3s ease;
 }
 
 .point-marker-label {
     position: absolute;
-    top: 5px;
+    top: 9px;
     width: 22px;
     height: 22px;
     background: white;
@@ -1975,7 +2021,7 @@ function validatePolygonForm(mapManager, form) {
 
 /* Efectos hover para marcadores */
 .custom-polygon-point-marker:hover .point-marker-icon {
-    color: #dc2626; /* Rojo más oscuro al hover */
+    color: #9fcffcff; /* Rojo más oscuro al hover */
     transform: scale(1.1);
 }
 
