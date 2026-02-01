@@ -287,16 +287,14 @@
                         <div class="mt-4">
                             <x-input-label for="name" :value="__('Nombre del Área:') " />
                             <x-text-input 
-                            id="name" 
-                            class="block mt-1 w-full" 
-                            type="text" 
-                            name="name" 
-                            :value="old('name')" 
-                            autocomplete="name" 
-                            placeholder="Ej: Reserva Natural XYZ"
-                            data-required-when-saving="true" />
-                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                        <div id="name-error" class="text-red-600 text-sm mt-1 hidden"></div>
+                                id="name" 
+                                class="block mt-1 w-full rounded-md border-gray-300 dark:bg-custom-gray dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500" 
+                                type="text" 
+                                name="name" 
+                                placeholder="Ej: Reserva Natural XYZ"
+                                data-required-when-saving="true" />
+                            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                            <div id="name-error" class="text-red-600 text-sm mt-1 hidden"></div>
                         </div>
 
                         <div class="mt-4">
@@ -1182,47 +1180,36 @@ function hideEnhancedLoader() {
 function validateSaveOption() {
     const saveCheckbox = document.getElementById('save_analysis');
     const nameInput = document.getElementById('name');
-    const nameValue = nameInput.value.trim();
-    const nameErrorDiv = document.getElementById('name-error');
+    const nameErrorDiv = document.getElementById('name-error'); // <--- Verifica este ID
     const nameRequiredHint = document.getElementById('name-required-hint');
     const submitButton = document.getElementById('submit-button');
     
-    // Si la casilla de guardar está activada
+    const nameValue = nameInput.value.trim();
+
     if (saveCheckbox.checked) {
-        // Mostrar indicador de requerido
+        // 1. Mostrar siempre el hint de requerido si el checkbox está marcado
         nameRequiredHint.classList.remove('hidden');
-        
-        // Validar que el nombre no esté vacío
+
         if (!nameValue) {
-            // Mostrar error
+            // 2. Aplicar texto y mostrar el div de error
             nameErrorDiv.textContent = 'Para guardar el análisis, debes ingresar un nombre para el área.';
             nameErrorDiv.classList.remove('hidden');
-            nameInput.classList.add('border-red-500', 'ring-2', 'ring-red-200');
             
-            // Deshabilitar el botón de envío
+            // Estilos de error al input
+            nameInput.classList.add('border-red-500', 'focus:ring-red-500');
             submitButton.disabled = true;
-            submitButton.classList.add('opacity-50', 'cursor-not-allowed');
-            return false;
         } else {
-            // Ocultar error si el nombre está completo
+            // Ocultar error si ya escribió algo
             nameErrorDiv.classList.add('hidden');
-            nameInput.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
-            
-            // Habilitar el botón de envío
+            nameInput.classList.remove('border-red-500', 'focus:ring-red-500');
             submitButton.disabled = false;
-            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            return true;
         }
     } else {
-        // Si la casilla NO está activada, ocultar mensajes
+        // Si no quiere guardar, ocultamos todo
         nameRequiredHint.classList.add('hidden');
         nameErrorDiv.classList.add('hidden');
-        nameInput.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
-        
-        // Habilitar el botón de envío (aunque el nombre esté vacío)
+        nameInput.classList.remove('border-red-500', 'focus:ring-red-500');
         submitButton.disabled = false;
-        submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        return true;
     }
 }
 
