@@ -24,6 +24,7 @@
                             <thead class="bg-stone-100/90 dark:bg-custom-gray">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Usuario</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Rol</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Actividad</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Fecha y Hora</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Detalles</th>
@@ -43,6 +44,34 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                        </td>
+                                        <!-- Nueva columna para el rol -->
+                                        <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap">
+                                            @if($activity->causer && $activity->causer->role)
+                                                @php
+                                                    $roleColors = [
+                                                        'administrador' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                                                        'basico' => 'bg-green-200 text-green-900 dark:bg-green-900 dark:text-green-200',
+                                                        'default' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                                    ];
+                                                    
+                                                    $roleKey = strtolower($activity->causer->role);
+                                                    $roleColor = $roleColors[$roleKey] ?? $roleColors['default'];
+                                                    
+                                                    $roleName = $roleTranslations[$roleKey] ?? ucfirst($activity->causer->role);
+                                                @endphp
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $roleColor }}">
+                                                    {{ $roleName }}
+                                                </span>
+                                            @elseif($activity->causer)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                    Sin rol
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                    Sistema
+                                                </span>
+                                            @endif
                                         </td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2">
                                             <div class="flex items-center">
