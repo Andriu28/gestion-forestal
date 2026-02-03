@@ -297,85 +297,85 @@ class ProducerController extends Controller
     }
 
     /**
- * Obtiene los detalles de un productor para mostrar en modal.
- */
-public function details(Request $request, $id)
-{
-    try {
-        $producer = Producer::withTrashed()->findOrFail($id);
-        
-        // Contar polígonos asociados (si tienes la relación)
-        $polygonsCount = 0;
-        if (method_exists($producer, 'polygons')) {
-            $polygonsCount = $producer->polygons()->count();
+     * Obtiene los detalles de un productor para mostrar en modal.
+     */
+    public function details(Request $request, $id)
+    {
+        try {
+            $producer = Producer::withTrashed()->findOrFail($id);
+            
+            // Contar polígonos asociados (si tienes la relación)
+            $polygonsCount = 0;
+            if (method_exists($producer, 'polygons')) {
+                $polygonsCount = $producer->polygons()->count();
+            }
+            
+            $producerData = [
+                'id' => $producer->id,
+                'name' => $producer->name,
+                'lastname' => $producer->lastname,
+                'description' => $producer->description,
+                'is_active' => $producer->is_active,
+                'deleted_at' => $producer->deleted_at,
+                'created_at' => $producer->created_at,
+                'updated_at' => $producer->updated_at,
+                'polygons_count' => $polygonsCount,
+            ];
+            
+            return response()->json([
+                'success' => true,
+                'producer' => $producerData
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar los detalles del productor: ' . $e->getMessage()
+            ], 500);
         }
-        
-        $producerData = [
-            'id' => $producer->id,
-            'name' => $producer->name,
-            'lastname' => $producer->lastname,
-            'description' => $producer->description,
-            'is_active' => $producer->is_active,
-            'deleted_at' => $producer->deleted_at,
-            'created_at' => $producer->created_at,
-            'updated_at' => $producer->updated_at,
-            'polygons_count' => $polygonsCount,
-        ];
-        
-        return response()->json([
-            'success' => true,
-            'producer' => $producerData
-        ]);
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al cargar los detalles del productor: ' . $e->getMessage()
-        ], 500);
     }
-}
 
-/**
- * Genera un PDF con la lista de productores aplicando los mismos filtros.
- */
-public function generatePdf(Request $request)
-{
-    $search = $request->input('search');
-    $status = $request->input('status', 'all');
+    /**
+     * Genera un PDF con la lista de productores aplicando los mismos filtros.
+     */
+    public function generatePdf(Request $request)
+    {
+        $search = $request->input('search');
+        $status = $request->input('status', 'all');
 
-    $query = Producer::query()
-        ->when($search, function ($query, $search) {
-            return $query->search($search);
-        });
+        $query = Producer::query()
+            ->when($search, function ($query, $search) {
+                return $query->search($search);
+            });
 
-    match ($status) {
-        'active'   => $query->where('is_active', true),
-        'inactive' => $query->where('is_active', false),
-        'deleted'  => $query->onlyTrashed(),
-        'all'      => $query->withTrashed(),
-        default    => $query,
-    };
+        match ($status) {
+            'active'   => $query->where('is_active', true),
+            'inactive' => $query->where('is_active', false),
+            'deleted'  => $query->onlyTrashed(),
+            'all'      => $query->withTrashed(),
+            default    => $query,
+        };
 
-    $producers = $query
-        ->orderBy('name')
-        ->get();
+        $producers = $query
+            ->orderBy('name')
+            ->get();
 
-    // Datos para el PDF
-    $filters = [
-        'search' => $search,
-        'status' => $status,
-        'total' => $producers->count(),
-        'generated_at' => now()->format('d/m/Y H:i:s'),
-    ];
+        // Datos para el PDF
+        $filters = [
+            'search' => $search,
+            'status' => $status,
+            'total' => $producers->count(),
+            'generated_at' => now()->format('d/m/Y H:i:s'),
+        ];
 
-    $pdf = \PDF::loadView('producers.pdf', [
-        'producers' => $producers,
-        'filters' => $filters,
-    ]);
+        $pdf = \PDF::loadView('producers.pdf', [
+            'producers' => $producers,
+            'filters' => $filters,
+        ]);
 
-    $pdf->setPaper('A4', 'landscape');
-    
-    return $pdf->download('productores_' . now()->format('Y-m-d_H-i') . '.pdf');
-}
+        $pdf->setPaper('A4', 'landscape');
+        
+        return $pdf->download('productores_' . now()->format('Y-m-d_H-i') . '.pdf');
+    }
 
 }

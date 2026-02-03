@@ -485,6 +485,257 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
 }
 
 /**
+ * Crear marcador personalizado para un punto
+ */
+function createPointMarker(point, index) {
+    // Crear ícono personalizado con número
+    const icon = L.divIcon({
+        className: 'custom-polygon-point-marker',
+        html: `
+            <div class="point-marker-container">
+                <div class="point-marker-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="point-marker-label">${index + 1}</div>
+            </div>
+        `,
+        iconSize: [40, 40],
+        iconAnchor: [20, 43],
+        popupAnchor: [0, -45]
+    });
+    
+    // Crear marcador
+    const marker = L.marker([point.lat, point.lng], {
+        icon: icon,
+        draggable: isEditModeActive,
+        zIndexOffset: 1000 + index
+    });
+    
+    // Agregar popup informativo
+    const utm = convertWGS84toUTM(point.lat, point.lng, point.utmZone || 20, point.utmHemisphere || 'N');
+    
+    marker.bindPopup(`
+        <div class="p-3 min-w-[200px]">
+            <div class="flex items-center mb-2">
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">
+                    <span class="text-blue-600 font-semibold">${index + 1}</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-900">Punto ${index + 1}</h4>
+                    <p class="text-xs text-gray-500">${point.note || 'Sin descripción'}</p>
+                </div>
+            </div>
+            
+            <div class="space-y-2 text-sm">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-gray-600">Lat:</span>
+                        <span class="font-mono text-green-600 ml-1">${point.lat.toFixed(6)}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Lng:</span>
+                        <span class="font-mono text-green-600 ml-1">${point.lng.toFixed(6)}</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-gray-600">Este:</span>
+                        <span class="font-mono text-blue-600 ml-1">${utm.easting}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Norte:</span>
+                        <span class="font-mono text-blue-600 ml-1">${utm.northing}</span>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between text-xs text-gray-500 pt-2 border-t">
+                    <span>Zona: ${utm.zone}${utm.hemisphere}</span>
+                    ${point.elevation ? `<span>Altura: ${point.elevation}m</span>` : ''}
+                </div>
+            </div>
+            
+            <div class="mt-3 pt-2 border-t">
+                <button class="w-full py-1 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded edit-point-btn" data-index="${index}">
+                    ✏️ Editar este punto
+                </button>
+            </div>
+        </div>
+    `);
+    
+    // Evento para editar desde el popup
+    marker.on('popupopen', function() {
+        setTimeout(() => {
+            const editBtn = document.querySelector('.leaflet-popup-content .edit-point-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    openEditPointModal(index);
+                });
+            }
+        }, 100);
+    });
+    
+    // Evento para arrastrar marcador - CORREGIDO
+    if (isEditModeActive) {
+        marker.on('dragend', function(e) {
+            const newLatLng = e.target.getLatLng();
+            const pointIndex = index;
+            
+            // Actualizar punto
+            polygonPoints[pointIndex].lat = newLatLng.lat;
+            polygonPoints[pointIndex].lng = newLatLng.lng;
+            
+            // Actualizar polígono - LLAMADA CORREGIDA
+            updatePolygonFromPoints(polygonPoints);
+            
+            // Actualizar lista
+            updatePointsList(polygonPoints);
+            
+            // Mostrar mensaje
+            showMessage(`Punto ${pointIndex + 1} movido a nueva ubicación`, 'success');
+        });
+    }
+    
+    return marker;
+}
+
+/**
+ * Actualizar marcadores en el mapa
+ */
+function updatePointMarkers() {
+    // Limpiar marcadores anteriores
+    if (window.pointMarkersLayer) {
+        window.pointMarkersLayer.clearLayers();
+    } else {
+        window.pointMarkersLayer = L.layerGroup().addTo(mapManager.map);
+    }
+    
+    // Agregar nuevos marcadores
+    polygonPoints.forEach((point, index) => {
+        const marker = createPointMarker(point, index);
+        marker.addTo(window.pointMarkersLayer);
+    });
+    
+    // Opcional: Conectar puntos con líneas
+    updatePointConnections();
+}
+
+/**
+ * Conectar puntos con líneas para mejor visualización
+ */
+function updatePointConnections() {
+    // Limpiar conexiones anteriores
+    if (window.connectionsLayer) {
+        window.connectionsLayer.clearLayers();
+    } else {
+        window.connectionsLayer = L.layerGroup().addTo(mapManager.map);
+    }
+    
+    if (polygonPoints.length < 2) return;
+    
+    // Crear líneas entre puntos consecutivos
+    for (let i = 0; i < polygonPoints.length; i++) {
+        const nextIndex = (i + 1) % polygonPoints.length;
+        
+        const line = L.polyline([
+            [polygonPoints[i].lat, polygonPoints[i].lng],
+            [polygonPoints[nextIndex].lat, polygonPoints[nextIndex].lng]
+        ], {
+            color: '#3b82f6',
+            weight: 2,
+            opacity: 0.5,
+            dashArray: '5, 5',
+            className: 'point-connection-line'
+        });
+        
+        line.addTo(window.connectionsLayer);
+    }
+}
+
+/**
+ * Alternar visibilidad de marcadores
+ */
+function togglePointMarkers(show) {
+    if (window.pointMarkersLayer) {
+        if (show) {
+            mapManager.map.addLayer(window.pointMarkersLayer);
+        } else {
+            mapManager.map.removeLayer(window.pointMarkersLayer);
+        }
+    }
+    
+    if (window.connectionsLayer) {
+        if (show) {
+            mapManager.map.addLayer(window.connectionsLayer);
+        } else {
+            mapManager.map.removeLayer(window.connectionsLayer);
+        }
+    }
+}
+
+/**
+ * Agregar control para mostrar/ocultar marcadores
+ */
+function addMarkerToggleControl() {
+    // Crear botón de control
+    const controlDiv = L.DomUtil.create('div', 'leaflet-control leaflet-bar');
+    controlDiv.style.marginRight = '10px';
+    
+    const toggleButton = L.DomUtil.create('a', '', controlDiv);
+    toggleButton.href = '#';
+    toggleButton.title = 'Mostrar/Ocultar puntos';
+    toggleButton.innerHTML = `
+        <div style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+        </div>
+    `;
+    
+    let markersVisible = true;
+    
+    L.DomEvent.on(toggleButton, 'click', function(e) {
+        L.DomEvent.stopPropagation(e);
+        L.DomEvent.preventDefault(e);
+        
+        markersVisible = !markersVisible;
+        togglePointMarkers(markersVisible);
+        
+        // Cambiar color del botón
+        if (markersVisible) {
+            toggleButton.style.backgroundColor = '';
+            toggleButton.style.color = '';
+            showMessage('Marcadores de puntos mostrados', 'info');
+        } else {
+            toggleButton.style.backgroundColor = '#4b5563';
+            toggleButton.style.color = 'white';
+            showMessage('Marcadores de puntos ocultos', 'info');
+        }
+    });
+    
+    // Crear control personalizado
+    const MarkerControl = L.Control.extend({
+        options: {
+            position: 'topright'
+        },
+        
+        onAdd: function(map) {
+            return controlDiv;
+        }
+    });
+    
+    // Agregar control al mapa si no existe
+    if (!window.markerControlAdded) {
+        mapManager.map.addControl(new MarkerControl());
+        window.markerControlAdded = true;
+    }
+}
+
+/**
  * Actualizar lista de puntos en el panel lateral
  */
 function updatePointsList(points) {
@@ -519,6 +770,9 @@ function updatePointsList(points) {
         container.appendChild(pointElement);
     });
     
+    // Actualizar marcadores en el mapa
+    updatePointMarkers();
+    
     // Calcular y actualizar resumen
     if (points.length > 2) {
         updatePolygonSummary(points);
@@ -530,7 +784,7 @@ function updatePointsList(points) {
  */
 function createPointElement(point, index) {
     const element = document.createElement('div');
-    element.className = 'bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700';
+    element.className = 'bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-colors duration-200';
     element.dataset.index = index;
     
     // Convertir a UTM para mostrar
@@ -539,22 +793,27 @@ function createPointElement(point, index) {
     element.innerHTML = `
         <div class="flex justify-between items-start mb-2">
             <div class="flex items-center">
-                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-2">
+                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-2 relative">
                     <span class="text-blue-600 dark:text-blue-300 font-semibold text-sm">${index + 1}</span>
+                    <div class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
                 </div>
                 <div>
                     <h4 class="font-medium text-gray-900 dark:text-white">Punto ${index + 1}</h4>
                     <p class="text-xs text-gray-500 dark:text-gray-400">${point.note || 'Sin descripción'}</p>
                 </div>
             </div>
-            <button type="button" class="text-gray-400 hover:text-blue-600 edit-point-btn" data-index="${index}" title="Editar punto">
+            <button type="button" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 edit-point-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-index="${index}" title="Editar punto">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                 </svg>
             </button>
         </div>
         
-        <div class="grid grid-cols-2 gap-2 text-sm">
+        <div class="grid grid-cols-2 gap-2 text-sm mb-2">
             <div>
                 <span class="text-gray-600 dark:text-gray-400">Lat:</span>
                 <span class="font-mono text-green-600 dark:text-green-400 ml-1">${point.lat.toFixed(6)}</span>
@@ -586,6 +845,39 @@ function createPointElement(point, index) {
     if (editBtn) {
         editBtn.addEventListener('click', () => openEditPointModal(index));
     }
+    
+    // Agregar efecto hover para destacar el marcador en el mapa
+    element.addEventListener('mouseenter', function() {
+        if (window.pointMarkersLayer) {
+            const marker = window.pointMarkersLayer.getLayers()[index];
+            if (marker) {
+                marker.openPopup();
+                
+                // Destacar el marcador
+                const iconElement = marker.getElement();
+                if (iconElement) {
+                    iconElement.style.filter = 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.8))';
+                    iconElement.style.transition = 'all 0.3s ease';
+                }
+            }
+        }
+    });
+    
+    element.addEventListener('mouseleave', function() {
+        if (window.pointMarkersLayer) {
+            const marker = window.pointMarkersLayer.getLayers()[index];
+            if (marker && !marker.isPopupOpen()) {
+                marker.closePopup();
+                
+                // Restaurar el marcador
+                const iconElement = marker.getElement();
+                if (iconElement) {
+                    iconElement.style.filter = '';
+                    iconElement.style.transform = '';
+                }
+            }
+        }
+    });
     
     return element;
 }
@@ -654,38 +946,88 @@ function extractPointsFromPolygon(polygonLayer) {
 }
 
 /**
- * Actualizar polígono desde array de puntos
+ * Actualizar polígono desde array de puntos - FUNCIÓN CORREGIDA
  */
 function updatePolygonFromPoints(points) {
-    if (!mapManager || !mapManager.currentPolygonLayer || points.length < 3) return;
+    if (!mapManager || !mapManager.currentPolygonLayer || points.length < 3) return false;
     
-    // Crear array de coordenadas
-    const latLngs = points.map(point => [point.lat, point.lng]);
-    
-    // Cerrar el polígono (último punto = primer punto)
-    latLngs.push([points[0].lat, points[0].lng]);
-    
-    // Actualizar polígono en el mapa
-    mapManager.currentPolygonLayer.setLatLngs([latLngs]);
-    
-    // Actualizar campo oculto
-    const geoJSON = mapManager.currentPolygonLayer.toGeoJSON();
-    if (mapManager.geometryInput) {
-        mapManager.geometryInput.value = JSON.stringify(geoJSON.geometry);
-    }
-    
-    // Recalcular área
-    if (mapManager.areaInput) {
-        const area = mapManager.calculateArea(geoJSON.geometry);
-        if (area) {
-            mapManager.areaInput.value = area.toFixed(2);
+    try {
+        // Crear array de coordenadas
+        const latLngs = points.map(point => [point.lat, point.lng]);
+        
+        // Cerrar el polígono (último punto = primer punto)
+        latLngs.push([points[0].lat, points[0].lng]);
+        
+        // Actualizar polígono en el mapa
+        mapManager.currentPolygonLayer.setLatLngs([latLngs]);
+        
+        // Sincronizar con los puntos de edición de Leaflet
+        if (mapManager.currentPolygonLayer.editing) {
+            const editHandler = mapManager.currentPolygonLayer.editing;
+            
+            // Obtener los handlers de vértices
+            if (editHandler._verticesHandlers && editHandler._verticesHandlers.length > 0) {
+                const vertexHandler = editHandler._verticesHandlers[0];
+                
+                // Actualizar las posiciones de los marcadores de edición
+                if (vertexHandler && vertexHandler._markerGroup) {
+                    // Limpiar marcadores existentes
+                    vertexHandler._markerGroup.clearLayers();
+                    
+                    // Agregar nuevos marcadores en las posiciones actualizadas
+                    latLngs.forEach((latLng, index) => {
+                        if (index < latLngs.length - 1) { // No agregar el último punto duplicado
+                            const marker = L.marker(latLng, {
+                                icon: L.divIcon({
+                                    className: 'leaflet-edit-move-icon',
+                                    iconSize: [20, 20],
+                                    iconAnchor: [10, 10]
+                                }),
+                                draggable: true,
+                                zIndexOffset: 10
+                            });
+                            
+                            // Mantener el comportamiento de arrastre de Leaflet
+                            vertexHandler._markerGroup.addLayer(marker);
+                        }
+                    });
+                    
+                    // Re-conectar los eventos de Leaflet
+                    vertexHandler._initMarkers();
+                }
+            }
+            
+            // Forzar actualización del polígono en Leaflet
+            mapManager.currentPolygonLayer.fire('edit');
         }
+        
+        // Actualizar campo oculto
+        const geoJSON = mapManager.currentPolygonLayer.toGeoJSON();
+        if (mapManager.geometryInput) {
+            mapManager.geometryInput.value = JSON.stringify(geoJSON.geometry);
+        }
+        
+        // Recalcular área
+        if (mapManager.areaInput) {
+            const area = mapManager.calculateArea(geoJSON.geometry);
+            if (area) {
+                mapManager.areaInput.value = area.toFixed(2);
+            }
+        }
+        
+        // Actualizar marcadores personalizados
+        updatePointMarkers();
+        
+        // Actualizar resumen
+        updatePolygonSummary(points);
+        
+        return true;
+        
+    } catch (error) {
+        console.error('Error actualizando polígono desde puntos:', error);
+        showMessage('Error actualizando polígono: ' + error.message, 'error');
+        return false;
     }
-    
-    // Actualizar resumen
-    updatePolygonSummary(points);
-    
-    return true;
 }
 
 /**
@@ -719,6 +1061,12 @@ function openEditPointModal(pointIndex) {
     
     // Mostrar modal
     modal.classList.remove('hidden');
+    
+    // Enfocar el primer campo
+    setTimeout(() => {
+        latInput.focus();
+        latInput.select();
+    }, 100);
 }
 
 /**
@@ -836,6 +1184,9 @@ function enablePolygonEditing(mapManager) {
             toggleEditBtn.onclick = () => toggleEditMode();
         }
         
+        // Agregar botón para mostrar/ocultar marcadores
+        addMarkerToggleControl();
+        
         // Asegurarse de que el polígono esté en el featureGroup
         if (!mapManager.drawnItems.hasLayer(mapManager.currentPolygonLayer)) {
             mapManager.drawnItems.addLayer(mapManager.currentPolygonLayer);
@@ -905,12 +1256,51 @@ function enablePolygonEditing(mapManager) {
         
         // Agregar popup informativo
         mapManager.currentPolygonLayer.bindPopup(`
-            <div class="p-2">
-                <strong>Polígono:</strong> {{ $polygon->name }}<br>
-                <small>Haz clic en "Editar" para modificar los puntos</small><br>
-                <small>O edita puntos individualmente en el panel lateral</small>
+            <div class="p-3 min-w-[250px]">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-900">{{ $polygon->name }}</h4>
+                        <p class="text-sm text-gray-600">${polygonPoints.length} puntos</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Área:</span>
+                        <span class="font-semibold">${mapManager.areaInput ? mapManager.areaInput.value + ' Ha' : 'Calculando...'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Puntos:</span>
+                        <span class="font-semibold">${polygonPoints.length}</span>
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-3 border-t">
+                    <p class="text-xs text-gray-500 mb-2">Usa el panel lateral para editar puntos individualmente</p>
+                    <button class="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded toggle-edit-btn">
+                        ✏️ Editar puntos en mapa
+                    </button>
+                </div>
             </div>
         `);
+        
+        // Evento para el botón de edición en el popup
+        mapManager.currentPolygonLayer.on('popupopen', function() {
+            setTimeout(() => {
+                const toggleBtn = document.querySelector('.leaflet-popup-content .toggle-edit-btn');
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', () => {
+                        toggleEditMode();
+                        mapManager.currentPolygonLayer.closePopup();
+                    });
+                }
+            }, 100);
+        });
         
         showMessage('Polígono cargado. Usa el panel lateral para editar puntos individualmente.', 'info');
         
@@ -938,6 +1328,13 @@ function toggleEditMode() {
                 mapManager.currentPolygonLayer.editing.enable();
             }
             
+            // Hacer marcadores arrastrables
+            if (window.pointMarkersLayer) {
+                window.pointMarkersLayer.eachLayer(function(marker) {
+                    marker.dragging.enable();
+                });
+            }
+            
             // Actualizar botón
             if (toggleEditBtn) {
                 toggleEditBtn.innerHTML = `
@@ -960,6 +1357,13 @@ function toggleEditMode() {
             // Desactivar herramientas de edición
             if (mapManager.currentPolygonLayer.editing) {
                 mapManager.currentPolygonLayer.editing.disable();
+            }
+            
+            // Hacer marcadores no arrastrables
+            if (window.pointMarkersLayer) {
+                window.pointMarkersLayer.eachLayer(function(marker) {
+                    marker.dragging.disable();
+                });
             }
             
             // Actualizar botón
@@ -1398,9 +1802,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('detect-location').disabled = true;
         isEditModeActive = false;
         
-        // Limpiar puntos
+        // Limpiar puntos y marcadores
         polygonPoints = [];
         updatePointsList(polygonPoints);
+        
+        if (window.pointMarkersLayer) {
+            window.pointMarkersLayer.clearLayers();
+        }
+        if (window.connectionsLayer) {
+            window.connectionsLayer.clearLayers();
+        }
     });
     
     // Abrir modal UTM
@@ -1435,11 +1846,196 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Las funciones restantes (handleLocationDetection, updateLocationInfoUI, validatePolygonForm) 
-// permanecen igual que en la versión anterior
+// Funciones auxiliares que deben mantenerse igual
+async function handleLocationDetection(mapManager, locationDetector) {
+    const val = mapManager.geometryInput?.value;
+    if (!val) {
+        showMessage('❌ Debes tener un polígono en el mapa', 'error');
+        return;
+    }
+    
+    let feature;
+    try {
+        feature = JSON.parse(val);
+    } catch (e) {
+        showMessage('❌ GeoJSON inválido', 'error');
+        return;
+    }
+    
+    const centroid = mapManager.calculateCentroid(feature);
+    if (!centroid) {
+        showMessage('❌ No se pudo calcular el centroide', 'error');
+        return;
+    }
+    
+    document.getElementById('centroid_lat').value = centroid.lat;
+    document.getElementById('centroid_lng').value = centroid.lng;
+    
+    const detectBtn = document.getElementById('detect-location');
+    const detectButtonText = document.getElementById('detect-button-text');
+    const originalText = detectButtonText.textContent;
+    detectButtonText.textContent = 'Detectando...';
+    detectBtn.disabled = true;
+    
+    try {
+        const data = await locationDetector.detectLocation(centroid.lat, centroid.lng);
+        
+        const address = data.address || {};
+        const municipality = address.county || address.suburb || address.village || address.town || address.city || '';
+        const parish = address.municipality || address.county || address.city || '';
+        const state = address.state || address.region || '';
+        
+        const cleanParish = locationDetector.cleanLocationString(parish);
+        const cleanMunicipality = locationDetector.cleanLocationString(municipality);
+        const cleanState = locationDetector.cleanLocationString(state);
+        
+        document.getElementById('detected_parish').value = cleanParish;
+        document.getElementById('detected_municipality').value = cleanMunicipality;
+        document.getElementById('detected_state').value = cleanState;
+        
+        updateLocationInfoUI(cleanParish, cleanMunicipality, cleanState, centroid);
+        
+        const assignResult = await locationDetector.findAndAssignParish(
+            cleanParish,
+            cleanMunicipality,
+            cleanState
+        );
+        
+        if (assignResult.success && assignResult.parish) {
+            document.getElementById('parish_id').value = assignResult.parish.id;
+            showMessage('✅ Parroquia encontrada y asignada', 'success');
+        } else {
+            showMessage('ℹ️ No se encontró parroquia exacta. Selecciona manualmente.', 'info');
+        }
+        
+    } catch (error) {
+        console.error('Error en detección de ubicación:', error);
+        showMessage('❌ Error detectando ubicación', 'error');
+    } finally {
+        detectBtn.disabled = false;
+        detectButtonText.textContent = originalText;
+    }
+}
+
+function updateLocationInfoUI(parish, municipality, state, centroid) {
+    document.getElementById('detected-parish-text').textContent = parish || 'No detectado';
+    document.getElementById('detected-municipality-text').textContent = municipality || 'No detectado';
+    document.getElementById('detected-state-text').textContent = state || 'No detectado';
+    
+    if (centroid) {
+        document.getElementById('detected-coords-text').textContent = 
+            `${centroid.lat.toFixed(6)}, ${centroid.lng.toFixed(6)}`;
+    }
+    
+    document.getElementById('location-info').classList.remove('hidden');
+}
+
+function validatePolygonForm(mapManager, form) {
+    const val = mapManager.geometryInput?.value;
+    if (!val) {
+        showMessage('❌ Debes tener un polígono en el mapa', 'error');
+        return false;
+    }
+    
+    const nameInput = document.getElementById('name');
+    if (!nameInput.value.trim()) {
+        nameInput.focus();
+        showMessage('❌ El nombre del polígono es requerido', 'error');
+        return false;
+    }
+    
+    try {
+        const parsed = JSON.parse(val);
+        const feature = (parsed.type && parsed.type === 'Feature') ? 
+            parsed : { type: 'Feature', geometry: parsed };
+        const geom = feature.geometry;
+        
+        if (!geom || !geom.type || !['Polygon', 'MultiPolygon'].includes(geom.type)) {
+            showMessage('❌ La geometría debe ser Polygon o MultiPolygon', 'error');
+            return false;
+        }
+        
+        if (geom.type === 'Polygon' && geom.coordinates && geom.coordinates[0]) {
+            const points = geom.coordinates[0];
+            if (points.length < 4) {
+                showMessage('❌ El polígono debe tener al menos 3 puntos distintos', 'error');
+                return false;
+            }
+        }
+        
+        const submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Actualizando...';
+        }
+        
+        return true;
+    } catch (err) {
+        showMessage('❌ Geometría inválida (JSON)', 'error');
+        return false;
+    }
+}
 </script>
 
 <style>
+/* Estilos para los marcadores de puntos */
+.custom-polygon-point-marker {
+    background: transparent;
+    border: none;
+}
+
+.point-marker-container {
+    position: relative;
+    width: 40px;
+    height: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.point-marker-icon {
+    width: 44px;
+    height: 44px;
+    color: #456deeff; /* Rojo para el ícono de ubicación */
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    transition: all 0.3s ease;
+}
+
+.point-marker-label {
+    position: absolute;
+    top: 9px;
+    width: 22px;
+    height: 22px;
+    background: white;
+    border: 2px solid #3b82f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+    color: #1e40af;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+}
+
+/* Efectos hover para marcadores */
+.custom-polygon-point-marker:hover .point-marker-icon {
+    color: #9fcffcff; /* Rojo más oscuro al hover */
+    transform: scale(1.1);
+}
+
+.custom-polygon-point-marker:hover .point-marker-label {
+    background: #3b82f6;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Líneas de conexión entre puntos */
+.point-connection-line {
+    pointer-events: none;
+}
+
 /* Estilos para controles de edición */
 #toggle-edit {
     transition: all 0.3s ease;
@@ -1529,5 +2125,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 .dark #points-container::-webkit-scrollbar-thumb:hover {
     background: #6b7280;
+}
+
+/* Estilos para popups de Leaflet */
+.leaflet-popup-content {
+    margin: 0;
+    padding: 0;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilos para los elementos de puntos en el panel */
+.bg-white.dark\\:bg-gray-800:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
 }
 </style>

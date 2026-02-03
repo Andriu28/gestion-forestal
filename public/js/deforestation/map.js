@@ -24,7 +24,7 @@ class DeforestationMap {
         // Constantes de configuración
         this.STORAGE_KEY = 'gfwLossLayerState'; // Key para localStorage
         this.INITIAL_CENTER = [-63.172905251869125, 10.555594747510682]; // Venezuela (lon, lat)
-        this.INITIAL_ZOOM = 15;
+        this.INITIAL_ZOOM = 10;
         this.MINZOOM = 5;
         this.MAXZOOM = 20;
         this.GFW_LOSS_URL = 'https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png';
