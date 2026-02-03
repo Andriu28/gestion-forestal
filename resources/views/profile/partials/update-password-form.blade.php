@@ -21,7 +21,7 @@
                     id="update_password_current_password" 
                     name="current_password" 
                     type="password" 
-                    class="block w-full pr-10" 
+                    class="block mt-1 w-full rounded-md border-gray-300 dark:bg-custom-gray dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500" 
                     autocomplete="current-password" 
                 />
                 <button
@@ -52,7 +52,7 @@
                     id="update_password_password" 
                     name="password" 
                     type="password" 
-                    class="block w-full pr-10" 
+                    class="block mt-1 w-full rounded-md border-gray-300 dark:bg-custom-gray dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500" 
                     autocomplete="new-password" 
                 />
                 <button
@@ -83,7 +83,7 @@
                     id="update_password_password_confirmation" 
                     name="password_confirmation" 
                     type="password" 
-                    class="block w-full pr-10" 
+                    class="block mt-1 w-full rounded-md border-gray-300 dark:bg-custom-gray dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500" 
                     autocomplete="new-password" 
                 />
                 <button
