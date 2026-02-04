@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env(key: 'MAIL_MAILER', default: 'smtp'),
+    'default' => env('MAIL_MAILER', 'smtp'),
 
     /*
     |--------------------------------------------------------------------------
@@ -39,35 +39,44 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
+            'url' => env('MAIL_URL'),
             'host' => env('MAIL_HOST', 'smtp.gmail.com'),
             'port' => env('MAIL_PORT', 587),
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => 60,
-            'stream' => [
-                'ssl' => [
-                    'allow_self_signed' => true,
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                ],
-            ],
+            'timeout' => 30, // ✅ REDUCIDO de 60 a 30 segundos para Railway
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            
+            // ⚠️ ¡IMPORTANTE! NO incluir configuración 'stream' en producción
+            // Railway y entornos seguros NO necesitan esta configuración
+            // 'stream' => [ ... ] // ⛔ ELIMINADO COMPLETAMENTE
         ],
 
         'ses' => [
             'transport' => 'ses',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'options' => [
+                'ConfigurationSetName' => env('AWS_SES_CONFIGURATION_SET'),
+            ],
         ],
 
         'postmark' => [
             'transport' => 'postmark',
             // 'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
             // 'client' => [
-            //     'timeout' => 5,
+            //     'timeout' => 15,
             // ],
         ],
 
         'resend' => [
             'transport' => 'resend',
+            'api_key' => env('RESEND_API_KEY'),
+            // 'client' => [
+            //     'timeout' => 15,
+            // ],
         ],
 
         'sendmail' => [
@@ -77,27 +86,30 @@ return [
 
         'log' => [
             'transport' => 'log',
-            'channel' => env('MAIL_LOG_CHANNEL'),
+            'channel' => env('MAIL_LOG_CHANNEL', 'mail'),
         ],
 
         'array' => [
             'transport' => 'array',
         ],
 
+        // ✅ CONFIGURACIÓN RECOMENDADA para Railway - Failover
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
                 'smtp',
-                'log',
+                'log', // Fallback a log si SMTP falla
             ],
             'retry_after' => 60,
         ],
 
+        // ✅ OPCIÓN para usar múltiples servicios
         'roundrobin' => [
             'transport' => 'roundrobin',
             'mailers' => [
                 'ses',
                 'postmark',
+                'resend',
             ],
             'retry_after' => 60,
         ],
@@ -118,6 +130,24 @@ return [
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'gestionforestal2025@gmail.com'),
         'name' => env('MAIL_FROM_NAME', 'Gestión Forestal'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Markdown Mail Settings
+    |--------------------------------------------------------------------------
+    |
+    | If you are using Markdown based email rendering, you may configure your
+    | theme and component paths here, allowing you to customize the design
+    | of the emails. Or, you may simply stick with the Laravel defaults!
+    |
+    */
+
+    'markdown' => [
+        'theme' => 'default',
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
     ],
 
 ];
