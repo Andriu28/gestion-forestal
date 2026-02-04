@@ -25,7 +25,8 @@ class AuditLogController extends Controller
                   // Buscar por nombre de usuario causante
                   ->orWhereHas('causer', function($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('role', 'like', "%{$search}%"); // Buscar por rol
                   })
                   // Buscar actividades de sesión
                   ->orWhere('description', 'like', '%sesión%');

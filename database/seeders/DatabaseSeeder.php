@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
    public function run(): void
     {
         User::create([
-            'name' => 'Administrador',
+            'name' => 'Root',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('12345678'),
             'role' => 'administrador',
@@ -23,17 +23,16 @@ class DatabaseSeeder extends Seeder
         ]);
 
          User::create([
-            'name' => 'Diper',
-            'email' => 'diper@gmail.com',
-            'password' => Hash::make('12345679'), // Hash con mayúscula
-            'role' => 'administrador',
-            'email_verified_at' => now(), // ← AGREGAR ESTA LÍNEA
+            'name' => 'Dipert',
+            'email' => 'diperishilla2468@gmail.com',
+            'password' => Hash::make('1234'), // Hash con mayúscula
+            'role' => 'administrador'
         ]);
 
         User::create([
             'name' => 'Básico',
             'email' => 'basico@gmail.com',
-            'password' => Hash::make('12345670'), // Hash con mayúscula
+            'password' => Hash::make('1234'), // Hash con mayúscula
             'role' => 'basico',
             'email_verified_at' => now(), // ← AGREGAR ESTA LÍNEA
         ]);

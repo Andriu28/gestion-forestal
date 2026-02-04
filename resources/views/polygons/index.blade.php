@@ -422,7 +422,7 @@ function updatePolygonRowForRestored(polygonId, polygonName, isActive = true) {
                 <button type="button" 
                         class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                         title="Ver detalles"
-                        onclick="showPolygonDetails({{ $polygon->id }})">
+                        onclick="showPolygonDetails(${polygonId})"
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                         <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
                         <circle cx="12" cy="12" r="3"/>

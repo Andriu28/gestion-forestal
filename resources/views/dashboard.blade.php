@@ -180,46 +180,7 @@
             </div>
         </div>
         
-        <!-- Tarjeta: Tasa de Actividad CON CÍRCULO ANIMADO -->
-        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-1 hover:transition-all hover:duration-300">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tasa de Actividad</p>
-                    <h3 id="completion-rate" class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $completionRate }}%</h3>
-                </div>
-                <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </div>
-            </div>
-            
-            <div class="flex items-center justify-between">
-                <div class="info">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Tasa de completación</p>
-                </div>
-                
-                <!-- Círculo de progreso ANIMADO -->
-                <div class="progresss relative w-20 h-20">
-                    <svg class="w-20 h-20 transform -rotate-90">
-                        <circle cx="40" cy="40" r="32" 
-                                class="fill-none stroke-yellow-100 dark:stroke-gray-700" 
-                                stroke-width="11"></circle>
-                        <circle id="completion-progress-circle" cx="40" cy="40" r="32" 
-                                class="fill-none stroke-yellow-600 dark:stroke-yellow-400" 
-                                stroke-width="11" 
-                                stroke-dasharray="220" 
-                                stroke-dashoffset="220" 
-                                stroke-linecap="round"></circle>
-                    </svg>
-                    <div class="percentage absolute inset-0 flex items-center justify-center">
-                        <p id="completion-percentage" class="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
-                            {{ $completionRate }}%
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+       
         
     </div>
     
