@@ -288,9 +288,10 @@
                             <x-input-label for="name" :value="__('Nombre del Área:') " />
                             <x-text-input 
                                 id="name" 
-                                class="block mt-1 w-full rounded-md border-gray-300 dark:bg-custom-gray dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500" 
+                                class="mt-1 block w-full" 
                                 type="text" 
                                 name="name" 
+                                oninput="capitalizarPrimeraLetra(this)"
                                 placeholder="Ej: Reserva Natural XYZ"
                                 data-required-when-saving="true" />
                             <x-input-error :messages="$errors->get('name')" class="mt-2" />
@@ -299,14 +300,14 @@
 
                         <div class="mt-4">
                             <x-input-label for="description" :value="__('Descripción:')" />
-                            <textarea id="description" name="description" rows="2" class="block mt-1 w-full rounded-md border-gray-300 dark:bg-custom-gray dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500 @error('address') border-red-500 @enderror" placeholder="Descripción del área de estudio..."></textarea>
+                            <textarea id="description" name="description" oninput="capitalizarPrimeraLetra(this)" rows="2" class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" placeholder="Descripción del área de estudio..."></textarea>
                             <x-input-error :messages="$errors->get('address')" class="mt-2" />
                         </div>
                         
                         <div class="grid grid-cols-2 gap-4 mb-6">
                         <div>
-                            <label for="start_year" class="block text-sm font-medium text-gray-700 mb-1">Año Inicio:</label>
-                            <select class="block w-full bg-gray-200 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" 
+                            <x-input-label for="start_year" :value="__('Año Inicio:') " />
+                            <select class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
                                     id="start_year" name="start_year" required>
                                 @for($i = 2001; $i <= 2024; $i++)
                                     <option value="{{ $i }}" {{ $i == 2020 ? 'selected' : '' }}>{{ $i }}</option>
@@ -315,8 +316,8 @@
                         </div>
                         
                         <div>
-                            <label for="end_year" class="block text-sm font-medium text-gray-700 mb-1">Año Fin:</label>
-                            <select class="block w-full bg-gray-200 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" 
+                            <x-input-label for="end_year" :value="__('Año Fin:') " />
+                            <select class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
                                     id="end_year" name="end_year" required>
                                 @for($i = 2001; $i <= 2024; $i++)
                                     <option value="{{ $i }}" {{ $i == 2024 ? 'selected' : '' }}>{{ $i }}</option>
@@ -1180,36 +1181,40 @@ function hideEnhancedLoader() {
 function validateSaveOption() {
     const saveCheckbox = document.getElementById('save_analysis');
     const nameInput = document.getElementById('name');
-    const nameErrorDiv = document.getElementById('name-error'); // <--- Verifica este ID
+    const nameErrorDiv = document.getElementById('name-error');
     const nameRequiredHint = document.getElementById('name-required-hint');
     const submitButton = document.getElementById('submit-button');
     
     const nameValue = nameInput.value.trim();
 
     if (saveCheckbox.checked) {
-        // 1. Mostrar siempre el hint de requerido si el checkbox está marcado
         nameRequiredHint.classList.remove('hidden');
 
         if (!nameValue) {
-            // 2. Aplicar texto y mostrar el div de error
             nameErrorDiv.textContent = 'Para guardar el análisis, debes ingresar un nombre para el área.';
             nameErrorDiv.classList.remove('hidden');
-            
-            // Estilos de error al input
             nameInput.classList.add('border-red-500', 'focus:ring-red-500');
+            
+            // Lógica del Tooltip y Deshabilitado
             submitButton.disabled = true;
+            submitButton.title = "Debes ingresar el nombre del área para continuar";
+            submitButton.classList.add('cursor-not-allowed'); // Feedback visual adicional
         } else {
-            // Ocultar error si ya escribió algo
             nameErrorDiv.classList.add('hidden');
             nameInput.classList.remove('border-red-500', 'focus:ring-red-500');
+            
             submitButton.disabled = false;
+            submitButton.title = ""; // Quitamos el tooltip
+            submitButton.classList.remove('cursor-not-allowed');
         }
     } else {
-        // Si no quiere guardar, ocultamos todo
         nameRequiredHint.classList.add('hidden');
         nameErrorDiv.classList.add('hidden');
         nameInput.classList.remove('border-red-500', 'focus:ring-red-500');
+        
         submitButton.disabled = false;
+        submitButton.title = "";
+        submitButton.classList.remove('cursor-not-allowed');
     }
 }
 

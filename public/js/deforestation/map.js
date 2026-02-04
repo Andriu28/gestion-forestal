@@ -24,9 +24,9 @@ class DeforestationMap {
         // Constantes de configuración
         this.STORAGE_KEY = 'gfwLossLayerState'; // Key para localStorage
         this.INITIAL_CENTER = [-63.172905251869125, 10.555594747510682]; // Venezuela (lon, lat)
-        this.INITIAL_ZOOM = 10;
+        this.INITIAL_ZOOM = 15;
         this.MINZOOM = 5;
-        this.MAXZOOM = 20;
+        this.MAXZOOM = 18;
         this.GFW_LOSS_URL = 'https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png';
 
         // =============================================
@@ -1551,6 +1551,16 @@ updateGfwIcons(isVisible) {
         } else {
             container.classList.add('hidden');
         }
+    }
+}
+
+function capitalizarPrimeraLetra(input) {
+    // Obtenemos el valor actual del input
+    let valor = input.value;
+
+    if (valor.length > 0) {
+        // Convertimos la primera letra a Mayúscula y sumamos el resto del texto
+        input.value = valor.charAt(0).toUpperCase() + valor.slice(1);
     }
 }
 

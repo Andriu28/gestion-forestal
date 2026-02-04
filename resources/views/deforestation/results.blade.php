@@ -345,8 +345,12 @@ function initResultMap() {
     resultMap = new ol.Map({
         target: 'result-map',
         layers: [
-            new ol.layer.Tile({ 
-                source: new ol.source.OSM() 
+            new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                    attributions: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+                    maxZoom: 20
+                })
             })
         ],
         controls: ol.control.defaults({
