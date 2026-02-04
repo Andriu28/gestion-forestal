@@ -475,13 +475,15 @@ private function isPolygonClosed($coordinates)
     
     try {
         $rawData = $request->input('report_data');
-        $dataToPass = is_string($rawData) ? json_decode($rawData, true) : $rawData;
+        $decoded = is_string($rawData) ? json_decode($rawData, true) : $rawData;
 
-        \Log::info('JSON decodificado:', ['dataToPass' => $dataToPass]); // MOVIDO AQUÍ
+        // CORRECCIÓN: Acceder al nivel 'dataToPass' que viene dentro del JSON
+        $dataToPass = $decoded['dataToPass'] ?? $decoded; 
 
-        if (!$dataToPass) {
-            return redirect()->route('deforestation.create')
-                ->withErrors(['error' => 'No se recibieron datos para el reporte.']);
+        if (!$dataToPass || !isset($dataToPass['yearly_results'])) {
+            \Log::warning('Estructura de datos inválida:', ['decoded' => $decoded]);
+            return redirect()->back()
+                ->withErrors(['error' => 'La estructura de los datos no es válida para generar el reporte.']);
         }
 
         // 1. Extraer variables clave

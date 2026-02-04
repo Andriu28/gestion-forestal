@@ -207,19 +207,19 @@
     <table class="stats-table">
         <tr>
             <td class="stat-box bg-blue">
-                <span class="stat-box-value">{{ number_format($polygon->area_ha, 5) }}</span>
+                <span class="stat-box-value">{{ number_format($polygon->area_ha, 4) }}</span>
                 <span class="stat-box-label">Área Total (ha)</span>
             </td>
-            <td class="stat-box bg-red">
-                <span class="stat-box-value">{{ number_format($totalDeforestedArea, 5) }}</span>
-                <span class="stat-box-label">Deforestación (ha)</span>
-            </td>
             <td class="stat-box bg-green">
-                <span class="stat-box-value">{{ number_format($conservedArea, 5) }}</span>
+                <span class="stat-box-value">{{ number_format($conservedArea, 4) }}</span>
                 <span class="stat-box-label">Conserva (ha)</span>
             </td>
+            <td class="stat-box bg-red">
+                <span class="stat-box-value">{{ number_format($totalDeforestedArea, 4) }}</span>
+                <span class="stat-box-label">Deforestación (ha)</span>
+            </td>
             <td class="stat-box bg-yellow">
-                <span class="stat-box-value">{{ number_format($totalPercentage, 5) }}%</span>
+                <span class="stat-box-value">{{ number_format($totalPercentage, 2) }}%</span>
                 <span class="stat-box-label">% Pérdida Total</span>
             </td>
         </tr>
@@ -241,15 +241,15 @@
                 @php $cumPct += $analysis->percentage_loss; @endphp
                 <tr>
                     <td>{{ $analysis->year }}</td>
-                    <td>{{ number_format($analysis->deforested_area_ha, 5) }}</td>
-                    <td>{{ number_format($analysis->percentage_loss, 5) }}%</td>
-                    <td>{{ number_format($cumPct, 5) }}%</td>
+                    <td>{{ number_format($analysis->deforested_area_ha, 4) }}</td>
+                    <td>{{ number_format($analysis->percentage_loss, 4) }}%</td>
+                    <td>{{ number_format($cumPct, 4) }}%</td>
                 </tr>
             @endforeach
             <tr class="total-row">
                 <td>TOTAL</td>
-                <td>{{ number_format($totalDeforestedArea, 5) }} ha</td>
-                <td>{{ number_format($totalPercentage, 5) }}%</td>
+                <td>{{ number_format($totalDeforestedArea, 4) }} ha</td>
+                <td>{{ number_format($totalPercentage, 4) }}%</td>
                 <td>-</td>
             </tr>
         </tbody>
@@ -259,7 +259,7 @@
     <div class="chart-container">
         @php
             // Buscamos el valor máximo para escalar las barras proporcionalmente
-            $maxLoss = $polygon->max('deforested_area_ha') ?: 1;
+            $maxLoss = collect($analyses)->max('deforested_area_ha') ?: 1;
         @endphp
 
         @foreach($analyses as $analysis)
@@ -272,7 +272,7 @@
                 <div class="bar-wrapper">
                     <div class="bar-fill" style="width: {{ $width }}%;"></div>
                 </div>
-                <span class="bar-value">{{ number_format($analysis->deforested_area_ha, 2) }} ha</span>
+                <span class="bar-value">{{ number_format($analysis->deforested_area_ha, 4) }} ha</span>
             </div>
         @endforeach
     </div>
@@ -282,11 +282,11 @@
         <tr>
             <td style="width: 50%; padding-right: 20px;">
                 <p><strong>Estado Actual de la Superficie:</strong></p>
-                <div style="margin-bottom: 5px; font-size: 10px;">Conservado ({{ number_format(100 - $totalPercentage, 2) }}%)</div>
+                <div style="margin-bottom: 5px; font-size: 10px;">Conservado ({{ number_format(100 - $totalPercentage, 4) }}%)</div>
                 <div style="width: 100%; background-color: #eee; height: 20px;">
                     <div style="width: {{ 100 - $totalPercentage }}%; background-color: #2e7d32; height: 100%;"></div>
                 </div>
-                <div style="margin-top: 15px; margin-bottom: 5px; font-size: 10px;">Deforestado ({{ number_format($totalPercentage, 2) }}%)</div>
+                <div style="margin-top: 15px; margin-bottom: 5px; font-size: 10px;">Deforestado ({{ number_format($totalPercentage, 4) }}%)</div>
                 <div style="width: 100%; background-color: #eee; height: 20px;">
                     <div style="width: {{ $totalPercentage }}%; background-color: #c62828; height: 100%;"></div>
                 </div>
@@ -306,14 +306,14 @@
     <div class="section-title">ANÁLISIS DE IMPACTO</div>
     <p>
         El análisis realizado sobre el polígono <strong>{{ $polygon->name }}</strong> mediante sensores remotos 
-        indica que se ha perdido un total de <strong>{{ number_format($totalDeforestedArea, 5) }} hectáreas</strong> 
+        indica que se ha perdido un total de <strong>{{ number_format($totalDeforestedArea, 4) }} hectáreas</strong> 
         en un lapso de {{ $end_year - $start_year + 1 }} años.
     </p>
 
     @if($totalPercentage > 30)
         <div class="alert alert-danger">
             <strong>AVISO DE IMPACTO CRÍTICO:</strong> El área presenta una tasa de deforestación alta 
-            ({{ number_format($totalPercentage, 2) }}%). Se recomienda intervención y verificación en campo 
+            ({{ number_format($totalPercentage, 4) }}%). Se recomienda intervención y verificación en campo 
             para determinar las causas del cambio de uso de suelo.
         </div>
     @endif
