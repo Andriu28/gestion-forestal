@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
          User::create([
-            'name' => 'Diper',
+            'name' => 'Dipert',
             'email' => 'diperishilla2468@gmail.com',
             'password' => Hash::make('1234'), // Hash con mayúscula
             'role' => 'administrador'
