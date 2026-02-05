@@ -60,6 +60,12 @@ return [
             ],
         ],
 
+        'mailersend' => [
+            'transport' => 'mailersend',
+            'api_key' => env('MAILERSEND_API_KEY'),
+            'host' => env('MAILERSEND_HOST', 'https://api.mailersend.com'),
+        ],
+
         'postmark' => [
             'transport' => 'postmark',
             // 'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
