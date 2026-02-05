@@ -25,16 +25,16 @@
                 <!-- Filtros -->
                 <form method="GET" action="{{ route('admin.users.index') }}" class="mb-6">
                     <div class="flex flex-wrap gap-4">
-                        <input type="text" name="search" class="form-input rounded-md bg-gray-200 border-gray-300" 
+                        <input type="text" name="search" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
                                placeholder="Buscar por nombre o email..." value="{{ $search ?? '' }}">
                         
-                        <select name="role" class="form-select rounded-md bg-gray-200 border-gray-300">
+                        <select name="role" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
                             <option value="all" {{ ($role ?? '') == 'all' ? 'selected' : '' }}>Todos los roles</option>
                             <option value="administrador" {{ ($role ?? '') == 'administrador' ? 'selected' : '' }}>Administradores</option>
                             <option value="basico" {{ ($role ?? '') == 'basico' ? 'selected' : '' }}>Básicos</option>
                         </select>
                         
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Filtrar</button>
+                        <button type="submit" class="px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white rounded-lg transition-all">Filtrar</button>
                         
                         @if(request('search') || request('role') || (request('status') != 'active' && request()->has('status')))
                             <a href="{{ route('admin.users.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</a>

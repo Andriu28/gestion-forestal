@@ -277,7 +277,7 @@
                             <a href="{{ route('profile.edit') }}" class="block px-4 md:px-6 py-2 md:py-3 text-sm text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 rounded-lg mx-2 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-1">Perfil</a>
                                                     
                             
-                            <a href="{{ asset('docs/manual.pdf') }}" 
+                            <a href="{{ route('support') }}" 
                                 target="_blank"
                                 class="block px-4 md:px-6 py-2 md:py-3 text-sm text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 rounded-lg mx-2 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-1">
                                 Soporte

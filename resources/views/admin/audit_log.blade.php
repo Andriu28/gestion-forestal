@@ -9,9 +9,9 @@
                 <!-- Filtros -->
                 <form method="GET" action="{{ route('admin.audit') }}" class="mb-6">
                     <div class="flex flex-wrap gap-4">
-                        <input type="text" name="search" class="form-input rounded-md bg-gray-200 border-gray-300" 
+                        <input type="text" name="search" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
                                placeholder="Buscar por usuario o actividad..." value="{{ $search ?? '' }}">
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Filtrar</button>
+                        <button type="submit" class="px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white rounded-lg transition-all">Filtrar</button>
                         @if(request('search'))
                             <a href="{{ route('admin.audit') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</a>
                         @endif

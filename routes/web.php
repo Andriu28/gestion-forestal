@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\DeforestationController;
 use App\Http\Controllers\ForestController;
+use App\Http\Controllers\SupportController;
 
 
 //  RUTA TEMPORAL PARA EJECUTAR SEEDERS - ELIMINAR DESPUÉS
@@ -81,6 +82,10 @@ Route::get('/producers/generate-pdf', [ProducerController::class, 'generatePdf']
 // Rutas accesibles para cualquier usuario autenticado (básico o administrador)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // RUTA DE SOPORTE AGREGADA AQUÍ
+    Route::get('/support', [SupportController::class, 'index'])->name('support');
+    Route::get('/support/download', [SupportController::class, 'generatePdf'])->name('support.pdf');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

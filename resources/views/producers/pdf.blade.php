@@ -145,7 +145,7 @@
             letter-spacing: 0.3px;
         }
         
-        .status-active {
+        /* .status-active {
             background-color: #f0f0f0;
             color: #000000;
             border: 1px solid #cccccc;
@@ -162,7 +162,7 @@
             color: #999999;
             border: 1px solid #eeeeee;
             text-decoration: line-through;
-        }
+        } */
         
         /* DESCRIPCIÓN */
         .description-cell {
@@ -292,7 +292,7 @@
             @foreach($producers as $producer)
             <tr>
                 <td class="text-center">{{ $producer->id }}</td>
-                <td class="text-bold">{{ $producer->name }}</td>
+                <td class="">{{ $producer->name }}</td>
                 <td>{{ $producer->lastname ?? '—' }}</td>
                 <td class="description-cell">
                     {{ $producer->description ? Str::limit($producer->description, 90) : 'Sin descripción' }}
