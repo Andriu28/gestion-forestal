@@ -45,12 +45,9 @@ return [
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => 30, // ✅ REDUCIDO de 60 a 30 segundos para Railway
+            'timeout' => 15, // ✅ Reducido de 30 a 15 para Railway
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
-            
-            // ⚠️ ¡IMPORTANTE! NO incluir configuración 'stream' en producción
-            // Railway y entornos seguros NO necesitan esta configuración
-            // 'stream' => [ ... ] // ⛔ ELIMINADO COMPLETAMENTE
+            // ⚠️ NO incluir 'stream' => []
         ],
 
         'ses' => [
@@ -61,6 +58,12 @@ return [
             'options' => [
                 'ConfigurationSetName' => env('AWS_SES_CONFIGURATION_SET'),
             ],
+        ],
+
+        'mailersend' => [
+            'transport' => 'mailersend',
+            'api_key' => env('MAILERSEND_API_KEY'),
+            'host' => env('MAILERSEND_HOST', 'https://api.mailersend.com'),
         ],
 
         'postmark' => [
@@ -86,24 +89,21 @@ return [
 
         'log' => [
             'transport' => 'log',
-            'channel' => env('MAIL_LOG_CHANNEL', 'mail'),
+            'channel' => env('MAIL_LOG_CHANNEL', 'stack'),
         ],
 
         'array' => [
             'transport' => 'array',
         ],
 
-        // ✅ CONFIGURACIÓN RECOMENDADA para Railway - Failover
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
                 'smtp',
                 'log', // Fallback a log si SMTP falla
             ],
-            'retry_after' => 60,
         ],
 
-        // ✅ OPCIÓN para usar múltiples servicios
         'roundrobin' => [
             'transport' => 'roundrobin',
             'mailers' => [
@@ -111,7 +111,6 @@ return [
                 'postmark',
                 'resend',
             ],
-            'retry_after' => 60,
         ],
 
     ],

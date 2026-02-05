@@ -114,7 +114,7 @@
             
             <div class="flex items-center justify-between">
                 <div class="info">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Crecimiento semanal</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Porcentaje activo</p>
                 </div>
                 
                 <!-- Círculo de progreso ANIMADO -->
