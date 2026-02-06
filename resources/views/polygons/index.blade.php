@@ -12,14 +12,14 @@
                         <div class="flex space-x-4">
                             
                             <a href="{{ route('polygons.map') }}" class="px-4 py-2 bg-blue-600/90 text-white rounded-md hover:bg-blue-600 flex items-center space-x-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                                     <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
                                     <circle cx="12" cy="10" r="3"/>
                                 </svg>
                                 <span>{{ __('Mapa') }}</span>
                             </a>
                             <a href="{{ route('polygons.create') }}" class="px-4 py-2 bg-lime-600/90 text-white rounded-md hover:bg-lime-600 flex items-center space-x-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                                     <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
                                 </svg>
                                 <span>{{ __('Nuevo') }}</span>
@@ -102,7 +102,7 @@
                                                                 class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Ver detalles"
                                                                 onclick="showPolygonDetails({{ $polygon->id }})">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                 <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
                                                                 <circle cx="12" cy="12" r="3"/>
                                                             </svg>
@@ -111,25 +111,27 @@
                                                         <form id="analyze-form-{{ $polygon->id }}" action="{{ route('deforestation.analyze') }}" method="POST" style="display: none;">
                                                                 @csrf
                                                                 <input type="hidden" name="name" value="{{ $polygon->name }}">
-                                                                <input type="hidden" name="geometry" value="{{ $polygon->geometry }}"> <input type="hidden" name="area_ha" value="{{ $polygon->area_ha }}">
-                                                                <input type="hidden" name="start_year" value="2001"> <input type="hidden" name="end_year" value="{{ date('Y') - 1 }}">
-                                                                <input type="hidden" name="save_analysis" value="0"> </form>
+                                                                <input type="hidden" name="geometry" value="{{ $polygon->geometry }}">
+                                                                <input type="hidden" name="area_ha" value="{{ $polygon->area_ha }}">
+                                                                <input type="hidden" name="description" value="{{ $polygon->description }}">
+                                                                <input type="hidden" name="start_year" id="start-{{ $polygon->id }}">
+                                                                <input type="hidden" name="end_year" id="end-{{ $polygon->id }}">
+                                                                <input type="hidden" name="save_analysis" id="save-{{ $polygon->id }}"> </form>
 
                                                             <button type="button" 
-                                                                    onclick="document.getElementById('analyze-form-{{ $polygon->id }}').submit();"
+                                                                    onclick="confirmAnalysis({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')"
                                                                     class="inline-flex items-center text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                                                     title="Analizar Deforestación">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                     <path d="M3 3v18h18"/>
                                                                     <path d="m19 9-5 5-4-4-3 3"/>
                                                                 </svg>
-                                                            </button>
-                                                        </form>    
+                                                            </button>   
 
                                                         <a href="{{ route('polygons.edit', $polygon) }}" 
                                                         class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                                         title="Editar">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                 <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
                                                             </svg>
                                                         </a>
@@ -139,13 +141,13 @@
                                                                 title="{{ $polygon->is_active ? 'Desactivar' : 'Activar' }}"
                                                                 onclick="handleTogglePolygonStatus({{ $polygon->id }}, '{{ addslashes($polygon->name) }}', {{ $polygon->is_active ? 'true' : 'false' }})">
                                                             @if($polygon->is_active)
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
+                                                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
                                                                     <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
                                                                     <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
                                                                     <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
                                                                 </svg>
                                                             @else
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
+                                                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
                                                                     <circle cx="12" cy="12" r="10" class="fill-green-100"/>
                                                                     <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
                                                                 </svg>
@@ -156,7 +158,7 @@
                                                                 class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Eliminar"
                                                                 onclick="handleDeletePolygon({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                 <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                                                             </svg>
                                                         </button>
@@ -165,7 +167,7 @@
                                                                 class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Restaurar"
                                                                 onclick="handleRestorePolygon({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
                                                             </svg>
                                                         </button>
@@ -183,7 +185,7 @@
 
                     @else
                         <div class="text-center py-8">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2002/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p class="text-gray-600 dark:text-gray-400">No se encontraron polígonos.</p>
@@ -202,7 +204,7 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <div class="bg-white/20 p-2 rounded-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2002/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                         </svg>
                     </div>
@@ -236,6 +238,42 @@
         </div>
     </div>
 </x-modal>
+<div id="loader-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl transform transition-all duration-300">
+        <div class="flex flex-col items-center">
+            <!-- Spinner mejorado -->
+            <div class="relative mb-6">
+                <div class="w-20 h-20 border-4 border-green-100 dark:border-green-900 rounded-full"></div>
+                <div class="absolute top-0 left-0 w-20 h-20 border-4 border-transparent border-t-green-600 rounded-full animate-spin"></div>
+                <div class="absolute top-2 left-2 w-16 h-16 border-4 border-transparent border-b-green-400 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s"></div>
+            </div>
+            
+            <!-- Texto principal -->
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">Analizando Deforestación</h3>
+            <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
+                Procesando el área seleccionada. Esto puede tomar unos segundos...
+            </p>
+            
+            <!-- Barra de progreso mejorada -->
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2 overflow-hidden">
+                <div id="progress-bar" class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full w-0 transition-all duration-500 ease-out relative">
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+                </div>
+            </div>
+            
+            <!-- Información de progreso -->
+            <div class="flex justify-between w-full text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <span id="progress-text">Iniciando...</span>
+                <span id="progress-percentage">0%</span>
+            </div>
+            
+            <!-- Tiempo estimado -->
+            <div class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                <span id="time-estimate">Tiempo estimado: 15-30 segundos</span>
+            </div>
+        </div>
+    </div>
+</div>
 </x-app-layout>
 
 
@@ -316,7 +354,7 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive, statusText = nu
         
         if (isActive) {
             // Icono para desactivar
-            newSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
+            newSvg = `<svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
                 <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
                 <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
                 <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
@@ -325,7 +363,7 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive, statusText = nu
             newOnclick = `handleTogglePolygonStatus(${polygonId}, '${polygonName.replace(/'/g, "\\'")}', true)`;
         } else {
             // Icono para activar
-            newSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
+            newSvg = `<svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
                 <circle cx="12" cy="12" r="10" class="fill-green-100"/>
                 <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
             </svg>`;
@@ -402,7 +440,7 @@ function updatePolygonRowForDeleted(polygonId, polygonName) {
                         class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                         title="Restaurar"
                         onclick="handleRestorePolygon(${polygonId}, '${polygonName.replace(/'/g, "\\'")}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
                     </svg>
                 </button>
@@ -441,7 +479,7 @@ function updatePolygonRowForRestored(polygonId, polygonName, isActive = true) {
                         class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                         title="Ver detalles"
                         onclick="showPolygonDetails(${polygonId})"
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                         <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
                         <circle cx="12" cy="12" r="3"/>
                     </svg>
@@ -450,7 +488,7 @@ function updatePolygonRowForRestored(polygonId, polygonName, isActive = true) {
                 <a href="/polygons/${polygonId}/edit" 
                    class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                    title="Editar">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                         <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
                     </svg>
                 </a>
@@ -460,12 +498,12 @@ function updatePolygonRowForRestored(polygonId, polygonName, isActive = true) {
                         title="${isActive ? 'Desactivar' : 'Activar'}"
                         onclick="handleTogglePolygonStatus(${polygonId}, '${escapedName}', ${activeStatus})">
                     ${isActive ? 
-                        `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
+                        `<svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
                             <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
                             <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
                             <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
                         </svg>` :
-                        `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
+                        `<svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
                             <circle cx="12" cy="12" r="10" class="fill-green-100"/>
                             <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
                         </svg>`
@@ -476,7 +514,7 @@ function updatePolygonRowForRestored(polygonId, polygonName, isActive = true) {
                         class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                         title="Eliminar"
                         onclick="handleDeletePolygon(${polygonId}, '${escapedName}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                         <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                     </svg>
                 </button>
@@ -793,6 +831,108 @@ document.addEventListener('DOMContentLoaded', function() {
     @if(session('error'))
         showCustomAlert('error', 'Error', '{{ session('error') }}');
     @endif
+});
+
+/* funcion agregadas por geral */
+
+window.confirmAnalysis = function(polygonId, polygonName) {
+    const currentYear = new Date().getFullYear();
+    const iconColor = '#f59f0bea';
+
+    return Swal.fire({
+        title: `Analizar deforestación`,
+        html: `
+            <div class="text-left px-4">
+                <p class="text-gray-700 dark:text-gray-300 mb-6 text-center">
+                    Configura los parámetros para el polígono: <br>
+                    <strong class="text-emerald-600 dark:text-emerald-400">${polygonName}</strong>
+                </p>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Año Inicio</label>
+                        <select id="swal-start" class="w-full p-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500">
+                            ${Array.from({length: currentYear - 2002}, (_, i) => 2001 + i)
+                                .map(y => `<option value="${y}">${y}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Año Fin</label>
+                        <select id="swal-end" class="w-full p-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500">
+                            ${Array.from({length: currentYear - 2002}, (_, i) => 2001 + i)
+                                .map(y => `<option value="${y}" ${y === currentYear - 1 ? 'selected' : ''}>${y}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-center gap-3 p-3 bg-gray-200/50 dark:bg-gray-700/50 rounded-2xl border border-dashed border-gray-400 dark:border-gray-500">
+                    <input type="checkbox" id="swal-save" class="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                    <label for="swal-save" class="text-sm font-semibold text-gray-700 dark:text-gray-200 cursor-pointer">¿Guardar resultados del análisis?</label>
+                </div>
+            </div>`,
+        icon: 'info',
+        iconColor: iconColor,
+        showCancelButton: true,
+        confirmButtonText: 'Iniciar Análisis',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            popup: 'rounded-2xl shadow-2xl bg-stone-100/90 dark:bg-custom-gray border border-gray-200 dark:border-gray-700',
+            title: 'text-2xl font-bold text-gray-900 dark:text-white',
+            htmlContainer: 'text-gray-600 dark:text-gray-300',
+            actions: 'gap-4 mt-6',
+            confirmButton: 'px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 ease-out border border-emerald-400/30',
+            cancelButton: 'px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 ease-out border border-rose-400/30'
+        },
+        preConfirm: () => {
+            const start = document.getElementById('swal-start').value;
+            const end = document.getElementById('swal-end').value;
+            const save = document.getElementById('swal-save').checked;
+            if (parseInt(start) > parseInt(end)) {
+                Swal.showValidationMessage('El año de inicio no puede ser mayor al de fin');
+                return false;
+            }
+            return { start, end, save };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // 1. Asignar valores al formulario oculto
+            document.getElementById(`start-${polygonId}`).value = result.value.start;
+            document.getElementById(`end-${polygonId}`).value = result.value.end;
+            document.getElementById(`save-${polygonId}`).value = result.value.save ? '1' : '0';
+
+            // 2. Activar tu Loader personalizado
+            const loaderOverlay = document.getElementById('loader-overlay');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const progressPercentage = document.getElementById('progress-percentage');
+
+            if (loaderOverlay) {
+                loaderOverlay.classList.remove('hidden');
+                
+                // Simulación de progreso inicial para dar feedback visual inmediato
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) {
+                        progress = 95; // Se queda ahí hasta que el servidor responda
+                        clearInterval(interval);
+                    }
+                    if (progressBar) progressBar.style.width = `${progress}%`;
+                    if (progressPercentage) progressPercentage.innerText = `${Math.round(progress)}%`;
+                    if (progressText) progressText.innerText = 'Consultando satélites GFW...';
+                }, 400);
+            }
+
+            // 3. Enviar el formulario
+            document.getElementById(`analyze-form-${polygonId}`).submit();
+        }
+    });
+};
+
+// Ocultar loader si regresamos a la página (por errores de validación, por ejemplo)
+window.addEventListener('pageshow', function (event) {
+    const loader = document.getElementById('loader-overlay');
+    if (loader) loader.classList.add('hidden');
 });
 </script>
 
