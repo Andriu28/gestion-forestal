@@ -56,6 +56,15 @@ class DeforestationController extends Controller
      */
     public function analyze(Request $request)
     {
+        /* dd($request); */
+        $geometryString = $request->input('geometry');
+
+        // NUEVO: Si la geometría viene en formato HEX de PostGIS (empieza por 0103...)
+        if (preg_match('/^[0-9A-Fa-f]+$/', $geometryString)) {
+            $geoJsonRes = DB::selectOne("SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson", [$geometryString]);
+            $geometryString = $geoJsonRes->geojson;
+        }
+/* dd($geometryString); */
         // Obtener datos
         $saveAnalysis = $request->boolean('save_analysis');
         
@@ -80,7 +89,7 @@ class DeforestationController extends Controller
             $request->validate([
                 'name' => 'nullable|string|max:255',
                 'start_year' => 'required|integer|min:2001|max:2024',
-                'end_year' => 'required|integer|min:2001|max:2024|gte:start_year',
+                'end_year' => 'required|integer|min:2001|max:2025|gte:start_year',
                 'geometry' => 'required|string',
                 'area_ha' => 'required|numeric|min:0.01',
                 'description' => 'nullable|string|max:1000',
@@ -91,7 +100,6 @@ class DeforestationController extends Controller
         // 1. Obtener los datos del Request y asignarlos a variables
         $startYear = (int) $request->input('start_year');
         $endYear = (int) $request->input('end_year');
-        $geometryString = $request->input('geometry');
         $areaHa = (float) $request->input('area_ha');
         $polygonName = $request->input('name', 'Área de Estudio');
         $description = $request->input('description', '');

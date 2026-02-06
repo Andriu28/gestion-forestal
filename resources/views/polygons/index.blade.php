@@ -24,6 +24,7 @@
                                 </svg>
                                 <span>{{ __('Nuevo') }}</span>
                             </a>
+                            
                         </div>
                     </div>
 
@@ -71,6 +72,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-stone-100/90 dark:bg-custom-gray divide-y divide-gray-200">
+                                    
                                     @foreach($polygons as $polygon)
                                         <tr id="polygon-row-{{ $polygon->id }}" class="hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
                                             <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20  px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $polygon->name }}</td>
@@ -96,7 +98,6 @@
                                             <td class="px-6 py-2 whitespace-nowrap">
                                                 <div class="flex items-center gap-2">
                                                     @if(!$polygon->trashed())
-                                                        <!-- Botón Ver - Ahora abre modal -->
                                                         <button type="button" 
                                                                 class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Ver detalles"
@@ -107,7 +108,24 @@
                                                             </svg>
                                                         </button>
 
-                                                        <!-- Botón Editar -->
+                                                        <form id="analyze-form-{{ $polygon->id }}" action="{{ route('deforestation.analyze') }}" method="POST" style="display: none;">
+                                                                @csrf
+                                                                <input type="hidden" name="name" value="{{ $polygon->name }}">
+                                                                <input type="hidden" name="geometry" value="{{ $polygon->geometry }}"> <input type="hidden" name="area_ha" value="{{ $polygon->area_ha }}">
+                                                                <input type="hidden" name="start_year" value="2001"> <input type="hidden" name="end_year" value="{{ date('Y') - 1 }}">
+                                                                <input type="hidden" name="save_analysis" value="0"> </form>
+
+                                                            <button type="button" 
+                                                                    onclick="document.getElementById('analyze-form-{{ $polygon->id }}').submit();"
+                                                                    class="inline-flex items-center text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
+                                                                    title="Analizar Deforestación">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                                    <path d="M3 3v18h18"/>
+                                                                    <path d="m19 9-5 5-4-4-3 3"/>
+                                                                </svg>
+                                                            </button>
+                                                        </form>    
+
                                                         <a href="{{ route('polygons.edit', $polygon) }}" 
                                                         class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                                         title="Editar">
@@ -116,7 +134,6 @@
                                                             </svg>
                                                         </a>
                                                         
-                                                        <!-- Botón Cambiar Estado (activo/inactivo) - AJAX -->
                                                         <button type="button" 
                                                                 class="inline-flex items-center transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="{{ $polygon->is_active ? 'Desactivar' : 'Activar' }}"
@@ -135,7 +152,6 @@
                                                             @endif
                                                         </button>
 
-                                                        <!-- Botón Eliminar (soft delete) - AJAX -->
                                                         <button type="button" 
                                                                 class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Eliminar"
@@ -145,7 +161,6 @@
                                                             </svg>
                                                         </button>
                                                     @else
-                                                        <!-- Botón Restaurar - AJAX -->
                                                         <button type="button" 
                                                                 class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Restaurar"

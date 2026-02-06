@@ -960,14 +960,14 @@ class PolygonMap {
         // Obtener el GeoJSON del polígono
         const geometryInput = document.getElementById('geometry');
         if (!geometryInput || !geometryInput.value) {
-            this.showAlert('❌ Debes dibujar un polígono primero', 'error');
+            this.showAlert('Debes dibujar un polígono primero', 'error');
             return;
         }
         
         // Calcular centroide
         const centroid = this.calculateCentroidFromGeoJSON(geometryInput.value);
         if (!centroid) {
-            this.showAlert('❌ No se pudo calcular el centroide del polígono', 'error');
+            this.showAlert('No se pudo calcular el centroide del polígono', 'error');
             return;
         }
         
@@ -993,7 +993,7 @@ class PolygonMap {
             
         } catch (error) {
             console.error('Error en detección de ubicación:', error);
-            this.showAlert('❌ Error detectando ubicación: ' + error.message, 'error');
+            this.showAlert('Error detectando ubicación: ' + error.message, 'error');
         } finally {
             detectBtn.disabled = false;
             detectButtonText.textContent = originalText;
@@ -1062,7 +1062,7 @@ class PolygonMap {
         // Intentar encontrar parroquia en la base de datos
         this.findParishInDatabase(cleanParish, cleanMunicipality, cleanState);
         
-        this.showAlert('✅ Ubicación detectada correctamente', 'success');
+        this.showAlert('Ubicación detectada correctamente', 'success');
     }
 
     /**
@@ -1109,13 +1109,13 @@ class PolygonMap {
             
             if (optionText.includes(parishName) || parishName.includes(optionText)) {
                 parishSelect.value = option.value;
-                this.showAlert(`✅ Parroquia "${option.text}" asignada automáticamente`, 'success');
+                this.showAlert(`Parroquia "${option.text}" asignada automáticamente`, 'success');
                 return;
             }
         }
         
         // Si no encontró coincidencia exacta, mostrar sugerencia
-        this.showAlert('ℹ️ No se encontró parroquia exacta. Selecciona manualmente.', 'info');
+        this.showAlert('No se encontró parroquia exacta. Selecciona manualmente.', 'info');
     }
 
     /**
@@ -1514,7 +1514,7 @@ function setupEventListeners() {
             const geometry = document.getElementById('geometry').value;
             if (!geometry) {
                 e.preventDefault();
-                showAlert('Debe dibujar un polígono en el mapa', 'warning');
+                showAlert('Debe dibujar un polígono en el mapa', 'warning'); // esto esta echando broma, apareciendo cada que se intenta cambiar de mapa
                 return false;
             }
             
