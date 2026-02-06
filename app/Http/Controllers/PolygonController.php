@@ -103,7 +103,6 @@ class PolygonController extends Controller
         return json_encode($geojson);
     }
 
-    // En el método store():
     public function store(Request $request): RedirectResponse
     {
         // AGREGAR los campos detected_* para poder crear las ubicaciones
@@ -117,7 +116,10 @@ class PolygonController extends Controller
             'centroid_lat' => 'nullable|numeric|between:-90,90',
             'centroid_lng' => 'nullable|numeric|between:-180,180',
             'location_data' => 'nullable|string',
-            
+            // AGREGAR ESTOS CAMPOS:
+            'detected_parish' => 'nullable|string|max:255',
+            'detected_municipality' => 'nullable|string|max:255',
+            'detected_state' => 'nullable|string|max:255',
         ]);
 
         DB::beginTransaction();
@@ -149,8 +151,9 @@ class PolygonController extends Controller
             if (!$parishId && !empty($validated['location_data'])) {
                 $locationData = json_decode($validated['location_data'], true);
                 if ($locationData && isset($locationData['address'])) {
+                    // CORREGIDO: Crear instancia primero
                     $locationService = new LocationService();
-                    $result = $locationService->processOSMData($locationData);
+                    $result = $locationService->processOSMData($locationData); // Llamar al método de instancia
                     
                     // Intentar con datos procesados de OSM
                     if (!empty($result['parish_id'])) {
@@ -304,6 +307,7 @@ class PolygonController extends Controller
                     null
             ]);
 
+            // ¡ESTO ES LO QUE FALTA! Agregar el return aquí:
             return redirect()->route('polygons.index')->with('success', 'Polígono creado exitosamente.')
                 ->with('debug_info', [
                     'polygon_id' => $polygon->id,

@@ -1,415 +1,348 @@
-// polygon-map-utils.js
 /**
- * Utilidades para manejo de mapas y polígonos
+ * CLASE PRINCIPAL - POLYGON MAP
+ * Mapa interactivo para creación de polígonos con funcionalidades similares
+ * al sistema de deforestación pero simplificado para polígonos.
+ * Utiliza: OpenLayers 6, Turf.js (para cálculos), Proj4 (para transformaciones)
  */
+class PolygonMap {
+    constructor() {
+        // =============================================
+        // 1. INICIALIZACIÓN DE PROPIEDADES
+        // =============================================
+        this.map = null;              // Instancia principal del mapa OpenLayers
+        this.draw = null;             // Interacción de dibujo actual
+        this.source = null;           // Fuente de datos vectoriales
+        this.polygonStyle = null;     // Estilo base para polígonos
+        this.coordinateDisplay = null;// Elemento DOM para mostrar coordenadas
+        this.baseLayers = {};         // Capas base disponibles
+        this.currentBaseLayer = null; // Capa base activa
+        this.drawingFeature = null;   // Feature en proceso de dibujo
 
-// Configuración de capas base
-const BaseLayers = {
-    osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }),
-    satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '© Esri'
-    }),
-    maptiler_satellite: L.tileLayer('https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key={key}', {
-        attribution: '© MapTiler',
-        key: 'your_maptiler_key'
-    }),
-    terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenTopoMap'
-    }),
-    dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© CARTO'
-    })
-};
+        // Constantes de configuración
+        this.INITIAL_CENTER = [-63.172905251869125, 10.555594747510682]; // Venezuela (lon, lat)
+        this.INITIAL_ZOOM = 15;
+        this.MINZOOM = 5;
+        this.MAXZOOM = 18;
 
-// Configuración de dibujo
-const DrawConfig = {
-    polygon: {
-        allowIntersection: false,
-        showArea: true,
-        shapeOptions: {
-            color: '#2b6cb0',
-            fillColor: '#2b6cb0',
-            fillOpacity: 0.25,
-            weight: 3
-        }
-    },
-    polyline: false,
-    rectangle: false,
-    circle: false,
-    circlemarker: false,
-    marker: false
-};
+        // =============================================
+        // 2. CONFIGURACIÓN INICIAL
+        // =============================================
+        this.defineCustomProjections(); // Definir proyecciones EPSG personalizadas
+        this.initializeMap();           // Configurar mapa y capas
+        this.setupEventListeners();     // Configurar listeners de eventos
+        this.setupCoordinateDisplay();  // Configurar display de coordenadas
 
-/**
- * Clase para manejar mapas de polígonos
- */
-class PolygonMapManager {
-    constructor(mapId, options = {}) {
-        this.map = L.map(mapId).setView([8.0, -66.0], 6);
-        this.drawnItems = new L.FeatureGroup().addTo(this.map);
-        this.currentPolygonLayer = null;
-        this.geometryInput = options.geometryInput || null;
-        this.coordsDisplay = options.coordsDisplay || null;
-        this.detectBtn = options.detectBtn || null;
-        this.areaInput = options.areaInput || null;
-        
-        // Inicializar capa base
-        BaseLayers.osm.addTo(this.map);
-        
-        // Configurar controles de dibujo
-        this.setupDrawingControls();
-        
-        // Configurar eventos del mapa
-        this.setupMapEvents();
+        // Verificación de dependencias críticas
+        this.verifyDependencies();
     }
-    
-    setupDrawingControls() {
-        this.drawControl = new L.Control.Draw({
-            draw: DrawConfig,
-            edit: {
-                featureGroup: this.drawnItems,
-                edit: {
-                    selectedPathOptions: {
-                        maintainColor: true
-                    }
-                }
-            }
-        });
-        
-        this.map.addControl(this.drawControl);
-    }
-    
-    setupMapEvents() {
-        // Evento de creación de polígono
-        this.map.on(L.Draw.Event.CREATED, (e) => this.onPolygonCreated(e));
-        
-        // Evento de edición de polígono
-        this.map.on(L.Draw.Event.EDITED, (e) => this.onPolygonEdited(e));
-        
-        // Evento de movimiento del mouse
-        this.map.on('mousemove', (e) => this.onMouseMove(e));
-    }
-    
-    onPolygonCreated(e) {
-        const layer = e.layer;
-        this.drawnItems.clearLayers();
-        this.drawnItems.addLayer(layer);
-        
-        this.updatePolygonData(layer);
-        this.currentPolygonLayer = layer;
-        
-        this.showMessage('Polígono dibujado', 'success');
-    }
-    
-    onPolygonEdited(e) {
-        const layers = e.layers;
-        layers.eachLayer((layer) => {
-            this.updatePolygonData(layer);
-            this.currentPolygonLayer = layer;
-        });
-        
-        this.showMessage('Polígono editado', 'success');
-    }
-    
-    onMouseMove(e) {
-        if (!this.geometryInput?.value) {
-            this.updateCoordsDisplay(e.latlng.lat, e.latlng.lng);
-        }
-    }
-    
-    updatePolygonData(layer) {
-        const feature = layer.toGeoJSON();
-        
-        // Actualizar campo de geometría
-        if (this.geometryInput) {
-            this.geometryInput.value = JSON.stringify(feature);
-        }
-        
-        // Actualizar área
-        this.updateArea(feature);
-        
-        // Habilitar detección
-        if (this.detectBtn) {
-            this.detectBtn.disabled = false;
-        }
-        
-        // Actualizar coordenadas del centroide
-        const centroid = this.calculateCentroid(feature);
-        if (centroid && this.coordsDisplay) {
-            this.updateCoordsDisplay(centroid.lat, centroid.lng);
-        }
-        
-        return feature;
-    }
-    
-    calculateCentroid(feature) {
-        try {
-            const coords = feature.geometry.coordinates;
-            let ring = null;
-            
-            if (feature.geometry.type === 'Polygon') ring = coords[0];
-            else if (feature.geometry.type === 'MultiPolygon') ring = coords[0][0];
-            
-            if (!ring || ring.length === 0) return null;
-            
-            let latSum = 0, lngSum = 0;
-            ring.forEach(pt => {
-                lngSum += pt[0];
-                latSum += pt[1];
-            });
-            
-            return {
-                lat: latSum / ring.length,
-                lng: lngSum / ring.length
-            };
-        } catch (e) {
-            console.error('Error calculando centroide:', e);
-            return null;
-        }
-    }
-    
-    calculateArea(feature) {
-        if (!feature || !feature.geometry) return 0;
-        
-        const coords = feature.geometry.coordinates[0];
-        if (!coords || coords.length < 3) return 0;
-        
-        let area = 0;
-        const n = coords.length;
-        
-        for (let i = 0; i < n; i++) {
-            const j = (i + 1) % n;
-            const xi = coords[i][1]; // latitud
-            const yi = coords[i][0]; // longitud
-            const xj = coords[j][1];
-            const yj = coords[j][0];
-            
-            area += xi * yj - xj * yi;
-        }
-        
-        area = Math.abs(area) / 2;
-        
-        const avgLat = coords.reduce((sum, coord) => sum + coord[1], 0) / n;
-        const kmPerDegreeLat = 111.32;
-        const kmPerDegreeLon = 111.32 * Math.cos(avgLat * Math.PI / 180);
-        
-        const areaKm2 = area * kmPerDegreeLat * kmPerDegreeLon;
-        const areaHa = areaKm2 * 100;
-        
-        return Math.round(areaHa * 100) / 100;
-    }
-    
-    updateArea(feature) {
-        if (!this.areaInput) return;
-        
-        if (feature) {
-            const area = this.calculateArea(feature);
-            this.areaInput.value = area;
-        } else {
-            this.areaInput.value = '';
-        }
-    }
-    
-    updateCoordsDisplay(lat, lng) {
-        if (this.coordsDisplay) {
-            this.coordsDisplay.textContent = `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
-        }
-    }
-    
-    showMessage(text, type = 'info') {
-        if (!this.coordsDisplay) return;
-        
-        const el = this.coordsDisplay;
-        el.textContent = text;
-        
-        // Reset classes
-        el.classList.remove('text-red-600', 'text-green-700', 'text-yellow-600');
-        
-        // Add appropriate class
-        switch(type) {
-            case 'error':
-                el.classList.add('text-red-600');
-                break;
-            case 'success':
-                el.classList.add('text-green-700');
-                break;
-            case 'warning':
-                el.classList.add('text-yellow-600');
-                break;
-        }
-        
-        // Auto-clear message
-        setTimeout(() => {
-            if (!this.geometryInput?.value) {
-                this.updateCoordsDisplay(0, 0);
-            }
-            el.classList.remove('text-red-600', 'text-green-700', 'text-yellow-600');
-        }, 3000);
-    }
-    
-    clearMap() {
-        this.drawnItems.clearLayers();
-        
-        if (this.geometryInput) {
-            this.geometryInput.value = '';
-        }
-        
-        if (this.detectBtn) {
-            this.detectBtn.disabled = true;
-        }
-        
-        if (this.areaInput) {
-            this.areaInput.value = '';
-        }
-        
-        this.updateCoordsDisplay(0, 0);
-        this.currentPolygonLayer = null;
-        
-        this.showMessage('Mapa limpiado', 'info');
-    }
-    
-    loadExistingPolygon(geoJSON) {
-        if (!geoJSON) return false;
-        
-        try {
-            const geoJsonLayer = L.geoJSON(geoJSON, {
-                style: {
-                    color: '#2b6cb0',
-                    fillColor: '#2b6cb0',
-                    fillOpacity: 0.25,
-                    weight: 3
-                }
-            }).addTo(this.drawnItems);
-            
-            this.map.fitBounds(geoJsonLayer.getBounds());
-            this.currentPolygonLayer = geoJsonLayer;
-            
-            const feature = geoJsonLayer.toGeoJSON();
-            this.updatePolygonData(geoJsonLayer);
-            
-            return true;
-        } catch (error) {
-            console.error('Error al cargar polígono existente:', error);
-            this.showMessage('Error al cargar el polígono existente', 'error');
-            return false;
-        }
-    }
-    
-    changeBaseLayer(layerKey) {
-        // Remover todas las capas base
-        Object.values(BaseLayers).forEach(layer => {
-            if (this.map.hasLayer(layer)) {
-                this.map.removeLayer(layer);
-            }
-        });
-        
-        // Añadir nueva capa
-        if (BaseLayers[layerKey]) {
-            BaseLayers[layerKey].addTo(this.map);
-            return true;
-        }
-        
-        return false;
-    }
-}
 
-/**
- * Utilidades para detección de ubicación
- */
-class LocationDetector {
-    constructor(options = {}) {
-        this.csrfToken = options.csrfToken || '';
-        this.findParishUrl = options.findParishUrl || '';
+    /**
+     * VERIFICA DEPENDENCIAS EXTERNAS
+     */
+    verifyDependencies() {
+        console.log('=== VERIFICACIÓN DE LIBRERÍAS PARA POLÍGONOS ===');
+        console.log('OpenLayers cargado:', typeof ol !== 'undefined');
+        console.log('Turf.js cargado:', typeof turf !== 'undefined');
+        
+        if (typeof turf === 'undefined') {
+            console.error('ERROR: Turf.js no está cargado');
+            console.info('Agrega: <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>');
+        }
     }
-    
-    async detectLocation(lat, lng) {
-        try {
-            const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=es`,
-                {
-                    headers: {
-                        'User-Agent': 'PolygonApp/1.0',
-                        'Accept': 'application/json'
-                    }
-                }
+
+    /**
+     * DEFINE PROYECCIONES PERSONALIZADAS
+     */
+    defineCustomProjections() {
+        if (typeof proj4 !== 'undefined') {
+            // EPSG:2203 - UTM Zone 20S (Venezuela)
+            proj4.defs('EPSG:2203', 
+                '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs'
             );
             
-            if (!response.ok) {
-                throw new Error('Error en Nominatim');
+            // EPSG:32620 - UTM Zone 20N (WGS84)
+            proj4.defs('EPSG:32620',
+                '+proj=utm +zone=20 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
+            );
+            
+            // Registrar definiciones en OpenLayers
+            if (typeof ol !== 'undefined') {
+                ol.proj.proj4.register(proj4);
             }
-            
-            return await response.json();
-        } catch (error) {
-            console.error('Error detectando ubicación:', error);
-            throw error;
         }
     }
-    
-    cleanLocationString(str) {
-        if (!str) return '';
-        return str.toString()
-            .replace('Parroquia ', '')
-            .replace('Municipio ', '')
-            .replace('Estado ', '')
-            .trim();
-    }
-    
-    async findAndAssignParish(parishName, municipalityName, stateName) {
-        try {
-            const response = await fetch(this.findParishUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.csrfToken
-                },
-                body: JSON.stringify({
-                    parish_name: parishName ? parishName.toLowerCase().trim() : '',
-                    municipality_name: municipalityName ? municipalityName.toLowerCase().trim() : '',
-                    state_name: stateName ? stateName.toLowerCase().trim() : ''
-                })
-            });
-            
-            return await response.json();
-        } catch (error) {
-            console.warn('Asignación parroquia fallida:', error);
-            return { success: false, error: error.message };
-        }
-    }
-}
 
-/**
- * Utilidades para coordenadas UTM
- */
-class UTMCoordinates {
-    static validate(zone, hemisphere, easting, northing) {
-        if (zone < 1 || zone > 60) {
-            return 'Zona UTM debe estar entre 1 y 60';
-        }
-        
-        if (hemisphere !== 'N' && hemisphere !== 'S') {
-            return 'Hemisferio debe ser N (Norte) o S (Sur)';
-        }
-        
-        if (easting < 0 || easting > 1000000) {
-            return 'Este (Easting) debe estar entre 0 y 1,000,000';
-        }
-        
-        if (hemisphere === 'N') {
-            if (northing < 0 || northing > 10000000) {
-                return 'Norte (Northing) en hemisferio Norte debe estar entre 0 y 10,000,000';
-            }
-        } else {
-            if (northing < 1000000 || northing > 10000000) {
-                return 'Norte (Northing) en hemisferio Sur debe estar entre 1,000,000 y 10,000,000';
-            }
-        }
-        
-        return null;
+    /**
+     * INICIALIZA TODOS LOS COMPONENTES DEL MAPA
+     */
+    initializeMap() {
+        this.setupBaseLayers();    // Capas base (OSM, Satélite, etc.)
+        this.setupVectorLayer();   // Capa vectorial para dibujos
+        this.setupMapInstance();   // Crear instancia del mapa
     }
-    
-    static setupProjection(zone, hemisphere) {
+
+    /**
+     * CONFIGURA CAPAS BASE (igual que deforestación)
+     */
+    setupBaseLayers() {
+        this.baseLayers = {
+            osm: new ol.layer.Tile({
+                title: 'OpenStreetMap',
+                visible: true,
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                    attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                })
+            }),
+            satellite: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                    attributions: 'Tiles © Esri'
+                }),
+                visible: false,
+                title: 'Satélite Esri'
+            }),
+            terrain: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}',
+                    attributions: 'Tiles © Esri'
+                }),
+                visible: false,
+                title: 'Relieve'
+            }),
+            dark: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                    attributions: '© CartoDB'
+                }),
+                visible: false,
+                title: 'Oscuro'
+            }),
+            maptiler_satellite: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=scUozK4fig7bE6jg7TPi',
+                    attributions: '© MapTiler & OpenStreetMap',
+                    tileSize: 512,
+                    maxZoom: 20
+                }),
+                visible: false,
+                title: 'MapTiler Satélite'
+            })
+        };
+    }
+
+    /**
+     * CONFIGURA CAPA VECTORIAL Y ESTILOS
+     */
+    setupVectorLayer() {
+        this.source = new ol.source.Vector();
+        this.setupStyles();
+
+        this.vectorLayer = new ol.layer.Vector({
+            source: this.source,
+            style: (feature) => this.getFeatureStyle(feature)
+        });
+    }
+
+    /**
+     * CREA INSTANCIA PRINCIPAL DEL MAPA
+     */
+    setupMapInstance() {
+        const baseLayerGroup = new ol.layer.Group({
+            layers: Object.values(this.baseLayers)
+        });
+
+        const initialCenter = ol.proj.fromLonLat(this.INITIAL_CENTER);
+
+        this.map = new ol.Map({
+            target: 'map',
+            layers: [baseLayerGroup, this.vectorLayer],
+            view: new ol.View({
+                center: initialCenter,
+                zoom: this.INITIAL_ZOOM,
+                minZoom: this.MINZOOM,
+                maxZoom: this.MAXZOOM,
+                smoothResolutionConstraint: true
+            })
+        });
+
+        this.currentBaseLayer = this.baseLayers.osm;
+    }
+
+    /**
+     * CONFIGURA TODOS LOS ESTILOS VISUALES
+     */
+    setupStyles() {
+        this.polygonStyle = this.getPolygonStyle('default');
+    }
+
+    /**
+     * OBTIENE ESTILO DE POLÍGONO POR ESTADO
+     */
+    getPolygonStyle(state = 'default', areaHa = 0) {
+        const styles = {
+            drawing: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: '#3b82f6', width: 3, lineDash: [5, 10], lineCap: 'round'
+                }),
+                fill: new ol.style.Fill({ color: 'rgba(59, 130, 246, 0.2)' }),
+                image: new ol.style.Circle({
+                    radius: 6,
+                    fill: new ol.style.Fill({ color: '#ffffff' }),
+                    stroke: new ol.style.Stroke({ color: '#3b82f6', width: 2 })
+                })
+            }),
+            
+            finished: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: '#10b981', width: 3, lineDash: null, lineCap: 'round'
+                }),
+                fill: new ol.style.Fill({ color: 'rgba(16, 185, 129, 0.3)' }),
+                image: new ol.style.Circle({
+                    radius: 5,
+                    fill: new ol.style.Fill({ color: '#10b981' }),
+                    stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 })
+                }),
+                text: new ol.style.Text({
+                    text: areaHa > 0 ? `${areaHa.toFixed(6)} ha` : '',
+                    font: 'bold 14px Arial, sans-serif',
+                    fill: new ol.style.Fill({ color: '#1f2937' }),
+                    stroke: new ol.style.Stroke({ color: '#ffffff', width: 3 }),
+                    backgroundFill: new ol.style.Fill({ color: 'rgba(255, 255, 255, 0.7)' }),
+                    padding: [4, 8, 4, 8],
+                    textBaseline: 'middle',
+                    textAlign: 'center',
+                    offsetY: 0
+                })
+            }),
+            
+            default: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: '#10b981', width: 3, lineDash: [8, 4], lineCap: 'round'
+                }),
+                fill: new ol.style.Fill({ color: 'rgba(16, 185, 129, 0.25)' })
+            })
+        };
+
+        return styles[state] || styles.default;
+    }
+
+    /**
+     * OBTIENE ESTILO PARA UNA FEATURE ESPECÍFICA
+     */
+    getFeatureStyle(feature) {
+        const geometry = feature.getGeometry();
+        const styles = [];
+        const areaHa = feature.get('area') || 0;
+        
+        // Usar estilo personalizado si existe
+        const customStyle = feature.getStyle();
+        if (customStyle) {
+            styles.push(customStyle);
+        } else {
+            // Para polígonos finalizados, mostrar área
+            if (geometry.getType() === 'Polygon' && areaHa > 0) {
+                styles.push(this.getPolygonStyle('finished', areaHa));
+            } else {
+                styles.push(this.polygonStyle);
+            }
+        }
+
+        return styles;
+    }
+
+    /**
+     * CONFIGURA LISTENERS DE EVENTOS
+     */
+    setupEventListeners() {
+        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+    }
+
+    /**
+     * MANEJA EVENTOS DE TECLADO
+     */
+    handleKeyDown(event) {
+        // Cancelar dibujo con Escape
+        if (event.key === 'Escape' && this.draw && this.drawingFeature) {
+            this.cancelDrawing();
+            event.preventDefault();
+        }
+    }
+
+    /**
+     * CANCELA DIBUJO ACTUAL
+     */
+    cancelDrawing() {
+        if (this.draw) {
+            this.map.removeInteraction(this.draw);
+            this.draw = null;
+        }
+        this.drawingFeature = null;
+        this.updateAreaDisplay(0);
+    }
+
+    /**
+     * CONFIGURA DISPLAY DE COORDENADAS UTM
+     */
+    setupCoordinateDisplay() {
+        this.createCoordinateDisplayElement();
+        
+        this.map.on('pointermove', (evt) => {
+            if (evt.dragging) return;
+            this.updateCoordinateDisplay(evt.coordinate);
+        });
+    }
+
+    /**
+     * CREA ELEMENTO DOM PARA MOSTRAR COORDENADAS
+     */
+    createCoordinateDisplayElement() {
+        const existingDisplays = document.querySelectorAll('#coordinate-display');
+        existingDisplays.forEach(display => display.remove());
+        
+        this.coordinateDisplay = document.getElementById('coordinate-display');
+        
+        if (this.coordinateDisplay) {
+            this.coordinateDisplay.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * ACTUALIZA DISPLAY CON COORDENADAS UTM
+     */
+    updateCoordinateDisplay(coordinate) {
+        if (!this.coordinateDisplay) return;
+        
+        const lonLat = ol.proj.toLonLat(coordinate);
+        const lon = lonLat[0];
+        const lat = lonLat[1];
+        
+        const zone = Math.floor((lon + 180) / 6) + 1;
+        const hemisphere = lat >= 0 ? 'N' : 'S';
+        
+        try {
+            const epsgCode = this.setupUTMProjection(zone, hemisphere);
+            const [easting, northing] = proj4('EPSG:4326', epsgCode, [lon, lat]);
+            
+            if (this.isValidUTM(easting, northing, zone, hemisphere)) {
+                this.coordinateDisplay.textContent = 
+                    `Zona ${zone}${hemisphere} | ` +
+                    `Este: ${easting.toFixed(3)} | ` +
+                    `Norte: ${northing.toFixed(3)}`;
+                this.coordinateDisplay.classList.remove('hidden');
+            } else {
+                this.coordinateDisplay.classList.add('hidden');
+            }
+        } catch (error) {
+            console.warn('Error en conversión UTM:', error);
+            this.coordinateDisplay.classList.add('hidden');
+        }
+    }
+
+    /**
+     * CONFIGURA PROYECCIÓN UTM DINÁMICAMENTE
+     */
+    setupUTMProjection(zone, hemisphere) {
         const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
         
         if (!proj4.defs(epsgCode)) {
@@ -419,84 +352,335 @@ class UTMCoordinates {
         
         return epsgCode;
     }
-    
-    static convertToWGS84(utmCoords) {
-        return utmCoords.map(coord => {
-            const [easting, northing, zone, hemisphere] = coord;
-            const epsgCode = this.setupProjection(zone, hemisphere);
-            
-            const wgs84 = proj4('WGS84');
-            const utm = proj4(epsgCode);
-            const point = proj4(utm, wgs84, [easting, northing]);
-            
-            return [point[0], point[1]]; // [lng, lat]
+
+    /**
+     * VALIDA COORDENADAS UTM
+     */
+    isValidUTM(easting, northing, zone, hemisphere) {
+        if (easting < 0 || easting > 1000000) return false;
+        
+        if (hemisphere === 'N') {
+            return northing >= 0 && northing <= 10000000;
+        } else {
+            return northing >= 1000000 && northing <= 10000000;
+        }
+    }
+
+    /**
+     * ACTIVA HERRAMIENTA DE DIBUJO DE POLÍGONOS
+     */
+    activateDrawing() {
+        this.removeExistingDrawInteraction();
+
+        this.draw = new ol.interaction.Draw({
+            source: this.source,
+            type: 'Polygon',
+            style: this.getPolygonStyle('drawing')
         });
+
+        this.setupDrawEvents();
+        this.map.addInteraction(this.draw);
+    }
+
+    /**
+     * CONFIGURA EVENTOS DE DIBUJO
+     */
+    setupDrawEvents() {
+        this.draw.on('drawstart', (evt) => {
+            this.drawingFeature = evt.feature;
+            this.source.clear();
+            this.updateAreaDisplay(0);
+            document.getElementById('detect-location').disabled = true;
+        });
+
+        this.draw.on('drawadd', () => this.refreshArea());
+        this.draw.on('drawabort', () => this.resetDrawingState());
+        this.draw.on('drawend', (event) => this.finalizeDrawing(event.feature));
+    }
+
+    /**
+     * FINALIZA PROCESO DE DIBUJO
+     */
+    finalizeDrawing(feature) {
+        const areaHa = this.refreshArea(feature);
+        
+        feature.set('area', areaHa);
+        feature.setStyle(this.getPolygonStyle('finished', areaHa));
+        
+        this.convertToGeoJSON(feature, areaHa);
+        this.showAlert(`Polígono completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
+        
+        document.getElementById('detect-location').disabled = false;
+        
+        this.map.removeInteraction(this.draw);
+        this.draw = null;
+        this.resetDrawingState();
+    }
+
+    /**
+     * ELIMINA INTERACCIÓN DE DIBUJO EXISTENTE
+     */
+    removeExistingDrawInteraction() {
+        if (this.draw) {
+            this.map.removeInteraction(this.draw);
+        }
+    }
+
+    /**
+     * LIMPIA ESTADO INTERNO DE DIBUJO
+     */
+    resetDrawingState() {
+        this.drawingFeature = null;
+        this.updateAreaDisplay(0);
+    }
+
+    /**
+     * CALCULA ÁREA DE UN POLÍGONO USANDO TURF.JS
+     */
+    calculateArea(feature) {
+        if (!feature || !feature.getGeometry) {
+            return 0;
+        }
+        
+        const geometry = feature.getGeometry();
+        if (!geometry) {
+            return 0;
+        }
+        
+        const geomType = geometry.getType();
+        
+        if (!['Polygon', 'MultiPolygon'].includes(geomType)) {
+            return 0;
+        }
+        
+        if (typeof turf === 'undefined') {
+            this.showAlert('Error: Turf.js no está cargado. Los cálculos de área no están disponibles.', 'error');
+            return 0;
+        }
+        
+        try {
+            const wgs84Geometry = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
+            const coordinates = wgs84Geometry.getCoordinates();
+            
+            let turfFeature;
+            switch (geomType) {
+                case 'Polygon':
+                    turfFeature = turf.polygon(coordinates);
+                    break;
+                case 'MultiPolygon':
+                    turfFeature = turf.multiPolygon(coordinates);
+                    break;
+                default:
+                    return 0;
+            }
+            
+            const areaM2 = turf.area(turfFeature);
+            
+            if (isNaN(areaM2) || areaM2 <= 0) {
+                return 0;
+            }
+            
+            const areaHa = areaM2 / 10000;
+            
+            return parseFloat(areaHa.toFixed(6));
+            
+        } catch (error) {
+            console.error('Error en cálculo de área:', error);
+            this.showAlert('Error calculando área', 'error');
+            return 0;
+        }
+    }
+
+    /**
+     * REFRESCA VISUALIZACIÓN DEL ÁREA
+     */
+    refreshArea(feature = this.drawingFeature) {
+        if (feature) {
+            const areaHa = this.calculateArea(feature);
+            this.updateAreaDisplay(areaHa);
+            return areaHa;
+        }
+        return 0;
+    }
+
+    /**
+     * ACTUALIZA DISPLAY DE ÁREA EN INTERFAZ
+     */
+    updateAreaDisplay(areaHa) {
+        const areaInput = document.getElementById('area_ha');
+        if (areaInput) {
+            areaInput.value = areaHa > 0 ? areaHa.toFixed(6) : '';
+        }
+    }
+
+    /**
+     * CONVIERTE FEATURE A GEOJSON
+     */
+    convertToGeoJSON(feature, existingArea = null) {
+        try {
+            const format = new ol.format.GeoJSON();
+            const geojson = format.writeFeature(feature, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+            const geojsonObj = JSON.parse(geojson);
+            
+            if (!geojsonObj.geometry) {
+                throw new Error('El polígono no tiene geometría válida');
+            }
+            
+            document.getElementById('geometry').value = JSON.stringify(geojsonObj.geometry);
+            
+            const areaHa = existingArea !== null ? existingArea : feature.get('area') || this.calculateArea(feature);
+            document.getElementById('area_ha').value = areaHa.toFixed(6);
+            
+        } catch (error) {
+            console.error('Error al convertir GeoJSON:', error);
+            this.showAlert('Error al guardar el polígono: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * CAMBIA LA CAPA BASE ACTIVA
+     */
+    changeBaseLayer(layerKey) {
+        if (!this.baseLayers[layerKey]) {
+            this.showAlert(`Capa base no encontrada: ${layerKey}`, 'error');
+            return;
+        }
+        
+        // Ocultar todas las capas base
+        Object.values(this.baseLayers).forEach(layer => {
+            layer.setVisible(false);
+        });
+        
+        // Mostrar la nueva capa base
+        this.baseLayers[layerKey].setVisible(true);
+        this.currentBaseLayer = this.baseLayers[layerKey];
+    }
+
+    /**
+     * LIMPIA MAPA COMPLETAMENTE
+     */
+    clearMap() {
+        this.source.clear();
+        document.getElementById('geometry').value = '';
+        document.getElementById('area_ha').value = '';
+        this.updateAreaDisplay(0);
+        document.getElementById('detect-location').disabled = true;
+        document.getElementById('location-info').classList.add('hidden');
+        
+        this.removeExistingDrawInteraction();
+        this.drawingFeature = null;
+    }
+
+    /**
+     * DIBUJA POLÍGONO DESDE COORDENADAS UTM
+     */
+    drawFromUTMCoordinates(utmCoordinates) {
+        try {
+            const wgs84Coordinates = utmCoordinates.map(coord => {
+                const [easting, northing, zone, hemisphere] = coord;
+                const sourceEpsg = this.setupUTMProjection(zone, hemisphere);
+                return proj4(sourceEpsg, 'EPSG:4326', [easting, northing]);
+            });
+
+            const invalidCoords = wgs84Coordinates.filter(coord => 
+                isNaN(coord[0]) || isNaN(coord[1]) || 
+                Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90
+            );
+            
+            if (invalidCoords.length > 0) {
+                this.showAlert('Algunas coordenadas UTM son inválidas o están fuera de rango', 'error');
+                return;
+            }
+
+            this.closePolygonIfNeeded(wgs84Coordinates);
+            this.createPolygonFromCoordinates(wgs84Coordinates, utmCoordinates);
+            
+        } catch (error) {
+            console.error('Error al procesar coordenadas UTM:', error);
+            this.showAlert('Error al procesar coordenadas UTM. Verifique los valores y formatos.', 'error');
+        }
+    }
+
+    /**
+     * CIERRA POLÍGONO SI NO ESTÁ CERRADO
+     */
+    closePolygonIfNeeded(coordinates) {
+        const firstCoord = coordinates[0];
+        const lastCoord = coordinates[coordinates.length - 1];
+        
+        if (firstCoord[0] !== lastCoord[0] || firstCoord[1] !== lastCoord[1]) {
+            coordinates.push(firstCoord);
+        }
+    }
+
+    /**
+     * CREA POLÍGONO DESDE COORDENADAS WGS84
+     */
+    createPolygonFromCoordinates(wgs84Coordinates, utmCoordinates) {
+        const feature = new ol.Feature({
+            geometry: new ol.geom.Polygon([wgs84Coordinates]).transform('EPSG:4326', 'EPSG:3857')
+        });
+        
+        this.clearMap();
+        
+        const areaHa = this.calculateArea(feature);
+        feature.set('area', areaHa);
+        feature.setStyle(this.getPolygonStyle('finished', areaHa));
+        
+        this.source.addFeature(feature);
+        this.updateAreaDisplay(areaHa);
+        document.getElementById('detect-location').disabled = false;
+        
+        this.map.getView().fit(
+            feature.getGeometry().getExtent(),
+            { padding: [50, 50, 50, 50], duration: 1000 }
+        );
+        
+        this.convertToGeoJSON(feature, areaHa);
+        
+        const zonesUsed = [...new Set(utmCoordinates.map(coord => 
+            `Zona ${coord[2]}${coord[3]}`
+        ))];
+        const zonesText = zonesUsed.sort().join(', ');
+        
+        this.showAlert(
+            `Polígono dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`, 
+            'success'
+        );
+    }
+
+    /**
+     * MUESTRA ALERTA AL USUARIO
+     */
+    showAlert(message, icon = 'info') {
+        if (window.Swal) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: icon,
+                title: message,
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+        } else {
+            alert(message);
+        }
     }
 }
+
+// =============================================
+// INICIALIZACIÓN GLOBAL
+// =============================================
 
 /**
- * Clase para manejar el modal de coordenadas manuales
+ * INICIALIZA MAPA CUANDO EL DOCUMENTO ESTÉ LISTO
  */
-class UTMModalManager {
-    constructor(options = {}) {
-        this.modalId = options.modalId || 'manual-polygon-modal';
-        this.coordinatesList = [];
-        this.onDrawPolygon = options.onDrawPolygon || null;
-        
-        this.init();
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('map')) {
+        window.polygonMapInstance = new PolygonMap();
     }
-    
-    init() {
-        this.modal = document.getElementById(this.modalId);
-        this.openModalBtn = document.getElementById('manual-polygon-toggle');
-        this.closeModalBtn = document.getElementById('close-modal');
-        this.cancelModalBtn = document.getElementById('cancel-modal');
-        
-        if (this.openModalBtn && this.modal) {
-            this.setupEventListeners();
-        }
-    }
-    
-    setupEventListeners() {
-        this.openModalBtn.addEventListener('click', () => this.open());
-        
-        if (this.closeModalBtn) {
-            this.closeModalBtn.addEventListener('click', () => this.close());
-        }
-        
-        if (this.cancelModalBtn) {
-            this.cancelModalBtn.addEventListener('click', () => this.close());
-        }
-        
-        this.modal.addEventListener('click', (e) => {
-            if (e.target === this.modal) this.close();
-        });
-    }
-    
-    open() {
-        this.modal.classList.remove('hidden');
-        this.modal.classList.add('flex');
-        setTimeout(() => this.modal.classList.add('opacity-100'), 10);
-    }
-    
-    close() {
-        this.modal.classList.remove('opacity-100');
-        setTimeout(() => {
-            this.modal.classList.remove('flex');
-            this.modal.classList.add('hidden');
-            this.coordinatesList = [];
-        }, 300);
-    }
-    
-    drawPolygon(utmCoordinates) {
-        if (this.onDrawPolygon && typeof this.onDrawPolygon === 'function') {
-            this.onDrawPolygon(utmCoordinates);
-        }
-    }
-}
-
-// Exportar clases y utilidades
-window.PolygonMapManager = PolygonMapManager;
-window.LocationDetector = LocationDetector;
-window.UTMCoordinates = UTMCoordinates;
-window.UTMModalManager = UTMModalManager;
+});

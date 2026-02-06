@@ -4,93 +4,22 @@
         <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
-                    <i class="fas fa-draw-polygon mr-2"></i> Crear Nuevo Polígono
+                   Crear Nuevo Polígono
                 </h2>
 
                 <form action="{{ route('polygons.store') }}" method="POST" id="polygon-form" novalidate>
                     @csrf
 
-                    <div class="grid grid-cols-1  gap-6">
+                    <div class="grid grid-cols-1 gap-6">
                         <!-- Columna del Mapa -->
                         <div>
-                            <x-input-label for="map" />
-                            <div class="relative rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 70vh;  border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
+                            <x-input-label for="map"/>
+                            <div class="relative rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 77vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
                                 <div id="map" class="h-full w-full"></div>
 
-                                <!-- Controles del mapa (similares a deforestación) -->
+                                <!-- Controles del mapa -->
                                 <div id="map-controls" class="absolute top-4 right-4 z-50 flex flex-col space-y-2">
                                     <div class="flex space-x-2">
-                                        <!-- Botón para mostrar/ocultar polígono -->
-                                        <div class="relative">
-                                            <button id="visibility-toggle-button" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
-                                                <span id="icon-eye-open">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye w-6 h-6">
-                                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                                                        <circle cx="12" cy="12" r="3"/>
-                                                    </svg>
-                                                </span>
-                                                <span id="icon-eye-closed" class="hidden">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off w-6 h-6">
-                                                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                                                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                                                        <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                                                        <line x1="2" x2="22" y1="2" y2="22"/>
-                                                    </svg>
-                                                </span>
-                                            </button>
-                                        </div>
-
-                                        <!-- Contenedor para controles de opacidad -->
-                                        <div class="relative">
-                                            <button id="opacity-control-button" title="Ajustar Opacidad" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers w-6 h-6">
-                                                    <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>
-                                                    <path d="m22 17.46-8.58-3.91a2 2 0 0 0-1.66 0L3 17.46"/>
-                                                    <path d="m22 12.46-8.58-3.91a2 2 0 0 0-1.66 0L3 12.46"/>
-                                                </svg>
-                                            </button>
-                                            
-                                            <div id="opacity-control-panel" 
-                                                class="absolute mt-3 w-48 rounded-xl shadow-lg bg-gray-50 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 
-                                                transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none hidden"
-                                                style="right: -97px;">
-                                                <div class="absolute -top-2 right-6 w-[6.4rem] h-2 z-100 pointer-events-none">
-                                                    <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
-                                                        <polygon points="8,0 16,8 0,8" fill="currentColor"/>
-                                                    </svg>
-                                                </div>
-                                                
-                                                <div class="p-4 z-100">
-                                                    <div class="flex items-center justify-between mb-2">
-                                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Opacidad Polígono</span>
-                                                        <span id="opacity-value" class="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">75%</span>
-                                                    </div>
-                                                    
-                                                    <input type="range" 
-                                                        id="opacity-slider" 
-                                                        min="0" 
-                                                        max="100" 
-                                                        value="75"
-                                                        class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb">
-                                                    
-                                                    <div class="flex space-x-2 mt-3">
-                                                        <button type="button" data-opacity="25" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs">
-                                                            25%
-                                                        </button>
-                                                        <button type="button" data-opacity="50" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs">
-                                                            50%
-                                                        </button>
-                                                        <button type="button" data-opacity="75" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs">
-                                                            75%
-                                                        </button>
-                                                        <button type="button" data-opacity="100" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs">
-                                                            100%
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
                                         <!-- Cambiar Mapa -->
                                         <div class="relative">
                                             <button id="base-map-toggle" title="Cambiar mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
@@ -142,7 +71,7 @@
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                             </svg>
-                                            Dibujar
+                                            
                                         </button>
 
                                         <!-- Limpiar Mapa -->
@@ -150,20 +79,20 @@
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
-                                            Limpiar
+                                            
                                         </button>
                                     </div>
                                 </div>
 
-                                <!-- Coordenadas en tiempo real -->
-                                <div class="absolute left-1/2 bottom-4 transform -translate-x-1/2 z-40 bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm shadow">
-                                    <span id="coordinates-display">Lat: 0.000000 | Lng: 0.000000</span>
+                                <!-- Coordenadas UTM en tiempo real -->
+                                <div id="coordinate-display" class="absolute left-2 bottom-4 transform  z-10 bg-white/90 dark:bg-gray-800/90 px-2 py-1 rounded-lg text-sm shadow-lg font-mono border border-gray-300 dark:border-gray-600">
+                                    Zona XXN | Este: 000000.000 | Norte: 0000000.000
                                 </div>
                             </div>
                             <x-input-error class="mt-2" :messages="$errors->get('geometry')" />
                         </div>
 
-                        <!-- Columna del Formulario -->
+                        <!-- Columna del Formulario (COMPLETA) -->
                         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl p-4 md:p-6 lg:p-8">
                             <div class="text-gray-900 dark:text-gray-100">
                                 <h2 class="text-lg font-semibold mb-4">Datos del Polígono</h2>
@@ -268,8 +197,8 @@
         </div>
     </div>
 
-    <!-- Modal para coordenadas manuales (similar a deforestación) -->
-    <div id="manual-polygon-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <!-- Modal para coordenadas manuales -->
+    <div id="manual-polygon-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden">
         <div class="bg-white dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-lg mx-4">
             <!-- Header -->
             <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
@@ -362,244 +291,1331 @@
     </div>
 </x-app-layout>
 
-<!-- Estilos y librerías -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<!-- Incluir OpenLayers PRIMERO -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css">
+<script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
 
-<!-- Scripts personalizados -->
-<script src="{{ asset('js/polygon/polygon-map-utils.js') }}"></script>
-<script>
+<!-- SweetAlert2 para notificaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Inicializar gestor del mapa
-    const mapManager = new PolygonMapManager('map', {
-        geometryInput: document.getElementById('geometry'),
-        coordsDisplay: document.getElementById('coordinates-display'),
-        detectBtn: document.getElementById('detect-location'),
-        areaInput: document.getElementById('area_ha')
-    });
-    
-    // Inicializar detector de ubicación
-    const locationDetector = new LocationDetector({
-        csrfToken: '{{ csrf_token() }}',
-        findParishUrl: '{{ route("polygons.find-parish-api") }}'
-    });
-    
-    // Inicializar modal UTM
-    const utmModal = new UTMModalManager({
-        modalId: 'manual-polygon-modal',
-        onDrawPolygon: (utmCoordinates) => {
-            drawUTMPolygonFromUTM(utmCoordinates, mapManager);
+<!-- Script personalizado para polígonos (CORREGIDO) -->
+<script>
+// ARCHIVO polygon-map.js COMPLETO CON DETECCIÓN DE UBICACIÓN
+class PolygonMap {
+    constructor() {
+        this.map = null;
+        this.draw = null;
+        this.source = null;
+        this.polygonStyle = null;
+        this.coordinateDisplay = null;
+        this.baseLayers = {};
+        this.currentBaseLayer = null;
+        this.drawingFeature = null;
+
+        // Coordenadas de Venezuela por defecto
+        this.INITIAL_CENTER = [-63.172905251869125, 10.555594747510682];
+        this.INITIAL_ZOOM = 15;
+        this.MINZOOM = 5;
+        this.MAXZOOM = 18;
+
+        console.log('Inicializando PolygonMap...');
+        
+        // Esperar a que el DOM esté completamente listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
         }
-    });
-    
-    // Configurar el modal UTM (código específico del modal)
-    setupUTMModal(utmModal);
-    
-    // Referencias a elementos
-    const drawBtn = document.getElementById('draw-polygon');
-    const detectBtn = document.getElementById('detect-location');
-    const clearBtn = document.getElementById('clear-map');
-    const geometryInput = document.getElementById('geometry');
-    
-    // Event Listeners
-    drawBtn.addEventListener('click', () => {
-        new L.Draw.Polygon(mapManager.map, DrawConfig.polygon).enable();
-    });
-    
-    clearBtn.addEventListener('click', () => {
-        mapManager.clearMap();
-        document.getElementById('location-info').classList.add('hidden');
-    });
-    
-    // Controles de visibilidad y opacidad
-    setupMapControls(mapManager);
-    
-    // Detectar ubicación
-    detectBtn.addEventListener('click', async () => {
-        await handleLocationDetection(mapManager, locationDetector);
-    });
-    
-    // Validación del formulario
-    document.getElementById('polygon-form').addEventListener('submit', function (e) {
-        if (!validatePolygonForm(mapManager, this)) {
-            e.preventDefault();
+    }
+
+    init() {
+        console.log('Ejecutando init()...');
+        
+        // Verificar que el elemento map existe
+        const mapElement = document.getElementById('map');
+        if (!mapElement) {
+            console.error('ERROR: No se encontró el elemento #map');
+            return;
         }
-    });
+        console.log('Elemento #map encontrado:', mapElement);
+
+        this.defineCustomProjections();
+        this.initializeMap();
+        this.setupEventListeners();
+        this.setupCoordinateDisplay();
+        this.verifyDependencies();
+    }
+
+    verifyDependencies() {
+        console.log('=== VERIFICACIÓN DE DEPENDENCIAS ===');
+        console.log('OpenLayers:', typeof ol !== 'undefined');
+        console.log('Turf.js:', typeof turf !== 'undefined');
+        console.log('Proj4:', typeof proj4 !== 'undefined');
+        
+        if (typeof ol === 'undefined') {
+            console.error('ERROR: OpenLayers no está cargado');
+            this.showAlert('Error crítico: OpenLayers no se cargó correctamente', 'error');
+        }
+    }
+
+    defineCustomProjections() {
+        if (typeof proj4 !== 'undefined') {
+            proj4.defs('EPSG:2203', 
+                '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs'
+            );
+            
+            proj4.defs('EPSG:32620',
+                '+proj=utm +zone=20 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
+            );
+            
+            if (typeof ol !== 'undefined') {
+                ol.proj.proj4.register(proj4);
+            }
+        }
+    }
+
+    initializeMap() {
+        console.log('Inicializando mapa...');
+        
+        try {
+            this.setupBaseLayers();
+            this.setupVectorLayer();
+            this.setupMapInstance();
+            console.log('Mapa inicializado correctamente');
+        } catch (error) {
+            console.error('Error al inicializar el mapa:', error);
+            this.showAlert('Error al cargar el mapa: ' + error.message, 'error');
+        }
+    }
+
+    setupBaseLayers() {
+        console.log('Configurando capas base...');
+        
+        this.baseLayers = {
+            osm: new ol.layer.Tile({
+                title: 'OpenStreetMap',
+                visible: true,
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                    attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                })
+            }),
+            satellite: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                    attributions: 'Tiles © Esri'
+                }),
+                visible: false,
+                title: 'Satélite Esri'
+            }),
+            terrain: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}',
+                    attributions: 'Tiles © Esri'
+                }),
+                visible: false,
+                title: 'Relieve'
+            }),
+            dark: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                    attributions: '© CartoDB'
+                }),
+                visible: false,
+                title: 'Oscuro'
+            }),
+            maptiler_satellite: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=scUozK4fig7bE6jg7TPi',
+                    attributions: '© MapTiler & OpenStreetMap',
+                    tileSize: 512,
+                    maxZoom: 20
+                }),
+                visible: false,
+                title: 'MapTiler Satélite'
+            })
+        };
+    }
+
+    setupVectorLayer() {
+        this.source = new ol.source.Vector();
+        this.setupStyles();
+
+        this.vectorLayer = new ol.layer.Vector({
+            source: this.source,
+            style: (feature) => this.getFeatureStyle(feature)
+        });
+    }
+
+    setupMapInstance() {
+        const baseLayerGroup = new ol.layer.Group({
+            layers: Object.values(this.baseLayers)
+        });
+
+        const initialCenter = ol.proj.fromLonLat(this.INITIAL_CENTER);
+
+        this.map = new ol.Map({
+            target: 'map',
+            layers: [baseLayerGroup, this.vectorLayer],
+            view: new ol.View({
+                center: initialCenter,
+                zoom: this.INITIAL_ZOOM,
+                minZoom: this.MINZOOM,
+                maxZoom: this.MAXZOOM,
+                smoothResolutionConstraint: true
+            }),
+            controls: ol.control.defaults({
+                attributionOptions: {
+                    collapsible: true
+                }
+            })
+        });
+
+        this.currentBaseLayer = this.baseLayers.osm;
+        console.log('Instancia del mapa creada:', this.map);
+    }
+
+    setupStyles() {
+        this.polygonStyle = this.getPolygonStyle('default');
+    }
+
+    getPolygonStyle(state = 'default', areaHa = 0) {
+        const styles = {
+            drawing: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: '#3b82f6', width: 3, lineDash: [5, 10], lineCap: 'round'
+                }),
+                fill: new ol.style.Fill({ color: 'rgba(59, 130, 246, 0.2)' }),
+                image: new ol.style.Circle({
+                    radius: 6,
+                    fill: new ol.style.Fill({ color: '#ffffff' }),
+                    stroke: new ol.style.Stroke({ color: '#3b82f6', width: 2 })
+                })
+            }),
+            
+            finished: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: '#10b981', width: 3, lineDash: null, lineCap: 'round'
+                }),
+                fill: new ol.style.Fill({ color: 'rgba(16, 185, 129, 0.3)' }),
+                image: new ol.style.Circle({
+                    radius: 5,
+                    fill: new ol.style.Fill({ color: '#10b981' }),
+                    stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 })
+                }),
+                text: new ol.style.Text({
+                    text: areaHa > 0 ? `${areaHa.toFixed(6)} ha` : '',
+                    font: 'bold 14px Arial, sans-serif',
+                    fill: new ol.style.Fill({ color: '#1f2937' }),
+                    stroke: new ol.style.Stroke({ color: '#ffffff', width: 3 }),
+                    backgroundFill: new ol.style.Fill({ color: 'rgba(255, 255, 255, 0.7)' }),
+                    padding: [4, 8, 4, 8],
+                    textBaseline: 'middle',
+                    textAlign: 'center',
+                    offsetY: 0
+                })
+            }),
+            
+            default: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: '#10b981', width: 3, lineDash: [8, 4], lineCap: 'round'
+                }),
+                fill: new ol.style.Fill({ color: 'rgba(16, 185, 129, 0.25)' })
+            })
+        };
+
+        return styles[state] || styles.default;
+    }
+
+    getFeatureStyle(feature) {
+        const geometry = feature.getGeometry();
+        const styles = [];
+        const areaHa = feature.get('area') || 0;
+        
+        const customStyle = feature.getStyle();
+        if (customStyle) {
+            styles.push(customStyle);
+        } else {
+            if (geometry.getType() === 'Polygon' && areaHa > 0) {
+                styles.push(this.getPolygonStyle('finished', areaHa));
+            } else {
+                styles.push(this.polygonStyle);
+            }
+        }
+
+        return styles;
+    }
+
+    setupEventListeners() {
+        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+    }
+
+    handleKeyDown(event) {
+        if (event.key === 'Escape' && this.draw && this.drawingFeature) {
+            this.cancelDrawing();
+            event.preventDefault();
+        }
+    }
+
+    cancelDrawing() {
+        if (this.draw) {
+            this.map.removeInteraction(this.draw);
+            this.draw = null;
+        }
+        this.drawingFeature = null;
+        this.updateAreaDisplay(0);
+    }
+
+    setupCoordinateDisplay() {
+        this.coordinateDisplay = document.getElementById('coordinate-display');
+        
+        if (!this.coordinateDisplay) {
+            console.warn('No se encontró el elemento coordinate-display');
+            return;
+        }
+        
+        this.map.on('pointermove', (evt) => {
+            if (evt.dragging) return;
+            this.updateCoordinateDisplay(evt.coordinate);
+        });
+    }
+
+    updateCoordinateDisplay(coordinate) {
+        if (!this.coordinateDisplay) return;
+        
+        try {
+            const lonLat = ol.proj.toLonLat(coordinate);
+            const lon = lonLat[0];
+            const lat = lonLat[1];
+            
+            const zone = Math.floor((lon + 180) / 6) + 1;
+            const hemisphere = lat >= 0 ? 'N' : 'S';
+            
+            const epsgCode = this.setupUTMProjection(zone, hemisphere);
+            const [easting, northing] = proj4('EPSG:4326', epsgCode, [lon, lat]);
+            
+            if (this.isValidUTM(easting, northing, zone, hemisphere)) {
+                this.coordinateDisplay.textContent = 
+                    `Zona ${zone}${hemisphere} | ` +
+                    `Este: ${easting.toFixed(3)} | ` +
+                    `Norte: ${northing.toFixed(3)}`;
+                this.coordinateDisplay.classList.remove('hidden');
+            } else {
+                this.coordinateDisplay.textContent = 'Coordenadas fuera de rango';
+            }
+        } catch (error) {
+            console.warn('Error en conversión UTM:', error);
+            this.coordinateDisplay.textContent = 'Error en coordenadas';
+        }
+    }
+
+    setupUTMProjection(zone, hemisphere) {
+        const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
+        
+        if (!proj4.defs(epsgCode)) {
+            const proj4String = `+proj=utm +zone=${zone} +${hemisphere === 'S' ? '+south ' : ''}datum=WGS84 +units=m +no_defs`;
+            proj4.defs(epsgCode, proj4String);
+        }
+        
+        return epsgCode;
+    }
+
+    isValidUTM(easting, northing, zone, hemisphere) {
+        if (easting < 0 || easting > 1000000) return false;
+        
+        if (hemisphere === 'N') {
+            return northing >= 0 && northing <= 10000000;
+        } else {
+            return northing >= 1000000 && northing <= 10000000;
+        }
+    }
+
+    activateDrawing() {
+        console.log('Activando dibujo de polígonos...');
+        
+        if (this.draw) {
+            this.map.removeInteraction(this.draw);
+        }
+
+        this.draw = new ol.interaction.Draw({
+            source: this.source,
+            type: 'Polygon',
+            style: this.getPolygonStyle('drawing')
+        });
+
+        this.setupDrawEvents();
+        this.map.addInteraction(this.draw);
+        
+        this.showAlert('Modo dibujo activado. Haz clic en el mapa para dibujar el polígono.', 'info');
+    }
+
+    setupDrawEvents() {
+        this.draw.on('drawstart', (evt) => {
+            this.drawingFeature = evt.feature;
+            this.source.clear();
+            this.updateAreaDisplay(0);
+            
+            const detectBtn = document.getElementById('detect-location');
+            if (detectBtn) detectBtn.disabled = true;
+        });
+
+        this.draw.on('drawadd', () => this.refreshArea());
+        this.draw.on('drawabort', () => this.resetDrawingState());
+        this.draw.on('drawend', (event) => this.finalizeDrawing(event.feature));
+    }
+
+    finalizeDrawing(feature) {
+        const areaHa = this.refreshArea(feature);
+        
+        feature.set('area', areaHa);
+        feature.setStyle(this.getPolygonStyle('finished', areaHa));
+        
+        this.convertToGeoJSON(feature, areaHa);
+        this.showAlert(`Polígono completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
+        
+        const detectBtn = document.getElementById('detect-location');
+        if (detectBtn) detectBtn.disabled = false;
+        
+        if (this.draw) {
+            this.map.removeInteraction(this.draw);
+            this.draw = null;
+        }
+        this.resetDrawingState();
+    }
+
+    removeExistingDrawInteraction() {
+        if (this.draw) {
+            this.map.removeInteraction(this.draw);
+        }
+    }
+
+    resetDrawingState() {
+        this.drawingFeature = null;
+        this.updateAreaDisplay(0);
+    }
+
+    calculateArea(feature) {
+        if (!feature || !feature.getGeometry) {
+            return 0;
+        }
+        
+        const geometry = feature.getGeometry();
+        if (!geometry) {
+            return 0;
+        }
+        
+        if (typeof turf === 'undefined') {
+            console.error('Turf.js no está disponible');
+            return 0;
+        }
+        
+        try {
+            const wgs84Geometry = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
+            const coordinates = wgs84Geometry.getCoordinates();
+            
+            if (!coordinates || coordinates.length === 0) {
+                return 0;
+            }
+            
+            const turfFeature = turf.polygon(coordinates);
+            const areaM2 = turf.area(turfFeature);
+            
+            if (isNaN(areaM2) || areaM2 <= 0) {
+                return 0;
+            }
+            
+            const areaHa = areaM2 / 10000;
+            return parseFloat(areaHa.toFixed(6));
+            
+        } catch (error) {
+            console.error('Error en cálculo de área:', error);
+            return 0;
+        }
+    }
+
+    refreshArea(feature = this.drawingFeature) {
+        if (feature) {
+            const areaHa = this.calculateArea(feature);
+            this.updateAreaDisplay(areaHa);
+            return areaHa;
+        }
+        return 0;
+    }
+
+    updateAreaDisplay(areaHa) {
+        const areaInput = document.getElementById('area_ha');
+        if (areaInput) {
+            areaInput.value = areaHa > 0 ? areaHa.toFixed(6) : '';
+        }
+    }
+
+    convertToGeoJSON(feature, existingArea = null) {
+        try {
+            const format = new ol.format.GeoJSON();
+            const geojson = format.writeFeature(feature, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+            const geojsonObj = JSON.parse(geojson);
+            
+            if (!geojsonObj.geometry) {
+                throw new Error('El polígono no tiene geometría válida');
+            }
+            
+            document.getElementById('geometry').value = JSON.stringify(geojsonObj.geometry);
+            
+            const areaHa = existingArea !== null ? existingArea : feature.get('area') || this.calculateArea(feature);
+            document.getElementById('area_ha').value = areaHa.toFixed(6);
+            
+        } catch (error) {
+            console.error('Error al convertir GeoJSON:', error);
+            this.showAlert('Error al guardar el polígono: ' + error.message, 'error');
+        }
+    }
+
+    changeBaseLayer(layerKey) {
+        console.log('Cambiando capa base a:', layerKey);
+        console.log('Capas base disponibles:', Object.keys(this.baseLayers));
+        
+        if (!this.baseLayers[layerKey]) {
+            console.error('Capa no encontrada:', layerKey);
+            this.showAlert(`Capa base no encontrada: ${layerKey}`, 'error');
+            return;
+        }
+        
+        // Ocultar todas las capas base
+        Object.values(this.baseLayers).forEach(layer => {
+            console.log('Ocultando capa:', layer.get('title'));
+            layer.setVisible(false);
+        });
+        
+        // Mostrar la nueva capa base
+        this.baseLayers[layerKey].setVisible(true);
+        this.currentBaseLayer = this.baseLayers[layerKey];
+        
+        console.log('Capa activada:', layerKey, 'título:', this.currentBaseLayer.get('title'));
+        
+        // Mostrar notificación con el nombre de la capa
+        const layerTitle = this.baseLayers[layerKey].get('title') || layerKey;
+        this.showAlert(`Mapa cambiado a: ${layerTitle}`, 'success');
+    }
+
+    clearMap() {
+        console.log('Limpiando mapa...');
+        
+        this.source.clear();
+        document.getElementById('geometry').value = '';
+        document.getElementById('area_ha').value = '';
+        this.updateAreaDisplay(0);
+        
+        const detectBtn = document.getElementById('detect-location');
+        if (detectBtn) detectBtn.disabled = true;
+        
+        const locationInfo = document.getElementById('location-info');
+        if (locationInfo) locationInfo.classList.add('hidden');
+        
+        this.removeExistingDrawInteraction();
+        this.drawingFeature = null;
+        
+        this.showAlert('Mapa limpiado', 'info');
+    }
+
+    drawFromUTMCoordinates(utmCoordinates) {
+        console.log('Dibujando desde coordenadas UTM:', utmCoordinates);
+        
+        try {
+            const wgs84Coordinates = utmCoordinates.map(coord => {
+                const [easting, northing, zone, hemisphere] = coord;
+                const sourceEpsg = this.setupUTMProjection(zone, hemisphere);
+                return proj4(sourceEpsg, 'EPSG:4326', [easting, northing]);
+            });
+
+            const invalidCoords = wgs84Coordinates.filter(coord => 
+                isNaN(coord[0]) || isNaN(coord[1]) || 
+                Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90
+            );
+            
+            if (invalidCoords.length > 0) {
+                this.showAlert('Algunas coordenadas UTM son inválidas o están fuera de rango', 'error');
+                return;
+            }
+
+            this.closePolygonIfNeeded(wgs84Coordinates);
+            this.createPolygonFromCoordinates(wgs84Coordinates, utmCoordinates);
+            
+        } catch (error) {
+            console.error('Error al procesar coordenadas UTM:', error);
+            this.showAlert('Error al procesar coordenadas UTM. Verifique los valores y formatos.', 'error');
+        }
+    }
+
+    closePolygonIfNeeded(coordinates) {
+        const firstCoord = coordinates[0];
+        const lastCoord = coordinates[coordinates.length - 1];
+        
+        if (firstCoord[0] !== lastCoord[0] || firstCoord[1] !== lastCoord[1]) {
+            coordinates.push(firstCoord);
+        }
+    }
+
+    createPolygonFromCoordinates(wgs84Coordinates, utmCoordinates) {
+        const feature = new ol.Feature({
+            geometry: new ol.geom.Polygon([wgs84Coordinates]).transform('EPSG:4326', 'EPSG:3857')
+        });
+        
+        this.clearMap();
+        
+        const areaHa = this.calculateArea(feature);
+        feature.set('area', areaHa);
+        feature.setStyle(this.getPolygonStyle('finished', areaHa));
+        
+        this.source.addFeature(feature);
+        this.updateAreaDisplay(areaHa);
+        
+        const detectBtn = document.getElementById('detect-location');
+        if (detectBtn) detectBtn.disabled = false;
+        
+        this.map.getView().fit(
+            feature.getGeometry().getExtent(),
+            { padding: [50, 50, 50, 50], duration: 1000 }
+        );
+        
+        this.convertToGeoJSON(feature, areaHa);
+        
+        const zonesUsed = [...new Set(utmCoordinates.map(coord => 
+            `Zona ${coord[2]}${coord[3]}`
+        ))];
+        const zonesText = zonesUsed.sort().join(', ');
+        
+        this.showAlert(
+            `Polígono dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`, 
+            'success'
+        );
+    }
+
+    // =============================================
+    // NUEVAS FUNCIONES PARA DETECCIÓN DE UBICACIÓN
+    // =============================================
+
+    /**
+     * Calcula el centroide de un polígono desde GeoJSON
+     */
+    calculateCentroidFromGeoJSON(geojson) {
+        try {
+            const geometry = typeof geojson === 'string' ? JSON.parse(geojson) : geojson;
+            
+            if (!geometry || !geometry.coordinates) {
+                console.error('GeoJSON inválido para calcular centroide');
+                return null;
+            }
+
+            let coordinates = geometry.coordinates;
+            
+            // Si es un Polygon, tomar el primer anillo
+            if (geometry.type === 'Polygon') {
+                coordinates = coordinates[0];
+            }
+            
+            // Calcular centroide simple (promedio de coordenadas)
+            let sumLat = 0;
+            let sumLng = 0;
+            let count = 0;
+            
+            for (const coord of coordinates) {
+                if (Array.isArray(coord[0])) {
+                    // Coordenadas anidadas
+                    for (const subCoord of coord) {
+                        sumLng += subCoord[0];
+                        sumLat += subCoord[1];
+                        count++;
+                    }
+                } else {
+                    sumLng += coord[0];
+                    sumLat += coord[1];
+                    count++;
+                }
+            }
+            
+            if (count === 0) return null;
+            
+            return {
+                lat: sumLat / count,
+                lng: sumLng / count
+            };
+            
+        } catch (error) {
+            console.error('Error calculando centroide:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Detecta ubicación usando el centroide del polígono
+     */
+    async detectLocation() {
+        console.log('Iniciando detección de ubicación...');
+        
+        // Obtener el GeoJSON del polígono
+        const geometryInput = document.getElementById('geometry');
+        if (!geometryInput || !geometryInput.value) {
+            this.showAlert('❌ Debes dibujar un polígono primero', 'error');
+            return;
+        }
+        
+        // Calcular centroide
+        const centroid = this.calculateCentroidFromGeoJSON(geometryInput.value);
+        if (!centroid) {
+            this.showAlert('❌ No se pudo calcular el centroide del polígono', 'error');
+            return;
+        }
+        
+        console.log('Centroide calculado:', centroid);
+        
+        // Actualizar campos ocultos
+        document.getElementById('centroid_lat').value = centroid.lat;
+        document.getElementById('centroid_lng').value = centroid.lng;
+        
+        // Deshabilitar botón y mostrar carga
+        const detectBtn = document.getElementById('detect-location');
+        const detectButtonText = document.getElementById('detect-button-text');
+        const originalText = detectButtonText.textContent;
+        detectButtonText.textContent = 'Detectando...';
+        detectBtn.disabled = true;
+        
+        try {
+            // Usar Nominatim (OpenStreetMap) para geocodificación inversa
+            const locationData = await this.reverseGeocode(centroid.lat, centroid.lng);
+            
+            // Procesar datos de ubicación
+            this.processLocationData(locationData, centroid);
+            
+        } catch (error) {
+            console.error('Error en detección de ubicación:', error);
+            this.showAlert('❌ Error detectando ubicación: ' + error.message, 'error');
+        } finally {
+            detectBtn.disabled = false;
+            detectButtonText.textContent = originalText;
+        }
+    }
+
+    /**
+     * Geocodificación inversa usando Nominatim
+     */
+    async reverseGeocode(lat, lng) {
+        console.log('Consultando Nominatim para:', lat, lng);
+        
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1&accept-language=es`,
+                {
+                    headers: {
+                        'User-Agent': 'PolygonSystem/1.0',
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Datos de Nominatim:', data);
+            
+            return data;
+            
+        } catch (error) {
+            console.error('Error en geocodificación inversa:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Procesa los datos de ubicación y actualiza la interfaz
+     */
+    processLocationData(data, centroid) {
+        const address = data.address || {};
+        
+        // Extraer información de ubicación
+        const parish = address.village || address.town || address.city || address.municipality || '';
+        const municipality = address.county || address.state_district || address.region || '';
+        const state = address.state || address.region || '';
+        
+        console.log('Datos de dirección:', { parish, municipality, state, address });
+        
+        // Limpiar nombres
+        const cleanParish = this.cleanLocationString(parish);
+        const cleanMunicipality = this.cleanLocationString(municipality);
+        const cleanState = this.cleanLocationString(state);
+        
+        // Actualizar campos ocultos
+        document.getElementById('detected_parish').value = cleanParish;
+        document.getElementById('detected_municipality').value = cleanMunicipality;
+        document.getElementById('detected_state').value = cleanState;
+        document.getElementById('location_data').value = JSON.stringify(data);
+        
+        // Actualizar interfaz de usuario
+        this.updateLocationInfoUI(cleanParish, cleanMunicipality, cleanState, centroid);
+        
+        // Intentar encontrar parroquia en la base de datos
+        this.findParishInDatabase(cleanParish, cleanMunicipality, cleanState);
+        
+        this.showAlert('✅ Ubicación detectada correctamente', 'success');
+    }
+
+    /**
+     * Limpia strings de ubicación
+     */
+    cleanLocationString(str) {
+        if (!str) return '';
+        
+        return str
+            .trim()
+            .replace(/[^\w\sáéíóúÁÉÍÓÚñÑüÜ.,\-\s]/g, '')
+            .replace(/\s+/g, ' ')
+            .toUpperCase();
+    }
+
+    /**
+     * Busca parroquia en la base de datos
+     */
+    async findParishInDatabase(parishName, municipalityName, stateName) {
+        try {
+            console.log('Buscando parroquia en base de datos:', { parishName, municipalityName, stateName });
+            
+            // Aquí deberías hacer una llamada a tu API de Laravel
+            // Por ahora, solo actualizaremos el select manualmente
+            this.updateParishSelect(parishName);
+            
+        } catch (error) {
+            console.error('Error buscando parroquia:', error);
+            // No mostramos error al usuario para no interrumpir el flujo
+        }
+    }
+
+    /**
+     * Actualiza el select de parroquias si encuentra coincidencia
+     */
+    updateParishSelect(parishName) {
+        const parishSelect = document.getElementById('parish_id');
+        if (!parishSelect) return;
+        
+        // Buscar opción que coincida con el nombre de la parroquia
+        for (let i = 0; i < parishSelect.options.length; i++) {
+            const option = parishSelect.options[i];
+            const optionText = option.text.toUpperCase();
+            
+            if (optionText.includes(parishName) || parishName.includes(optionText)) {
+                parishSelect.value = option.value;
+                this.showAlert(`✅ Parroquia "${option.text}" asignada automáticamente`, 'success');
+                return;
+            }
+        }
+        
+        // Si no encontró coincidencia exacta, mostrar sugerencia
+        this.showAlert('ℹ️ No se encontró parroquia exacta. Selecciona manualmente.', 'info');
+    }
+
+    /**
+     * Actualiza la interfaz con la información de ubicación
+     */
+    updateLocationInfoUI(parish, municipality, state, centroid) {
+        document.getElementById('detected-parish-text').textContent = parish || 'No detectado';
+        document.getElementById('detected-municipality-text').textContent = municipality || 'No detectado';
+        document.getElementById('detected-state-text').textContent = state || 'No detectado';
+        document.getElementById('detected-coords-text').textContent = 
+            `${centroid.lat.toFixed(6)}, ${centroid.lng.toFixed(6)}`;
+        
+        // Mostrar el panel de información
+        document.getElementById('location-info').classList.remove('hidden');
+    }
+
+    showAlert(message, icon = 'info') {
+        if (window.Swal) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: icon,
+                title: message,
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+        } else {
+            alert(message);
+        }
+    }
+}
+
+// =============================================
+// CÓDIGO PARA EL MODAL Y CONTROLES
+// =============================================
+
+// Variables globales
+let coordinatesList = [];
+const layerNames = {
+    'osm': 'OpenStreetMap',
+    'satellite': 'Satélite Esri', 
+    'maptiler_satellite': 'MapTiler Satélite',
+    'terrain': 'Relieve',
+    'dark': 'Oscuro'
+};
+
+// Función para abrir el modal
+function openCoordinateModal() {
+    const modal = document.getElementById('manual-polygon-modal');
+    modal.classList.remove('hidden');
+    
+    void modal.offsetWidth;
+    
+    setTimeout(() => {
+        const firstInput = document.getElementById('single-easting');
+        if (firstInput) firstInput.focus();
+    }, 100);
+}
+
+// Función para cerrar el modal
+function closeCoordinateModal() {
+    const modal = document.getElementById('manual-polygon-modal');
+    
+    modal.classList.add('closing');
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('closing');
+        coordinatesList = [];
+        updateCoordinatesList();
+        document.getElementById('bulk-coords').value = '';
+        document.getElementById('single-easting').value = '';
+        document.getElementById('single-northing').value = '';
+        
+        setInputMethod('single');
+    }, 300);
+}
+
+// Función para validar coordenadas UTM
+function validateUTMCoordinates(zone, hemisphere, easting, northing) {
+    if (zone < 1 || zone > 60) {
+        return 'Zona UTM debe estar entre 1 y 60';
+    }
+    
+    if (hemisphere !== 'N' && hemisphere !== 'S') {
+        return 'Hemisferio debe ser N (Norte) o S (Sur)';
+    }
+    
+    if (easting < 0 || easting > 1000000) {
+        return 'Este (Easting) debe estar entre 0 y 1,000,000';
+    }
+    
+    if (hemisphere === 'N') {
+        if (northing < 0 || northing > 10000000) {
+            return 'Norte (Northing) en hemisferio Norte debe estar entre 0 y 10,000,000';
+        }
+    } else {
+        if (northing < 1000000 || northing > 10000000) {
+            return 'Norte (Northing) en hemisferio Sur debe estar entre 1,000,000 y 10,000,000';
+        }
+    }
+    
+    return null;
+}
+
+// Event listeners cuando el DOM está cargado
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM completamente cargado, inicializando mapa...');
+    
+    // Inicializar el mapa
+    window.polygonMapInstance = new PolygonMap();
+    
+    // Configurar otros event listeners
+    setupEventListeners();
+    
+    // Inicializar modal
+    setInputMethod('single');
 });
 
-// Función para dibujar polígono desde coordenadas UTM
-function drawUTMPolygonFromUTM(utmCoordinates, mapManager) {
-    if (!utmCoordinates || utmCoordinates.length < 3) {
-        mapManager.showMessage('Se necesitan al menos 3 coordenadas', 'error');
-        return;
-    }
+function setupEventListeners() {
+    console.log('Configurando event listeners...');
     
-    try {
-        // Convertir coordenadas UTM a WGS84
-        const wgs84Coords = UTMCoordinates.convertToWGS84(utmCoordinates);
-        
-        // Crear polígono cerrado
-        if (wgs84Coords[0][0] !== wgs84Coords[wgs84Coords.length-1][0] || 
-            wgs84Coords[0][1] !== wgs84Coords[wgs84Coords.length-1][1]) {
-            wgs84Coords.push(wgs84Coords[0]);
-        }
-        
-        // Limpiar mapa existente
-        mapManager.drawnItems.clearLayers();
-        
-        // Crear y añadir polígono
-        const polygon = L.polygon(wgs84Coords, {
-            color: '#2b6cb0',
-            fillColor: '#2b6cb0',
-            fillOpacity: 0.25,
-            weight: 3
-        }).addTo(mapManager.drawnItems);
-        
-        // Ajustar vista
-        mapManager.map.fitBounds(polygon.getBounds());
-        
-        // Crear feature GeoJSON
-        const feature = {
-            type: 'Feature',
-            geometry: {
-                type: 'Polygon',
-                coordinates: [wgs84Coords]
-            },
-            properties: {}
-        };
-        
-        mapManager.updatePolygonData(polygon);
-        mapManager.currentPolygonLayer = polygon;
-        mapManager.showMessage('Polígono dibujado desde coordenadas UTM', 'success');
-        
-    } catch (error) {
-        console.error('Error dibujando polígono UTM:', error);
-        mapManager.showMessage('Error dibujando polígono', 'error');
-    }
-}
-
-// Configurar controles del mapa
-function setupMapControls(mapManager) {
-    const visibilityToggle = document.getElementById('visibility-toggle-button');
-    const opacitySlider = document.getElementById('opacity-slider');
-    const opacityValue = document.getElementById('opacity-value');
-    const opacityButtons = document.querySelectorAll('[data-opacity]');
-    const baseMapToggle = document.getElementById('base-map-toggle');
-    const fullscreenToggle = document.getElementById('fullscreen-toggle');
-    
-    let isPolygonVisible = true;
-    
-    // Toggle visibilidad
-    if (visibilityToggle) {
-        visibilityToggle.addEventListener('click', () => {
-            if (mapManager.currentPolygonLayer) {
-                isPolygonVisible = !isPolygonVisible;
-                if (isPolygonVisible) {
-                    mapManager.map.addLayer(mapManager.currentPolygonLayer);
-                    document.getElementById('icon-eye-open').classList.remove('hidden');
-                    document.getElementById('icon-eye-closed').classList.add('hidden');
-                } else {
-                    mapManager.map.removeLayer(mapManager.currentPolygonLayer);
-                    document.getElementById('icon-eye-open').classList.add('hidden');
-                    document.getElementById('icon-eye-closed').classList.remove('hidden');
-                }
-            }
+    // Modal de coordenadas
+    const manualToggle = document.getElementById('manual-polygon-toggle');
+    if (manualToggle) {
+        manualToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeMenu('base-map-menu');
+            openCoordinateModal();
         });
+    } else {
+        console.error('No se encontró el botón manual-polygon-toggle');
     }
     
-    // Control de opacidad
-    if (opacitySlider && opacityValue) {
-        opacitySlider.addEventListener('input', (e) => {
-            const value = parseInt(e.target.value);
-            opacityValue.textContent = `${value}%`;
-            
-            if (mapManager.currentPolygonLayer) {
-                mapManager.currentPolygonLayer.setStyle({ fillOpacity: value / 100 });
-            }
-        });
-    }
+    document.getElementById('close-modal')?.addEventListener('click', closeCoordinateModal);
+    document.getElementById('cancel-modal')?.addEventListener('click', closeCoordinateModal);
     
-    if (opacityButtons) {
-        opacityButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const value = parseInt(btn.dataset.opacity);
-                if (opacitySlider) opacitySlider.value = value;
-                if (opacityValue) opacityValue.textContent = `${value}%`;
-                
-                if (mapManager.currentPolygonLayer) {
-                    mapManager.currentPolygonLayer.setStyle({ fillOpacity: value / 100 });
-                }
-            });
-        });
-    }
-    
-    // Pantalla completa
-    if (fullscreenToggle) {
-        fullscreenToggle.addEventListener('click', () => {
-            const mapElement = document.getElementById('map');
-            if (!document.fullscreenElement) {
-                mapElement.requestFullscreen?.() ||
-                mapElement.webkitRequestFullscreen?.() ||
-                mapElement.msRequestFullscreen?.();
-            } else {
-                document.exitFullscreen?.() ||
-                document.webkitExitFullscreen?.() ||
-                document.msExitFullscreen?.();
-            }
-        });
-    }
-    
-    // Menú de capas base
-    if (baseMapToggle) {
-        setupBaseMapMenu();
-    }
-}
-
-// Configurar menú de capas base
-function setupBaseMapMenu() {
-    const baseMapMenu = document.getElementById('base-map-menu');
-    const baseMapToggle = document.getElementById('base-map-toggle');
-    
-    if (!baseMapMenu || !baseMapToggle) return;
-    
-    baseMapToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isShowing = baseMapMenu.classList.contains('show');
-        toggleMenu('base-map-menu', !isShowing);
+    // Métodos de entrada del modal
+    document.getElementById('method-single')?.addEventListener('click', function() {
+        setInputMethod('single');
     });
     
+    document.getElementById('method-bulk')?.addEventListener('click', function() {
+        setInputMethod('bulk');
+    });
+    
+    // Agregar coordenada individual
+    document.getElementById('add-coord')?.addEventListener('click', function() {
+        const zone = parseInt(document.getElementById('single-zone').value);
+        const hemisphere = document.getElementById('single-hemisphere').value;
+        const easting = document.getElementById('single-easting').value.trim();
+        const northing = document.getElementById('single-northing').value.trim();
+        
+        if (!zone || !easting || !northing) {
+            showAlert('Debe ingresar Zona, Este y Norte', 'warning');
+            return;
+        }
+        
+        if (isNaN(zone) || isNaN(easting) || isNaN(northing)) {
+            showAlert('Zona, Este y Norte deben ser números válidos', 'warning');
+            return;
+        }
+        
+        const validationError = validateUTMCoordinates(zone, hemisphere, parseFloat(easting), parseFloat(northing));
+        if (validationError) {
+            showAlert(validationError, 'warning');
+            return;
+        }
+        
+        coordinatesList.push({ 
+            zone: zone,
+            hemisphere: hemisphere,
+            easting: parseFloat(easting), 
+            northing: parseFloat(northing) 
+        });
+        updateCoordinatesList();
+        
+        document.getElementById('single-easting').value = '';
+        document.getElementById('single-northing').value = '';
+        
+        showAlert(`Coordenada agregada (Zona ${zone}${hemisphere})`, 'success');
+    });
+    
+    // Limpiar lista de coordenadas
+    document.getElementById('clear-list')?.addEventListener('click', function() {
+        coordinatesList = [];
+        updateCoordinatesList();
+    });
+    
+    // Enviar formulario del modal
+    const manualForm = document.getElementById('manual-polygon-form');
+    if (manualForm) {
+        manualForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            let utmCoords = [];
+            
+            if (document.getElementById('method-single').classList.contains('bg-blue-600')) {
+                if (coordinatesList.length < 3) {
+                    showAlert('Se necesitan al menos 3 coordenadas', 'warning');
+                    return;
+                }
+                utmCoords = coordinatesList.map(coord => [
+                    coord.easting, 
+                    coord.northing, 
+                    coord.zone, 
+                    coord.hemisphere
+                ]);
+            } else {
+                const coordsText = document.getElementById('bulk-coords').value.trim();
+                if (!coordsText) {
+                    showAlert('Debe ingresar coordenadas UTM', 'warning');
+                    return;
+                }
+                
+                const lines = coordsText.split('\n');
+                let hasErrors = false;
+                
+                lines.forEach((line, index) => {
+                    const parts = line.split(',').map(s => s.trim());
+                    if (parts.length === 4) {
+                        const [zoneStr, hemisphere, eastingStr, northingStr] = parts;
+                        const zone = parseInt(zoneStr);
+                        const easting = parseFloat(eastingStr);
+                        const northing = parseFloat(northingStr);
+                        
+                        if (!isNaN(zone) && !isNaN(easting) && !isNaN(northing) && 
+                            (hemisphere === 'N' || hemisphere === 'S')) {
+                            
+                            const validationError = validateUTMCoordinates(zone, hemisphere, easting, northing);
+                            if (validationError) {
+                                showAlert(`Línea ${index + 1}: ${validationError}`, 'warning');
+                                hasErrors = true;
+                                return;
+                            }
+                            
+                            utmCoords.push([easting, northing, zone, hemisphere]);
+                        } else {
+                            showAlert(`Línea ${index + 1}: Formato inválido`, 'warning');
+                            hasErrors = true;
+                        }
+                    } else if (line.trim() !== '') {
+                        showAlert(`Línea ${index + 1}: Debe tener 4 valores (Zona,Hemisferio,Este,Norte)`, 'warning');
+                        hasErrors = true;
+                    }
+                });
+                
+                if (hasErrors) return;
+                
+                if (utmCoords.length < 3) {
+                    showAlert('Se necesitan al menos 3 coordenadas UTM válidas', 'warning');
+                    return;
+                }
+            }
+            
+            if (window.polygonMapInstance && window.polygonMapInstance.drawFromUTMCoordinates) {
+                window.polygonMapInstance.drawFromUTMCoordinates(utmCoords);
+            } else {
+                console.error('polygonMapInstance no disponible');
+                showAlert('Error: El mapa no está inicializado', 'error');
+            }
+            
+            closeCoordinateModal();
+        });
+    }
+    
+    // Controles del mapa
+    document.getElementById('draw-polygon')?.addEventListener('click', function() {
+        console.log('Botón dibujar clickeado');
+        if (window.polygonMapInstance) {
+            window.polygonMapInstance.activateDrawing();
+        } else {
+            console.error('polygonMapInstance no disponible');
+            showAlert('Error: El mapa no está inicializado', 'error');
+        }
+    });
+    
+    document.getElementById('clear-map')?.addEventListener('click', function() {
+        console.log('Botón limpiar clickeado');
+        if (window.polygonMapInstance) {
+            window.polygonMapInstance.clearMap();
+        } else {
+            console.error('polygonMapInstance no disponible');
+            showAlert('Error: El mapa no está inicializado', 'error');
+        }
+    });
+    
+    // =============================================
+    // NUEVO EVENT LISTENER PARA DETECCIÓN DE UBICACIÓN
+    // =============================================
+    document.getElementById('detect-location')?.addEventListener('click', async function() {
+        console.log('Botón detectar ubicación clickeado');
+        if (window.polygonMapInstance && window.polygonMapInstance.detectLocation) {
+            await window.polygonMapInstance.detectLocation();
+        } else {
+            console.error('polygonMapInstance o detectLocation no disponible');
+            showAlert('Error: La detección de ubicación no está disponible', 'error');
+        }
+    });
+    
+    // Menú de capas base
+    const baseMapToggle = document.getElementById('base-map-toggle');
+    if (baseMapToggle) {
+        baseMapToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('base-map-menu');
+            const isShowing = menu.classList.contains('show');
+            
+            console.log('Botón mapa clickeado, mostrar menú:', !isShowing);
+            toggleMenu('base-map-menu', !isShowing);
+        });
+    } else {
+        console.error('No se encontró el botón base-map-toggle');
+    }
+    
+    // Cambiar capas base
     document.querySelectorAll('#base-map-menu button').forEach(button => {
         button.addEventListener('click', function(e) {
             e.stopPropagation();
             const layerKey = this.getAttribute('data-layer');
-            const layerNames = {
-                'osm': 'OpenStreetMap',
-                'satellite': 'Satélite Esri',
-                'maptiler_satellite': 'MapTiler Satélite',
-                'terrain': 'Relieve',
-                'dark': 'Oscuro'
-            };
+            console.log('Cambiando a capa:', layerKey);
             
-            // Actualizar botón
-            const svg = baseMapToggle.querySelector('svg').cloneNode(true);
-            baseMapToggle.innerHTML = '';
-            baseMapToggle.appendChild(svg);
-            baseMapToggle.appendChild(document.createTextNode(' ' + (layerNames[layerKey] || 'Mapas')));
+            if (window.polygonMapInstance && window.polygonMapInstance.changeBaseLayer) {
+                window.polygonMapInstance.changeBaseLayer(layerKey);
+            } else {
+                console.error('polygonMapInstance o changeBaseLayer no disponible');
+                showAlert('Error: No se puede cambiar la capa base', 'error');
+            }
             
-            // Cerrar menú
             closeMenu('base-map-menu');
+            
+            // Actualizar texto del botón
+            const buttonElement = document.getElementById('base-map-toggle');
+            if (buttonElement) {
+                const svg = buttonElement.querySelector('svg')?.cloneNode(true);
+                if (svg) {
+                    buttonElement.innerHTML = '';
+                    buttonElement.appendChild(svg);
+                    buttonElement.appendChild(document.createTextNode(' ' + (layerNames[layerKey] || 'Mapas')));
+                }
+            }
         });
+    });
+    
+    // Pantalla completa
+    document.getElementById('fullscreen-toggle')?.addEventListener('click', function() {
+        const mapElement = document.getElementById('map');
+        if (!document.fullscreenElement) {
+            if (mapElement.requestFullscreen) {
+                mapElement.requestFullscreen();
+            } else if (mapElement.webkitRequestFullscreen) {
+                mapElement.webkitRequestFullscreen();
+            } else if (mapElement.msRequestFullscreen) {
+                mapElement.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    });
+    
+    // Cerrar menús al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        const baseMapToggle = document.getElementById('base-map-toggle');
+        const baseMapMenu = document.getElementById('base-map-menu');
+        const modal = document.getElementById('manual-polygon-modal');
+        
+        if (modal.classList.contains('hidden')) {
+            if (!baseMapToggle?.contains(e.target) && !baseMapMenu?.contains(e.target)) {
+                closeMenu('base-map-menu');
+            }
+        }
+        
+        if (!modal.classList.contains('hidden') && e.target === modal) {
+            closeCoordinateModal();
+        }
+    });
+    
+    // Escape para cerrar modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeCoordinateModal();
+        }
+    });
+    
+    // Validación del formulario principal
+    const polygonForm = document.getElementById('polygon-form');
+    if (polygonForm) {
+        polygonForm.addEventListener('submit', function(e) {
+            const geometry = document.getElementById('geometry').value;
+            if (!geometry) {
+                e.preventDefault();
+                showAlert('Debe dibujar un polígono en el mapa', 'warning');
+                return false;
+            }
+            
+            const nameInput = document.getElementById('name');
+            if (!nameInput.value.trim()) {
+                e.preventDefault();
+                nameInput.focus();
+                showAlert('El nombre del polígono es requerido', 'warning');
+                return false;
+            }
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creando...';
+            
+            return true;
+        });
+    }
+}
+
+// Funciones auxiliares para el modal
+function setInputMethod(method) {
+    const singleBtn = document.getElementById('method-single');
+    const bulkBtn = document.getElementById('method-bulk');
+    const singleInput = document.getElementById('single-input');
+    const bulkInput = document.getElementById('bulk-input');
+    const coordsList = document.getElementById('coords-list');
+    
+    if (!singleBtn || !bulkBtn || !singleInput || !bulkInput) {
+        console.error('Elementos del modal no encontrados');
+        return;
+    }
+    
+    if (method === 'single') {
+        singleBtn.classList.add('bg-blue-600', 'text-white');
+        singleBtn.classList.remove('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+        bulkBtn.classList.remove('bg-blue-600', 'text-white');
+        bulkBtn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+        singleInput.classList.remove('hidden');
+        bulkInput.classList.add('hidden');
+        
+        if (coordinatesList.length > 0) {
+            coordsList?.classList.remove('hidden');
+        } else {
+            coordsList?.classList.add('hidden');
+        }
+    } else {
+        bulkBtn.classList.add('bg-blue-600', 'text-white');
+        bulkBtn.classList.remove('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-300');
+        singleBtn.classList.remove('bg-blue-600', 'text-white');
+        singleBtn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+        bulkInput.classList.remove('hidden');
+        singleInput.classList.add('hidden');
+        
+        coordsList?.classList.add('hidden');
+    }
+}
+
+function updateCoordinatesList() {
+    const container = document.getElementById('coords-container');
+    const listSection = document.getElementById('coords-list');
+    const isSingleMode = document.getElementById('method-single')?.classList.contains('bg-blue-600');
+    
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (coordinatesList.length === 0) {
+        listSection?.classList.add('hidden');
+        return;
+    }
+    
+    if (isSingleMode) {
+        listSection?.classList.remove('hidden');
+    } else {
+        listSection?.classList.add('hidden');
+    }
+    
+    coordinatesList.forEach((coord, index) => {
+        const coordElement = document.createElement('div');
+        coordElement.className = 'flex justify-between items-center text-xs font-mono';
+        coordElement.innerHTML = `
+            <span>${index + 1}. Z${coord.zone}${coord.hemisphere} | E:${coord.easting} | N:${coord.northing}</span>
+            <button type="button" onclick="removeCoordinate(${index})" class="text-red-500 hover:text-red-700 text-xs">✕</button>
+        `;
+        container.appendChild(coordElement);
     });
 }
 
-// Funciones para mostrar/ocultar menús
+function removeCoordinate(index) {
+    coordinatesList.splice(index, 1);
+    updateCoordinatesList();
+}
+
+// Funciones para menús desplegables
 function toggleMenu(menuId, show) {
     const menu = document.getElementById(menuId);
-    if (!menu) return;
+    if (!menu) {
+        console.error('Menú no encontrado:', menuId);
+        return;
+    }
     
     if (show) {
         menu.classList.remove('hidden');
@@ -619,324 +1635,229 @@ function toggleMenu(menuId, show) {
 }
 
 function closeMenu(menuId) {
-    toggleMenu(menuId, false);
+    const menu = document.getElementById(menuId);
+    if (!menu) return;
+    
+    menu.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto', 'show');
+    menu.classList.add('scale-95', 'opacity-0', 'pointer-events-none');
+    
+    setTimeout(() => {
+        if (menu.classList.contains('scale-95')) {
+            menu.classList.add('hidden');
+        }
+    }, 400);
 }
 
-// Detección de ubicación
-async function handleLocationDetection(mapManager, locationDetector) {
-    const val = mapManager.geometryInput?.value;
-    if (!val) {
-        mapManager.showMessage('❌ Debes dibujar un polígono primero', 'error');
-        return;
+// Función para mostrar alertas
+function showAlert(message, type = 'info') {
+    if (window.Swal) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: type,
+            title: message,
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+    } else {
+        alert(message);
     }
+}
+// =============================================
+// FUNCIONES PARA MANEJAR REDIMENSIONAMIENTO DEL MAPA
+// =============================================
+
+/**
+ * Redimensiona el mapa cuando cambia el tamaño de la ventana o sidebar
+ */
+function resizeMap() {
+    console.log('Redimensionando mapa...');
     
-    let feature;
-    try {
-        feature = JSON.parse(val);
-    } catch (e) {
-        mapManager.showMessage('❌ GeoJSON inválido', 'error');
-        return;
-    }
-    
-    const centroid = mapManager.calculateCentroid(feature);
-    if (!centroid) {
-        mapManager.showMessage('❌ No se pudo calcular el centroide', 'error');
-        return;
-    }
-    
-    // Actualizar campos ocultos
-    document.getElementById('centroid_lat').value = centroid.lat;
-    document.getElementById('centroid_lng').value = centroid.lng;
-    
-    // Deshabilitar botón y mostrar carga
-    const detectBtn = document.getElementById('detect-location');
-    const detectButtonText = document.getElementById('detect-button-text');
-    const originalText = detectButtonText.textContent;
-    detectButtonText.textContent = 'Detectando...';
-    detectBtn.disabled = true;
-    
-    try {
-        const data = await locationDetector.detectLocation(centroid.lat, centroid.lng);
+    if (window.polygonMapInstance && window.polygonMapInstance.map) {
+        const map = window.polygonMapInstance.map;
         
-        const address = data.address || {};
-        const municipality = address.county || address.suburb || address.village || address.town || address.city || '';
-        const parish = address.municipality || address.county || address.city || '';
-        const state = address.state || address.region || '';
-        
-        // Limpiar nombres
-        const cleanParish = locationDetector.cleanLocationString(parish);
-        const cleanMunicipality = locationDetector.cleanLocationString(municipality);
-        const cleanState = locationDetector.cleanLocationString(state);
-        
-        // Actualizar campos ocultos
-        document.getElementById('detected_parish').value = cleanParish;
-        document.getElementById('detected_municipality').value = cleanMunicipality;
-        document.getElementById('detected_state').value = cleanState;
-        
-        // Actualizar interfaz
-        updateLocationInfoUI(cleanParish, cleanMunicipality, cleanState, centroid);
-        
-        // Intentar asignar parroquia
-        const assignResult = await locationDetector.findAndAssignParish(
-            cleanParish,
-            cleanMunicipality,
-            cleanState
-        );
-        
-        if (assignResult.success && assignResult.parish) {
-            document.getElementById('parish_id').value = assignResult.parish.id;
-            mapManager.showMessage('✅ Parroquia encontrada y asignada', 'success');
-        } else {
-            mapManager.showMessage('ℹ️ No se encontró parroquia exacta. Selecciona manualmente.', 'info');
-        }
-        
-    } catch (error) {
-        console.error('Error en detección de ubicación:', error);
-        mapManager.showMessage('❌ Error detectando ubicación', 'error');
-    } finally {
-        detectBtn.disabled = false;
-        detectButtonText.textContent = originalText;
+        // Forzar actualización del tamaño
+        setTimeout(() => {
+            map.updateSize();
+            
+            // Ajustar la vista al tamaño actual
+            const currentCenter = map.getView().getCenter();
+            const currentZoom = map.getView().getZoom();
+            
+            // Forzar un pequeño cambio para que OpenLayers recalcule
+            map.getView().setCenter([currentCenter[0] + 0.000001, currentCenter[1]]);
+            
+            setTimeout(() => {
+                map.getView().setCenter(currentCenter);
+                map.getView().setZoom(currentZoom);
+                
+                console.log('Mapa redimensionado correctamente');
+                
+                // Aplicar clase de animación
+                const mapElement = document.getElementById('map');
+                mapElement.classList.add('force-resize');
+                setTimeout(() => mapElement.classList.remove('force-resize'), 100);
+                
+            }, 50);
+        }, 100);
     }
 }
 
-// Actualizar UI de información de ubicación
-function updateLocationInfoUI(parish, municipality, state, centroid) {
-    document.getElementById('detected-parish-text').textContent = parish || 'No detectado';
-    document.getElementById('detected-municipality-text').textContent = municipality || 'No detectado';
-    document.getElementById('detected-state-text').textContent = state || 'No detectado';
-    document.getElementById('detected-coords-text').textContent = 
-        `${centroid.lat.toFixed(6)}, ${centroid.lng.toFixed(6)}`;
+/**
+ * Observa cambios en el sidebar de Laravel
+ */
+function observeSidebarChanges() {
+    console.log('Observando cambios en el sidebar...');
     
-    document.getElementById('location-info').classList.remove('hidden');
-}
-
-// Validación del formulario
-function validatePolygonForm(mapManager, form) {
-    const val = mapManager.geometryInput?.value;
-    if (!val) {
-        mapManager.showMessage('❌ Debes dibujar un polígono en el mapa', 'error');
-        return false;
-    }
+    // Método 1: Observar cambios en el atributo de cuerpo
+    const body = document.body;
     
-    const nameInput = document.getElementById('name');
-    if (!nameInput.value.trim()) {
-        nameInput.focus();
-        mapManager.showMessage('❌ El nombre del polígono es requerido', 'error');
-        return false;
-    }
-    
-    try {
-        const parsed = JSON.parse(val);
-        const feature = (parsed.type && parsed.type === 'Feature') ? 
-            parsed : { type: 'Feature', geometry: parsed };
-        const geom = feature.geometry;
-        
-        if (!geom || !geom.type || !['Polygon', 'MultiPolygon'].includes(geom.type)) {
-            mapManager.showMessage('❌ La geometría debe ser Polygon o MultiPolygon', 'error');
-            return false;
-        }
-        
-        // Mostrar carga
-        const submitBtn = document.getElementById('submit-btn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creando...';
-        }
-        
-        return true;
-    } catch (err) {
-        mapManager.showMessage('❌ Geometría inválida (JSON)', 'error');
-        return false;
-    }
-}
-
-// Configurar modal UTM
-function setupUTMModal(utmModal) {
-    const methodSingleBtn = document.getElementById('method-single');
-    const methodBulkBtn = document.getElementById('method-bulk');
-    const singleInput = document.getElementById('single-input');
-    const bulkInput = document.getElementById('bulk-input');
-    const addCoordBtn = document.getElementById('add-coord');
-    const clearListBtn = document.getElementById('clear-list');
-    const manualForm = document.getElementById('manual-polygon-form');
-    const bulkCoordsTextarea = document.getElementById('bulk-coords');
-    
-    if (!methodSingleBtn || !methodBulkBtn) return;
-    
-    // Cambiar entre métodos de entrada
-    methodSingleBtn.addEventListener('click', () => {
-        methodSingleBtn.classList.add('bg-blue-600', 'text-white');
-        methodSingleBtn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-        methodBulkBtn.classList.remove('bg-blue-600', 'text-white');
-        methodBulkBtn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-        singleInput.classList.remove('hidden');
-        bulkInput.classList.add('hidden');
-    });
-    
-    methodBulkBtn.addEventListener('click', () => {
-        methodBulkBtn.classList.add('bg-blue-600', 'text-white');
-        methodBulkBtn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-        methodSingleBtn.classList.remove('bg-blue-600', 'text-white');
-        methodSingleBtn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-        bulkInput.classList.remove('hidden');
-        singleInput.classList.add('hidden');
-    });
-    
-    // Agregar coordenada individual
-    if (addCoordBtn) {
-        addCoordBtn.addEventListener('click', () => {
-            const zone = parseInt(document.getElementById('single-zone').value);
-            const hemisphere = document.getElementById('single-hemisphere').value;
-            const easting = parseFloat(document.getElementById('single-easting').value);
-            const northing = parseFloat(document.getElementById('single-northing').value);
-            
-            const error = UTMCoordinates.validate(zone, hemisphere, easting, northing);
-            if (error) {
-                alert(error);
-                return;
-            }
-            
-            utmModal.coordinatesList.push([easting, northing, zone, hemisphere]);
-            updateCoordsList(utmModal.coordinatesList);
-            
-            // Limpiar inputs
-            document.getElementById('single-easting').value = '';
-            document.getElementById('single-northing').value = '';
-        });
-    }
-    
-    // Actualizar lista de coordenadas
-    function updateCoordsList(coordinatesList) {
-        const coordsList = document.getElementById('coords-list');
-        const coordsContainer = document.getElementById('coords-container');
-        
-        if (!coordsList || !coordsContainer) return;
-        
-        coordsContainer.innerHTML = '';
-        
-        if (coordinatesList.length === 0) {
-            coordsList.classList.add('hidden');
-            return;
-        }
-        
-        coordsList.classList.remove('hidden');
-        
-        coordinatesList.forEach((coord, index) => {
-            const [easting, northing, zone, hemisphere] = coord;
-            const div = document.createElement('div');
-            div.className = 'flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded';
-            div.innerHTML = `
-                <div class="text-xs font-mono">
-                    <span class="text-gray-600 dark:text-gray-400">${zone}${hemisphere}</span>
-                    <span class="mx-2 text-gray-400">|</span>
-                    <span class="text-green-600">E:${easting.toLocaleString()}</span>
-                    <span class="mx-2 text-gray-400">|</span>
-                    <span class="text-blue-600">N:${northing.toLocaleString()}</span>
-                </div>
-                <button type="button" class="text-red-500 hover:text-red-700 text-xs" data-index="${index}">
-                    ✕
-                </button>
-            `;
-            coordsContainer.appendChild(div);
-        });
-        
-        // Agregar event listeners para eliminar
-        coordsContainer.querySelectorAll('button[data-index]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const index = parseInt(e.target.closest('button').dataset.index);
-                coordinatesList.splice(index, 1);
-                updateCoordsList(coordinatesList);
-            });
-        });
-    }
-    
-    // Limpiar lista
-    if (clearListBtn) {
-        clearListBtn.addEventListener('click', () => {
-            utmModal.coordinatesList = [];
-            updateCoordsList(utmModal.coordinatesList);
-        });
-    }
-    
-    // Manejar envío del formulario
-    if (manualForm) {
-        manualForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            if (methodSingleBtn.classList.contains('bg-blue-600')) {
-                // Método individual
-                if (utmModal.coordinatesList.length < 3) {
-                    alert('Se necesitan al menos 3 coordenadas para formar un polígono');
-                    return;
+    // Crear un observer para detectar cambios de clase
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                // Verificar si hay clases relacionadas con sidebar
+                const hasSidebarClass = body.classList.contains('sidebar-open') || 
+                                       body.classList.contains('sidebar-collapse') ||
+                                       body.classList.contains('sidebar-mini') ||
+                                       body.classList.contains('layout-fixed');
+                
+                if (hasSidebarClass) {
+                    console.log('Sidebar cambió, redimensionando mapa...');
+                    setTimeout(resizeMap, 300); // Esperar a que termine la animación
                 }
-                
-                utmModal.drawPolygon(utmModal.coordinatesList);
-                utmModal.close();
-            } else {
-                // Método por lote
-                const bulkText = bulkCoordsTextarea.value.trim();
-                if (!bulkText) {
-                    alert('Ingresa coordenadas en el área de texto');
-                    return;
-                }
-                
-                const lines = bulkText.split('\n').filter(line => line.trim());
-                const bulkCoords = [];
-                
-                for (const line of lines) {
-                    const parts = line.split(',').map(part => part.trim());
-                    if (parts.length !== 4) continue;
-                    
-                    const [zoneStr, hemisphere, eastingStr, northingStr] = parts;
-                    const zone = parseInt(zoneStr);
-                    const easting = parseFloat(eastingStr);
-                    const northing = parseFloat(northingStr);
-                    
-                    const error = UTMCoordinates.validate(zone, hemisphere, easting, northing);
-                    if (error) {
-                        alert(`Error en línea: ${line}\n${error}`);
-                        return;
-                    }
-                    
-                    bulkCoords.push([easting, northing, zone, hemisphere]);
-                }
-                
-                if (bulkCoords.length < 3) {
-                    alert('Se necesitan al menos 3 coordenadas válidas');
-                    return;
-                }
-                
-                utmModal.drawPolygon(bulkCoords);
-                utmModal.close();
             }
         });
+    });
+    
+    // Configurar observer
+    observer.observe(body, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
+    
+    // Método 2: Detectar clicks en botones del sidebar
+    document.querySelectorAll('[data-toggle="push-menu"], [data-widget="pushmenu"]').forEach(button => {
+        button.addEventListener('click', () => {
+            console.log('Botón sidebar clickeado, redimensionando en 500ms...');
+            setTimeout(resizeMap, 500);
+        });
+    });
+    
+    // Método 3: Redimensionar en eventos específicos
+    const events = [
+        'resize',
+        'orientationchange',
+        'load',
+        'DOMContentLoaded',
+        'transitionend'
+    ];
+    
+    events.forEach(event => {
+        window.addEventListener(event, () => {
+            setTimeout(resizeMap, 100);
+        });
+    });
+}
+
+/**
+ * Forzar redimensionamiento inicial
+ */
+function forceInitialResize() {
+    console.log('Forzando redimensionamiento inicial...');
+    
+    // Esperar a que todo esté cargado
+    setTimeout(() => {
+        // Redimensionar varias veces para asegurar
+        resizeMap();
+        
+        setTimeout(resizeMap, 300);
+        setTimeout(resizeMap, 600);
+        setTimeout(resizeMap, 1000);
+        
+        // También redimensionar cuando las imágenes se carguen
+        window.addEventListener('load', () => {
+            setTimeout(resizeMap, 200);
+        });
+        
+    }, 500);
+}
+
+/**
+ * Solución definitiva para sidebar de Laravel AdminLTE
+ */
+function fixLaravelSidebarMapResize() {
+    console.log('Aplicando fix para sidebar de Laravel...');
+    
+    // 1. Detectar si estamos usando AdminLTE
+    const isAdminLTE = document.body.classList.contains('sidebar-mini') || 
+                      document.body.classList.contains('layout-fixed') ||
+                      document.body.classList.contains('sidebar-open');
+    
+    if (isAdminLTE) {
+        console.log('Detectado AdminLTE, aplicando fixes específicos...');
+        
+        // Override del método de toggle del sidebar
+        const originalPushMenu = window.PushMenu;
+        if (window.PushMenu) {
+            const originalToggle = window.PushMenu.prototype.toggle;
+            window.PushMenu.prototype.toggle = function() {
+                originalToggle.apply(this, arguments);
+                setTimeout(resizeMap, 350); // Tiempo de animación del sidebar
+            };
+        }
+        
+        // Detectar cambios en el localStorage (AdminLTE guarda estado)
+        const originalSetItem = localStorage.setItem;
+        localStorage.setItem = function(key, value) {
+            originalSetItem.apply(this, arguments);
+            if (key.includes('sidebar') || key.includes('menu')) {
+                setTimeout(resizeMap, 400);
+            }
+        };
+    }
+    
+    // 2. Observar cambios en el layout
+    observeSidebarChanges();
+    
+    // 3. Forzar redimensionamiento periódico (solo en desarrollo)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        setInterval(() => {
+            if (window.polygonMapInstance && window.polygonMapInstance.map) {
+                window.polygonMapInstance.map.updateSize();
+            }
+        }, 2000);
     }
 }
 </script>
 
 <style>
-/* Estilos similares a deforestación */
-.slider-thumb::-webkit-slider-thumb {
-    appearance: none;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: #4f46e5;
-    cursor: pointer;
-    border: 2px solid #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+/* Estilos CSS adicionales para OpenLayers */
+.ol-viewport {
+    border-radius: 0.5rem;
 }
 
-.slider-thumb::-moz-range-thumb {
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: #4f46e5;
-    cursor: pointer;
-    border: 2px solid #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+.ol-control {
+    background-color: rgba(255,255,255,0.8);
+    border-radius: 4px;
+    padding: 2px;
 }
 
+.ol-control:hover {
+    background-color: rgba(255,255,255,0.9);
+}
+
+/* Asegurar que el mapa ocupe todo el espacio */
+#map {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+}
+
+/* Estilos para el modal */
 #manual-polygon-modal {
     transition: opacity 0.3s ease;
 }
@@ -944,11 +1865,6 @@ function setupUTMModal(utmModal) {
 #manual-polygon-modal.closing {
     opacity: 0;
 }
-
-#icon-eye-open, #icon-eye-closed {
-    transition: opacity 0.3s ease;
-}
-
 
 /* Estilos para controles de mapa */
 #map-controls {
@@ -979,4 +1895,59 @@ function setupUTMModal(utmModal) {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+/* Estilos para el display de coordenadas */
+#coordinate-display {
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: #1f2937;
+    border: 1px solid #d1d5db;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(4px);
+}
+
+.dark #coordinate-display {
+    color: #f9fafb;
+    border-color: #4b5563;
+    background: rgba(31, 41, 55, 0.95) !important;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Asegurar visibilidad de los controles de OpenLayers */
+.ol-zoom {
+    top: 0.5em;
+    left: 0.5em;
+}
+
+.ol-rotate {
+    top: 0.5em;
+    right: 0.5em;
+}
+
+/* Estilos para botones deshabilitados */
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Mejoras visuales para el formulario */
+textarea, select, input[type="text"], input[type="number"] {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+textarea:focus, select:focus, input[type="text"]:focus, input[type="number"]:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
 </style>
