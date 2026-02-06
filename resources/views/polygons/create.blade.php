@@ -12,17 +12,17 @@
 
                     <div class="grid grid-cols-1 gap-6">
                         <!-- Columna del Mapa -->
-                        <div>
-                            <x-input-label for="map"/>
+                        <div class="lg:col-span-1">
+                            <x-input-label for="map" class="sr-only">Mapa</x-input-label>
                             <div class="relative rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 77vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
                                 <div id="map" class="h-full w-full"></div>
 
                                 <!-- Controles del mapa -->
-                                <div id="map-controls" class="absolute top-4 right-4 z-50 flex flex-col ">
+                                <div id="map-controls" class="absolute top-4 right-4 z-50 flex flex-col">
                                     <div class="flex space-x-2">
                                         <!-- Cambiar Mapa -->
                                         <div class="relative">
-                                            <button id="base-map-toggle" title="Cambiar mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                            <button id="base-map-toggle" type="button" title="Cambiar mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center shadow-lg transition-colors">
                                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
                                                 </svg>
@@ -30,67 +30,60 @@
                                             </button>
                                             
                                             <div id="base-map-menu"
-                                                class="absolute mt-3 w-40 rounded-xl shadow-lg bg-gray-100 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 right-0
-                                                        transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none hidden">
+                                                class="absolute mt-2 w-48 rounded-xl shadow-lg bg-white dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 right-0
+                                                        transition-all duration-300 ease-out scale-95 opacity-0 pointer-events-none hidden">
                                                 <div class="absolute -top-2 right-6 w-8 h-2 pointer-events-none">
                                                     <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
                                                         <polygon points="8,0 16,8 0,8" fill="currentColor"/>
                                                     </svg>
                                                 </div>
                                                 <div class="py-2" role="menu" aria-orientation="vertical">
-                                                    <button data-layer="osm" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">OpenStreetMap</button>
-                                                    <button data-layer="satellite" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Satélite Esri</button>
-                                                    <button data-layer="maptiler_satellite" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">MapTiler Satélite</button>
-                                                    <button data-layer="terrain" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Relieve</button>
-                                                    <button data-layer="dark" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Oscuro</button>
+                                                    <button data-layer="osm" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">OpenStreetMap</button>
+                                                    <button data-layer="satellite" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Satélite Esri</button>
+                                                    <button data-layer="maptiler_satellite" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">MapTiler Satélite</button>
+                                                    <button data-layer="terrain" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Relieve</button>
+                                                    <button data-layer="dark" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Oscuro</button>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <!-- Pantalla Completa -->
-                                        <button id="fullscreen-toggle" title="Pantalla Completa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <button id="fullscreen-toggle" type="button" title="Pantalla Completa" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center justify-center shadow-lg transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"></path>
                                             </svg>
                                         </button>
                                     </div>
 
                                     <!-- Segunda fila de controles -->
-                                    <div class="">
+                                    <div class="flex flex-col space-y-2">
                                         <!-- Coordenadas Manuales -->
-                                        <button id="manual-polygon-toggle" title="Escribir Coordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
+                                        <button id="manual-polygon-toggle" type="button" title="Escribir Coordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center shadow-lg transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M13 21h8"/>
                                                 <path d="m15 5 4 4"/>
                                                 <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
                                             </svg>
                                         </button>
-                                    </div>  
-
-                                    <div class=""> 
-                                         <!-- Dibujar Polígono -->
-                                        <button type="button" id="draw-polygon" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                         
+                                        <!-- Dibujar Polígono -->
+                                        <button type="button" id="draw-polygon" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center shadow-lg transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                             </svg>
-                                            
                                         </button>
 
-                                    </div>
-                                       
-
                                         <!-- Limpiar Mapa -->
-                                        <button type="button" id="clear-map" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        <button type="button" id="clear-map" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg flex items-center shadow-lg transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                             </svg>
-                                            
                                         </button>
                                     </div>
                                 </div>
 
                                 <!-- Coordenadas UTM en tiempo real -->
-                                <div id="coordinate-display" class="absolute left-2 bottom-4 transform  z-10 bg-white/90 dark:bg-gray-800/90 px-2 py-1 rounded-lg text-sm shadow-lg font-mono border border-gray-300 dark:border-gray-600">
+                                <div id="coordinate-display" class="absolute left-2 bottom-4 z-10 bg-white/90 dark:bg-gray-800/90 px-3 py-2 rounded-lg text-sm shadow-lg font-mono border border-gray-300 dark:border-gray-600 backdrop-blur-sm">
                                     Zona XXN | Este: 000000.000 | Norte: 0000000.000
                                 </div>
                             </div>
@@ -98,100 +91,102 @@
                         </div>
 
                         <!-- Columna del Formulario (COMPLETA) -->
-                        <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl p-4 md:p-6 lg:p-8">
-                            <div class="text-gray-900 dark:text-gray-100">
-                                <h2 class="text-lg font-semibold mb-4">Datos del Polígono</h2>
-                                
-                                <div class="space-y-6">
-                                    <div>
-                                        <x-input-label for="name" :value="__('Nombre del Polígono *')" />
-                                        <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
-                                            :value="old('name')" required placeholder="Ej: Finca La Esperanza" />
-                                        <x-input-error class="mt-2" :messages="$errors->get('name')" />
-                                    </div>
-
-                                    <div>
-                                        <x-input-label for="description" :value="__('Descripción')" />
-                                        <textarea id="description" name="description" rows="3"
-                                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                            placeholder="Descripción del polígono...">{{ old('description') }}</textarea>
-                                        <x-input-error class="mt-2" :messages="$errors->get('description')" />
-                                    </div>
-
-                                    <div>
-                                        <x-input-label for="producer_id" :value="__('Productor (Opcional)')" />
-                                        <select id="producer_id" name="producer_id"
-                                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                            <option value="">Seleccione un productor</option>
-                                            @foreach($producers as $producer)
-                                                <option value="{{ $producer->id }}" {{ old('producer_id') == $producer->id ? 'selected' : '' }}>
-                                                    {{ $producer->name }} {{ $producer->lastname }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <x-input-error class="mt-2" :messages="$errors->get('producer_id')" />
-                                    </div>
-
-                                    <div>
-                                        <x-input-label for="parish_id" :value="__('Parroquia (Opcional)')" />
-                                        <select id="parish_id" name="parish_id"
-                                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                            <option value="">Seleccione una parroquia</option>
-                                            @foreach($parishes as $parish)
-                                                <option value="{{ $parish->id }}" {{ old('parish_id') == $parish->id ? 'selected' : '' }}>
-                                                    {{ $parish->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <x-input-error class="mt-2" :messages="$errors->get('parish_id')" />
-                                    </div>
-
-                                    <div>
-                                        <x-input-label for="area_ha" :value="__('Área en Hectáreas')" />
-                                        <x-text-input id="area_ha" name="area_ha" type="number" step="0.01"
-                                            class="mt-1 block w-full" :value="old('area_ha')" placeholder="Se calculará automáticamente" />
-                                        <x-input-error class="mt-2" :messages="$errors->get('area_ha')" />
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Dejar vacío para calcular automáticamente desde el mapa</p>
-                                    </div>
-
-                                    <!-- Campos ocultos para la detección y el envío -->
-                                    <input type="hidden" id="geometry" name="geometry" value="{{ old('geometry', '') }}" required>
-                                    <input type="hidden" id="detected_parish" name="detected_parish" value="{{ old('detected_parish') }}">
-                                    <input type="hidden" id="detected_municipality" name="detected_municipality" value="{{ old('detected_municipality') }}">
-                                    <input type="hidden" id="detected_state" name="detected_state" value="{{ old('detected_state') }}">
-                                    <input type="hidden" id="centroid_lat" name="centroid_lat" value="{{ old('centroid_lat') }}">
-                                    <input type="hidden" id="centroid_lng" name="centroid_lng" value="{{ old('centroid_lng') }}">
-                                    <input type="hidden" id="location_data" name="location_data" value="{{ old('location_data') }}">
-
-                                    <div id="location-info" class="p-4 bg-blue-50 dark:bg-blue-900 rounded-lg hidden">
-                                        <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">📍 Ubicación detectada</h3>
-                                        <div class="text-sm space-y-1">
-                                            <div><strong>Parroquia:</strong> <span id="detected-parish-text">-</span></div>
-                                            <div><strong>Municipio:</strong> <span id="detected-municipality-text">-</span></div>
-                                            <div><strong>Estado:</strong> <span id="detected-state-text">-</span></div>
-                                            <div><strong>Coordenadas:</strong> <span id="detected-coords-text">-</span></div>
+                        <div class="lg:col-span-1">
+                            <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl p-4 md:p-6 lg:p-8 h-full">
+                                <div class="text-gray-900 dark:text-gray-100">
+                                    <h2 class="text-lg font-semibold mb-4">Datos del Polígono</h2>
+                                    
+                                    <div class="space-y-6">
+                                        <div>
+                                            <x-input-label for="name" :value="__('Nombre del Polígono *')" />
+                                            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
+                                                :value="old('name')" required placeholder="Ej: Finca La Esperanza" />
+                                            <x-input-error class="mt-2" :messages="$errors->get('name')" />
                                         </div>
-                                    </div>
 
-                                    <!-- Botón de detección de ubicación -->
-                                    <div class="pt-4">
-                                        <button type="button" id="detect-location" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300" disabled>
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                                            </svg>
-                                            <span id="detect-button-text">Detectar Ubicación</span>
-                                        </button>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            Dibuja un polígono primero para habilitar la detección automática
-                                        </p>
-                                    </div>
+                                        <div>
+                                            <x-input-label for="description" :value="__('Descripción')" />
+                                            <textarea id="description" name="description" rows="3"
+                                                class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                                placeholder="Descripción del polígono...">{{ old('description') }}</textarea>
+                                            <x-input-error class="mt-2" :messages="$errors->get('description')" />
+                                        </div>
 
-                                    <!-- Botones de acción -->
-                                    <div class="flex items-center justify-end space-x-4 pt-6">
-                                        <x-go-back-button />
-                                        <x-primary-button type="submit" id="submit-btn" class="bg-green-600 hover:bg-green-700">
-                                            Crear Polígono
-                                        </x-primary-button>
+                                        <div>
+                                            <x-input-label for="producer_id" :value="__('Productor (Opcional)')" />
+                                            <select id="producer_id" name="producer_id"
+                                                class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                                <option value="">Seleccione un productor</option>
+                                                @foreach($producers as $producer)
+                                                    <option value="{{ $producer->id }}" {{ old('producer_id') == $producer->id ? 'selected' : '' }}>
+                                                        {{ $producer->name }} {{ $producer->lastname }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <x-input-error class="mt-2" :messages="$errors->get('producer_id')" />
+                                        </div>
+
+                                        <div>
+                                            <x-input-label for="parish_id" :value="__('Parroquia (Opcional)')" />
+                                            <select id="parish_id" name="parish_id"
+                                                class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                                <option value="">Seleccione una parroquia</option>
+                                                @foreach($parishes as $parish)
+                                                    <option value="{{ $parish->id }}" {{ old('parish_id') == $parish->id ? 'selected' : '' }}>
+                                                        {{ $parish->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <x-input-error class="mt-2" :messages="$errors->get('parish_id')" />
+                                        </div>
+
+                                        <div>
+                                            <x-input-label for="area_ha" :value="__('Área en Hectáreas')" />
+                                            <x-text-input id="area_ha" name="area_ha" type="number" step="0.01"
+                                                class="mt-1 block w-full" :value="old('area_ha')" placeholder="Se calculará automáticamente" readonly />
+                                            <x-input-error class="mt-2" :messages="$errors->get('area_ha')" />
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Se calcula automáticamente desde el mapa</p>
+                                        </div>
+
+                                        <!-- Campos ocultos para la detección y el envío -->
+                                        <input type="hidden" id="geometry" name="geometry" value="{{ old('geometry', '') }}" required>
+                                        <input type="hidden" id="detected_parish" name="detected_parish" value="{{ old('detected_parish') }}">
+                                        <input type="hidden" id="detected_municipality" name="detected_municipality" value="{{ old('detected_municipality') }}">
+                                        <input type="hidden" id="detected_state" name="detected_state" value="{{ old('detected_state') }}">
+                                        <input type="hidden" id="centroid_lat" name="centroid_lat" value="{{ old('centroid_lat') }}">
+                                        <input type="hidden" id="centroid_lng" name="centroid_lng" value="{{ old('centroid_lng') }}">
+                                        <input type="hidden" id="location_data" name="location_data" value="{{ old('location_data') }}">
+
+                                        <div id="location-info" class="p-4 bg-blue-50 dark:bg-blue-900 rounded-lg hidden">
+                                            <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">📍 Ubicación detectada</h3>
+                                            <div class="text-sm space-y-1">
+                                                <div><strong>Parroquia:</strong> <span id="detected-parish-text">-</span></div>
+                                                <div><strong>Municipio:</strong> <span id="detected-municipality-text">-</span></div>
+                                                <div><strong>Estado:</strong> <span id="detected-state-text">-</span></div>
+                                                <div><strong>Coordenadas:</strong> <span id="detected-coords-text">-</span></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Botón de detección de ubicación -->
+                                        <div class="pt-4">
+                                            <button type="button" id="detect-location" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300" disabled>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                                                </svg>
+                                                <span id="detect-button-text">Detectar Ubicación</span>
+                                            </button>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                Dibuja un polígono primero para habilitar la detección automática
+                                            </p>
+                                        </div>
+
+                                        <!-- Botones de acción -->
+                                        <div class="flex items-center justify-end space-x-4 pt-6">
+                                            <x-go-back-button />
+                                            <x-primary-button type="submit" id="submit-btn" class="bg-green-600 hover:bg-green-700">
+                                                Crear Polígono
+                                            </x-primary-button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -203,12 +198,12 @@
     </div>
 
     <!-- Modal para coordenadas manuales -->
-    <div id="manual-polygon-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div id="manual-polygon-modal" class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 hidden">
         <div class="bg-white dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-lg mx-4">
             <!-- Header -->
             <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ingresar Coordenadas UTM</h3>
-                <button id="close-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -222,8 +217,8 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Método de entrada:</label>
                     <div class="flex space-x-2">
-                        <button type="button" id="method-single" class="flex-1 py-2 px-3 bg-blue-600 text-white rounded-lg text-sm font-medium">Una por una</button>
-                        <button type="button" id="method-bulk" class="flex-1 py-2 px-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">Lote</button>
+                        <button type="button" id="method-single" class="flex-1 py-2 px-3 bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors">Una por una</button>
+                        <button type="button" id="method-bulk" class="flex-1 py-2 px-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors">Lote</button>
                     </div>
                 </div>
 
@@ -232,26 +227,26 @@
                     <div class="grid grid-cols-4 gap-2">
                         <div>
                             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Zona</label>
-                            <input type="number" id="single-zone" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2" 
+                            <input type="number" id="single-zone" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" 
                                 min="1" max="60" placeholder="20" value="20">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Hemisferio</label>
-                            <select id="single-hemisphere" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm">
+                            <select id="single-hemisphere" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                                 <option value="N">Norte (N)</option>
                                 <option value="S">Sur (S)</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Este</label>
-                            <input type="text" id="single-easting" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2" placeholder="500000">
+                            <input type="text" id="single-easting" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" placeholder="500000">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Norte</label>
-                            <input type="text" id="single-northing" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2" placeholder="10000000">
+                            <input type="text" id="single-northing" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" placeholder="10000000">
                         </div>
                     </div>
-                    <button type="button" id="add-coord" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 rounded-lg text-sm">
+                    <button type="button" id="add-coord" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 rounded-lg text-sm transition-colors">
                         + Agregar coordenada
                     </button>
                 </div>
@@ -270,8 +265,8 @@
                         </p>
                     </div>
                    
-                    <textarea id="bulk-coords" rows="6" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 font-mono text-xs" 
-                        placeholder="Ejemplo:&#10;Zona,Hemisferio,Este,Norte&#10;20,N,476097.904,1157477.299&#10;20,N,476181.804,1157432.362&#10;20,N,475211.522,1157534.959"></textarea>
+                    <textarea id="bulk-coords" rows="6" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 font-mono text-xs focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" 
+                        placeholder="Ejemplo:&#10;20,N,476097.904,1157477.299&#10;20,N,476181.804,1157432.362&#10;20,N,475211.522,1157534.959"></textarea>
                 </div>
 
                 <!-- Lista de coordenadas agregadas -->
@@ -280,14 +275,14 @@
                     <div class="max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-500 rounded-md p-2 bg-gray-50 dark:bg-gray-800/80">
                         <div id="coords-container" class="space-y-1"></div>
                     </div>
-                    <button type="button" id="clear-list" class="text-red-600 hover:text-red-700 text-xs mt-1">Limpiar lista</button>
+                    <button type="button" id="clear-list" class="text-red-600 hover:text-red-700 text-xs mt-1 transition-colors">Limpiar lista</button>
                 </div>
 
                 <div class="flex space-x-3 pt-2">
-                    <button type="button" id="cancel-modal" class="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium">
+                    <button type="button" id="cancel-modal" class="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors">
                         Cancelar
                     </button>
-                    <button type="submit" class="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
+                    <button type="submit" class="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
                         Dibujar
                     </button>
                 </div>
@@ -307,7 +302,7 @@
 
 <!-- Script personalizado para polígonos (CORREGIDO) -->
 <script>
-// ARCHIVO polygon-map.js COMPLETO CON DETECCIÓN DE UBICACIÓN
+// ARCHIVO polygon-map.js COMPLETO CON DETECCIÓN DE UBICACIÓN Y VALIDACIÓN CORREGIDA
 class PolygonMap {
     constructor() {
         this.map = null;
@@ -351,6 +346,13 @@ class PolygonMap {
         this.setupEventListeners();
         this.setupCoordinateDisplay();
         this.verifyDependencies();
+        
+        // Forzar redimensionamiento después de la inicialización
+        setTimeout(() => {
+            if (this.map) {
+                this.map.updateSize();
+            }
+        }, 500);
     }
 
     verifyDependencies() {
@@ -664,6 +666,10 @@ class PolygonMap {
             
             const detectBtn = document.getElementById('detect-location');
             if (detectBtn) detectBtn.disabled = true;
+            
+            // Ocultar información de ubicación previa
+            const locationInfo = document.getElementById('location-info');
+            if (locationInfo) locationInfo.classList.add('hidden');
         });
 
         this.draw.on('drawadd', () => this.refreshArea());
@@ -782,7 +788,6 @@ class PolygonMap {
 
     changeBaseLayer(layerKey) {
         console.log('Cambiando capa base a:', layerKey);
-        console.log('Capas base disponibles:', Object.keys(this.baseLayers));
         
         if (!this.baseLayers[layerKey]) {
             console.error('Capa no encontrada:', layerKey);
@@ -792,7 +797,6 @@ class PolygonMap {
         
         // Ocultar todas las capas base
         Object.values(this.baseLayers).forEach(layer => {
-            console.log('Ocultando capa:', layer.get('title'));
             layer.setVisible(false);
         });
         
@@ -800,11 +804,17 @@ class PolygonMap {
         this.baseLayers[layerKey].setVisible(true);
         this.currentBaseLayer = this.baseLayers[layerKey];
         
-        console.log('Capa activada:', layerKey, 'título:', this.currentBaseLayer.get('title'));
-        
-        // Mostrar notificación con el nombre de la capa
-        const layerTitle = this.baseLayers[layerKey].get('title') || layerKey;
-        this.showAlert(`Mapa cambiado a: ${layerTitle}`, 'success');
+        // Actualizar texto del botón
+        const buttonElement = document.getElementById('base-map-toggle');
+        if (buttonElement) {
+            const layerTitle = this.baseLayers[layerKey].get('title') || layerKey;
+            buttonElement.innerHTML = `
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                </svg>
+                ${layerTitle}
+            `;
+        }
     }
 
     clearMap() {
@@ -861,7 +871,7 @@ class PolygonMap {
         const lastCoord = coordinates[coordinates.length - 1];
         
         if (firstCoord[0] !== lastCoord[0] || firstCoord[1] !== lastCoord[1]) {
-            coordinates.push(firstCoord);
+            coordinates.push([...firstCoord]);
         }
     }
 
@@ -904,9 +914,6 @@ class PolygonMap {
     // NUEVAS FUNCIONES PARA DETECCIÓN DE UBICACIÓN
     // =============================================
 
-    /**
-     * Calcula el centroide de un polígono desde GeoJSON
-     */
     calculateCentroidFromGeoJSON(geojson) {
         try {
             const geometry = typeof geojson === 'string' ? JSON.parse(geojson) : geojson;
@@ -918,19 +925,16 @@ class PolygonMap {
 
             let coordinates = geometry.coordinates;
             
-            // Si es un Polygon, tomar el primer anillo
             if (geometry.type === 'Polygon') {
                 coordinates = coordinates[0];
             }
             
-            // Calcular centroide simple (promedio de coordenadas)
             let sumLat = 0;
             let sumLng = 0;
             let count = 0;
             
             for (const coord of coordinates) {
                 if (Array.isArray(coord[0])) {
-                    // Coordenadas anidadas
                     for (const subCoord of coord) {
                         sumLng += subCoord[0];
                         sumLat += subCoord[1];
@@ -956,20 +960,15 @@ class PolygonMap {
         }
     }
 
-    /**
-     * Detecta ubicación usando el centroide del polígono
-     */
     async detectLocation() {
         console.log('Iniciando detección de ubicación...');
         
-        // Obtener el GeoJSON del polígono
         const geometryInput = document.getElementById('geometry');
         if (!geometryInput || !geometryInput.value) {
             this.showAlert('Debes dibujar un polígono primero', 'error');
             return;
         }
         
-        // Calcular centroide
         const centroid = this.calculateCentroidFromGeoJSON(geometryInput.value);
         if (!centroid) {
             this.showAlert('No se pudo calcular el centroide del polígono', 'error');
@@ -978,11 +977,9 @@ class PolygonMap {
         
         console.log('Centroide calculado:', centroid);
         
-        // Actualizar campos ocultos
         document.getElementById('centroid_lat').value = centroid.lat;
         document.getElementById('centroid_lng').value = centroid.lng;
         
-        // Deshabilitar botón y mostrar carga
         const detectBtn = document.getElementById('detect-location');
         const detectButtonText = document.getElementById('detect-button-text');
         const originalText = detectButtonText.textContent;
@@ -990,10 +987,7 @@ class PolygonMap {
         detectBtn.disabled = true;
         
         try {
-            // Usar Nominatim (OpenStreetMap) para geocodificación inversa
             const locationData = await this.reverseGeocode(centroid.lat, centroid.lng);
-            
-            // Procesar datos de ubicación
             this.processLocationData(locationData, centroid);
             
         } catch (error) {
@@ -1005,22 +999,20 @@ class PolygonMap {
         }
     }
 
-    /**
-     * Geocodificación inversa usando Nominatim
-     */
     async reverseGeocode(lat, lng) {
         console.log('Consultando Nominatim para:', lat, lng);
         
         try {
-            const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1&accept-language=es`,
-                {
-                    headers: {
-                        'User-Agent': 'PolygonSystem/1.0',
-                        'Accept': 'application/json'
-                    }
+            // Usar CORS proxy para evitar problemas de CORS
+            const proxyUrl = ''; // Puedes añadir un proxy si es necesario
+            const targetUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1&accept-language=es`;
+            
+            const response = await fetch(proxyUrl + targetUrl, {
+                headers: {
+                    'User-Agent': 'PolygonSystem/1.0',
+                    'Accept': 'application/json'
                 }
-            );
+            });
             
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
@@ -1037,42 +1029,31 @@ class PolygonMap {
         }
     }
 
-    /**
-     * Procesa los datos de ubicación y actualiza la interfaz
-     */
     processLocationData(data, centroid) {
         const address = data.address || {};
         
-        // Extraer información de ubicación
+        // Buscar los mejores nombres para cada nivel
         const parish = address.village || address.town || address.city || address.municipality || '';
         const municipality = address.county || address.state_district || address.region || '';
         const state = address.state || address.region || '';
         
         console.log('Datos de dirección:', { parish, municipality, state, address });
         
-        // Limpiar nombres
         const cleanParish = this.cleanLocationString(parish);
         const cleanMunicipality = this.cleanLocationString(municipality);
         const cleanState = this.cleanLocationString(state);
         
-        // Actualizar campos ocultos
         document.getElementById('detected_parish').value = cleanParish;
         document.getElementById('detected_municipality').value = cleanMunicipality;
         document.getElementById('detected_state').value = cleanState;
         document.getElementById('location_data').value = JSON.stringify(data);
         
-        // Actualizar interfaz de usuario
         this.updateLocationInfoUI(cleanParish, cleanMunicipality, cleanState, centroid);
-        
-        // Intentar encontrar parroquia en la base de datos
         this.findParishInDatabase(cleanParish, cleanMunicipality, cleanState);
         
         this.showAlert('Ubicación detectada correctamente', 'success');
     }
 
-    /**
-     * Limpia strings de ubicación
-     */
     cleanLocationString(str) {
         if (!str) return '';
         
@@ -1083,49 +1064,66 @@ class PolygonMap {
             .toUpperCase();
     }
 
-    /**
-     * Busca parroquia en la base de datos
-     */
     async findParishInDatabase(parishName, municipalityName, stateName) {
         try {
             console.log('Buscando parroquia en base de datos:', { parishName, municipalityName, stateName });
             
-            // Aquí deberías hacer una llamada a tu API de Laravel
-            // Por ahora, solo actualizaremos el select manualmente
-            this.updateParishSelect(parishName);
+            // Limpiar nombres para búsqueda
+            const cleanParish = parishName
+                .replace(/PARROQUIA\s*/i, '')
+                .replace(/MUNICIPIO\s*/i, '')
+                .trim();
+            
+            const cleanMunicipality = municipalityName
+                .replace(/MUNICIPIO\s*/i, '')
+                .trim();
+            
+            this.updateParishSelect(cleanParish, cleanMunicipality);
             
         } catch (error) {
             console.error('Error buscando parroquia:', error);
-            // No mostramos error al usuario para no interrumpir el flujo
         }
     }
 
-    /**
-     * Actualiza el select de parroquias si encuentra coincidencia
-     */
-    updateParishSelect(parishName) {
+    updateParishSelect(parishName, municipalityName) {
         const parishSelect = document.getElementById('parish_id');
         if (!parishSelect) return;
         
-        // Buscar opción que coincida con el nombre de la parroquia
+        const searchTerms = [
+            parishName,
+            municipalityName,
+            parishName.replace(/^SANTA\s+|^SAN\s+/i, ''),
+            parishName.replace(/\s+\(.*\)$/, '')
+        ].filter(term => term.length > 0);
+        
+        console.log('Términos de búsqueda:', searchTerms);
+        
+        let foundOption = null;
+        
         for (let i = 0; i < parishSelect.options.length; i++) {
             const option = parishSelect.options[i];
             const optionText = option.text.toUpperCase();
             
-            if (optionText.includes(parishName) || parishName.includes(optionText)) {
-                parishSelect.value = option.value;
-                this.showAlert(`Parroquia "${option.text}" asignada automáticamente`, 'success');
-                return;
+            // Buscar coincidencias exactas o parciales
+            for (const term of searchTerms) {
+                if (term && optionText.includes(term) || 
+                    (term.length > 3 && optionText.includes(term.substring(0, term.length - 2)))) {
+                    foundOption = option;
+                    break;
+                }
             }
+            
+            if (foundOption) break;
         }
         
-        // Si no encontró coincidencia exacta, mostrar sugerencia
-        this.showAlert('No se encontró parroquia exacta. Selecciona manualmente.', 'info');
+        if (foundOption) {
+            parishSelect.value = foundOption.value;
+            this.showAlert(`Parroquia "${foundOption.text}" asignada automáticamente`, 'success');
+        } else {
+            this.showAlert('No se encontró parroquia exacta. Selecciona manualmente.', 'info');
+        }
     }
 
-    /**
-     * Actualiza la interfaz con la información de ubicación
-     */
     updateLocationInfoUI(parish, municipality, state, centroid) {
         document.getElementById('detected-parish-text').textContent = parish || 'No detectado';
         document.getElementById('detected-municipality-text').textContent = municipality || 'No detectado';
@@ -1133,8 +1131,10 @@ class PolygonMap {
         document.getElementById('detected-coords-text').textContent = 
             `${centroid.lat.toFixed(6)}, ${centroid.lng.toFixed(6)}`;
         
-        // Mostrar el panel de información
-        document.getElementById('location-info').classList.remove('hidden');
+        const locationInfo = document.getElementById('location-info');
+        if (locationInfo) {
+            locationInfo.classList.remove('hidden');
+        }
     }
 
     showAlert(message, icon = 'info') {
@@ -1158,15 +1158,7 @@ class PolygonMap {
 // CÓDIGO PARA EL MODAL Y CONTROLES
 // =============================================
 
-// Variables globales
 let coordinatesList = [];
-const layerNames = {
-    'osm': 'OpenStreetMap',
-    'satellite': 'Satélite Esri', 
-    'maptiler_satellite': 'MapTiler Satélite',
-    'terrain': 'Relieve',
-    'dark': 'Oscuro'
-};
 
 // Función para abrir el modal
 function openCoordinateModal() {
@@ -1227,6 +1219,99 @@ function validateUTMCoordinates(zone, hemisphere, easting, northing) {
     return null;
 }
 
+// =============================================
+// VALIDACIÓN MEJORADA DEL FORMULARIO - CORREGIDA
+// =============================================
+
+function validatePolygonForm() {
+    console.log('Validando formulario de polígono...');
+    
+    // 1. Validar que haya un polígono dibujado
+    const geometry = document.getElementById('geometry');
+    if (!geometry || !geometry.value) {
+        showAlert('Debe dibujar un polígono en el mapa antes de enviar', 'warning');
+        
+        // Resaltar el mapa
+        const mapContainer = document.getElementById('map');
+        if (mapContainer) {
+            mapContainer.classList.add('border-2', 'border-red-500');
+            setTimeout(() => {
+                mapContainer.classList.remove('border-2', 'border-red-500');
+            }, 2000);
+        }
+        
+        return false;
+    }
+    
+    // 2. Validar que el nombre no esté vacío
+    const nameInput = document.getElementById('name');
+    if (!nameInput || !nameInput.value.trim()) {
+        showAlert('El nombre del polígono es requerido', 'warning');
+        if (nameInput) {
+            nameInput.focus();
+            nameInput.classList.add('border-red-500');
+            setTimeout(() => {
+                nameInput.classList.remove('border-red-500');
+            }, 2000);
+        }
+        return false;
+    }
+    
+    // 3. Validar que el área sea un número válido
+    const areaInput = document.getElementById('area_ha');
+    if (areaInput && areaInput.value) {
+        const areaValue = parseFloat(areaInput.value);
+        if (isNaN(areaValue) || areaValue <= 0) {
+            showAlert('El área debe ser un número mayor a 0', 'warning');
+            areaInput.focus();
+            areaInput.classList.add('border-red-500');
+            setTimeout(() => {
+                areaInput.classList.remove('border-red-500');
+            }, 2000);
+            return false;
+        }
+    }
+    
+    console.log('Validación del formulario exitosa');
+    return true;
+}
+
+
+
+function handleFormSubmit(e) {
+    console.log('Formulario submit, validando...');
+    
+    // Solo validar si el submit fue desde el botón de envío del formulario
+    const submitter = e.submitter;
+    
+    // Si no es el botón de submit principal, no validar
+    if (submitter && !submitter.matches('#submit-btn, #submit-btn *')) {
+        return true;
+    }
+    
+    // Validar antes de enviar
+    if (!validatePolygonForm()) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+    
+    return true;
+}
+
+function setupFormValidation() {
+    const polygonForm = document.getElementById('polygon-form');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    if (!polygonForm || !submitBtn) return;
+    
+    // Configurar event listeners SOLO para el botón de submit
+    submitBtn.addEventListener('click', handleSubmitClick);
+    
+    // En su lugar, usar un listener más específico
+    polygonForm.addEventListener('submit', handleFormSubmit, true);
+}
+
 // Event listeners cuando el DOM está cargado
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM completamente cargado, inicializando mapa...');
@@ -1239,6 +1324,32 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar modal
     setInputMethod('single');
+    
+    // Configurar validación del formulario
+    setupFormValidation();
+    
+    // Configurar redimensionamiento del mapa
+    setupMapResizeHandler();
+    
+    // Prevenir que otros botones disparen la validación del formulario
+    const formButtons = document.querySelectorAll('#polygon-form button:not(#submit-btn)');
+    formButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // No hacer nada especial, dejar que el botón funcione normalmente
+        });
+    });
+    
+    // Prevenir que el formulario se envíe por eventos no deseados
+    const polygonForm = document.getElementById('polygon-form');
+    polygonForm.addEventListener('submit', function(e) {
+        // Solo permitir submit desde el botón de envío
+        const submitter = e.submitter;
+        if (!submitter || !submitter.closest('#submit-btn')) {
+            e.preventDefault();
+            return false;
+        }
+    });
 });
 
 function setupEventListeners() {
@@ -1409,9 +1520,7 @@ function setupEventListeners() {
         }
     });
     
-    // =============================================
-    // NUEVO EVENT LISTENER PARA DETECCIÓN DE UBICACIÓN
-    // =============================================
+    // Detección de ubicación
     document.getElementById('detect-location')?.addEventListener('click', async function() {
         console.log('Botón detectar ubicación clickeado');
         if (window.polygonMapInstance && window.polygonMapInstance.detectLocation) {
@@ -1433,8 +1542,6 @@ function setupEventListeners() {
             console.log('Botón mapa clickeado, mostrar menú:', !isShowing);
             toggleMenu('base-map-menu', !isShowing);
         });
-    } else {
-        console.error('No se encontró el botón base-map-toggle');
     }
     
     // Cambiar capas base
@@ -1452,17 +1559,6 @@ function setupEventListeners() {
             }
             
             closeMenu('base-map-menu');
-            
-            // Actualizar texto del botón
-            const buttonElement = document.getElementById('base-map-toggle');
-            if (buttonElement) {
-                const svg = buttonElement.querySelector('svg')?.cloneNode(true);
-                if (svg) {
-                    buttonElement.innerHTML = '';
-                    buttonElement.appendChild(svg);
-                    buttonElement.appendChild(document.createTextNode(' ' + (layerNames[layerKey] || 'Mapas')));
-                }
-            }
         });
     });
     
@@ -1511,33 +1607,6 @@ function setupEventListeners() {
             closeCoordinateModal();
         }
     });
-    
-    // Validación del formulario principal
-    const polygonForm = document.getElementById('polygon-form');
-    if (polygonForm) {
-        polygonForm.addEventListener('submit', function(e) {
-            const geometry = document.getElementById('geometry').value;
-            if (!geometry) {
-                e.preventDefault();
-                showAlert('Debe dibujar un polígono en el mapa', 'warning'); // esto esta echando broma, apareciendo cada que se intenta cambiar de mapa
-                return false;
-            }
-            
-            const nameInput = document.getElementById('name');
-            if (!nameInput.value.trim()) {
-                e.preventDefault();
-                nameInput.focus();
-                showAlert('El nombre del polígono es requerido', 'warning');
-                return false;
-            }
-            
-            const submitBtn = document.getElementById('submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creando...';
-            
-            return true;
-        });
-    }
 }
 
 // Funciones auxiliares para el modal
@@ -1600,10 +1669,10 @@ function updateCoordinatesList() {
     
     coordinatesList.forEach((coord, index) => {
         const coordElement = document.createElement('div');
-        coordElement.className = 'flex justify-between items-center text-xs font-mono';
+        coordElement.className = 'flex justify-between items-center text-xs font-mono py-1';
         coordElement.innerHTML = `
-            <span>${index + 1}. Z${coord.zone}${coord.hemisphere} | E:${coord.easting} | N:${coord.northing}</span>
-            <button type="button" onclick="removeCoordinate(${index})" class="text-red-500 hover:text-red-700 text-xs">✕</button>
+            <span>${index + 1}. Z${coord.zone}${coord.hemisphere} | E:${coord.easting.toFixed(3)} | N:${coord.northing.toFixed(3)}</span>
+            <button type="button" onclick="removeCoordinate(${index})" class="text-red-500 hover:text-red-700 text-xs transition-colors">✕</button>
         `;
         container.appendChild(coordElement);
     });
@@ -1669,170 +1738,52 @@ function showAlert(message, type = 'info') {
         alert(message);
     }
 }
+
 // =============================================
 // FUNCIONES PARA MANEJAR REDIMENSIONAMIENTO DEL MAPA
 // =============================================
 
-/**
- * Redimensiona el mapa cuando cambia el tamaño de la ventana o sidebar
- */
-function resizeMap() {
-    console.log('Redimensionando mapa...');
-    
-    if (window.polygonMapInstance && window.polygonMapInstance.map) {
-        const map = window.polygonMapInstance.map;
-        
-        // Forzar actualización del tamaño
-        setTimeout(() => {
-            map.updateSize();
-            
-            // Ajustar la vista al tamaño actual
-            const currentCenter = map.getView().getCenter();
-            const currentZoom = map.getView().getZoom();
-            
-            // Forzar un pequeño cambio para que OpenLayers recalcule
-            map.getView().setCenter([currentCenter[0] + 0.000001, currentCenter[1]]);
-            
+function setupMapResizeHandler() {
+    // Redimensionar mapa cuando cambie el tamaño de la ventana
+    window.addEventListener('resize', function() {
+        if (window.polygonMapInstance && window.polygonMapInstance.map) {
             setTimeout(() => {
-                map.getView().setCenter(currentCenter);
-                map.getView().setZoom(currentZoom);
-                
-                console.log('Mapa redimensionado correctamente');
-                
-                // Aplicar clase de animación
-                const mapElement = document.getElementById('map');
-                mapElement.classList.add('force-resize');
-                setTimeout(() => mapElement.classList.remove('force-resize'), 100);
-                
-            }, 50);
-        }, 100);
-    }
-}
-
-/**
- * Observa cambios en el sidebar de Laravel
- */
-function observeSidebarChanges() {
-    console.log('Observando cambios en el sidebar...');
+                window.polygonMapInstance.map.updateSize();
+            }, 100);
+        }
+    });
     
-    // Método 1: Observar cambios en el atributo de cuerpo
-    const body = document.body;
+    // Redimensionar mapa después de cargar completamente
+    window.addEventListener('load', function() {
+        if (window.polygonMapInstance && window.polygonMapInstance.map) {
+            setTimeout(() => {
+                window.polygonMapInstance.map.updateSize();
+            }, 500);
+        }
+    });
     
-    // Crear un observer para detectar cambios de clase
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                // Verificar si hay clases relacionadas con sidebar
-                const hasSidebarClass = body.classList.contains('sidebar-open') || 
-                                       body.classList.contains('sidebar-collapse') ||
-                                       body.classList.contains('sidebar-mini') ||
-                                       body.classList.contains('layout-fixed');
-                
-                if (hasSidebarClass) {
-                    console.log('Sidebar cambió, redimensionando mapa...');
-                    setTimeout(resizeMap, 300); // Esperar a que termine la animación
+    // Observar cambios en el DOM que puedan afectar al tamaño del mapa
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' || mutation.type === 'childList') {
+                if (window.polygonMapInstance && window.polygonMapInstance.map) {
+                    setTimeout(() => {
+                        window.polygonMapInstance.map.updateSize();
+                    }, 300);
                 }
             }
         });
     });
     
-    // Configurar observer
-    observer.observe(body, {
-        attributes: true,
-        attributeFilter: ['class']
-    });
-    
-    // Método 2: Detectar clicks en botones del sidebar
-    document.querySelectorAll('[data-toggle="push-menu"], [data-widget="pushmenu"]').forEach(button => {
-        button.addEventListener('click', () => {
-            console.log('Botón sidebar clickeado, redimensionando en 500ms...');
-            setTimeout(resizeMap, 500);
+    // Observar el contenedor del mapa
+    const mapContainer = document.getElementById('map');
+    if (mapContainer) {
+        observer.observe(mapContainer.parentElement, {
+            attributes: true,
+            attributeFilter: ['class', 'style'],
+            childList: false,
+            subtree: false
         });
-    });
-    
-    // Método 3: Redimensionar en eventos específicos
-    const events = [
-        'resize',
-        'orientationchange',
-        'load',
-        'DOMContentLoaded',
-        'transitionend'
-    ];
-    
-    events.forEach(event => {
-        window.addEventListener(event, () => {
-            setTimeout(resizeMap, 100);
-        });
-    });
-}
-
-/**
- * Forzar redimensionamiento inicial
- */
-function forceInitialResize() {
-    console.log('Forzando redimensionamiento inicial...');
-    
-    // Esperar a que todo esté cargado
-    setTimeout(() => {
-        // Redimensionar varias veces para asegurar
-        resizeMap();
-        
-        setTimeout(resizeMap, 300);
-        setTimeout(resizeMap, 600);
-        setTimeout(resizeMap, 1000);
-        
-        // También redimensionar cuando las imágenes se carguen
-        window.addEventListener('load', () => {
-            setTimeout(resizeMap, 200);
-        });
-        
-    }, 500);
-}
-
-/**
- * Solución definitiva para sidebar de Laravel AdminLTE
- */
-function fixLaravelSidebarMapResize() {
-    console.log('Aplicando fix para sidebar de Laravel...');
-    
-    // 1. Detectar si estamos usando AdminLTE
-    const isAdminLTE = document.body.classList.contains('sidebar-mini') || 
-                      document.body.classList.contains('layout-fixed') ||
-                      document.body.classList.contains('sidebar-open');
-    
-    if (isAdminLTE) {
-        console.log('Detectado AdminLTE, aplicando fixes específicos...');
-        
-        // Override del método de toggle del sidebar
-        const originalPushMenu = window.PushMenu;
-        if (window.PushMenu) {
-            const originalToggle = window.PushMenu.prototype.toggle;
-            window.PushMenu.prototype.toggle = function() {
-                originalToggle.apply(this, arguments);
-                setTimeout(resizeMap, 350); // Tiempo de animación del sidebar
-            };
-        }
-        
-        // Detectar cambios en el localStorage (AdminLTE guarda estado)
-        const originalSetItem = localStorage.setItem;
-        localStorage.setItem = function(key, value) {
-            originalSetItem.apply(this, arguments);
-            if (key.includes('sidebar') || key.includes('menu')) {
-                setTimeout(resizeMap, 400);
-            }
-        };
-    }
-    
-    // 2. Observar cambios en el layout
-    observeSidebarChanges();
-    
-    // 3. Forzar redimensionamiento periódico (solo en desarrollo)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        setInterval(() => {
-            if (window.polygonMapInstance && window.polygonMapInstance.map) {
-                window.polygonMapInstance.map.updateSize();
-            }
-        }, 2000);
     }
 }
 </script>
@@ -1954,5 +1905,60 @@ textarea, select, input[type="text"], input[type="number"] {
 textarea:focus, select:focus, input[type="text"]:focus, input[type="number"]:focus {
     border-color: #10b981;
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Grid responsivo */
+@media (min-width: 1024px) {
+    .lg\:grid-cols-2 {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Clases de utilidad */
+.backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+}
+
+.ring-1 {
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+.ring-black {
+    --tw-ring-color: rgba(0, 0, 0, 1);
+}
+
+.ring-opacity-5 {
+    --tw-ring-opacity: 0.05;
+}
+
+/* Clases para modo oscuro */
+.dark .dark\:bg-custom-gray {
+    background-color: #1f2937;
+}
+
+.dark .dark\:border-gray-600 {
+    border-color: #4b5563;
+}
+
+.dark .dark\:text-gray-100 {
+    color: #f3f4f6;
+}
+
+.dark .dark\:text-gray-300 {
+    color: #d1d5db;
+}
+
+.dark .dark\:text-gray-400 {
+    color: #9ca3af;
+}
+
+.dark .dark\:hover\:bg-gray-700:hover {
+    background-color: #374151;
+}
+
+.dark .dark\:bg-gray-800 {
+    background-color: #1f2937;
 }
 </style>
