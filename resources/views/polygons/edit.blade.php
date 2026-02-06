@@ -22,6 +22,7 @@
                                 <div id="map-controls" class="absolute top-4 right-4 z-50 flex flex-col space-y-2">
                                     <!-- Segunda fila de controles -->
                                     <div class="flex space-x-2">
+                                        
                                         <!-- Coordenadas Manuales -->
                                         <button id="manual-polygon-toggle" type="button" title="Escribir Coordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
@@ -124,7 +125,7 @@
                                             <div>
                                                 <x-input-label for="description" :value="__('Descripción')" />
                                                 <textarea id="description" name="description" rows="3"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                    class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 transition-all duration-200"
                                                     placeholder="Descripción del polígono...">{{ old('description', $polygon->description) }}</textarea>
                                                 <x-input-error class="mt-2" :messages="$errors->get('description')" />
                                             </div>
@@ -132,7 +133,7 @@
                                             <div>
                                                 <x-input-label for="producer_id" :value="__('Productor (Opcional)')" />
                                                 <select id="producer_id" name="producer_id"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                                    class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 transition-all duration-200">
                                                     <option value="">Seleccione un productor</option>
                                                     @foreach($producers as $producer)
                                                         <option value="{{ $producer->id }}" {{ old('producer_id', $polygon->producer_id) == $producer->id ? 'selected' : '' }}>
@@ -149,7 +150,7 @@
                                             <div>
                                                 <x-input-label for="parish_id" :value="__('Parroquia (Opcional)')" />
                                                 <select id="parish_id" name="parish_id"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                                    class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 transition-all duration-200">
                                                     <option value="">Seleccione una parroquia</option>
                                                     @foreach($parishes as $parish)
                                                         <option value="{{ $parish->id }}" {{ old('parish_id', $polygon->parish_id) == $parish->id ? 'selected' : '' }}>
