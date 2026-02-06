@@ -1223,6 +1223,24 @@ function validateUTMCoordinates(zone, hemisphere, easting, northing) {
 // VALIDACIÓN MEJORADA DEL FORMULARIO - CORREGIDA
 // =============================================
 
+function handleSubmitClick(e) {
+    console.log('Botón submit clickeado');
+    
+    // Solo manejar el click del botón de envío
+    const submitter = e.target.closest('#submit-btn') || e.target;
+    if (submitter && submitter.id === 'submit-btn') {
+        // Validar antes de enviar
+        if (!validatePolygonForm()) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        
+        // Si la validación pasa, permitir el envío normal
+        return true;
+    }
+}
+
 function validatePolygonForm() {
     console.log('Validando formulario de polígono...');
     
@@ -1275,8 +1293,6 @@ function validatePolygonForm() {
     console.log('Validación del formulario exitosa');
     return true;
 }
-
-
 
 function handleFormSubmit(e) {
     console.log('Formulario submit, validando...');
