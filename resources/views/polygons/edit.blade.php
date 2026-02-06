@@ -431,7 +431,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
 
 <!-- Cargar utilidades primero -->
-<script src="{{ asset('js/polygon/polygon-map-utils.js') }}"></script>
+<script src="{{ asset('js/polygon/polygon-map-edit.js') }}"></script>
 
 <script>
 // Variables globales
