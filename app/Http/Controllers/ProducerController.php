@@ -15,27 +15,32 @@ class ProducerController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $status = $request->input('status', 'all');
+        $status = $request->input('status', 'all');  // Cambia 'all' por 'active'
 
-        $query = Producer::query()
+        $query = Producer::query()  // Esto ya excluye los eliminados por defecto
             ->when($search, function ($query, $search) {
                 return $query->search($search);
             });
 
         match ($status) {
-            'active'   => $query->where('is_active', true),
-            'inactive' => $query->where('is_active', false),
-            'deleted'  => $query->onlyTrashed(),
-            'all'      => $query->withTrashed(),
-            default    => $query,
-        };
+        'active'   => $query->where('is_active', true),
+        'inactive' => $query->where('is_active', false),
+        'deleted'  => $query->onlyTrashed(),
+        'all'      => $query, // ¡CORREGIDO! No usar withTrashed()
+        default    => $query->where('is_active', true), // Por defecto solo activos
+    };
 
         $producers = $query
             ->orderBy('name')
             ->paginate(10)
             ->withQueryString();
 
-        return view('producers.index', compact('producers', 'search', 'status'));
+        // Agregar contadores para estadísticas
+        $deletedCount = Producer::onlyTrashed()->count();
+        $activeCount = Producer::where('is_active', true)->count();
+        $inactiveCount = Producer::where('is_active', false)->count();
+
+        return view('producers.index', compact('producers', 'search', 'status', 'deletedCount', 'activeCount', 'inactiveCount'));
     }
 
     /**
@@ -44,6 +49,26 @@ class ProducerController extends Controller
     public function create()
     {
         return view('producers.create');
+    }
+
+     /**
+     * Muestra solo los productores eliminados (soft deleted).
+     */
+    public function deleted(Request $request)
+    {
+        $search = $request->input('search');
+
+        $query = Producer::onlyTrashed()
+            ->when($search, function ($query, $search) {
+                return $query->search($search);
+            });
+
+        $producers = $query
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('producers.deleted', compact('producers', 'search'));
     }
 
     /**
@@ -117,8 +142,8 @@ class ProducerController extends Controller
     }
 
     /**
-     * Elimina (soft delete) un productor.
-     */
+    * Elimina (soft delete) un productor - MEJORADO para AJAX
+    */
     public function destroy(Request $request, Producer $producer)
     {
         try {
@@ -129,7 +154,8 @@ class ProducerController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Productor deshabilitado exitosamente.',
-                    'producer_id' => $producer->id
+                    'producer_id' => $producer->id,
+                    'redirect' => route('producers.deleted') // Opcional: redirección si se necesita
                 ]);
             }
 
@@ -160,7 +186,7 @@ class ProducerController extends Controller
     }
 
     /**
-     * Restaura un productor eliminado.
+     * Restaura un productor eliminado - MEJORADO para AJAX
      */
     public function restore(Request $request, $id)
     {
@@ -173,7 +199,8 @@ class ProducerController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Productor habilitado exitosamente.',
-                    'producer_id' => $producer->id
+                    'producer_id' => $producer->id,
+                    'redirect' => route('producers.index') // Opcional: redirección si se necesita
                 ]);
             }
 
@@ -204,7 +231,7 @@ class ProducerController extends Controller
     }
 
     /**
-     * Elimina permanentemente un productor.
+     * Elimina permanentemente un productor - MEJORADO para AJAX
      */
     public function forceDelete(Request $request, $id)
     {

@@ -114,15 +114,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     // RUTAS DE PRODUCTORES 
-    Route::resource('producers', ProducerController::class)->names([
-        'index' => 'producers.index',
-        'create' => 'producers.create', 
-        'edit' => 'producers.edit',
-        'update' => 'producers.update',
-    ]);
-
-    // Rutas adicionales para funcionalidades extra de productores
+    // IMPORTANTE: Definir rutas personalizadas ANTES del resource
     Route::prefix('producers')->group(function () {
+        // RUTAS PERSONALIZADAS - DEBEN IR ANTES DEL RESOURCE
+        Route::get('/deleted', [ProducerController::class, 'deleted'])
+            ->name('producers.deleted');
+        
+        Route::get('/{producer}/details', [ProducerController::class, 'details'])
+            ->name('producers.details');
+        
         Route::post('{producer}/toggle-status', [ProducerController::class, 'toggleStatus'])
             ->name('producers.toggle-status');
         Route::post('{id}/restore', [ProducerController::class, 'restore'])
@@ -131,8 +131,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('producers.force-delete');
     });
 
-    
+    // RUTA RESOURCE - DESPUÉS de las rutas personalizadas
+    Route::resource('producers', ProducerController::class)->except(['destroy'])->names([
+        'index' => 'producers.index',
+        'create' => 'producers.create', 
+        'edit' => 'producers.edit',
+        'update' => 'producers.update',
+    ]);
 
+    // Ruta destroy separada (opcional, si quieres mantenerla específica)
+    Route::delete('producers/{producer}', [ProducerController::class, 'destroy'])
+        ->name('producers.destroy');
+    
 
     // Rutas para gestión de áreas
     Route::resource('areas', AreaController::class)->except(['show']);
@@ -168,9 +178,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('polygons', PolygonController::class);
 
         // ========== FIN RUTAS POLÍGONOS ==========
-
-    Route::get('/producers/{producer}/details', [ProducerController::class, 'details'])
-    ->name('producers.details');
 
        // Grupo de rutas para deforestación - CORREGIDO
     Route::prefix('deforestation')->name('deforestation.')->group(function () {

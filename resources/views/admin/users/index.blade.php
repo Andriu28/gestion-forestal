@@ -12,13 +12,13 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                             <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
                         </svg>
-                        <span>{{ __('Nuevo Usuario') }}</span>
+                        <span>{{ __('Nuevo') }}</span>
                     </a>
                     <a href="{{ route('admin.users.disabled') }}" class="px-4 py-2 bg-orange-600/90 text-white rounded-md hover:bg-orange-600 flex items-center space-x-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                         </svg>
-                        <span>{{ __('Ver Deshabilitados') }}</span>
+                        <span>{{ __('Deshabilitados') }}</span>
                     </a>
                 </div>
 

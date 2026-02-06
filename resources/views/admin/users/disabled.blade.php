@@ -13,7 +13,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
-                        <span>{{ __('Volver a Habilitados') }}</span>
+                        <span>{{ __('Habilitados') }}</span>
                     </a>
                 </div>
 
@@ -29,7 +29,7 @@
                             <option value="basico" {{ ($role ?? '') == 'basico' ? 'selected' : '' }}>Básicos</option>
                         </select>
                         
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Filtrar</button>
+                        <button type="submit" class="px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white rounded-lg transition-all">Filtrar</button>
                         
                         @if(request('search') || request('role'))
                             <a href="{{ route('admin.users.disabled') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</a>
@@ -143,56 +143,3 @@
     </div>
 </x-app-layout>
 
-@push('styles')
-<style>
-    /* Estilos para la paginación (igual que audit_log) */
-    .pagination {
-        display: flex;
-        justify-content: center;
-        list-style: none;
-        padding: 0;
-        margin: 1rem 0;
-    }
-    
-    .pagination li {
-        margin: 0 2px;
-    }
-    
-    .pagination li a,
-    .pagination li span {
-        display: block;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        border: 1px solid #d1d5db;
-        color: #4b5563;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-    
-    .pagination li.active span {
-        background-color: #4f46e5;
-        color: white;
-        border-color: #4f46e5;
-    }
-    
-    .pagination li a:hover {
-        background-color: #f3f4f6;
-    }
-    
-    .dark .pagination li a,
-    .dark .pagination li span {
-        border-color: #4b5563;
-        color: #d1d5db;
-    }
-    
-    .dark .pagination li.active span {
-        background-color: #6366f1;
-        border-color: #6366f1;
-        color: white;
-    }
-    
-    .dark .pagination li a:hover {
-        background-color: #374151;
-    }
-</style>
-@endpush

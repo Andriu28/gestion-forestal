@@ -60,7 +60,7 @@
                     <div class="fixed bottom-6 right-6 z-50">
                 <a href="{{ asset('docs\manual2.pdf') }}" 
                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center group">
-                    <svg class="w-5 h-5 mr-2 group-hover:animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                    <svg class="w-5 h-5 mr-2 " fill="currentColor" viewBox="0 0 20 20">
                         <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z"/>
                     </svg>
                     <span>Descargar PDF</span>
