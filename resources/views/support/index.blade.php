@@ -58,13 +58,13 @@
                         </a>
                     </nav>
                     <div class="fixed bottom-6 right-6 z-50">
-                <a href="{{ asset('docs\manual2.pdf') }}" 
-                   class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center group">
-                    <svg class="w-5 h-5 mr-2 " fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z"/>
-                    </svg>
-                    <span>Descargar PDF</span>
-                </a>
+                        <a href="{{ asset('docs\manual2.pdf') }}" 
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center group">
+                        <svg class="w-5 h-5 mr-2 " fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z"/>
+                        </svg>
+                        <span>Descargar PDF</span>
+                    </a>
             </div>
                 </aside>
 
@@ -96,12 +96,16 @@
         /* Asegurar que el botón no tape contenido en móviles */
         @media (max-width: 640px) {
             .fixed.bottom-6.right-6 {
-                bottom: 1rem;
-                right: 1rem;
+                bottom: 1.5rem;
+                right: 6rem;
             }
             .fixed.bottom-6.right-6 a {
-                padding: 0.75rem;
-                font-size: 0.875rem;
+                padding: 0.65rem;
+                font-size: 0.85rem;
+            }
+            .fixed.bottom-6.right-6 svg {
+                width: 1.10rem;
+                height: 1.10rem;
             }
         }
     </style>
