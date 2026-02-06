@@ -183,6 +183,12 @@
                     'sections' => [
                         'profile' => 'Editar perfil'
                     ]
+                ],
+                'support' => [
+                    'title' => 'Manual de usuario',
+                    'sections' => [
+                        'support' => 'Resumen'
+                    ]
                 ]
             ];
             

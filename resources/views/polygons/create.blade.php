@@ -18,7 +18,7 @@
                                 <div id="map" class="h-full w-full"></div>
 
                                 <!-- Controles del mapa -->
-                                <div id="map-controls" class="absolute top-4 right-4 z-50 flex flex-col space-y-2">
+                                <div id="map-controls" class="absolute top-4 right-4 z-50 flex flex-col ">
                                     <div class="flex space-x-2">
                                         <!-- Cambiar Mapa -->
                                         <div class="relative">
@@ -56,7 +56,7 @@
                                     </div>
 
                                     <!-- Segunda fila de controles -->
-                                    <div class="flex space-x-2">
+                                    <div class="">
                                         <!-- Coordenadas Manuales -->
                                         <button id="manual-polygon-toggle" title="Escribir Coordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
@@ -65,17 +65,22 @@
                                                 <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
                                             </svg>
                                         </button>
+                                    </div>  
 
-                                        <!-- Dibujar Polígono -->
-                                        <button type="button" id="draw-polygon" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                    <div class=""> 
+                                         <!-- Dibujar Polígono -->
+                                        <button type="button" id="draw-polygon" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                             </svg>
                                             
                                         </button>
 
+                                    </div>
+                                       
+
                                         <!-- Limpiar Mapa -->
-                                        <button type="button" id="clear-map" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                        <button type="button" id="clear-map" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
