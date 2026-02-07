@@ -164,7 +164,7 @@ class LocationService
         
         // Eliminar prefijos comunes (MEJORADO)
         $commonPrefixes = [
-            'parroquia', 'municipio', 'municipal', 'estado', 
+            'Parroquia', 'Municipio', 'municipal', 'Estado', 
             'sector', 'zona', 'urb', 'urb.', 'urbano', 
             'rural', 'distrito', 'cantón', 'departamento',
             'provincia', 'región', 'comuna', 'aldea'
@@ -192,15 +192,23 @@ class LocationService
     {
         $name = trim($name);
         
-        // Capitalizar palabras (excepto preposiciones)
-        $prepositions = ['de', 'del', 'la', 'las', 'los', 'y', 'e', 'el'];
+        // Solo capitalizar la primera letra de cada palabra
+        // pero NO alterar las palabras que ya tienen mayúsculas
         $words = explode(' ', $name);
         
-        $cleaned = array_map(function($word) use ($prepositions) {
-            if (in_array(mb_strtolower($word), $prepositions)) {
-                return mb_strtolower($word);
+        $cleaned = array_map(function($word) {
+            // Si la palabra ya comienza con mayúscula, dejarla tal cual
+            if (mb_strlen($word) > 0 && ctype_upper(mb_substr($word, 0, 1))) {
+                return $word;
             }
-            return mb_convert_case($word, MB_CASE_TITLE, 'UTF-8');
+            
+            // Si es completamente minúscula, capitalizar
+            if (mb_strtolower($word) === $word) {
+                return mb_convert_case($word, MB_CASE_TITLE, 'UTF-8');
+            }
+            
+            // Dejar palabras mixtas como están (ej: "McDonald")
+            return $word;
         }, $words);
         
         return implode(' ', $cleaned);

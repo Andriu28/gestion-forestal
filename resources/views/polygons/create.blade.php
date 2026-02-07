@@ -300,9 +300,10 @@
 <!-- SweetAlert2 para notificaciones -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- Script personalizado para polígonos (CORREGIDO) -->
+<!-- Script personalizado para polígonos con depuración mejorada -->
 <script>
 // ARCHIVO polygon-map.js COMPLETO CON DETECCIÓN DE UBICACIÓN Y VALIDACIÓN CORREGIDA
+// ARCHIVO polygon-map.js COMPLETO CON DETECCIÓN DE UBICACIÓN CORREGIDA
 class PolygonMap {
     constructor() {
         this.map = null;
@@ -1032,20 +1033,36 @@ class PolygonMap {
     processLocationData(data, centroid) {
         const address = data.address || {};
         
-        // Buscar los mejores nombres para cada nivel
-        const parish = address.village || address.town || address.city || address.municipality || '';
-        const municipality = address.county || address.state_district || address.region || '';
-        const state = address.state || address.region || '';
+        // Extraer los nombres originales
+        let parish = address.village || address.town || address.city || address.municipality || '';
+        let municipality = address.county || address.state_district || address.region || '';
+        let state = address.state || address.region || '';
         
-        console.log('Datos de dirección:', { parish, municipality, state, address });
+        console.log('Datos de dirección originales:', { parish, municipality, state, address });
         
-        const cleanParish = this.cleanLocationString(parish);
-        const cleanMunicipality = this.cleanLocationString(municipality);
-        const cleanState = this.cleanLocationString(state);
+        // Solo quitar "Municipio" y "Estado" de los prefijos, manteniendo CASE ORIGINAL
+        const cleanParish = this.removePrefixes(parish, ['Parroquia', 'Sector', 'Zona']);
+        const cleanMunicipality = this.removePrefixes(municipality, ['Municipio', 'Distrito', 'County']);
+        const cleanState = this.removePrefixes(state, ['Estado', 'State', 'Departamento']);
         
+        // DEBUG: Verificar valores antes de guardar
+        console.log('DEBUG - Valores antes de guardar:');
+        console.log('Parroquia:', cleanParish);
+        console.log('Municipio:', cleanMunicipality);
+        console.log('Estado:', cleanState);
+        console.log('¿Es minúscula?', cleanParish === cleanParish.toLowerCase());
+        
+        console.log('Datos de dirección limpios:', { 
+            parish: cleanParish, 
+            municipality: cleanMunicipality, 
+            state: cleanState 
+        });
+        
+        // Guardar los valores ORIGINALES con mayúsculas
         document.getElementById('detected_parish').value = cleanParish;
         document.getElementById('detected_municipality').value = cleanMunicipality;
         document.getElementById('detected_state').value = cleanState;
+        
         document.getElementById('location_data').value = JSON.stringify(data);
         
         this.updateLocationInfoUI(cleanParish, cleanMunicipality, cleanState, centroid);
@@ -1054,72 +1071,87 @@ class PolygonMap {
         this.showAlert('Ubicación detectada correctamente', 'success');
     }
 
-    cleanLocationString(str) {
+    removePrefixes(str, prefixes) {
         if (!str) return '';
         
-        return str
-            .trim()
-            .replace(/[^\w\sáéíóúÁÉÍÓÚñÑüÜ.,\-\s]/g, '')
-            .replace(/\s+/g, ' ')
-            .toUpperCase();
+        // Hacer una copia para no modificar el original
+        let result = str.trim();
+        
+        // Para cada prefijo, verificar si está al inicio (preservando mayúsculas/minúsculas)
+        prefixes.forEach(prefix => {
+            // Crear regex que coincida con el prefijo al inicio (case insensitive)
+            const regex = new RegExp(`^${prefix}\\s+`, 'i');
+            
+            // Verificar si coincide sin modificar mayúsculas/minúsculas
+            if (regex.test(result)) {
+                // Remover exactamente el prefijo como está (preservando mayúsculas/minúsculas)
+                const match = result.match(regex);
+                if (match) {
+                    result = result.substring(match[0].length);
+                }
+            }
+        });
+        
+        // También eliminar espacios múltiples
+        result = result.replace(/\s+/g, ' ').trim();
+        
+        return result;
     }
 
     async findParishInDatabase(parishName, municipalityName, stateName) {
         try {
             console.log('Buscando parroquia en base de datos:', { parishName, municipalityName, stateName });
             
-            // Limpiar nombres para búsqueda
-            const cleanParish = parishName
-                .replace(/PARROQUIA\s*/i, '')
-                .replace(/MUNICIPIO\s*/i, '')
-                .trim();
-            
-            const cleanMunicipality = municipalityName
-                .replace(/MUNICIPIO\s*/i, '')
-                .trim();
-            
-            this.updateParishSelect(cleanParish, cleanMunicipality);
+            // NO limpiar nada, usar el nombre tal como viene de Nominatim
+            this.updateParishSelect(parishName);
             
         } catch (error) {
             console.error('Error buscando parroquia:', error);
         }
     }
 
-    updateParishSelect(parishName, municipalityName) {
+    updateParishSelect(parishName) {
         const parishSelect = document.getElementById('parish_id');
         if (!parishSelect) return;
         
-        const searchTerms = [
-            parishName,
-            municipalityName,
-            parishName.replace(/^SANTA\s+|^SAN\s+/i, ''),
-            parishName.replace(/\s+\(.*\)$/, '')
-        ].filter(term => term.length > 0);
-        
-        console.log('Términos de búsqueda:', searchTerms);
+        console.log(`Buscando EXACTAMENTE: "${parishName}" en el select`);
         
         let foundOption = null;
         
+        // Buscar exactamente como viene (CASE SENSITIVE)
         for (let i = 0; i < parishSelect.options.length; i++) {
             const option = parishSelect.options[i];
-            const optionText = option.text.toUpperCase();
+            const optionText = option.text;
             
-            // Buscar coincidencias exactas o parciales
-            for (const term of searchTerms) {
-                if (term && optionText.includes(term) || 
-                    (term.length > 3 && optionText.includes(term.substring(0, term.length - 2)))) {
-                    foundOption = option;
-                    break;
-                }
+            console.log(`Comparando con opción: "${optionText}"`);
+            
+            // 1. Primero intentar coincidencia EXACTA
+            if (optionText === parishName) {
+                foundOption = option;
+                console.log(`✓ ¡ENCONTRADO! Coincidencia EXACTA: "${optionText}"`);
+                break;
             }
             
-            if (foundOption) break;
+            // 2. Si no coincide exactamente, buscar si CONTIENE el nombre
+            if (optionText.includes(parishName)) {
+                foundOption = option;
+                console.log(`✓ Coincidencia PARCIAL: "${optionText}" contiene "${parishName}"`);
+                break;
+            }
+            
+            // 3. Buscar sin considerar mayúsculas/minúsculas (pero preservar el texto original)
+            if (optionText.toLowerCase() === parishName.toLowerCase()) {
+                foundOption = option;
+                console.log(`✓ Coincidencia (case-insensitive): "${optionText}" == "${parishName}"`);
+                break;
+            }
         }
         
         if (foundOption) {
             parishSelect.value = foundOption.value;
             this.showAlert(`Parroquia "${foundOption.text}" asignada automáticamente`, 'success');
         } else {
+            console.log('No se encontró coincidencia para:', parishName);
             this.showAlert('No se encontró parroquia exacta. Selecciona manualmente.', 'info');
         }
     }
@@ -1236,9 +1268,87 @@ function handleSubmitClick(e) {
             return false;
         }
         
+        // Si la validación pasa, mostrar datos en consola
+        logFormData();
+        
         // Si la validación pasa, permitir el envío normal
         return true;
     }
+}
+
+function logFormData() {
+    console.log('=== DATOS QUE SE ENVIARÁN AL SERVIDOR ===');
+    
+    // Obtener el formulario
+    const form = document.getElementById('polygon-form');
+    if (!form) {
+        console.error('No se encontró el formulario');
+        return;
+    }
+    
+    // Crear objeto FormData
+    const formData = new FormData(form);
+    
+    // Mostrar todos los datos del formulario
+    console.log('📋 DATOS DEL FORMULARIO:');
+    for (let [key, value] of formData.entries()) {
+        if (key === 'geometry' || key === 'location_data') {
+            try {
+                const parsed = JSON.parse(value);
+                console.log(`${key}:`, parsed);
+                console.log(`${key} (crudo):`, value.substring(0, 100) + '...');
+            } catch (e) {
+                console.log(`${key}:`, value.substring(0, 100) + '...');
+            }
+        } else {
+            console.log(`${key}:`, value);
+        }
+    }
+    
+    // Mostrar datos específicos importantes
+    console.log('🎯 DATOS ESPECÍFICOS:');
+    console.log('Nombre:', document.getElementById('name')?.value);
+    console.log('Descripción:', document.getElementById('description')?.value);
+    console.log('Productor ID:', document.getElementById('producer_id')?.value);
+    console.log('Parroquia ID:', document.getElementById('parish_id')?.value);
+    console.log('Área Ha:', document.getElementById('area_ha')?.value);
+    
+    // Datos de ubicación detectada
+    console.log('📍 DATOS DE UBICACIÓN DETECTADA:');
+    console.log('Parroquia detectada:', document.getElementById('detected_parish')?.value);
+    console.log('Municipio detectado:', document.getElementById('detected_municipality')?.value);
+    console.log('Estado detectado:', document.getElementById('detected_state')?.value);
+    console.log('Centroide Lat:', document.getElementById('centroid_lat')?.value);
+    console.log('Centroide Lng:', document.getElementById('centroid_lng')?.value);
+    
+    // GeoJSON
+    const geometry = document.getElementById('geometry')?.value;
+    if (geometry) {
+        try {
+            const geoObj = JSON.parse(geometry);
+            console.log('🗺️ GEOMETRÍA GEOJSON:');
+            console.log('Tipo:', geoObj.type);
+            console.log('Número de coordenadas:', geoObj.coordinates?.[0]?.length || 'N/A');
+            console.log('Primeras coordenadas:', geoObj.coordinates?.[0]?.slice(0, 3) || 'N/A');
+        } catch (e) {
+            console.log('Error parseando GeoJSON:', e.message);
+        }
+    }
+    
+    // Location data
+    const locationData = document.getElementById('location_data')?.value;
+    if (locationData) {
+        try {
+            const locObj = JSON.parse(locationData);
+            console.log('🗺️ DATOS DE UBICACIÓN (OSM):');
+            console.log('Address:', locObj.address || 'N/A');
+            console.log('Display name:', locObj.display_name?.substring(0, 100) || 'N/A');
+        } catch (e) {
+            console.log('Error parseando location_data:', e.message);
+        }
+    }
+    
+    console.log('=== FIN DE DATOS DEL FORMULARIO ===\n\n');
 }
 
 function validatePolygonForm() {
@@ -1311,6 +1421,9 @@ function handleFormSubmit(e) {
         e.stopPropagation();
         return false;
     }
+    
+    // Mostrar datos en consola
+    logFormData();
     
     return true;
 }
