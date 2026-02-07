@@ -1,6 +1,7 @@
-{{-- [file name]: create.blade.php --}}
+<!-- resources/views/polygons/create.blade.php -->
+
 <x-app-layout>
-    <div class="mx-auto">
+    <div class="mx-auto ">
         <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
@@ -14,83 +15,89 @@
                         <!-- Columna del Mapa -->
                         <div class="lg:col-span-1">
                             <x-input-label for="map" class="sr-only">Mapa</x-input-label>
-                            <div class="relative rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 77vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
+                            <div class="relative  rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 77vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
                                 <div id="map" class="h-full w-full"></div>
 
-                                <!-- Controles del mapa -->
-                                <div id="map-controls" class="absolute top-4 right-4 z-50 flex flex-col">
-                                    <div class="flex space-x-2">
-                                        <!-- Cambiar Mapa -->
-                                        <div class="relative">
-                                            <button id="base-map-toggle" type="button" title="Cambiar mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center shadow-lg transition-colors">
-                                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
-                                                </svg>
-                                                Mapas
-                                            </button>
-                                            
-                                            <div id="base-map-menu"
-                                                class="absolute mt-2 w-48 rounded-xl shadow-lg bg-white dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 right-0
-                                                        transition-all duration-300 ease-out scale-95 opacity-0 pointer-events-none hidden">
-                                                <div class="absolute -top-2 right-6 w-8 h-2 pointer-events-none">
-                                                    <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
-                                                        <polygon points="8,0 16,8 0,8" fill="currentColor"/>
+                                <!-- Controles del mapa - IGUALES A ANALISIS -->
+                                <div id="map-controls">
+                                    <!-- Contenedor para los botones superiores (Cambiar Mapa y Pantalla Completa) -->
+                                    <div class="flex flex-col items-end space-y-2">
+                                        <!-- Fila superior: Cambiar Mapa y Pantalla Completa -->
+                                        <div class="flex space-x-2">
+
+                                            <!-- Botón para cambiar mapa base -->
+                                            <div class="relative">
+                                                <button id="base-map-toggle" title="Cambiar mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
                                                     </svg>
-                                                </div>
-                                                <div class="py-2" role="menu" aria-orientation="vertical">
-                                                    <button data-layer="osm" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">OpenStreetMap</button>
-                                                    <button data-layer="satellite" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Satélite Esri</button>
-                                                    <button data-layer="maptiler_satellite" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">MapTiler Satélite</button>
-                                                    <button data-layer="terrain" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Relieve</button>
-                                                    <button data-layer="dark" type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">Oscuro</button>
+                                                    Mapas
+                                                </button>
+                                                
+                                                <!-- Menú de cambio de mapa -->
+                                                <div id="base-map-menu"
+                                                    class="absolute mt-3 w-40 rounded-xl shadow-lg bg-gray-50 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 
+                                                            transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none hidden"
+                                                    style="right: 1px;">
+                                                    <!-- Flechita -->
+                                                    <div class="absolute -top-2 right-6 w-8 h-2 pointer-events-none">
+                                                        <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
+                                                            <polygon points="8,0 16,8 0,8" fill="currentColor"/>
+                                                        </svg>
+                                                    </div>
+                                                    <!-- Menú -->
+                                                    <div class="py-2" role="menu" aria-orientation="vertical">
+                                                        <button data-layer="osm" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">OpenStreetMap</button>
+                                                        <button data-layer="satellite" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Satélite Esri</button>
+                                                        <button data-layer="maptiler_satellite" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">MapTiler Satélite</button>
+                                                        <button data-layer="terrain" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Relieve</button>
+                                                        <button data-layer="dark" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Oscuro</button>
+                                                    </div>
                                                 </div>
                                             </div>
+                                            
+                                            <!-- Botón de pantalla completa -->
+                                            <button id="fullscreen-toggle" title="Pantalla Completa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"></path>
+                                                </svg>
+                                            </button>
                                         </div>
-
-                                        <!-- Pantalla Completa -->
-                                        <button id="fullscreen-toggle" type="button" title="Pantalla Completa" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center justify-center shadow-lg transition-colors">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    <!-- Segunda fila de controles -->
-                                    <div class="flex flex-col space-y-2">
-                                        <!-- Coordenadas Manuales -->
-                                        <button id="manual-polygon-toggle" type="button" title="Escribir Coordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center shadow-lg transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M13 21h8"/>
-                                                <path d="m15 5 4 4"/>
-                                                <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
-                                            </svg>
-                                        </button>
-                                         
-                                        <!-- Dibujar Polígono -->
-                                        <button type="button" id="draw-polygon" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center shadow-lg transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                            </svg>
-                                        </button>
-
-                                        <!-- Limpiar Mapa -->
-                                        <button type="button" id="clear-map" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg flex items-center shadow-lg transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                        </button>
+                                        
+                                        <!-- Fila inferior: Solo el botón de coordenadas manuales -->
+                                        <div class="flex space-x-2"> 
+                                            <button id="manual-polygon-toggle" title="Escribir Coordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6 lucide-pencil-line">
+                                                    <path d="M13 21h8"/>
+                                                    <path d="m15 5 4 4"/>
+                                                    <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button id="draw-polygon" title="Dibujar Coordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6 lucide-plus">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button id="clear-map" title="Limpiar Mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6 lucide-clear">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Coordenadas UTM en tiempo real -->
-                                <div id="coordinate-display" class="absolute left-2 bottom-4 z-10 bg-white/90 dark:bg-gray-800/90 px-3 py-2 rounded-lg text-sm shadow-lg font-mono border border-gray-300 dark:border-gray-600 backdrop-blur-sm">
-                                    Zona XXN | Este: 000000.000 | Norte: 0000000.000
-                                </div>
+                                <!-- Display de coordenadas - MISMAS QUE ANALISIS -->
+                                <!-- Se mostrará automáticamente cuando se mueva el mouse -->
                             </div>
                             <x-input-error class="mt-2" :messages="$errors->get('geometry')" />
                         </div>
 
-                        <!-- Columna del Formulario (COMPLETA) -->
+                        <!-- Columna del Formulario -->
                         <div class="lg:col-span-1">
                             <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl p-4 md:p-6 lg:p-8 h-full">
                                 <div class="text-gray-900 dark:text-gray-100">
@@ -197,13 +204,13 @@
         </div>
     </div>
 
-    <!-- Modal para coordenadas manuales -->
-    <div id="manual-polygon-modal" class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-lg mx-4">
+    <!-- Modal para coordenadas manuales - MISMOS ESTILOS QUE ANALISIS -->
+    <div id="manual-polygon-modal" class="hidden">
+        <div class="bg-white dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-lg">
             <!-- Header -->
             <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ingresar Coordenadas UTM</h3>
-                <button id="close-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -217,8 +224,8 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Método de entrada:</label>
                     <div class="flex space-x-2">
-                        <button type="button" id="method-single" class="flex-1 py-2 px-3 bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors">Una por una</button>
-                        <button type="button" id="method-bulk" class="flex-1 py-2 px-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors">Lote</button>
+                        <button type="button" id="method-single" class="flex-1 py-2 px-3 bg-blue-600 text-white rounded-lg text-sm font-medium">Una por una</button>
+                        <button type="button" id="method-bulk" class="flex-1 py-2 px-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">Lote</button>
                     </div>
                 </div>
 
@@ -227,26 +234,26 @@
                     <div class="grid grid-cols-4 gap-2">
                         <div>
                             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Zona</label>
-                            <input type="number" id="single-zone" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" 
+                            <input type="number" id="single-zone" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2" 
                                 min="1" max="60" placeholder="20" value="20">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Hemisferio</label>
-                            <select id="single-hemisphere" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                            <select id="single-hemisphere" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm">
                                 <option value="N">Norte (N)</option>
                                 <option value="S">Sur (S)</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Este</label>
-                            <input type="text" id="single-easting" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" placeholder="500000">
+                            <input type="text" id="single-easting" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2" placeholder="500000">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Norte</label>
-                            <input type="text" id="single-northing" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" placeholder="10000000">
+                            <input type="text" id="single-northing" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2" placeholder="10000000">
                         </div>
                     </div>
-                    <button type="button" id="add-coord" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 rounded-lg text-sm transition-colors">
+                    <button type="button" id="add-coord" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 rounded-lg text-sm">
                         + Agregar coordenada
                     </button>
                 </div>
@@ -265,8 +272,8 @@
                         </p>
                     </div>
                    
-                    <textarea id="bulk-coords" rows="6" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 font-mono text-xs focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" 
-                        placeholder="Ejemplo:&#10;20,N,476097.904,1157477.299&#10;20,N,476181.804,1157432.362&#10;20,N,475211.522,1157534.959"></textarea>
+                   <textarea id="bulk-coords" rows="6" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 font-mono text-xs" 
+          placeholder="Ejemplo:&#10;&#9;Zona,Hemisferio,Este,Norte&#10;&#9;20,N,476097.904,1157477.299&#10;&#9;20,N,476181.804,1157432.362&#10;&#9;20,N,475211.522,1157534.959"></textarea>
                 </div>
 
                 <!-- Lista de coordenadas agregadas -->
@@ -275,14 +282,14 @@
                     <div class="max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-500 rounded-md p-2 bg-gray-50 dark:bg-gray-800/80">
                         <div id="coords-container" class="space-y-1"></div>
                     </div>
-                    <button type="button" id="clear-list" class="text-red-600 hover:text-red-700 text-xs mt-1 transition-colors">Limpiar lista</button>
+                    <button type="button" id="clear-list" class="text-red-600 hover:text-red-700 text-xs mt-1">Limpiar lista</button>
                 </div>
 
                 <div class="flex space-x-3 pt-2">
-                    <button type="button" id="cancel-modal" class="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors">
+                    <button type="button" id="cancel-modal" class="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium">
                         Cancelar
                     </button>
-                    <button type="submit" class="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                    <button type="submit" class="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
                         Dibujar
                     </button>
                 </div>
@@ -300,10 +307,8 @@
 <!-- SweetAlert2 para notificaciones -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- Script personalizado para polígonos con depuración mejorada -->
 <script>
-// ARCHIVO polygon-map.js COMPLETO CON DETECCIÓN DE UBICACIÓN Y VALIDACIÓN CORREGIDA
-// ARCHIVO polygon-map.js COMPLETO CON DETECCIÓN DE UBICACIÓN CORREGIDA
+// ARCHIVO polygon-map.js MODIFICADO PARA INCLUIR DISPLAY DE COORDENADAS COMO ANALISIS
 class PolygonMap {
     constructor() {
         this.map = null;
@@ -347,6 +352,7 @@ class PolygonMap {
         this.setupEventListeners();
         this.setupCoordinateDisplay();
         this.verifyDependencies();
+        this.setupMapResizeObserver(); // NUEVO: Configurar observer para redimensionamiento
         
         // Forzar redimensionamiento después de la inicialización
         setTimeout(() => {
@@ -354,6 +360,61 @@ class PolygonMap {
                 this.map.updateSize();
             }
         }, 500);
+    }
+
+    setupMapResizeObserver() {
+        console.log('Configurando observador de redimensionamiento...');
+        
+        // Verificar si el API ResizeObserver está disponible
+        if ('ResizeObserver' in window) {
+            const mapElement = document.getElementById('map');
+            if (mapElement && mapElement.parentElement) {
+                const observer = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        console.log('Cambio detectado en contenedor del mapa:', entry.contentRect);
+                        // Verificar si el cambio es significativo
+                        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+                            this.updateMapSize();
+                        }
+                    }
+                });
+                
+                observer.observe(mapElement.parentElement);
+                console.log('Observador de redimensionamiento configurado para contenedor padre');
+                
+                // También observar cambios en el sidebar
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    observer.observe(sidebar);
+                    console.log('Observador de redimensionamiento configurado para sidebar');
+                }
+            }
+        } else {
+            console.warn('ResizeObserver no está disponible en este navegador');
+        }
+    }
+    
+    updateMapSize() {
+        if (this.map) {
+            console.log('Actualizando tamaño del mapa...');
+            // Pequeño retraso para asegurar que los cambios CSS se hayan aplicado
+            setTimeout(() => {
+                this.map.updateSize();
+                
+                // Si hay un polígono dibujado, ajustar la vista
+                if (this.source && this.source.getFeatures().length > 0) {
+                    const extent = this.source.getExtent();
+                    if (extent && extent[0] !== Infinity) {
+                        this.map.getView().fit(extent, {
+                            padding: [50, 50, 50, 50],
+                            duration: 500
+                        });
+                    }
+                }
+                
+                console.log('Tamaño del mapa actualizado');
+            }, 100);
+        }
     }
 
     verifyDependencies() {
@@ -576,18 +637,43 @@ class PolygonMap {
         this.updateAreaDisplay(0);
     }
 
+    // =============================================
+    // DISPLAY DE COORDENADAS - COMO ANALISIS
+    // =============================================
+
     setupCoordinateDisplay() {
-        this.coordinateDisplay = document.getElementById('coordinate-display');
-        
-        if (!this.coordinateDisplay) {
-            console.warn('No se encontró el elemento coordinate-display');
-            return;
-        }
+        console.log('Configurando display de coordenadas...');
+        this.createCoordinateDisplayElement();
         
         this.map.on('pointermove', (evt) => {
             if (evt.dragging) return;
             this.updateCoordinateDisplay(evt.coordinate);
         });
+    }
+
+    createCoordinateDisplayElement() {
+        console.log('Creando elemento display de coordenadas...');
+        
+        // Eliminar cualquier display existente
+        const existingDisplays = document.querySelectorAll('.coordinate-display');
+        existingDisplays.forEach(display => {
+            console.log('Eliminando display existente:', display);
+            display.remove();
+        });
+        
+        // Crear nuevo elemento
+        this.coordinateDisplay = document.createElement('div');
+        this.coordinateDisplay.className = 'coordinate-display';
+        this.coordinateDisplay.style.cssText = 'position: absolute; bottom: 10px; left: 10px; background-color: rgba(255, 255, 255, 0.9); padding: 5px 10px; border-radius: 4px; font-size: 12px; z-index: 1; font-family: monospace; display: none; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);';
+        
+        const mapContainer = this.map.getTargetElement();
+        if (mapContainer) {
+            mapContainer.style.position = 'relative';
+            mapContainer.appendChild(this.coordinateDisplay);
+            console.log('Display de coordenadas agregado al mapa');
+        } else {
+            console.error('No se encontró el contenedor del mapa');
+        }
     }
 
     updateCoordinateDisplay(coordinate) {
@@ -607,15 +693,15 @@ class PolygonMap {
             if (this.isValidUTM(easting, northing, zone, hemisphere)) {
                 this.coordinateDisplay.textContent = 
                     `Zona ${zone}${hemisphere} | ` +
-                    `Este: ${easting.toFixed(3)} | ` +
-                    `Norte: ${northing.toFixed(3)}`;
-                this.coordinateDisplay.classList.remove('hidden');
+                    `Este: ${easting.toFixed(6)} | ` +
+                    `Norte: ${northing.toFixed(6)}`;
+                this.coordinateDisplay.style.display = 'block';
             } else {
-                this.coordinateDisplay.textContent = 'Coordenadas fuera de rango';
+                this.coordinateDisplay.style.display = 'none';
             }
         } catch (error) {
             console.warn('Error en conversión UTM:', error);
-            this.coordinateDisplay.textContent = 'Error en coordenadas';
+            this.coordinateDisplay.style.display = 'none';
         }
     }
 
@@ -639,6 +725,10 @@ class PolygonMap {
             return northing >= 1000000 && northing <= 10000000;
         }
     }
+
+    // =============================================
+    // FUNCIONALIDADES DE DIBUJO
+    // =============================================
 
     activateDrawing() {
         console.log('Activando dibujo de polígonos...');
@@ -912,7 +1002,7 @@ class PolygonMap {
     }
 
     // =============================================
-    // NUEVAS FUNCIONES PARA DETECCIÓN DE UBICACIÓN
+    // DETECCIÓN DE UBICACIÓN
     // =============================================
 
     calculateCentroidFromGeoJSON(geojson) {
@@ -1004,11 +1094,9 @@ class PolygonMap {
         console.log('Consultando Nominatim para:', lat, lng);
         
         try {
-            // Usar CORS proxy para evitar problemas de CORS
-            const proxyUrl = ''; // Puedes añadir un proxy si es necesario
             const targetUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1&accept-language=es`;
             
-            const response = await fetch(proxyUrl + targetUrl, {
+            const response = await fetch(targetUrl, {
                 headers: {
                     'User-Agent': 'PolygonSystem/1.0',
                     'Accept': 'application/json'
@@ -1033,24 +1121,15 @@ class PolygonMap {
     processLocationData(data, centroid) {
         const address = data.address || {};
         
-        // Extraer los nombres originales
         let parish = address.village || address.town || address.city || address.municipality || '';
         let municipality = address.county || address.state_district || address.region || '';
         let state = address.state || address.region || '';
         
         console.log('Datos de dirección originales:', { parish, municipality, state, address });
         
-        // Solo quitar "Municipio" y "Estado" de los prefijos, manteniendo CASE ORIGINAL
         const cleanParish = this.removePrefixes(parish, ['Parroquia', 'Sector', 'Zona']);
         const cleanMunicipality = this.removePrefixes(municipality, ['Municipio', 'Distrito', 'County']);
         const cleanState = this.removePrefixes(state, ['Estado', 'State', 'Departamento']);
-        
-        // DEBUG: Verificar valores antes de guardar
-        console.log('DEBUG - Valores antes de guardar:');
-        console.log('Parroquia:', cleanParish);
-        console.log('Municipio:', cleanMunicipality);
-        console.log('Estado:', cleanState);
-        console.log('¿Es minúscula?', cleanParish === cleanParish.toLowerCase());
         
         console.log('Datos de dirección limpios:', { 
             parish: cleanParish, 
@@ -1058,7 +1137,6 @@ class PolygonMap {
             state: cleanState 
         });
         
-        // Guardar los valores ORIGINALES con mayúsculas
         document.getElementById('detected_parish').value = cleanParish;
         document.getElementById('detected_municipality').value = cleanMunicipality;
         document.getElementById('detected_state').value = cleanState;
@@ -1074,17 +1152,12 @@ class PolygonMap {
     removePrefixes(str, prefixes) {
         if (!str) return '';
         
-        // Hacer una copia para no modificar el original
         let result = str.trim();
         
-        // Para cada prefijo, verificar si está al inicio (preservando mayúsculas/minúsculas)
         prefixes.forEach(prefix => {
-            // Crear regex que coincida con el prefijo al inicio (case insensitive)
             const regex = new RegExp(`^${prefix}\\s+`, 'i');
             
-            // Verificar si coincide sin modificar mayúsculas/minúsculas
             if (regex.test(result)) {
-                // Remover exactamente el prefijo como está (preservando mayúsculas/minúsculas)
                 const match = result.match(regex);
                 if (match) {
                     result = result.substring(match[0].length);
@@ -1092,7 +1165,6 @@ class PolygonMap {
             }
         });
         
-        // También eliminar espacios múltiples
         result = result.replace(/\s+/g, ' ').trim();
         
         return result;
@@ -1102,7 +1174,6 @@ class PolygonMap {
         try {
             console.log('Buscando parroquia en base de datos:', { parishName, municipalityName, stateName });
             
-            // NO limpiar nada, usar el nombre tal como viene de Nominatim
             this.updateParishSelect(parishName);
             
         } catch (error) {
@@ -1118,28 +1189,24 @@ class PolygonMap {
         
         let foundOption = null;
         
-        // Buscar exactamente como viene (CASE SENSITIVE)
         for (let i = 0; i < parishSelect.options.length; i++) {
             const option = parishSelect.options[i];
             const optionText = option.text;
             
             console.log(`Comparando con opción: "${optionText}"`);
             
-            // 1. Primero intentar coincidencia EXACTA
             if (optionText === parishName) {
                 foundOption = option;
                 console.log(`✓ ¡ENCONTRADO! Coincidencia EXACTA: "${optionText}"`);
                 break;
             }
             
-            // 2. Si no coincide exactamente, buscar si CONTIENE el nombre
             if (optionText.includes(parishName)) {
                 foundOption = option;
                 console.log(`✓ Coincidencia PARCIAL: "${optionText}" contiene "${parishName}"`);
                 break;
             }
             
-            // 3. Buscar sin considerar mayúsculas/minúsculas (pero preservar el texto original)
             if (optionText.toLowerCase() === parishName.toLowerCase()) {
                 foundOption = option;
                 console.log(`✓ Coincidencia (case-insensitive): "${optionText}" == "${parishName}"`);
@@ -1252,26 +1319,22 @@ function validateUTMCoordinates(zone, hemisphere, easting, northing) {
 }
 
 // =============================================
-// VALIDACIÓN MEJORADA DEL FORMULARIO - CORREGIDA
+// VALIDACIÓN DEL FORMULARIO
 // =============================================
 
 function handleSubmitClick(e) {
     console.log('Botón submit clickeado');
     
-    // Solo manejar el click del botón de envío
     const submitter = e.target.closest('#submit-btn') || e.target;
     if (submitter && submitter.id === 'submit-btn') {
-        // Validar antes de enviar
         if (!validatePolygonForm()) {
             e.preventDefault();
             e.stopPropagation();
             return false;
         }
         
-        // Si la validación pasa, mostrar datos en consola
         logFormData();
         
-        // Si la validación pasa, permitir el envío normal
         return true;
     }
 }
@@ -1279,17 +1342,14 @@ function handleSubmitClick(e) {
 function logFormData() {
     console.log('=== DATOS QUE SE ENVIARÁN AL SERVIDOR ===');
     
-    // Obtener el formulario
     const form = document.getElementById('polygon-form');
     if (!form) {
         console.error('No se encontró el formulario');
         return;
     }
     
-    // Crear objeto FormData
     const formData = new FormData(form);
     
-    // Mostrar todos los datos del formulario
     console.log('📋 DATOS DEL FORMULARIO:');
     for (let [key, value] of formData.entries()) {
         if (key === 'geometry' || key === 'location_data') {
@@ -1305,7 +1365,6 @@ function logFormData() {
         }
     }
     
-    // Mostrar datos específicos importantes
     console.log('🎯 DATOS ESPECÍFICOS:');
     console.log('Nombre:', document.getElementById('name')?.value);
     console.log('Descripción:', document.getElementById('description')?.value);
@@ -1313,7 +1372,6 @@ function logFormData() {
     console.log('Parroquia ID:', document.getElementById('parish_id')?.value);
     console.log('Área Ha:', document.getElementById('area_ha')?.value);
     
-    // Datos de ubicación detectada
     console.log('📍 DATOS DE UBICACIÓN DETECTADA:');
     console.log('Parroquia detectada:', document.getElementById('detected_parish')?.value);
     console.log('Municipio detectado:', document.getElementById('detected_municipality')?.value);
@@ -1321,7 +1379,6 @@ function logFormData() {
     console.log('Centroide Lat:', document.getElementById('centroid_lat')?.value);
     console.log('Centroide Lng:', document.getElementById('centroid_lng')?.value);
     
-    // GeoJSON
     const geometry = document.getElementById('geometry')?.value;
     if (geometry) {
         try {
@@ -1335,7 +1392,6 @@ function logFormData() {
         }
     }
     
-    // Location data
     const locationData = document.getElementById('location_data')?.value;
     if (locationData) {
         try {
@@ -1354,12 +1410,10 @@ function logFormData() {
 function validatePolygonForm() {
     console.log('Validando formulario de polígono...');
     
-    // 1. Validar que haya un polígono dibujado
     const geometry = document.getElementById('geometry');
     if (!geometry || !geometry.value) {
         showAlert('Debe dibujar un polígono en el mapa antes de enviar', 'warning');
         
-        // Resaltar el mapa
         const mapContainer = document.getElementById('map');
         if (mapContainer) {
             mapContainer.classList.add('border-2', 'border-red-500');
@@ -1371,7 +1425,6 @@ function validatePolygonForm() {
         return false;
     }
     
-    // 2. Validar que el nombre no esté vacío
     const nameInput = document.getElementById('name');
     if (!nameInput || !nameInput.value.trim()) {
         showAlert('El nombre del polígono es requerido', 'warning');
@@ -1385,7 +1438,6 @@ function validatePolygonForm() {
         return false;
     }
     
-    // 3. Validar que el área sea un número válido
     const areaInput = document.getElementById('area_ha');
     if (areaInput && areaInput.value) {
         const areaValue = parseFloat(areaInput.value);
@@ -1407,22 +1459,18 @@ function validatePolygonForm() {
 function handleFormSubmit(e) {
     console.log('Formulario submit, validando...');
     
-    // Solo validar si el submit fue desde el botón de envío del formulario
     const submitter = e.submitter;
     
-    // Si no es el botón de submit principal, no validar
     if (submitter && !submitter.matches('#submit-btn, #submit-btn *')) {
         return true;
     }
     
-    // Validar antes de enviar
     if (!validatePolygonForm()) {
         e.preventDefault();
         e.stopPropagation();
         return false;
     }
     
-    // Mostrar datos en consola
     logFormData();
     
     return true;
@@ -1434,14 +1482,30 @@ function setupFormValidation() {
     
     if (!polygonForm || !submitBtn) return;
     
-    // Configurar event listeners SOLO para el botón de submit
     submitBtn.addEventListener('click', handleSubmitClick);
-    
-    // En su lugar, usar un listener más específico
     polygonForm.addEventListener('submit', handleFormSubmit, true);
 }
 
-// Event listeners cuando el DOM está cargado
+// =============================================
+// FUNCIÓN DEBOUCE PARA OPTIMIZAR EVENTOS DE REDIMENSIONAMIENTO
+// =============================================
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// =============================================
+// INICIALIZACIÓN Y EVENT LISTENERS
+// =============================================
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM completamente cargado, inicializando mapa...');
     
@@ -1457,22 +1521,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configurar validación del formulario
     setupFormValidation();
     
-    // Configurar redimensionamiento del mapa
+    // Configurar redimensionamiento del mapa (MEJORADO)
     setupMapResizeHandler();
     
-    // Prevenir que otros botones disparen la validación del formulario
+    // Configurar observer para el sidebar
+    setupSidebarObserver();
+    
     const formButtons = document.querySelectorAll('#polygon-form button:not(#submit-btn)');
     formButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.stopPropagation();
-            // No hacer nada especial, dejar que el botón funcione normalmente
         });
     });
     
-    // Prevenir que el formulario se envíe por eventos no deseados
     const polygonForm = document.getElementById('polygon-form');
     polygonForm.addEventListener('submit', function(e) {
-        // Solo permitir submit desde el botón de envío
         const submitter = e.submitter;
         if (!submitter || !submitter.closest('#submit-btn')) {
             e.preventDefault();
@@ -1869,20 +1932,20 @@ function showAlert(message, type = 'info') {
 }
 
 // =============================================
-// FUNCIONES PARA MANEJAR REDIMENSIONAMIENTO DEL MAPA
+// FUNCIONES PARA MANEJAR REDIMENSIONAMIENTO DEL MAPA (MEJORADO)
 // =============================================
 
 function setupMapResizeHandler() {
-    // Redimensionar mapa cuando cambie el tamaño de la ventana
-    window.addEventListener('resize', function() {
+    // Redimensionar cuando cambia el tamaño de la ventana
+    window.addEventListener('resize', debounce(function() {
         if (window.polygonMapInstance && window.polygonMapInstance.map) {
             setTimeout(() => {
                 window.polygonMapInstance.map.updateSize();
             }, 100);
         }
-    });
+    }, 250));
     
-    // Redimensionar mapa después de cargar completamente
+    // Redimensionar cuando se carga la página
     window.addEventListener('load', function() {
         if (window.polygonMapInstance && window.polygonMapInstance.map) {
             setTimeout(() => {
@@ -1891,28 +1954,80 @@ function setupMapResizeHandler() {
         }
     });
     
-    // Observar cambios en el DOM que puedan afectar al tamaño del mapa
-    const observer = new MutationObserver(function(mutations) {
+    // También redimensionar después de que la página esté completamente cargada
+    setTimeout(() => {
+        if (window.polygonMapInstance && window.polygonMapInstance.map) {
+            window.polygonMapInstance.map.updateSize();
+        }
+    }, 1000);
+}
+
+// Nueva función para observar el sidebar
+function setupSidebarObserver() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) {
+        console.log('No se encontró el sidebar');
+        return;
+    }
+    
+    console.log('Configurando observador para sidebar...');
+    
+    // Observer para cambios en el sidebar
+    const sidebarObserver = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
-            if (mutation.type === 'attributes' || mutation.type === 'childList') {
-                if (window.polygonMapInstance && window.polygonMapInstance.map) {
-                    setTimeout(() => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                console.log('Sidebar cambió de estado, redimensionando mapa...');
+                // Esperar a que la animación del sidebar termine
+                setTimeout(() => {
+                    if (window.polygonMapInstance && window.polygonMapInstance.map) {
                         window.polygonMapInstance.map.updateSize();
-                    }, 300);
-                }
+                        console.log('Mapa redimensionado después de cambio en sidebar');
+                    }
+                }, 400);
             }
         });
     });
     
-    // Observar el contenedor del mapa
-    const mapContainer = document.getElementById('map');
-    if (mapContainer) {
-        observer.observe(mapContainer.parentElement, {
-            attributes: true,
-            attributeFilter: ['class', 'style'],
-            childList: false,
-            subtree: false
+    // Observar cambios en el sidebar
+    sidebarObserver.observe(sidebar, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
+    
+    // También escuchar clics en el botón del sidebar
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            console.log('Botón del sidebar clickeado, redimensionando mapa...');
+            // Esperar a que la animación del sidebar termine
+            setTimeout(() => {
+                if (window.polygonMapInstance && window.polygonMapInstance.map) {
+                    window.polygonMapInstance.map.updateSize();
+                    console.log('Mapa redimensionado después de clic en sidebar toggle');
+                }
+            }, 400);
         });
+    }
+}
+
+// También configurar observer para cambios en el contenedor del mapa
+function setupMapContainerObserver() {
+    const mapContainer = document.getElementById('map');
+    if (mapContainer && mapContainer.parentElement) {
+        if ('ResizeObserver' in window) {
+            const resizeObserver = new ResizeObserver(function(entries) {
+                for (let entry of entries) {
+                    if (window.polygonMapInstance && window.polygonMapInstance.map) {
+                        setTimeout(() => {
+                            window.polygonMapInstance.map.updateSize();
+                        }, 50);
+                    }
+                }
+            });
+            
+            resizeObserver.observe(mapContainer.parentElement);
+            console.log('Observador de redimensionamiento configurado para contenedor del mapa');
+        }
     }
 }
 </script>
@@ -1954,14 +2069,11 @@ function setupMapResizeHandler() {
 /* Estilos para controles de mapa */
 #map-controls {
     pointer-events: auto;
+    z-index: 1 !important;
 }
 
 .absolute {
     position: absolute;
-}
-
-.z-50 {
-    z-index: 50;
 }
 
 /* Animaciones suaves */
@@ -1980,44 +2092,41 @@ function setupMapResizeHandler() {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Estilos para el display de coordenadas */
-#coordinate-display {
-    font-family: 'Courier New', monospace;
-    font-size: 0.875rem;
-    color: #1f2937;
-    border: 1px solid #d1d5db;
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(4px);
+/* Aplicar a TODAS las páginas con mapa, no solo análisis */
+.map-container::before {
+    content: '';
+    position: absolute;
+    top: 64px;
+    left: 0;
+    box-shadow: -20px -20px 0 rgb(245 245 244 / 0.9);
+    z-index: 30;
+    width: 40px;
+    height: 40px;
+    border-radius: 45%;
+    transition: right 0.35s cubic-bezier(.4, 0, .2, 1);
 }
 
-.dark #coordinate-display {
-    color: #f9fafb;
-    border-color: #4b5563;
-    background: rgba(31, 41, 55, 0.95) !important;
+/* Estilos para el display de coordenadas - IGUAL QUE ANALISIS */
+.coordinate-display {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1;
+    font-family: monospace;
+    display: none;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.animate-spin {
-    animation: spin 1s linear infinite;
-}
-
-/* Asegurar visibilidad de los controles de OpenLayers */
-.ol-zoom {
-    top: 0.5em;
-    left: 0.5em;
-}
-
-.ol-rotate {
-    top: 0.5em;
-    right: 0.5em;
+/* Estilo para modo oscuro */
+.dark .coordinate-display {
+    background-color: rgba(21, 23, 29, 0.9);
+    color: #e5e7eb;
+    border: 1px solid #4b5563;
 }
 
 /* Estilos para botones deshabilitados */
@@ -2037,57 +2146,63 @@ textarea:focus, select:focus, input[type="text"]:focus, input[type="number"]:foc
 }
 
 /* Grid responsivo */
-@media (min-width: 1024px) {
-    .lg\:grid-cols-2 {
-        grid-template-columns: 1fr 1fr;
+
+
+/* Asegurar que los controles de OpenLayers estén visibles */
+.ol-zoom {
+    top: 0.5em;
+    left: 0.5em;
+}
+
+.ol-rotate {
+    top: 0.5em;
+    right: 0.5em;
+}
+
+.ol-attribution {
+    bottom: 0.5em;
+    right: 0.5em;
+}
+
+/* ============================================= */
+/* ESTILOS PARA REDIMENSIONAMIENTO DEL MAPA */
+/* ============================================= */
+
+/* Asegurar que el contenedor del mapa se ajuste al sidebar */
+.mx-auto {
+    transition: margin-left 0.35s cubic-bezier(.4, 0, .2, 1);
+}
+
+.sidebar:not(.collapsed) ~ .flex-1 .mx-auto {
+    margin-left: 0;
+}
+
+.sidebar.collapsed ~ .flex-1 .mx-auto {
+    margin-left: 0;
+}
+
+/* Forzar que el contenedor del mapa sea responsivo */
+#map {
+    transition: width 0.35s cubic-bezier(.4, 0, .2, 1), height 0.35s cubic-bezier(.4, 0, .2, 1);
+}
+
+
+
+/* Asegurar que el contenedor del mapa tenga dimensiones adecuadas */
+#map {
+    min-height: 400px;
+}
+
+/* Mejorar la experiencia en dispositivos móviles */
+@media (max-width: 768px) {
+    #map {
+        height: 50vh !important;
+        min-height: 300px;
     }
 }
 
-/* Clases de utilidad */
-.backdrop-blur-sm {
-    backdrop-filter: blur(4px);
-}
-
-.ring-1 {
-    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-}
-
-.ring-black {
-    --tw-ring-color: rgba(0, 0, 0, 1);
-}
-
-.ring-opacity-5 {
-    --tw-ring-opacity: 0.05;
-}
-
-/* Clases para modo oscuro */
-.dark .dark\:bg-custom-gray {
-    background-color: #1f2937;
-}
-
-.dark .dark\:border-gray-600 {
-    border-color: #4b5563;
-}
-
-.dark .dark\:text-gray-100 {
-    color: #f3f4f6;
-}
-
-.dark .dark\:text-gray-300 {
-    color: #d1d5db;
-}
-
-.dark .dark\:text-gray-400 {
-    color: #9ca3af;
-}
-
-.dark .dark\:hover\:bg-gray-700:hover {
-    background-color: #374151;
-}
-
-.dark .dark\:bg-gray-800 {
-    background-color: #1f2937;
+/* Animación suave para el redimensionamiento del mapa */
+#map .ol-viewport {
+    transition: transform 0.3s ease-out;
 }
 </style>

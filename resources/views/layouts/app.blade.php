@@ -20,8 +20,9 @@
         'resources/css/app.css', 
         'resources/css/styleDas.css'
     ])
-
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+    
+    <!-- quite esto de aqui ya que no se usa pero dejo constancia por si daña algo -->
+    <!-- <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css"> -->
 
     {{-- Estilos y scripts específicos del head --}}
     @yield('head-styles')
@@ -171,12 +172,13 @@
     ])
     
    <!-- quite unos script de aqui y parece que no pasa nada per etare al pendiente -->
-    
-    @livewireScripts
+
+   
+   <!-- quite esto de libre livewire ya que no entendi bien que hace pero consume vastante recursos al cargar --> 
+   <!--  @livewireScripts -->
     
 </body>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+
 <!-- Script que contiene el js para las animaciones del menu de perfin de usuario -->
 <script src="{{ asset('js/menuUser.js') }}"></script>
 </html>

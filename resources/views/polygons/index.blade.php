@@ -10,19 +10,20 @@
                     
                     <div class="flex justify-end mb-4 space-x-4">
                         <div class="flex space-x-4">
-                            
+
+                            <a href="{{ route('polygons.create') }}" class="px-4 py-2 bg-lime-600/90 text-white rounded-md hover:bg-lime-600 flex items-center space-x-2">
+                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                    <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
+                                </svg>
+                                <span>{{ __('Nuevo') }}</span>
+                            </a>
+
                             <a href="{{ route('polygons.map') }}" class="px-4 py-2 bg-blue-600/90 text-white rounded-md hover:bg-blue-600 flex items-center space-x-2">
                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                                     <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
                                     <circle cx="12" cy="10" r="3"/>
                                 </svg>
                                 <span>{{ __('Mapa') }}</span>
-                            </a>
-                            <a href="{{ route('polygons.create') }}" class="px-4 py-2 bg-lime-600/90 text-white rounded-md hover:bg-lime-600 flex items-center space-x-2">
-                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                                    <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
-                                </svg>
-                                <span>{{ __('Nuevo') }}</span>
                             </a>
                             
                         </div>

@@ -327,13 +327,7 @@ async function handleDisableProducer(producerId, producerName) {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p class="text-gray-600 dark:text-gray-400">No se encontraron productores.</p>
-                            <a href="{{ route('producers.deleted') }}" 
-                               class="inline-flex items-center mt-4 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2">
-                                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                                </svg>
-                                Ver productores eliminados
-                            </a>
+                            
                         </td>
                     </tr>
                 `;
