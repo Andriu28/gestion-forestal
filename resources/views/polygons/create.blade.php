@@ -2193,13 +2193,7 @@ textarea:focus, select:focus, input[type="text"]:focus, input[type="number"]:foc
     min-height: 400px;
 }
 
-/* Mejorar la experiencia en dispositivos móviles */
-@media (max-width: 768px) {
-    #map {
-        height: 50vh !important;
-        min-height: 300px;
-    }
-}
+
 
 /* Animación suave para el redimensionamiento del mapa */
 #map .ol-viewport {

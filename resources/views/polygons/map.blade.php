@@ -16,7 +16,7 @@
                 </div>
 
                 <!-- Mapa -->
-                <div class="relative rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 70vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
+                <div class="relative rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 75vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
                     <div id="map" class="h-full w-full"></div>
                     
                     <!-- Controles del mapa - IGUALES A ANALISIS Y POLYGONS -->
@@ -894,14 +894,6 @@
         /* Asegurar que el contenedor del mapa tenga dimensiones adecuadas */
         #map {
             min-height: 400px;
-        }
-
-        /* Mejorar la experiencia en dispositivos móviles */
-        @media (max-width: 768px) {
-            #map {
-                height: 50vh !important;
-                min-height: 300px;
-            }
         }
 
         /* Animación suave para el redimensionamiento del mapa */
