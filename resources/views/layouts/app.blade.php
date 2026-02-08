@@ -175,7 +175,7 @@
 
    
    <!-- quite esto de libre livewire ya que no entendi bien que hace pero consume vastante recursos al cargar --> 
-   <!--  @livewireScripts -->
+   <!--  @-livewireScripts -->
     
 </body>
 
