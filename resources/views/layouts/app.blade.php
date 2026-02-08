@@ -174,8 +174,7 @@
    <!-- quite unos script de aqui y parece que no pasa nada per etare al pendiente -->
 
    
-   <!-- quite esto de libre livewire ya que no entendi bien que hace pero consume vastante recursos al cargar --> 
-   <!--  @-livewireScripts -->
+    @livewireScripts
     
 </body>
 
