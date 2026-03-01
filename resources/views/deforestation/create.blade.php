@@ -307,8 +307,24 @@
                             <textarea id="description" name="description" oninput="capitalizarPrimeraLetra(this)" rows="2" class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" placeholder="Descripción del área de estudio..."></textarea>
                             <x-input-error :messages="$errors->get('address')" class="mt-2" />
                         </div>
+
+                        <div class="mt-4">
+                            <x-input-label for="producer_id" :value="__('Productor')" /> <!-- MODIFICADO: se quitó (Opcional) -->
+                            <select id="producer_id" name="producer_id"
+                                class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                <option value="">Seleccione un productor</option>
+                                @foreach($producers as $producer)
+                                    <option value="{{ $producer->id }}" {{ old('producer_id') == $producer->id ? 'selected' : '' }}>
+                                        {{ $producer->name }} {{ $producer->lastname }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <x-input-error class="mt-2" :messages="$errors->get('producer_id')" />
+                            <!-- MODIFICADO: div para mensaje de error del productor -->
+                            <div id="producer-error" class="text-red-600 text-sm mt-1 hidden"></div>
+                        </div>
                         
-                        <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="mt-4 grid grid-cols-2 gap-4 mb-6">
                         <div>
                             <x-input-label for="start_year" :value="__('Año Inicio:') " />
                             <select class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
@@ -345,7 +361,8 @@
 
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Si desactivas esta opción, el análisis se mostrará pero no se guardará.
-                            <span id="name-required-hint" class="font-semibold text-green-600 hidden"> (Nombre requerido)</span>
+                            <!-- MODIFICADO: hint unificado para nombre y productor -->
+                            <span id="name-required-hint" class="font-semibold text-green-600 hidden"> (Nombre y productor requeridos)</span>
                         </p>
                         
                     </div>
@@ -555,7 +572,6 @@ function closeCoordinateModal() {
     }, 300);
 }
 
-// Abrir modal de coordenadas UTM
 // Abrir modal de coordenadas UTM - AGREGAR CIERRE DE OPACIDAD
 document.getElementById('manual-polygon-toggle').addEventListener('click', function(e) {
     e.stopPropagation();
@@ -1178,43 +1194,55 @@ function hideEnhancedLoader() {
     }, 1500);
 }
 
-// Manejar el envío del formulario con AJAX
-// Reemplaza el manejador de envío del formulario actual con este:
-
-// Función para validar el formulario en tiempo real
+// ===== MODIFICADO: VALIDACIÓN EN TIEMPO REAL (NOMBRE Y PRODUCTOR) =====
 function validateSaveOption() {
     const saveCheckbox = document.getElementById('save_analysis');
     const nameInput = document.getElementById('name');
+    const producerSelect = document.getElementById('producer_id');
     const nameErrorDiv = document.getElementById('name-error');
+    const producerErrorDiv = document.getElementById('producer-error');
     const nameRequiredHint = document.getElementById('name-required-hint');
     const submitButton = document.getElementById('submit-button');
     
     const nameValue = nameInput.value.trim();
-
+    const producerValue = producerSelect.value; // vacío si no hay selección
+    
     if (saveCheckbox.checked) {
         nameRequiredHint.classList.remove('hidden');
-
+        let hasError = false;
+        
+        // Validar nombre
         if (!nameValue) {
             nameErrorDiv.textContent = 'Para guardar el análisis, debes ingresar un nombre para el área.';
             nameErrorDiv.classList.remove('hidden');
             nameInput.classList.add('border-red-500', 'focus:ring-red-500');
-            
-            // Lógica del Tooltip y Deshabilitado
-            submitButton.disabled = true;
-            submitButton.title = "Debes ingresar el nombre del área para continuar";
-            submitButton.classList.add('cursor-not-allowed'); // Feedback visual adicional
+            hasError = true;
         } else {
             nameErrorDiv.classList.add('hidden');
             nameInput.classList.remove('border-red-500', 'focus:ring-red-500');
-            
-            submitButton.disabled = false;
-            submitButton.title = ""; // Quitamos el tooltip
-            submitButton.classList.remove('cursor-not-allowed');
         }
+        
+        // Validar productor
+        if (!producerValue) {
+            producerErrorDiv.textContent = 'Para guardar el análisis, debes seleccionar un productor.';
+            producerErrorDiv.classList.remove('hidden');
+            producerSelect.classList.add('border-red-500', 'focus:ring-red-500');
+            hasError = true;
+        } else {
+            producerErrorDiv.classList.add('hidden');
+            producerSelect.classList.remove('border-red-500', 'focus:ring-red-500');
+        }
+        
+        submitButton.disabled = hasError;
+        submitButton.title = hasError ? "Completa los campos requeridos" : "";
+        submitButton.classList.toggle('cursor-not-allowed', hasError);
     } else {
+        // Si no se guarda, ocultar advertencias y habilitar botón
         nameRequiredHint.classList.add('hidden');
         nameErrorDiv.classList.add('hidden');
         nameInput.classList.remove('border-red-500', 'focus:ring-red-500');
+        producerErrorDiv.classList.add('hidden');
+        producerSelect.classList.remove('border-red-500', 'focus:ring-red-500');
         
         submitButton.disabled = false;
         submitButton.title = "";
@@ -1222,12 +1250,11 @@ function validateSaveOption() {
     }
 }
 
-// Evento cuando cambia la casilla de guardar
-document.getElementById('save_analysis').addEventListener('change', function(e) {
+// Eventos que disparan la validación
+document.getElementById('save_analysis').addEventListener('change', function() {
     validateSaveOption();
-    
     // Si se activa y el nombre está vacío, enfocar el campo
-    if (e.target.checked) {
+    if (this.checked) {
         const nameValue = document.getElementById('name').value.trim();
         if (!nameValue) {
             document.getElementById('name').focus();
@@ -1235,11 +1262,12 @@ document.getElementById('save_analysis').addEventListener('change', function(e) 
     }
 });
 
-// Evento cuando se escribe en el campo nombre
-document.getElementById('name').addEventListener('input', function(e) {
-    if (document.getElementById('save_analysis').checked) {
-        validateSaveOption();
-    }
+document.getElementById('name').addEventListener('input', function() {
+    validateSaveOption();
+});
+
+document.getElementById('producer_id').addEventListener('change', function() {
+    validateSaveOption();
 });
 
 // ===== MANEJADOR DE ENVÍO DEL FORMULARIO ACTUALIZADO =====
@@ -1269,20 +1297,29 @@ document.getElementById('analysis-form').addEventListener('submit', function(e) 
         return false;
     }
     
-    // Validar la casilla de guardar y el nombre
+    // Validar la casilla de guardar, nombre y productor
     const saveCheckbox = document.getElementById('save_analysis');
     const nameInput = document.getElementById('name');
+    const producerSelect = document.getElementById('producer_id');
     const nameValue = nameInput.value.trim();
+    const producerValue = producerSelect.value;
     
-    if (saveCheckbox.checked && !nameValue) {
-        e.preventDefault();
-        nameInput.classList.add('border-red-500', 'ring-2', 'ring-red-200');
-        nameInput.focus();
-        
-        showAlert('Para guardar el análisis, debes ingresar un nombre para el área.', 'warning');
-        return false;
+    if (saveCheckbox.checked) {
+        if (!nameValue) {
+            e.preventDefault();
+            nameInput.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+            nameInput.focus();
+            showAlert('Para guardar el análisis, debes ingresar un nombre para el área.', 'warning');
+            return false;
+        }
+        if (!producerValue) {
+            e.preventDefault();
+            producerSelect.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+            producerSelect.focus();
+            showAlert('Para guardar el análisis, debes seleccionar un productor.', 'warning');
+            return false;
+        }
     }
-    
     
     // Deshabilitar el botón de envío para evitar múltiples clics
     const submitButton = document.getElementById('submit-button');
@@ -1316,28 +1353,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('save_analysis').addEventListener('change', function(e) {
         localStorage.setItem('saveAnalysisPreference', e.target.checked);
     });
-});
-
-// Validación cuando el usuario escribe en el campo nombre
-document.getElementById('name').addEventListener('input', function(e) {
-    const saveCheckbox = document.getElementById('save_analysis');
-    const nameValue = e.target.value.trim();
-    const nameErrorDiv = document.getElementById('name-error');
-    const nameRequiredHint = document.getElementById('name-required-hint');
-    
-    if (saveCheckbox.checked) {
-        if (!nameValue) {
-            nameInput.classList.add('border-yellow-300', 'ring-1', 'ring-yellow-200');
-            nameErrorDiv.textContent = 'Por favor, ingresa un nombre para el área.';
-            nameErrorDiv.classList.remove('hidden');
-            nameRequiredHint.classList.remove('hidden');
-        } else {
-            nameInput.classList.remove('border-yellow-300', 'ring-1', 'ring-yellow-200', 
-                                       'border-red-500', 'ring-2', 'ring-red-200');
-            nameErrorDiv.classList.add('hidden');
-            nameRequiredHint.classList.remove('hidden');
-        }
-    }
 });
 
 // Función para calcular área en hectáreas desde coordenadas WGS84
@@ -1380,9 +1395,6 @@ function calculateAreaHectares(coordinates) {
         return 0;
     }
 }
-
-// Función para actualizar el display del área
-
 
 // Función para calcular área desde un polígono OpenLayers
 function calculatePolygonArea(feature) {
@@ -1503,7 +1515,7 @@ input[type="text"], textarea, select {
 }
 
 /* Estilo para el mensaje de error */
-#name-error {
+#name-error, #producer-error {
     animation: fadeIn 0.3s ease-in;
 }
 
