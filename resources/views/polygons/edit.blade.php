@@ -1,67 +1,131 @@
-{{-- [file name]: edit.blade.php --}}
 <x-app-layout>
-    <div class="mx-auto">
+    <div class="mx-auto ">
         <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
-                    <i class="fas fa-draw-polygon mr-2"></i> Editar Polígono: {{ $polygon->name }}
+                   Editar Polígono: {{ $polygon->name }}
                 </h2>
 
                 <form action="{{ route('polygons.update', $polygon) }}" method="POST" id="polygon-form" novalidate>
                     @csrf
                     @method('PUT')
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                         <!-- Columna del Mapa (ocupa 2/3 en pantallas grandes) -->
-                        <div class="lg:col-span-2">
-                            <x-input-label for="map" />
-                            <div class="relative rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 70vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
+                        <div class="lg:col-span-3">
+                            <x-input-label for="map" class="sr-only">Mapa</x-input-label>
+                            <div class="relative rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 77vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
                                 <div id="map" class="h-full w-full"></div>
 
-                                <!-- Controles simplificados del mapa -->
-                                <div id="map-controls" class="absolute top-4 right-4 z-50 flex flex-col space-y-2">
-                                    <!-- Segunda fila de controles -->
-                                    <div class="flex space-x-2">
+                                <!-- Controles del mapa - CON BOTÓN DE EDICIÓN -->
+                                <div id="map-controls">
+                                    <div class="flex flex-col items-end space-y-2">
+                                        <!-- Fila superior: Cambiar Mapa y Pantalla Completa -->
+                                        <div class="flex space-x-2">
+                                            <!-- Botón para cambiar mapa base -->
+                                            <!-- Botón de edición (se activará cuando haya un polígono) -->
+                                            <button type="button" id="edit-polygon" title="Editar Polígono" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg hidden">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit w-6 h-6">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                </svg>
+                                                
+                                            </button>
+
+                                            <div class="relative">
+
+                                                <button type="button" id="base-map-toggle" title="Cambiar mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                                                    </svg>
+                                                    Mapas
+                                                </button>
+                                                
+                                                <!-- Menú de cambio de mapa -->
+                                                <div id="base-map-menu"
+                                                    class="absolute mt-3 w-40 rounded-xl shadow-lg bg-gray-50 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 
+                                                            transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none hidden"
+                                                    style="right: 1px;">
+                                                    <!-- Flechita -->
+                                                    <div class="absolute -top-2 right-6 w-8 h-2 pointer-events-none">
+                                                        <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
+                                                            <polygon points="8,0 16,8 0,8" fill="currentColor"/>
+                                                        </svg>
+                                                    </div>
+                                                    <!-- Menú -->
+                                                    <div class="py-2" role="menu" aria-orientation="vertical">
+                                                        <button data-layer="osm" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">OpenStreetMap</button>
+                                                        <button data-layer="satellite" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Satélite Esri</button>
+                                                        <button data-layer="maptiler_satellite" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">MapTiler Satélite</button>
+                                                        <button data-layer="terrain" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Relieve</button>
+                                                        <button data-layer="dark" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Oscuro</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Botón de pantalla completa -->
+                                            <button type="button" id="fullscreen-toggle" title="Pantalla Completa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
                                         
-                                        <!-- Coordenadas Manuales -->
-                                        <button id="manual-polygon-toggle" type="button" title="Escribir Coordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
-                                                <path d="M13 21h8"/>
-                                                <path d="m15 5 4 4"/>
-                                                <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
-                                            </svg>
-                                        </button>
-
-                                        <!-- Dibujar Polígono -->
-                                        <button type="button" id="draw-polygon" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                            </svg>
-                                            Dibujar
-                                        </button>
-
-                                        <!-- Limpiar Mapa -->
-                                        <button type="button" id="clear-map" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                            Limpiar
-                                        </button>
-
-                                        <!-- Botón de edición (se agregará dinámicamente) -->
-                                        <button id="toggle-edit" type="button" title="Editar puntos" class="hidden bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit w-6 h-6">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                            </svg>
-                                            Editar
-                                        </button>
+                                        <!-- Fila media: Botones de acción principal -->
+                                        <div class="flex space-x-2">
+                                            <button type="button" id="manual-polygon-toggle" title="Escribir Coordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6 lucide-pencil-line">
+                                                    <path d="M13 21h8"/>
+                                                    <path d="m15 5 4 4"/>
+                                                    <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <!-- Botón de  -->
+                                        <div class="flex space-x-2">
+                                            <button type="button" id="draw-polygon" title="Dibujar Nuevo Polígono" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6 lucide-plus">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                </svg>
+                                                
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Fila inferior: Botones de limpieza -->
+                                        <div class="flex space-x-2">
+                                            <button type="button" id="clear-map" title="Limpiar Mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6 lucide-clear">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                                
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Coordenadas en tiempo real -->
-                                <div class="absolute left-1/2 bottom-4 transform -translate-x-1/2 z-40 bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm shadow">
-                                    <span id="coordinates-display">Lat: 0.000000 | Lng: 0.000000</span>
+                                <!-- Display de coordenadas -->
+                                <div class="absolute bottom-3 left-3 z-10">
+                                    <div id="coordinate-display" class="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2 rounded-lg shadow-lg text-sm font-mono hidden">
+                                        Lat: 0.000000, Lng: 0.000000
+                                    </div>
+                                </div>
+
+                                <!-- Información del punto seleccionado (para edición) -->
+                                <div id="point-info" class="absolute top-3 left-3 z-10 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg max-w-xs hidden">
+                                    <h4 class="font-bold text-gray-900 dark:text-white mb-2">Punto seleccionado</h4>
+                                    <div class="space-y-1 text-sm">
+                                        <div><span class="font-semibold">Lat:</span> <span id="selected-lat">0.000000</span></div>
+                                        <div><span class="font-semibold">Lng:</span> <span id="selected-lng">0.000000</span></div>
+                                        <div><span class="font-semibold">Índice:</span> <span id="selected-index">-</span></div>
+                                    </div>
+                                    <div class="mt-3 space-y-2">
+                                        <button type="button" id="delete-point" class="w-full bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded text-sm">
+                                            Eliminar punto
+                                        </button>
+                                        <button type="button" id="update-point" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded text-sm">
+                                            Actualizar coordenadas
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <x-input-error class="mt-2" :messages="$errors->get('geometry')" />
@@ -69,7 +133,7 @@
 
                         <!-- Panel lateral de puntos del polígono (ocupa 1/3 en pantallas grandes) -->
                         <div class="lg:col-span-1">
-                            <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl p-4 md:p-6 lg:p-6 h-full">
+                            <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl h-full">
                                 <div class="text-gray-900 dark:text-gray-100 h-full flex flex-col">
                                     <h2 class="text-lg font-semibold mb-4 flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
@@ -81,14 +145,13 @@
                                     
                                     <div class="flex-1 overflow-hidden">
                                         <!-- Lista de puntos -->
-                                        <div id="points-container" class="space-y-3 overflow-y-auto max-h-[400px] pr-2">
-                                            <!-- Los puntos se agregarán dinámicamente aquí -->
+                                        <div id="points-container" class="space-y-3 overflow-y-auto max-h-[40vh] pr-2">
                                             <div id="no-points-message" class="text-center py-8 text-gray-500 dark:text-gray-400">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                                 </svg>
                                                 <p>No hay puntos para mostrar</p>
-                                                <p class="text-sm mt-1">Dibuja un polígono o carga uno existente</p>
+                                                <p class="text-sm mt-1">Carga un polígono o dibuja uno nuevo</p>
                                             </div>
                                         </div>
                                     </div>
@@ -98,8 +161,23 @@
                                         <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">Resumen</h3>
                                         <div class="text-sm space-y-1">
                                             <div><strong>Área:</strong> <span id="summary-area">0.00</span> Ha</div>
-                                            <div><strong>Perímetro:</strong> <span id="summary-perimeter">0.00</span> km</div>
                                             <div><strong>Número de puntos:</strong> <span id="summary-points">0</span></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Controles de edición -->
+                                    <div id="edit-controls" class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hidden">
+                                        <h3 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Controles de edición</h3>
+                                        <div class="space-y-2">
+                                            <button type="button" id="add-point" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded text-sm flex items-center justify-center">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                </svg>
+                                                Agregar punto
+                                            </button>
+                                            <button type="button" id="finish-edit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-sm">
+                                                Finalizar edición
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -107,7 +185,7 @@
                         </div>
 
                         <!-- Columna del Formulario (ocupa todo el ancho debajo del mapa) -->
-                        <div class="lg:col-span-3">
+                        <div class="lg:col-span-4">
                             <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl p-4 md:p-6 lg:p-8">
                                 <div class="text-gray-900 dark:text-gray-100">
                                     <h2 class="text-lg font-semibold mb-4">Datos del Polígono</h2>
@@ -125,7 +203,7 @@
                                             <div>
                                                 <x-input-label for="description" :value="__('Descripción')" />
                                                 <textarea id="description" name="description" rows="3"
-                                                    class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 transition-all duration-200"
+                                                    class="w-full px-2.5 sm:px-3 py-1.5 mt-1 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 "
                                                     placeholder="Descripción del polígono...">{{ old('description', $polygon->description) }}</textarea>
                                                 <x-input-error class="mt-2" :messages="$errors->get('description')" />
                                             </div>
@@ -133,7 +211,7 @@
                                             <div>
                                                 <x-input-label for="producer_id" :value="__('Productor (Opcional)')" />
                                                 <select id="producer_id" name="producer_id"
-                                                    class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 transition-all duration-200">
+                                                    class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 ">
                                                     <option value="">Seleccione un productor</option>
                                                     @foreach($producers as $producer)
                                                         <option value="{{ $producer->id }}" {{ old('producer_id', $polygon->producer_id) == $producer->id ? 'selected' : '' }}>
@@ -150,7 +228,7 @@
                                             <div>
                                                 <x-input-label for="parish_id" :value="__('Parroquia (Opcional)')" />
                                                 <select id="parish_id" name="parish_id"
-                                                    class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 transition-all duration-200">
+                                                    class="w-full px-2.5 sm:px-3 py-1.5 mt-1 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 ">
                                                     <option value="">Seleccione una parroquia</option>
                                                     @foreach($parishes as $parish)
                                                         <option value="{{ $parish->id }}" {{ old('parish_id', $polygon->parish_id) == $parish->id ? 'selected' : '' }}>
@@ -167,7 +245,7 @@
                                             <div>
                                                 <x-input-label for="area_ha" :value="__('Área en Hectáreas')" />
                                                 <x-text-input id="area_ha" name="area_ha" type="number" step="0.01"
-                                                    class="mt-1 block w-full" value="{{ old('area_ha', $polygon->area_ha) }}" placeholder="Se calculará automáticamente" />
+                                                    class="mt-1  w-full" value="{{ old('area_ha', $polygon->area_ha) }}" placeholder="Se calculará automáticamente" />
                                                 <x-input-error class="mt-2" :messages="$errors->get('area_ha')" />
                                                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Dejar vacío para calcular automáticamente desde el mapa</p>
                                             </div>
@@ -246,12 +324,12 @@
     </div>
 
     <!-- Modal para coordenadas manuales -->
-    <div id="manual-polygon-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-lg mx-4">
+    <div id="manual-polygon-modal" class="hidden">
+        <div class="bg-white dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-lg">
             <!-- Header -->
             <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ingresar Coordenadas UTM</h3>
-                <button id="close-modal" type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -313,8 +391,8 @@
                         </p>
                     </div>
                    
-                    <textarea id="bulk-coords" rows="6" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 font-mono text-xs" 
-                        placeholder="Ejemplo:&#10;Zona,Hemisferio,Este,Norte&#10;20,N,476097.904,1157477.299&#10;20,N,476181.804,1157432.362&#10;20,N,475211.522,1157534.959"></textarea>
+                   <textarea id="bulk-coords" rows="6" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 font-mono text-xs" 
+          placeholder="Ejemplo:&#10;&#9;Zona,Hemisferio,Este,Norte&#10;&#9;20,N,476097.904,1157477.299&#10;&#9;20,N,476181.804,1157432.362&#10;&#9;20,N,475211.522,1157534.959"></textarea>
                 </div>
 
                 <!-- Lista de coordenadas agregadas -->
@@ -373,7 +451,7 @@
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Zona UTM</label>
                         <input type="number" id="edit-point-zone" min="1" max="60"
@@ -387,13 +465,6 @@
                             <option value="N">Norte (N)</option>
                             <option value="S">Sur (S)</option>
                         </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Altura (m)</label>
-                        <input type="number" id="edit-point-elevation" step="0.1"
-                            class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2" 
-                            placeholder="Ej: 100">
                     </div>
                 </div>
                 
@@ -424,655 +495,1563 @@
     </div>
 </x-app-layout>
 
-<!-- Estilos y librerías -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<!-- Incluir OpenLayers PRIMERO -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css">
+<script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
 
-<!-- Cargar utilidades primero -->
-<script src="{{ asset('js/polygon/polygon-map-edit.js') }}"></script>
+<!-- SweetAlert2 para notificaciones -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-// Variables globales
-let mapManager = null;
-let isEditModeActive = false;
-let editHandler = null;
-let polygonPoints = []; // Array para almacenar los puntos del polígono
+// CLASE PRINCIPAL PARA EDITAR POLÍGONOS CON OPENLAYERS
+class PolygonEditor {
+    constructor(polygonGeoJSON = null) {
+        this.map = null;
+        this.source = null;
+        this.vectorLayer = null;
+        this.modify = null;
+        this.draw = null;
+        this.select = null;
+        this.currentFeature = null;
+        this.coordinateDisplay = null;
+        this.baseLayers = {};
+        this.currentBaseLayer = null;
+        this.existingPolygon = polygonGeoJSON;
+        this.isEditMode = false;
+        this.polygonPoints = [];
+        this.selectedPointIndex = -1;
+        this.selectedFeature = null;
 
-/**
- * Convertir coordenadas WGS84 a UTM
- */
-function convertWGS84toUTM(lat, lng, zone = 20, hemisphere = 'N') {
-    try {
-        // Definir proyección UTM (zona 20N para Venezuela por defecto)
-        const utmProjection = `+proj=utm +zone=${zone} +${hemisphere === 'N' ? 'north' : 'south'} +ellps=WGS84 +datum=WGS84 +units=m +no_defs`;
-        const wgs84Projection = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
+        // Coordenadas de Venezuela por defecto
+        this.INITIAL_CENTER = [-63.172905251869125, 10.555594747510682];
+        this.INITIAL_ZOOM = 15;
+        this.MINZOOM = 5;
+        this.MAXZOOM = 18;
+
+        console.log('Inicializando PolygonEditor...');
         
-        // Convertir usando proj4
-        const point = proj4(wgs84Projection, utmProjection, [lng, lat]);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
+        }
+    }
+
+    init() {
+        console.log('Ejecutando init()...');
         
-        return {
-            easting: point[0].toFixed(3),
-            northing: point[1].toFixed(3),
-            zone: zone,
-            hemisphere: hemisphere
-        };
-    } catch (error) {
-        console.error('Error convirtiendo a UTM:', error);
-        return {
-            easting: 'Error',
-            northing: 'Error',
-            zone: zone,
-            hemisphere: hemisphere
+        const mapElement = document.getElementById('map');
+        if (!mapElement) {
+            console.error('ERROR: No se encontró el elemento #map');
+            return;
+        }
+
+        this.defineCustomProjections();
+        this.initializeMap();
+        this.setupEventListeners();
+        this.setupCoordinateDisplay();
+        this.setupMapResizeObserver();
+        
+        // Cargar polígono existente si está disponible
+        if (this.existingPolygon) {
+            setTimeout(() => this.loadExistingPolygon(), 500);
+        }
+        
+        setTimeout(() => {
+            if (this.map) {
+                this.map.updateSize();
+            }
+        }, 500);
+    }
+
+    setupMapResizeObserver() {
+        if ('ResizeObserver' in window) {
+            const mapElement = document.getElementById('map');
+            if (mapElement && mapElement.parentElement) {
+                const observer = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+                            this.updateMapSize();
+                        }
+                    }
+                });
+                
+                observer.observe(mapElement.parentElement);
+            }
+        }
+    }
+    
+    updateMapSize() {
+        if (this.map) {
+            setTimeout(() => {
+                this.map.updateSize();
+                
+                if (this.source && this.source.getFeatures().length > 0) {
+                    const extent = this.source.getExtent();
+                    if (extent && extent[0] !== Infinity) {
+                        this.map.getView().fit(extent, {
+                            padding: [50, 50, 50, 50],
+                            duration: 500
+                        });
+                    }
+                }
+            }, 100);
+        }
+    }
+
+    defineCustomProjections() {
+        if (typeof proj4 !== 'undefined') {
+            proj4.defs('EPSG:2203', 
+                '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs'
+            );
+            
+            proj4.defs('EPSG:32620',
+                '+proj=utm +zone=20 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
+            );
+            
+            if (typeof ol !== 'undefined') {
+                ol.proj.proj4.register(proj4);
+            }
+        }
+    }
+
+    initializeMap() {
+        try {
+            this.setupBaseLayers();
+            this.setupVectorLayer();
+            this.setupMapInstance();
+            console.log('Mapa inicializado correctamente');
+        } catch (error) {
+            console.error('Error al inicializar el mapa:', error);
+            this.showAlert('Error al cargar el mapa: ' + error.message, 'error');
+        }
+    }
+
+    setupBaseLayers() {
+        this.baseLayers = {
+            osm: new ol.layer.Tile({
+                title: 'OpenStreetMap',
+                visible: true,
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                    attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                })
+            }),
+            satellite: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                    attributions: 'Tiles © Esri'
+                }),
+                visible: false,
+                title: 'Satélite Esri'
+            }),
+            terrain: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}',
+                    attributions: 'Tiles © Esri'
+                }),
+                visible: false,
+                title: 'Relieve'
+            }),
+            dark: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                    attributions: '© CartoDB'
+                }),
+                visible: false,
+                title: 'Oscuro'
+            }),
+            maptiler_satellite: new ol.layer.Tile({
+                source: new ol.source.XYZ({
+                    url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=scUozK4fig7bE6jg7TPi',
+                    attributions: '© MapTiler & OpenStreetMap',
+                    tileSize: 512,
+                    maxZoom: 20
+                }),
+                visible: false,
+                title: 'MapTiler Satélite'
+            })
         };
     }
-}
 
-/**
- * Calcular distancia entre dos puntos en kilómetros
- */
-function calculateDistance(lat1, lng1, lat2, lng2) {
-    const R = 6371; // Radio de la Tierra en km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-}
+    setupVectorLayer() {
+        this.source = new ol.source.Vector();
 
-/**
- * Crear marcador personalizado para un punto
- */
-function createPointMarker(point, index) {
-    // Crear ícono personalizado con número
-    const icon = L.divIcon({
-        className: 'custom-polygon-point-marker',
-        html: `
-            <div class="point-marker-container">
-                <div class="point-marker-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="point-marker-label">${index + 1}</div>
-            </div>
-        `,
-        iconSize: [40, 40],
-        iconAnchor: [20, 43],
-        popupAnchor: [0, -45]
-    });
-    
-    // Crear marcador
-    const marker = L.marker([point.lat, point.lng], {
-        icon: icon,
-        draggable: isEditModeActive,
-        zIndexOffset: 1000 + index
-    });
-    
-    // Agregar popup informativo
-    const utm = convertWGS84toUTM(point.lat, point.lng, point.utmZone || 20, point.utmHemisphere || 'N');
-    
-    marker.bindPopup(`
-        <div class="p-3 min-w-[200px]">
-            <div class="flex items-center mb-2">
-                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-                    <span class="text-blue-600 font-semibold">${index + 1}</span>
-                </div>
-                <div>
-                    <h4 class="font-bold text-gray-900">Punto ${index + 1}</h4>
-                    <p class="text-xs text-gray-500">${point.note || 'Sin descripción'}</p>
-                </div>
-            </div>
-            
-            <div class="space-y-2 text-sm">
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <span class="text-gray-600">Lat:</span>
-                        <span class="font-mono text-green-600 ml-1">${point.lat.toFixed(6)}</span>
-                    </div>
-                    <div>
-                        <span class="text-gray-600">Lng:</span>
-                        <span class="font-mono text-green-600 ml-1">${point.lng.toFixed(6)}</span>
-                    </div>
-                </div>
+        this.vectorLayer = new ol.layer.Vector({
+            source: this.source,
+            style: (feature) => this.getFeatureStyle(feature)
+        });
+    }
+
+    getFeatureStyle(feature) {
+        const styles = [];
+        const areaHa = feature.get('area') || 0;
+        
+        // Estilo base del polígono
+        styles.push(new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: this.isEditMode ? '#8b5cf6' : '#10b981',
+                width: this.isEditMode ? 4 : 3,
+                lineDash: this.isEditMode ? [10, 5] : null,
+                lineCap: 'round'
+            }),
+            fill: new ol.style.Fill({
+                color: this.isEditMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(16, 185, 129, 0.3)'
+            })
+        }));
+        
+        // Texto del área
+        if (areaHa > 0) {
+            styles.push(new ol.style.Style({
+                text: new ol.style.Text({
+                    text: `${areaHa.toFixed(6)} ha`,
+                    font: 'bold 14px Arial, sans-serif',
+                    fill: new ol.style.Fill({ color: '#1f2937' }),
+                    stroke: new ol.style.Stroke({ color: '#ffffff', width: 3 }),
+                    backgroundFill: new ol.style.Fill({ color: 'rgba(255, 255, 255, 0.7)' }),
+                    padding: [4, 8, 4, 8],
+                    textBaseline: 'middle',
+                    textAlign: 'center',
+                    offsetY: 0
+                })
+            }));
+        }
+        
+        // Puntos de vértice en modo edición
+        if (this.isEditMode && feature === this.currentFeature) {
+            const geometry = feature.getGeometry();
+            if (geometry.getType() === 'Polygon') {
+                const coordinates = geometry.getCoordinates()[0];
                 
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <span class="text-gray-600">Este:</span>
-                        <span class="font-mono text-blue-600 ml-1">${utm.easting}</span>
-                    </div>
-                    <div>
-                        <span class="text-gray-600">Norte:</span>
-                        <span class="font-mono text-blue-600 ml-1">${utm.northing}</span>
-                    </div>
-                </div>
-                
-                <div class="flex justify-between text-xs text-gray-500 pt-2 border-t">
-                    <span>Zona: ${utm.zone}${utm.hemisphere}</span>
-                    ${point.elevation ? `<span>Altura: ${point.elevation}m</span>` : ''}
-                </div>
-            </div>
-            
-            <div class="mt-3 pt-2 border-t">
-                <button class="w-full py-1 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded edit-point-btn" data-index="${index}">
-                    ✏️ Editar este punto
-                </button>
-            </div>
-        </div>
-    `);
-    
-    // Evento para editar desde el popup
-    marker.on('popupopen', function() {
-        setTimeout(() => {
-            const editBtn = document.querySelector('.leaflet-popup-content .edit-point-btn');
-            if (editBtn) {
-                editBtn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    openEditPointModal(index);
+                coordinates.forEach((coord, index) => {
+                    if (index < coordinates.length - 1) { // No mostrar el último punto duplicado
+                        styles.push(new ol.style.Style({
+                            image: new ol.style.Circle({
+                                radius: 8,
+                                fill: new ol.style.Fill({
+                                    color: index === this.selectedPointIndex ? '#ef4444' : '#3b82f6'
+                                }),
+                                stroke: new ol.style.Stroke({
+                                    color: '#ffffff',
+                                    width: 3
+                                })
+                            }),
+                            geometry: new ol.geom.Point(coord),
+                            text: new ol.style.Text({
+                                text: (index + 1).toString(),
+                                font: 'bold 12px Arial, sans-serif',
+                                fill: new ol.style.Fill({ color: '#ffffff' }),
+                                offsetY: 0
+                            })
+                        }));
+                    }
                 });
             }
-        }, 100);
-    });
-    
-    // Evento para arrastrar marcador - CORREGIDO
-    if (isEditModeActive) {
-        marker.on('dragend', function(e) {
-            const newLatLng = e.target.getLatLng();
-            const pointIndex = index;
-            
-            // Actualizar punto
-            polygonPoints[pointIndex].lat = newLatLng.lat;
-            polygonPoints[pointIndex].lng = newLatLng.lng;
-            
-            // Actualizar polígono - LLAMADA CORREGIDA
-            updatePolygonFromPoints(polygonPoints);
-            
-            // Actualizar lista
-            updatePointsList(polygonPoints);
-            
-            // Mostrar mensaje
-            showMessage(`Punto ${pointIndex + 1} movido a nueva ubicación`, 'success');
-        });
-    }
-    
-    return marker;
-}
-
-/**
- * Actualizar marcadores en el mapa
- */
-function updatePointMarkers() {
-    // Limpiar marcadores anteriores
-    if (window.pointMarkersLayer) {
-        window.pointMarkersLayer.clearLayers();
-    } else {
-        window.pointMarkersLayer = L.layerGroup().addTo(mapManager.map);
-    }
-    
-    // Agregar nuevos marcadores
-    polygonPoints.forEach((point, index) => {
-        const marker = createPointMarker(point, index);
-        marker.addTo(window.pointMarkersLayer);
-    });
-    
-    // Opcional: Conectar puntos con líneas
-    updatePointConnections();
-}
-
-/**
- * Conectar puntos con líneas para mejor visualización
- */
-function updatePointConnections() {
-    // Limpiar conexiones anteriores
-    if (window.connectionsLayer) {
-        window.connectionsLayer.clearLayers();
-    } else {
-        window.connectionsLayer = L.layerGroup().addTo(mapManager.map);
-    }
-    
-    if (polygonPoints.length < 2) return;
-    
-    // Crear líneas entre puntos consecutivos
-    for (let i = 0; i < polygonPoints.length; i++) {
-        const nextIndex = (i + 1) % polygonPoints.length;
+        }
         
-        const line = L.polyline([
-            [polygonPoints[i].lat, polygonPoints[i].lng],
-            [polygonPoints[nextIndex].lat, polygonPoints[nextIndex].lng]
-        ], {
-            color: '#3b82f6',
-            weight: 2,
-            opacity: 0.5,
-            dashArray: '5, 5',
-            className: 'point-connection-line'
+        return styles;
+    }
+
+    setupMapInstance() {
+        const baseLayerGroup = new ol.layer.Group({
+            layers: Object.values(this.baseLayers)
+        });
+
+        const initialCenter = ol.proj.fromLonLat(this.INITIAL_CENTER);
+
+        this.map = new ol.Map({
+            target: 'map',
+            layers: [baseLayerGroup, this.vectorLayer],
+            view: new ol.View({
+                center: initialCenter,
+                zoom: this.INITIAL_ZOOM,
+                minZoom: this.MINZOOM,
+                maxZoom: this.MAXZOOM,
+                smoothResolutionConstraint: true
+            }),
+            controls: ol.control.defaults({
+                attributionOptions: {
+                    collapsible: true
+                }
+            })
+        });
+
+        this.currentBaseLayer = this.baseLayers.osm;
+    }
+
+    setupEventListeners() {
+        // Evento para clic en el mapa (selección de puntos)
+        this.map.on('click', (evt) => {
+            if (!this.isEditMode || !this.currentFeature) return;
+            
+            const pixel = evt.pixel;
+            const feature = this.map.forEachFeatureAtPixel(pixel, (feature) => {
+                return feature;
+            });
+            
+            if (feature === this.currentFeature) {
+                // Verificar si se hizo clic en un punto de vértice
+                const geometry = feature.getGeometry();
+                if (geometry.getType() === 'Polygon') {
+                    const coordinates = geometry.getCoordinates()[0];
+                    const clickedCoord = evt.coordinate;
+                    
+                    // Buscar el punto más cercano
+                    let minDistance = Infinity;
+                    let closestIndex = -1;
+                    
+                    for (let i = 0; i < coordinates.length - 1; i++) {
+                        const distance = this.calculateDistance(coordinates[i], clickedCoord);
+                        if (distance < minDistance && distance < 20) { // 20 píxeles de tolerancia
+                            minDistance = distance;
+                            closestIndex = i;
+                        }
+                    }
+                    
+                    if (closestIndex !== -1) {
+                        this.selectPoint(closestIndex, coordinates[closestIndex]);
+                    } else {
+                        this.deselectPoint();
+                    }
+                }
+            } else {
+                this.deselectPoint();
+            }
         });
         
-        line.addTo(window.connectionsLayer);
-    }
-}
-
-/**
- * Alternar visibilidad de marcadores
- */
-function togglePointMarkers(show) {
-    if (window.pointMarkersLayer) {
-        if (show) {
-            mapManager.map.addLayer(window.pointMarkersLayer);
-        } else {
-            mapManager.map.removeLayer(window.pointMarkersLayer);
-        }
-    }
-    
-    if (window.connectionsLayer) {
-        if (show) {
-            mapManager.map.addLayer(window.connectionsLayer);
-        } else {
-            mapManager.map.removeLayer(window.connectionsLayer);
-        }
-    }
-}
-
-/**
- * Agregar control para mostrar/ocultar marcadores
- */
-function addMarkerToggleControl() {
-    // Crear botón de control
-    const controlDiv = L.DomUtil.create('div', 'leaflet-control leaflet-bar');
-    controlDiv.style.marginRight = '10px';
-    
-    const toggleButton = L.DomUtil.create('a', '', controlDiv);
-    toggleButton.href = '#';
-    toggleButton.title = 'Mostrar/Ocultar puntos';
-    toggleButton.innerHTML = `
-        <div style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-        </div>
-    `;
-    
-    let markersVisible = true;
-    
-    L.DomEvent.on(toggleButton, 'click', function(e) {
-        L.DomEvent.stopPropagation(e);
-        L.DomEvent.preventDefault(e);
-        
-        markersVisible = !markersVisible;
-        togglePointMarkers(markersVisible);
-        
-        // Cambiar color del botón
-        if (markersVisible) {
-            toggleButton.style.backgroundColor = '';
-            toggleButton.style.color = '';
-            showMessage('Marcadores de puntos mostrados', 'info');
-        } else {
-            toggleButton.style.backgroundColor = '#4b5563';
-            toggleButton.style.color = 'white';
-            showMessage('Marcadores de puntos ocultos', 'info');
-        }
-    });
-    
-    // Crear control personalizado
-    const MarkerControl = L.Control.extend({
-        options: {
-            position: 'topright'
-        },
-        
-        onAdd: function(map) {
-            return controlDiv;
-        }
-    });
-    
-    // Agregar control al mapa si no existe
-    if (!window.markerControlAdded) {
-        mapManager.map.addControl(new MarkerControl());
-        window.markerControlAdded = true;
-    }
-}
-
-/**
- * Actualizar lista de puntos en el panel lateral
- */
-function updatePointsList(points) {
-    const container = document.getElementById('points-container');
-    const noPointsMessage = document.getElementById('no-points-message');
-    const pointsCount = document.getElementById('points-count');
-    const summaryPoints = document.getElementById('summary-points');
-    
-    if (!container || !pointsCount) return;
-    
-    // Actualizar contador
-    pointsCount.textContent = points.length;
-    if (summaryPoints) summaryPoints.textContent = points.length;
-    
-    // Ocultar mensaje de "no hay puntos"
-    if (noPointsMessage) {
-        noPointsMessage.classList.toggle('hidden', points.length > 0);
-    }
-    
-    // Mostrar/ocultar resumen
-    const summary = document.getElementById('polygon-summary');
-    if (summary) {
-        summary.classList.toggle('hidden', points.length === 0);
-    }
-    
-    // Limpiar contenedor
-    container.innerHTML = '';
-    
-    // Agregar cada punto
-    points.forEach((point, index) => {
-        const pointElement = createPointElement(point, index);
-        container.appendChild(pointElement);
-    });
-    
-    // Actualizar marcadores en el mapa
-    updatePointMarkers();
-    
-    // Calcular y actualizar resumen
-    if (points.length > 2) {
-        updatePolygonSummary(points);
-    }
-}
-
-/**
- * Crear elemento HTML para un punto
- */
-function createPointElement(point, index) {
-    const element = document.createElement('div');
-    element.className = 'bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-colors duration-200';
-    element.dataset.index = index;
-    
-    // Convertir a UTM para mostrar
-    const utm = convertWGS84toUTM(point.lat, point.lng);
-    
-    element.innerHTML = `
-        <div class="flex justify-between items-start mb-2">
-            <div class="flex items-center">
-                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-2 relative">
-                    <span class="text-blue-600 dark:text-blue-300 font-semibold text-sm">${index + 1}</span>
-                    <div class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="font-medium text-gray-900 dark:text-white">Punto ${index + 1}</h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">${point.note || 'Sin descripción'}</p>
-                </div>
-            </div>
-            <button type="button" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 edit-point-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-index="${index}" title="Editar punto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                </svg>
-            </button>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-2 text-sm mb-2">
-            <div>
-                <span class="text-gray-600 dark:text-gray-400">Lat:</span>
-                <span class="font-mono text-green-600 dark:text-green-400 ml-1">${point.lat.toFixed(6)}</span>
-            </div>
-            <div>
-                <span class="text-gray-600 dark:text-gray-400">Lng:</span>
-                <span class="font-mono text-green-600 dark:text-green-400 ml-1">${point.lng.toFixed(6)}</span>
-            </div>
-            <div>
-                <span class="text-gray-600 dark:text-gray-400">Este:</span>
-                <span class="font-mono text-blue-600 dark:text-blue-400 ml-1">${utm.easting}</span>
-            </div>
-            <div>
-                <span class="text-gray-600 dark:text-gray-400">Norte:</span>
-                <span class="font-mono text-blue-600 dark:text-blue-400 ml-1">${utm.northing}</span>
-            </div>
-        </div>
-        
-        <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span>Zona: ${utm.zone}${utm.hemisphere}</span>
-                ${point.elevation ? `<span>Altura: ${point.elevation}m</span>` : ''}
-            </div>
-        </div>
-    `;
-    
-    // Agregar event listener al botón de editar
-    const editBtn = element.querySelector('.edit-point-btn');
-    if (editBtn) {
-        editBtn.addEventListener('click', () => openEditPointModal(index));
-    }
-    
-    // Agregar efecto hover para destacar el marcador en el mapa
-    element.addEventListener('mouseenter', function() {
-        if (window.pointMarkersLayer) {
-            const marker = window.pointMarkersLayer.getLayers()[index];
-            if (marker) {
-                marker.openPopup();
+        // Evento para mover puntos
+        this.map.on('pointermove', (evt) => {
+            if (!this.isEditMode || !this.currentFeature || this.selectedPointIndex === -1) return;
+            
+            if (evt.dragging) {
+                const geometry = this.currentFeature.getGeometry();
+                const coordinates = geometry.getCoordinates()[0];
                 
-                // Destacar el marcador
-                const iconElement = marker.getElement();
-                if (iconElement) {
-                    iconElement.style.filter = 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.8))';
-                    iconElement.style.transition = 'all 0.3s ease';
-                }
+                // Actualizar coordenada seleccionada
+                coordinates[this.selectedPointIndex] = evt.coordinate;
+                coordinates[coordinates.length - 1] = coordinates[0]; // Cerrar el polígono
+                
+                geometry.setCoordinates([coordinates]);
+                
+                // Actualizar información del punto
+                const lonLat = ol.proj.toLonLat(evt.coordinate);
+                this.updatePointInfo(this.selectedPointIndex, lonLat[1], lonLat[0]);
+                
+                // Recalcular área
+                const areaHa = this.calculateArea(this.currentFeature);
+                this.updateAreaDisplay(areaHa);
+                this.currentFeature.set('area', areaHa);
+                
+                // Actualizar lista de puntos
+                this.updatePolygonPoints();
+                this.updateGeoJSON();
+            }
+        });
+    }
+
+    setupCoordinateDisplay() {
+        this.createCoordinateDisplayElement();
+        
+        this.map.on('pointermove', (evt) => {
+            if (evt.dragging) return;
+            this.updateCoordinateDisplay(evt.coordinate);
+        });
+    }
+
+    createCoordinateDisplayElement() {
+        const existingDisplays = document.querySelectorAll('.coordinate-display');
+        existingDisplays.forEach(display => display.remove());
+        
+        this.coordinateDisplay = document.getElementById('coordinate-display');
+        if (!this.coordinateDisplay) {
+            this.coordinateDisplay = document.createElement('div');
+            this.coordinateDisplay.id = 'coordinate-display';
+            this.coordinateDisplay.className = 'coordinate-display';
+            this.coordinateDisplay.style.cssText = 'position: absolute; bottom: 10px; left: 10px; background-color: rgba(255, 255, 255, 0.9); padding: 5px 10px; border-radius: 4px; font-size: 12px; z-index: 1; font-family: monospace; display: none; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);';
+            
+            const mapContainer = this.map.getTargetElement();
+            if (mapContainer) {
+                mapContainer.style.position = 'relative';
+                mapContainer.appendChild(this.coordinateDisplay);
             }
         }
-    });
-    
-    element.addEventListener('mouseleave', function() {
-        if (window.pointMarkersLayer) {
-            const marker = window.pointMarkersLayer.getLayers()[index];
-            if (marker && !marker.isPopupOpen()) {
-                marker.closePopup();
-                
-                // Restaurar el marcador
-                const iconElement = marker.getElement();
-                if (iconElement) {
-                    iconElement.style.filter = '';
-                    iconElement.style.transform = '';
-                }
+    }
+
+    updateCoordinateDisplay(coordinate) {
+        if (!this.coordinateDisplay) return;
+        
+        try {
+            const lonLat = ol.proj.toLonLat(coordinate);
+            const lon = lonLat[0];
+            const lat = lonLat[1];
+            
+            const zone = Math.floor((lon + 180) / 6) + 1;
+            const hemisphere = lat >= 0 ? 'N' : 'S';
+            
+            const epsgCode = this.setupUTMProjection(zone, hemisphere);
+            const [easting, northing] = proj4('EPSG:4326', epsgCode, [lon, lat]);
+            
+            if (this.isValidUTM(easting, northing, zone, hemisphere)) {
+                this.coordinateDisplay.textContent = 
+                    `Zona ${zone}${hemisphere} | ` +
+                    `Este: ${easting.toFixed(3)} | ` +
+                    `Norte: ${northing.toFixed(3)}`;
+                this.coordinateDisplay.style.display = 'block';
+            } else {
+                this.coordinateDisplay.style.display = 'none';
             }
-        }
-    });
-    
-    return element;
-}
-
-/**
- * Actualizar resumen del polígono
- */
-function updatePolygonSummary(points) {
-    if (points.length < 3) return;
-    
-    // Calcular perímetro
-    let perimeter = 0;
-    for (let i = 0; i < points.length; i++) {
-        const nextIndex = (i + 1) % points.length;
-        perimeter += calculateDistance(
-            points[i].lat, points[i].lng,
-            points[nextIndex].lat, points[nextIndex].lng
-        );
-    }
-    
-    // Actualizar elementos
-    const summaryPerimeter = document.getElementById('summary-perimeter');
-    const summaryArea = document.getElementById('summary-area');
-    
-    if (summaryPerimeter) {
-        summaryPerimeter.textContent = perimeter.toFixed(2);
-    }
-    
-    if (summaryArea && mapManager && mapManager.currentPolygonLayer) {
-        // Calcular área usando la función existente
-        const geoJSON = mapManager.currentPolygonLayer.toGeoJSON();
-        const area = mapManager.calculateArea(geoJSON.geometry);
-        if (area) {
-            summaryArea.textContent = area.toFixed(2);
+        } catch (error) {
+            console.warn('Error en conversión UTM:', error);
+            this.coordinateDisplay.style.display = 'none';
         }
     }
-}
 
-/**
- * Extraer puntos del polígono actual
- */
-function extractPointsFromPolygon(polygonLayer) {
-    if (!polygonLayer) return [];
-    
-    const points = [];
-    const latLngs = polygonLayer.getLatLngs()[0]; // Primer anillo del polígono
-    
-    latLngs.forEach((latLng, index) => {
-        // No incluir el último punto si es igual al primero (polígono cerrado)
-        if (index === latLngs.length - 1 && 
-            latLng.lat === latLngs[0].lat && 
-            latLng.lng === latLngs[0].lng) {
+    setupUTMProjection(zone, hemisphere) {
+        const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
+        
+        if (!proj4.defs(epsgCode)) {
+            const proj4String = `+proj=utm +zone=${zone} +${hemisphere === 'S' ? '+south ' : ''}datum=WGS84 +units=m +no_defs`;
+            proj4.defs(epsgCode, proj4String);
+        }
+        
+        return epsgCode;
+    }
+
+    isValidUTM(easting, northing, zone, hemisphere) {
+        if (easting < 0 || easting > 1000000) return false;
+        
+        if (hemisphere === 'N') {
+            return northing >= 0 && northing <= 10000000;
+        } else {
+            return northing >= 1000000 && northing <= 10000000;
+        }
+    }
+
+    calculateDistance(coord1, coord2) {
+        const dx = coord1[0] - coord2[0];
+        const dy = coord1[1] - coord2[1];
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // =============================================
+    // CARGA DE POLÍGONO EXISTENTE
+    // =============================================
+
+    loadExistingPolygon() {
+        if (!this.existingPolygon || !this.map) return;
+        
+        try {
+            console.log('Cargando polígono existente...');
+            
+            // Limpiar cualquier polígono existente
+            this.source.clear();
+            
+            // Parsear el GeoJSON
+            const geojsonFormat = new ol.format.GeoJSON();
+            const features = geojsonFormat.readFeatures(this.existingPolygon, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+            
+            if (features.length > 0) {
+                this.currentFeature = features[0];
+                
+                // Calcular área
+                const areaHa = this.calculateArea(this.currentFeature);
+                this.currentFeature.set('area', areaHa);
+                
+                // Agregar al mapa
+                this.source.addFeature(this.currentFeature);
+                
+                // Ajustar vista al polígono
+                this.map.getView().fit(this.currentFeature.getGeometry().getExtent(), {
+                    padding: [50, 50, 50, 50],
+                    duration: 1000
+                });
+                
+                // Actualizar campos del formulario
+                this.updateAreaDisplay(areaHa);
+                this.updateGeoJSON();
+                
+                // Habilitar botón de detección y edición
+                const detectBtn = document.getElementById('detect-location');
+                const editBtn = document.getElementById('edit-polygon');
+                if (detectBtn) detectBtn.disabled = false;
+                if (editBtn) editBtn.classList.remove('hidden');
+                
+                // Actualizar lista de puntos
+                this.updatePolygonPoints();
+            }
+        } catch (error) {
+            console.error('Error cargando polígono existente:', error);
+            this.showAlert('Error cargando polígono existente: ' + error.message, 'error');
+        }
+    }
+
+    // =============================================
+    // FUNCIONALIDADES DE DIBUJO
+    // =============================================
+
+    activateDrawing() {
+        console.log('Activando dibujo de polígonos...');
+        
+        // Limpiar interacciones existentes
+        this.deactivateModify();
+        this.deactivateDrawing();
+        
+        // Salir del modo edición
+        this.exitEditMode();
+        
+        this.draw = new ol.interaction.Draw({
+            source: this.source,
+            type: 'Polygon',
+            style: new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: '#3b82f6',
+                    width: 3,
+                    lineDash: [5, 10],
+                    lineCap: 'round'
+                }),
+                fill: new ol.style.Fill({
+                    color: 'rgba(59, 130, 246, 0.2)'
+                }),
+                image: new ol.style.Circle({
+                    radius: 6,
+                    fill: new ol.style.Fill({ color: '#ffffff' }),
+                    stroke: new ol.style.Stroke({ color: '#3b82f6', width: 2 })
+                })
+            })
+        });
+
+        this.draw.on('drawstart', () => {
+            this.source.clear();
+            this.currentFeature = null;
+            this.updateAreaDisplay(0);
+            
+            const detectBtn = document.getElementById('detect-location');
+            const editBtn = document.getElementById('edit-polygon');
+            if (detectBtn) detectBtn.disabled = true;
+            if (editBtn) editBtn.classList.add('hidden');
+            
+            const locationInfo = document.getElementById('location-info');
+            if (locationInfo) locationInfo.classList.add('hidden');
+        });
+
+        this.draw.on('drawend', (event) => {
+            this.finalizeDrawing(event.feature);
+        });
+
+        this.map.addInteraction(this.draw);
+        
+        this.showAlert('Modo dibujo activado. Haz clic en el mapa para dibujar el polígono.', 'info');
+    }
+
+    finalizeDrawing(feature) {
+        const areaHa = this.calculateArea(feature);
+        
+        feature.set('area', areaHa);
+        this.currentFeature = feature;
+        
+        this.updateAreaDisplay(areaHa);
+        this.updateGeoJSON();
+        
+        // Habilitar botones
+        const detectBtn = document.getElementById('detect-location');
+        const editBtn = document.getElementById('edit-polygon');
+        if (detectBtn) detectBtn.disabled = false;
+        if (editBtn) editBtn.classList.remove('hidden');
+        
+        // Actualizar lista de puntos
+        this.updatePolygonPoints();
+        
+        // Remover interacción de dibujo
+        this.deactivateDrawing();
+        
+        this.showAlert(`Polígono completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
+    }
+
+    deactivateDrawing() {
+        if (this.draw) {
+            this.map.removeInteraction(this.draw);
+            this.draw = null;
+        }
+    }
+
+    // =============================================
+    // FUNCIONALIDADES DE EDICIÓN MEJORADAS
+    // =============================================
+
+    activateEditMode() {
+        if (!this.currentFeature) {
+            this.showAlert('Primero debes cargar o dibujar un polígono', 'warning');
             return;
         }
         
-        points.push({
-            lat: latLng.lat,
-            lng: latLng.lng,
-            elevation: null,
-            note: `Punto ${index + 1} del polígono`,
-            originalIndex: index
-        });
-    });
-    
-    return points;
-}
-
-/**
- * Actualizar polígono desde array de puntos - FUNCIÓN CORREGIDA
- */
-function updatePolygonFromPoints(points) {
-    if (!mapManager || !mapManager.currentPolygonLayer || points.length < 3) return false;
-    
-    try {
-        // Crear array de coordenadas
-        const latLngs = points.map(point => [point.lat, point.lng]);
+        console.log('Activando modo edición...');
         
-        // Cerrar el polígono (último punto = primer punto)
-        latLngs.push([points[0].lat, points[0].lng]);
+        // Desactivar dibujo si está activo
+        this.deactivateDrawing();
         
-        // Actualizar polígono en el mapa
-        mapManager.currentPolygonLayer.setLatLngs([latLngs]);
+        this.isEditMode = true;
         
-        // Sincronizar con los puntos de edición de Leaflet
-        if (mapManager.currentPolygonLayer.editing) {
-            const editHandler = mapManager.currentPolygonLayer.editing;
+        // Actualizar estilo del polígono
+        this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
+        
+        // Mostrar controles de edición
+        document.getElementById('edit-controls').classList.remove('hidden');
+        document.getElementById('edit-polygon').innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check w-6 h-6">
+                <path d="M20 6 9 17l-5-5"/>
+            </svg>
             
-            // Obtener los handlers de vértices
-            if (editHandler._verticesHandlers && editHandler._verticesHandlers.length > 0) {
-                const vertexHandler = editHandler._verticesHandlers[0];
+        `;
+        document.getElementById('edit-polygon').classList.remove('bg-purple-600', 'hover:bg-purple-700');
+        document.getElementById('edit-polygon').classList.add('bg-green-600', 'hover:bg-green-700');
+        
+        // Actualizar puntos del polígono
+        this.updatePolygonPoints();
+        
+        // Activar interacción de modificación
+        this.activateModify();
+        
+        this.showAlert('Modo edición activado. Haz clic en los puntos para seleccionarlos y arrástralos para moverlos.', 'info');
+    }
+
+    exitEditMode() {
+        console.log('Saliendo del modo edición...');
+        
+        this.isEditMode = false;
+        this.selectedPointIndex = -1;
+        this.selectedFeature = null;
+        
+        // Ocultar información del punto
+        document.getElementById('point-info').classList.add('hidden');
+        
+        // Ocultar controles de edición
+        document.getElementById('edit-controls').classList.add('hidden');
+        document.getElementById('edit-polygon').innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit w-6 h-6">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+
+        `;
+        document.getElementById('edit-polygon').classList.remove('bg-green-600', 'hover:bg-green-700');
+        document.getElementById('edit-polygon').classList.add('bg-gray-600', 'hover:bg-gray-700');
+        
+        // Desactivar interacción de modificación
+        this.deactivateModify();
+        
+        // Actualizar estilo del polígono
+        this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
+        
+        this.showAlert('Modo edición desactivado', 'info');
+    }
+
+    activateModify() {
+        if (!this.currentFeature) return;
+        
+        this.modify = new ol.interaction.Modify({
+            source: this.source,
+            style: new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 8,
+                    fill: new ol.style.Fill({ color: '#3b82f6' }),
+                    stroke: new ol.style.Stroke({
+                        color: '#ffffff',
+                        width: 3
+                    })
+                })
+            })
+        });
+        
+        this.modify.on('modifyend', (event) => {
+            const feature = event.features.getArray()[0];
+            if (feature === this.currentFeature) {
+                // Recalcular área
+                const areaHa = this.calculateArea(feature);
+                this.updateAreaDisplay(areaHa);
+                feature.set('area', areaHa);
                 
-                // Actualizar las posiciones de los marcadores de edición
-                if (vertexHandler && vertexHandler._markerGroup) {
-                    // Limpiar marcadores existentes
-                    vertexHandler._markerGroup.clearLayers();
-                    
-                    // Agregar nuevos marcadores en las posiciones actualizadas
-                    latLngs.forEach((latLng, index) => {
-                        if (index < latLngs.length - 1) { // No agregar el último punto duplicado
-                            const marker = L.marker(latLng, {
-                                icon: L.divIcon({
-                                    className: 'leaflet-edit-move-icon',
-                                    iconSize: [20, 20],
-                                    iconAnchor: [10, 10]
-                                }),
-                                draggable: true,
-                                zIndexOffset: 10
-                            });
-                            
-                            // Mantener el comportamiento de arrastre de Leaflet
-                            vertexHandler._markerGroup.addLayer(marker);
-                        }
-                    });
-                    
-                    // Re-conectar los eventos de Leaflet
-                    vertexHandler._initMarkers();
+                // Actualizar GeoJSON
+                this.updateGeoJSON();
+                
+                // Actualizar lista de puntos
+                this.updatePolygonPoints();
+                
+                this.showAlert('Polígono modificado', 'success');
+            }
+        });
+        
+        this.map.addInteraction(this.modify);
+    }
+
+    deactivateModify() {
+        if (this.modify) {
+            this.map.removeInteraction(this.modify);
+            this.modify = null;
+        }
+    }
+
+    selectPoint(index, coordinate) {
+        this.selectedPointIndex = index;
+        
+        // Convertir coordenadas a lat/lng
+        const lonLat = ol.proj.toLonLat(coordinate);
+        
+        // Actualizar información del punto
+        this.updatePointInfo(index, lonLat[1], lonLat[0]);
+        
+        // Mostrar panel de información
+        document.getElementById('point-info').classList.remove('hidden');
+        
+        // Actualizar estilo del polígono para resaltar el punto seleccionado
+        this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
+    }
+
+    deselectPoint() {
+        this.selectedPointIndex = -1;
+        document.getElementById('point-info').classList.add('hidden');
+        
+        // Actualizar estilo del polígono
+        this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
+    }
+
+    updatePointInfo(index, lat, lng) {
+        document.getElementById('selected-lat').textContent = lat.toFixed(6);
+        document.getElementById('selected-lng').textContent = lng.toFixed(6);
+        document.getElementById('selected-index').textContent = index + 1;
+    }
+
+    deleteSelectedPoint() {
+        if (this.selectedPointIndex === -1 || !this.currentFeature) return;
+        
+        const geometry = this.currentFeature.getGeometry();
+        const coordinates = geometry.getCoordinates()[0];
+        
+        if (coordinates.length <= 4) { // 3 puntos + el punto de cierre
+            this.showAlert('El polígono debe tener al menos 3 puntos', 'warning');
+            return;
+        }
+        
+        // Eliminar el punto seleccionado
+        coordinates.splice(this.selectedPointIndex, 1);
+        
+        // Actualizar el último punto para cerrar el polígono
+        coordinates[coordinates.length - 1] = coordinates[0];
+        
+        geometry.setCoordinates([coordinates]);
+        
+        // Recalcular área
+        const areaHa = this.calculateArea(this.currentFeature);
+        this.updateAreaDisplay(areaHa);
+        this.currentFeature.set('area', areaHa);
+        
+        // Actualizar GeoJSON
+        this.updateGeoJSON();
+        
+        // Actualizar lista de puntos
+        this.updatePolygonPoints();
+        
+        // Deseleccionar punto
+        this.deselectPoint();
+        
+        this.showAlert(`Punto ${this.selectedPointIndex + 1} eliminado`, 'success');
+    }
+
+    addPointAtClick(event) {
+        if (!this.currentFeature || !this.isEditMode) return;
+        
+        const coordinate = event.coordinate;
+        const geometry = this.currentFeature.getGeometry();
+        const coordinates = geometry.getCoordinates()[0];
+        
+        // Encontrar el segmento más cercano
+        let minDistance = Infinity;
+        let insertIndex = -1;
+        
+        for (let i = 0; i < coordinates.length - 1; i++) {
+            const segmentStart = coordinates[i];
+            const segmentEnd = coordinates[i + 1];
+            const distance = this.pointToSegmentDistance(coordinate, segmentStart, segmentEnd);
+            
+            if (distance < minDistance && distance < 25) { // 25 píxeles de tolerancia
+                minDistance = distance;
+                insertIndex = i + 1;
+            }
+        }
+        
+        if (insertIndex !== -1) {
+            // Insertar nuevo punto
+            coordinates.splice(insertIndex, 0, coordinate);
+            
+            // Actualizar el último punto para cerrar el polígono
+            coordinates[coordinates.length - 1] = coordinates[0];
+            
+            geometry.setCoordinates([coordinates]);
+            
+            // Recalcular área
+            const areaHa = this.calculateArea(this.currentFeature);
+            this.updateAreaDisplay(areaHa);
+            this.currentFeature.set('area', areaHa);
+            
+            // Actualizar GeoJSON
+            this.updateGeoJSON();
+            
+            // Actualizar lista de puntos
+            this.updatePolygonPoints();
+            
+            this.showAlert('Nuevo punto agregado', 'success');
+        }
+    }
+
+    pointToSegmentDistance(point, segmentStart, segmentEnd) {
+        const A = point[0] - segmentStart[0];
+        const B = point[1] - segmentStart[1];
+        const C = segmentEnd[0] - segmentStart[0];
+        const D = segmentEnd[1] - segmentStart[1];
+
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        let param = -1;
+        
+        if (lenSq !== 0) {
+            param = dot / lenSq;
+        }
+
+        let xx, yy;
+
+        if (param < 0) {
+            xx = segmentStart[0];
+            yy = segmentStart[1];
+        } else if (param > 1) {
+            xx = segmentEnd[0];
+            yy = segmentEnd[1];
+        } else {
+            xx = segmentStart[0] + param * C;
+            yy = segmentStart[1] + param * D;
+        }
+
+        const dx = point[0] - xx;
+        const dy = point[1] - yy;
+        
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    updatePolygonPoints() {
+        if (!this.currentFeature) {
+            this.polygonPoints = [];
+            this.updatePointsList();
+            return;
+        }
+        
+        const geometry = this.currentFeature.getGeometry();
+        if (geometry.getType() !== 'Polygon') return;
+        
+        const coordinates = geometry.getCoordinates()[0];
+        this.polygonPoints = [];
+        
+        for (let i = 0; i < coordinates.length - 1; i++) { // Excluir el último punto duplicado
+            const coord = coordinates[i];
+            const lonLat = ol.proj.toLonLat(coord);
+            
+            this.polygonPoints.push({
+                lat: lonLat[1],
+                lng: lonLat[0],
+                index: i
+            });
+        }
+        
+        this.updatePointsList();
+    }
+
+    updatePointsList() {
+        const container = document.getElementById('points-container');
+        const noPointsMessage = document.getElementById('no-points-message');
+        const pointsCount = document.getElementById('points-count');
+        const summaryPoints = document.getElementById('summary-points');
+        
+        if (!container || !pointsCount) return;
+        
+        // Actualizar contador
+        pointsCount.textContent = this.polygonPoints.length;
+        if (summaryPoints) summaryPoints.textContent = this.polygonPoints.length;
+        
+        // Ocultar/mostrar mensaje
+        if (noPointsMessage) {
+            noPointsMessage.classList.toggle('hidden', this.polygonPoints.length > 0);
+        }
+        
+        // Mostrar/ocultar resumen
+        const summary = document.getElementById('polygon-summary');
+        if (summary) {
+            summary.classList.toggle('hidden', this.polygonPoints.length === 0);
+        }
+        
+        // Limpiar contenedor
+        container.innerHTML = '';
+        
+        // Agregar cada punto
+        this.polygonPoints.forEach((point, index) => {
+            const pointElement = this.createPointElement(point, index);
+            container.appendChild(pointElement);
+        });
+        
+        // Calcular y actualizar resumen
+        if (this.polygonPoints.length > 2) {
+            this.updatePolygonSummary();
+        }
+    }
+
+    createPointElement(point, index) {
+        const element = document.createElement('div');
+        element.className = 'bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 ';
+        element.dataset.index = index;
+        
+        // Convertir a UTM
+        const zone = Math.floor((point.lng + 180) / 6) + 1;
+        const hemisphere = point.lat >= 0 ? 'N' : 'S';
+        const epsgCode = this.setupUTMProjection(zone, hemisphere);
+        const [easting, northing] = proj4('EPSG:4326', epsgCode, [point.lng, point.lat]);
+        
+        element.innerHTML = `
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-2 relative">
+                        <span class="text-blue-600 dark:text-blue-300 font-semibold text-sm">${index + 1}</span>
+                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900 dark:text-white">Punto ${index + 1}</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Click para seleccionar</p>
+                    </div>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 edit-point-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-index="${index}" title="Editar punto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 gap-1 mb-2">
+                <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span class="text-gray-600 dark:text-gray-400 text-sm ">Zona: ${zone} ${hemisphere}</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-1 text-sm mb-2">
+                <div>
+                    <span class="text-gray-600 dark:text-gray-400">Este:</span>
+                    <span class="font-mono text-blue-600 dark:text-blue-400 ml-1">${easting.toFixed(3)}</span>
+                </div>
+                <div>
+                    <span class="text-gray-600 dark:text-gray-400">Norte:</span>
+                    <span class="font-mono text-blue-600 dark:text-blue-400 ml-1">${northing.toFixed(3)}</span>
+                </div>
+            </div> 
+            
+        `;
+        
+        // Evento para seleccionar el punto
+        element.addEventListener('click', (e) => {
+            if (!e.target.closest('button')) {
+                this.selectPoint(index, ol.proj.fromLonLat([point.lng, point.lat]));
+            }
+        });
+        
+        // Evento para el botón de editar
+        const editBtn = element.querySelector('.edit-point-btn');
+        if (editBtn) {
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openEditPointModal(index, point);
+            });
+        }
+        
+        return element;
+    }
+
+    updatePolygonSummary() {
+        if (this.polygonPoints.length < 3) return;
+        
+        // Calcular perímetro
+        let perimeter = 0;
+        for (let i = 0; i < this.polygonPoints.length; i++) {
+            const nextIndex = (i + 1) % this.polygonPoints.length;
+            const point1 = this.polygonPoints[i];
+            const point2 = this.polygonPoints[nextIndex];
+            
+            // Calcular distancia en kilómetros
+            const R = 6371; // Radio de la Tierra en km
+            const dLat = (point2.lat - point1.lat) * Math.PI / 180;
+            const dLon = (point2.lng - point1.lng) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(point1.lat * Math.PI / 180) * Math.cos(point2.lat * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            perimeter += R * c;
+        }
+        
+        // Actualizar elementos
+        const summaryPerimeter = document.getElementById('summary-perimeter');
+        const summaryArea = document.getElementById('summary-area');
+        
+        if (summaryPerimeter) {
+            summaryPerimeter.textContent = perimeter.toFixed(2);
+        }
+        
+        if (summaryArea && this.currentFeature) {
+            const area = this.currentFeature.get('area') || 0;
+            summaryArea.textContent = area.toFixed(2);
+        }
+    }
+
+    // =============================================
+    // UTILIDADES
+    // =============================================
+
+    calculateArea(feature) {
+        if (!feature || !feature.getGeometry) return 0;
+        
+        const geometry = feature.getGeometry();
+        if (!geometry) return 0;
+        
+        if (typeof turf === 'undefined') {
+            console.error('Turf.js no está disponible');
+            return 0;
+        }
+        
+        try {
+            const wgs84Geometry = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
+            const coordinates = wgs84Geometry.getCoordinates();
+            
+            if (!coordinates || coordinates.length === 0) return 0;
+            
+            const turfFeature = turf.polygon(coordinates);
+            const areaM2 = turf.area(turfFeature);
+            
+            if (isNaN(areaM2) || areaM2 <= 0) return 0;
+            
+            const areaHa = areaM2 / 10000;
+            return parseFloat(areaHa.toFixed(6));
+            
+        } catch (error) {
+            console.error('Error en cálculo de área:', error);
+            return 0;
+        }
+    }
+
+    updateAreaDisplay(areaHa) {
+        const areaInput = document.getElementById('area_ha');
+        if (areaInput) {
+            areaInput.value = areaHa > 0 ? areaHa.toFixed(6) : '';
+        }
+    }
+
+    updateGeoJSON() {
+        if (!this.currentFeature) return;
+        
+        try {
+            const format = new ol.format.GeoJSON();
+            const geojson = format.writeFeature(this.currentFeature, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+            const geojsonObj = JSON.parse(geojson);
+            
+            if (geojsonObj.geometry) {
+                document.getElementById('geometry').value = JSON.stringify(geojsonObj.geometry);
+            }
+        } catch (error) {
+            console.error('Error al convertir GeoJSON:', error);
+        }
+    }
+
+    clearMap() {
+        this.source.clear();
+        this.currentFeature = null;
+        this.isEditMode = false;
+        this.selectedPointIndex = -1;
+        
+        document.getElementById('geometry').value = '';
+        document.getElementById('area_ha').value = '';
+        
+        const detectBtn = document.getElementById('detect-location');
+        const editBtn = document.getElementById('edit-polygon');
+        if (detectBtn) detectBtn.disabled = true;
+        if (editBtn) editBtn.classList.add('hidden');
+        
+        const locationInfo = document.getElementById('location-info');
+        if (locationInfo) locationInfo.classList.add('hidden');
+        
+        this.deactivateDrawing();
+        this.deactivateModify();
+        this.deselectPoint();
+        
+        this.updateAreaDisplay(0);
+        this.updatePolygonPoints();
+        
+        this.showAlert('Mapa limpiado', 'info');
+    }
+
+    changeBaseLayer(layerKey) {
+        if (!this.baseLayers[layerKey]) {
+            this.showAlert(`Capa base no encontrada: ${layerKey}`, 'error');
+            return;
+        }
+        
+        Object.values(this.baseLayers).forEach(layer => {
+            layer.setVisible(false);
+        });
+        
+        this.baseLayers[layerKey].setVisible(true);
+        this.currentBaseLayer = this.baseLayers[layerKey];
+        
+        const buttonElement = document.getElementById('base-map-toggle');
+        if (buttonElement) {
+            const layerTitle = this.baseLayers[layerKey].get('title') || layerKey;
+            buttonElement.innerHTML = `
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                </svg>
+                ${layerTitle}
+            `;
+        }
+    }
+
+    showAlert(message, icon = 'info') {
+        if (window.Swal) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: icon,
+                title: message,
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+        } else {
+            alert(message);
+        }
+    }
+
+    // =============================================
+    // DETECCIÓN DE UBICACIÓN
+    // =============================================
+
+    calculateCentroidFromGeoJSON(geojson) {
+        try {
+            const geometry = typeof geojson === 'string' ? JSON.parse(geojson) : geojson;
+            
+            if (!geometry || !geometry.coordinates) {
+                console.error('GeoJSON inválido para calcular centroide');
+                return null;
+            }
+
+            let coordinates = geometry.coordinates;
+            
+            if (geometry.type === 'Polygon') {
+                coordinates = coordinates[0];
+            }
+            
+            let sumLat = 0;
+            let sumLng = 0;
+            let count = 0;
+            
+            for (const coord of coordinates) {
+                if (Array.isArray(coord[0])) {
+                    for (const subCoord of coord) {
+                        sumLng += subCoord[0];
+                        sumLat += subCoord[1];
+                        count++;
+                    }
+                } else {
+                    sumLng += coord[0];
+                    sumLat += coord[1];
+                    count++;
                 }
             }
             
-            // Forzar actualización del polígono en Leaflet
-            mapManager.currentPolygonLayer.fire('edit');
+            if (count === 0) return null;
+            
+            return {
+                lat: sumLat / count,
+                lng: sumLng / count
+            };
+            
+        } catch (error) {
+            console.error('Error calculando centroide:', error);
+            return null;
+        }
+    }
+
+    async detectLocation() {
+        const geometryInput = document.getElementById('geometry');
+        if (!geometryInput || !geometryInput.value) {
+            this.showAlert('Debes tener un polígono en el mapa', 'error');
+            return;
         }
         
-        // Actualizar campo oculto
-        const geoJSON = mapManager.currentPolygonLayer.toGeoJSON();
-        if (mapManager.geometryInput) {
-            mapManager.geometryInput.value = JSON.stringify(geoJSON.geometry);
+        const centroid = this.calculateCentroidFromGeoJSON(geometryInput.value);
+        if (!centroid) {
+            this.showAlert('No se pudo calcular el centroide del polígono', 'error');
+            return;
         }
         
-        // Recalcular área
-        if (mapManager.areaInput) {
-            const area = mapManager.calculateArea(geoJSON.geometry);
-            if (area) {
-                mapManager.areaInput.value = area.toFixed(2);
+        document.getElementById('centroid_lat').value = centroid.lat;
+        document.getElementById('centroid_lng').value = centroid.lng;
+        
+        const detectBtn = document.getElementById('detect-location');
+        const detectButtonText = document.getElementById('detect-button-text');
+        const originalText = detectButtonText.textContent;
+        detectButtonText.textContent = 'Detectando...';
+        detectBtn.disabled = true;
+        
+        try {
+            const locationData = await this.reverseGeocode(centroid.lat, centroid.lng);
+            this.processLocationData(locationData, centroid);
+            
+        } catch (error) {
+            console.error('Error en detección de ubicación:', error);
+            this.showAlert('Error detectando ubicación: ' + error.message, 'error');
+        } finally {
+            detectBtn.disabled = false;
+            detectButtonText.textContent = originalText;
+        }
+    }
+
+    async reverseGeocode(lat, lng) {
+        try {
+            const targetUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1&accept-language=es`;
+            
+            const response = await fetch(targetUrl, {
+                headers: {
+                    'User-Agent': 'PolygonSystem/1.0',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return data;
+            
+        } catch (error) {
+            console.error('Error en geocodificación inversa:', error);
+            throw error;
+        }
+    }
+
+    processLocationData(data, centroid) {
+        const address = data.address || {};
+        
+        let parish = address.village || address.town || address.city || address.municipality || '';
+        let municipality = address.county || address.state_district || address.region || '';
+        let state = address.state || address.region || '';
+        
+        const cleanParish = this.removePrefixes(parish, ['Parroquia', 'Sector', 'Zona']);
+        const cleanMunicipality = this.removePrefixes(municipality, ['Municipio', 'Distrito', 'County']);
+        const cleanState = this.removePrefixes(state, ['Estado', 'State', 'Departamento']);
+        
+        document.getElementById('detected_parish').value = cleanParish;
+        document.getElementById('detected_municipality').value = cleanMunicipality;
+        document.getElementById('detected_state').value = cleanState;
+        
+        document.getElementById('location_data').value = JSON.stringify(data);
+        
+        this.updateLocationInfoUI(cleanParish, cleanMunicipality, cleanState, centroid);
+        this.findParishInDatabase(cleanParish, cleanMunicipality, cleanState);
+        
+        this.showAlert('Ubicación detectada correctamente', 'success');
+    }
+
+    removePrefixes(str, prefixes) {
+        if (!str) return '';
+        
+        let result = str.trim();
+        
+        prefixes.forEach(prefix => {
+            const regex = new RegExp(`^${prefix}\\s+`, 'i');
+            
+            if (regex.test(result)) {
+                const match = result.match(regex);
+                if (match) {
+                    result = result.substring(match[0].length);
+                }
+            }
+        });
+        
+        result = result.replace(/\s+/g, ' ').trim();
+        
+        return result;
+    }
+
+    findParishInDatabase(parishName, municipalityName, stateName) {
+        try {
+            this.updateParishSelect(parishName);
+        } catch (error) {
+            console.error('Error buscando parroquia:', error);
+        }
+    }
+
+    updateParishSelect(parishName) {
+        const parishSelect = document.getElementById('parish_id');
+        if (!parishSelect) return;
+        
+        let foundOption = null;
+        
+        for (let i = 0; i < parishSelect.options.length; i++) {
+            const option = parishSelect.options[i];
+            const optionText = option.text;
+            
+            if (optionText === parishName) {
+                foundOption = option;
+                break;
+            }
+            
+            if (optionText.includes(parishName)) {
+                foundOption = option;
+                break;
+            }
+            
+            if (optionText.toLowerCase() === parishName.toLowerCase()) {
+                foundOption = option;
+                break;
             }
         }
         
-        // Actualizar marcadores personalizados
-        updatePointMarkers();
+        if (foundOption) {
+            parishSelect.value = foundOption.value;
+            this.showAlert(`Parroquia "${foundOption.text}" asignada automáticamente`, 'success');
+        } else {
+            this.showAlert('No se encontró parroquia exacta. Selecciona manualmente.', 'info');
+        }
+    }
+
+    updateLocationInfoUI(parish, municipality, state, centroid) {
+        document.getElementById('detected-parish-text').textContent = parish || 'No detectado';
+        document.getElementById('detected-municipality-text').textContent = municipality || 'No detectado';
+        document.getElementById('detected-state-text').textContent = state || 'No detectado';
+        document.getElementById('detected-coords-text').textContent = 
+            `${centroid.lat.toFixed(6)}, ${centroid.lng.toFixed(6)}`;
         
-        // Actualizar resumen
-        updatePolygonSummary(points);
-        
-        return true;
-        
-    } catch (error) {
-        console.error('Error actualizando polígono desde puntos:', error);
-        showMessage('Error actualizando polígono: ' + error.message, 'error');
-        return false;
+        const locationInfo = document.getElementById('location-info');
+        if (locationInfo) {
+            locationInfo.classList.remove('hidden');
+        }
     }
 }
 
-/**
- * Abrir modal para editar punto
- */
-function openEditPointModal(pointIndex) {
-    if (pointIndex < 0 || pointIndex >= polygonPoints.length) return;
+// =============================================
+// FUNCIONES GLOBALES Y CONFIGURACIÓN
+// =============================================
+
+let polygonEditor = null;
+let coordinatesList = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM completamente cargado, inicializando editor...');
     
-    const point = polygonPoints[pointIndex];
+    // Obtener el polígono existente del campo hidden
+    const geometryInput = document.getElementById('geometry');
+    let existingPolygon = null;
+    
+    if (geometryInput && geometryInput.value) {
+        try {
+            existingPolygon = JSON.parse(geometryInput.value);
+        } catch (error) {
+            console.error('Error parseando polígono existente:', error);
+        }
+    }
+    
+    // Inicializar el editor con el polígono existente
+    polygonEditor = new PolygonEditor(existingPolygon);
+    
+    // Configurar event listeners
+    setupEventListeners();
+    setupModalFunctions();
+    setupFormValidation();
+    setupMapResizeHandler();
+});
+
+function setupEventListeners() {
+    // Botón de dibujar
+    document.getElementById('draw-polygon').addEventListener('click', () => {
+        if (polygonEditor) {
+            polygonEditor.activateDrawing();
+        }
+    });
+    
+    // Botón de editar
+    document.getElementById('edit-polygon').addEventListener('click', () => {
+        if (polygonEditor) {
+            if (polygonEditor.isEditMode) {
+                polygonEditor.exitEditMode();
+            } else {
+                polygonEditor.activateEditMode();
+            }
+        }
+    });
+    
+    // Botón de limpiar
+    document.getElementById('clear-map').addEventListener('click', () => {
+        if (polygonEditor) {
+            polygonEditor.clearMap();
+        }
+    });
+    
+    // Botón de agregar punto
+    document.getElementById('add-point').addEventListener('click', () => {
+        if (polygonEditor && polygonEditor.isEditMode) {
+            // Activar modo para agregar punto al hacer clic
+            const mapElement = document.getElementById('map');
+            mapElement.style.cursor = 'crosshair';
+            
+            const clickHandler = (event) => {
+                polygonEditor.addPointAtClick(event);
+                mapElement.style.cursor = '';
+                polygonEditor.map.un('click', clickHandler);
+            };
+            
+            polygonEditor.map.on('click', clickHandler);
+            
+            showAlert('Haz clic en el segmento donde quieres agregar un nuevo punto', 'info');
+        }
+    });
+    
+    // Botón de finalizar edición
+    document.getElementById('finish-edit').addEventListener('click', () => {
+        if (polygonEditor) {
+            polygonEditor.exitEditMode();
+        }
+    });
+    
+    // Botón de eliminar punto
+    document.getElementById('delete-point').addEventListener('click', () => {
+        if (polygonEditor) {
+            polygonEditor.deleteSelectedPoint();
+        }
+    });
+    
+    // Botón de actualizar coordenadas
+    document.getElementById('update-point').addEventListener('click', () => {
+        if (polygonEditor && polygonEditor.selectedPointIndex !== -1) {
+            const point = polygonEditor.polygonPoints[polygonEditor.selectedPointIndex];
+            if (point) {
+                openEditPointModal(polygonEditor.selectedPointIndex, point);
+            }
+        }
+    });
+    
+    // Botón de detección de ubicación
+    document.getElementById('detect-location').addEventListener('click', async () => {
+        if (polygonEditor) {
+            await polygonEditor.detectLocation();
+        }
+    });
+    
+    // Menú de capas base
+    document.getElementById('base-map-toggle').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = document.getElementById('base-map-menu');
+        const isShowing = menu.classList.contains('show');
+        toggleMenu('base-map-menu', !isShowing);
+    });
+    
+    document.querySelectorAll('#base-map-menu button').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const layerKey = button.getAttribute('data-layer');
+            if (polygonEditor) {
+                polygonEditor.changeBaseLayer(layerKey);
+            }
+            closeMenu('base-map-menu');
+        });
+    });
+    
+    // Pantalla completa
+    document.getElementById('fullscreen-toggle').addEventListener('click', () => {
+        const mapElement = document.getElementById('map');
+        if (!document.fullscreenElement) {
+            if (mapElement.requestFullscreen) {
+                mapElement.requestFullscreen();
+            } else if (mapElement.webkitRequestFullscreen) {
+                mapElement.webkitRequestFullscreen();
+            } else if (mapElement.msRequestFullscreen) {
+                mapElement.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    });
+    
+    // Cerrar menús al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        const baseMapToggle = document.getElementById('base-map-toggle');
+        const baseMapMenu = document.getElementById('base-map-menu');
+        const modal = document.getElementById('manual-polygon-modal');
+        
+        if (modal.classList.contains('hidden')) {
+            if (!baseMapToggle?.contains(e.target) && !baseMapMenu?.contains(e.target)) {
+                closeMenu('base-map-menu');
+            }
+        }
+    });
+}
+
+// Resto de las funciones auxiliares (toggleMenu, closeMenu, etc.)
+// ... [Mantén todas las funciones auxiliares del código anterior]
+
+// Función para abrir modal de edición de punto
+function openEditPointModal(index, point) {
     const modal = document.getElementById('edit-point-modal');
     const title = document.getElementById('edit-point-title');
     const latInput = document.getElementById('edit-point-lat');
     const lngInput = document.getElementById('edit-point-lng');
     const zoneInput = document.getElementById('edit-point-zone');
     const hemisphereSelect = document.getElementById('edit-point-hemisphere');
-    const elevationInput = document.getElementById('edit-point-elevation');
     const noteInput = document.getElementById('edit-point-note');
     const indexInput = document.getElementById('edit-point-index');
     
     if (!modal || !point) return;
     
-    // Llenar formulario con datos del punto
-    title.textContent = `Editar Punto ${pointIndex + 1}`;
+    title.textContent = `Editar Punto ${index + 1}`;
     latInput.value = point.lat.toFixed(6);
     lngInput.value = point.lng.toFixed(6);
-    zoneInput.value = point.utmZone || 20;
-    hemisphereSelect.value = point.utmHemisphere || 'N';
-    elevationInput.value = point.elevation || '';
-    noteInput.value = point.note || '';
-    indexInput.value = pointIndex;
     
-    // Mostrar modal
+    // Calcular zona UTM
+    const zone = Math.floor((point.lng + 180) / 6) + 1;
+    const hemisphere = point.lat >= 0 ? 'N' : 'S';
+    zoneInput.value = zone;
+    hemisphereSelect.value = hemisphere;
+    
+    noteInput.value = point.note || '';
+    indexInput.value = index;
+    
     modal.classList.remove('hidden');
     
-    // Enfocar el primer campo
     setTimeout(() => {
         latInput.focus();
         latInput.select();
     }, 100);
 }
 
-/**
- * Cerrar modal de edición de punto
- */
+// Función para cerrar modal de edición de punto
 function closeEditPointModal() {
     const modal = document.getElementById('edit-point-modal');
     if (modal) {
@@ -1080,422 +2059,7 @@ function closeEditPointModal() {
     }
 }
 
-/**
- * Eliminar punto del polígono
- */
-function deletePoint(pointIndex) {
-    if (polygonPoints.length <= 3) {
-        showMessage('No se puede eliminar. El polígono debe tener al menos 3 puntos.', 'error');
-        return;
-    }
-    
-    // Eliminar punto del array
-    polygonPoints.splice(pointIndex, 1);
-    
-    // Reindexar puntos
-    polygonPoints.forEach((point, index) => {
-        point.note = `Punto ${index + 1} del polígono`;
-    });
-    
-    // Actualizar polígono
-    updatePolygonFromPoints(polygonPoints);
-    
-    // Actualizar lista
-    updatePointsList(polygonPoints);
-    
-    showMessage(`Punto ${pointIndex + 1} eliminado`, 'success');
-    closeEditPointModal();
-}
-
-/**
- * Cargar polígono existente desde la base de datos
- */
-function loadExistingPolygonFromDB(geoJSON) {
-    if (!geoJSON || !mapManager) return null;
-    
-    try {
-        // Limpiar cualquier polígono existente
-        mapManager.drawnItems.clearLayers();
-        
-        // Crear polígono a partir del GeoJSON
-        const polygonLayer = L.geoJSON(geoJSON, {
-            style: {
-                color: '#2b6cb0',
-                fillColor: '#2b6cb0',
-                fillOpacity: 0.25,
-                weight: 3
-            },
-            onEachFeature: function(feature, layer) {
-                // Guardar referencia al polígono
-                mapManager.currentPolygonLayer = layer;
-                
-                // Asegurarse de que esté en el featureGroup
-                mapManager.drawnItems.addLayer(layer);
-                
-                // Ajustar vista al polígono
-                mapManager.map.fitBounds(layer.getBounds());
-                
-                // Extraer puntos del polígono
-                polygonPoints = extractPointsFromPolygon(layer);
-                
-                // Actualizar lista de puntos
-                updatePointsList(polygonPoints);
-                
-                // Calcular área
-                if (mapManager.areaInput && (!mapManager.areaInput.value || mapManager.areaInput.value === '0')) {
-                    const area = mapManager.calculateArea(geoJSON);
-                    if (area) {
-                        mapManager.areaInput.value = area.toFixed(2);
-                    }
-                }
-            }
-        });
-        
-        // Agregar al mapa
-        polygonLayer.addTo(mapManager.map);
-        
-        // Habilitar edición inmediatamente
-        setTimeout(() => {
-            enablePolygonEditing(mapManager);
-            document.getElementById('detect-location').disabled = false;
-        }, 100);
-        
-        return polygonLayer;
-    } catch (error) {
-        console.error('Error cargando polígono:', error);
-        showMessage('Error cargando polígono: ' + error.message, 'error');
-        return null;
-    }
-}
-
-/**
- * Habilita la edición de un polígono existente
- */
-function enablePolygonEditing(mapManager) {
-    if (!mapManager || !mapManager.currentPolygonLayer) {
-        console.warn('No hay polígono para editar');
-        return;
-    }
-    
-    try {
-        // Mostrar botón de edición
-        const toggleEditBtn = document.getElementById('toggle-edit');
-        if (toggleEditBtn) {
-            toggleEditBtn.classList.remove('hidden');
-            toggleEditBtn.onclick = () => toggleEditMode();
-        }
-        
-        // Agregar botón para mostrar/ocultar marcadores
-        addMarkerToggleControl();
-        
-        // Asegurarse de que el polígono esté en el featureGroup
-        if (!mapManager.drawnItems.hasLayer(mapManager.currentPolygonLayer)) {
-            mapManager.drawnItems.addLayer(mapManager.currentPolygonLayer);
-        }
-        
-        // Inicializar handler de edición
-        editHandler = new L.EditToolbar.Edit(mapManager.map, {
-            featureGroup: mapManager.drawnItems,
-            poly: {
-                allowIntersection: false,
-                drawError: {
-                    color: '#e1e4e8',
-                    message: '<strong>Error:</strong> ¡El polígono no puede intersectarse consigo mismo!'
-                }
-            }
-        });
-        
-        // Preparar el polígono para edición
-        if (!mapManager.currentPolygonLayer.editing) {
-            mapManager.currentPolygonLayer.editing = new L.EditToolbar.Edit(mapManager.map, {
-                featureGroup: mapManager.drawnItems
-            });
-        }
-        
-        // Habilitar edición por defecto (para que los puntos sean visibles)
-        mapManager.currentPolygonLayer.editing.enable();
-        
-        // Escuchar eventos de edición
-        mapManager.currentPolygonLayer.on('edit', function(e) {
-            const updatedLayer = e.target;
-            const geoJSON = updatedLayer.toGeoJSON();
-            
-            // Actualizar campo oculto
-            if (mapManager.geometryInput) {
-                mapManager.geometryInput.value = JSON.stringify(geoJSON.geometry);
-            }
-            
-            // Recalcular área
-            if (mapManager.areaInput) {
-                const area = mapManager.calculateArea(geoJSON.geometry);
-                if (area) {
-                    mapManager.areaInput.value = area.toFixed(2);
-                }
-            }
-            
-            // Actualizar lista de puntos
-            polygonPoints = extractPointsFromPolygon(updatedLayer);
-            updatePointsList(polygonPoints);
-            
-            console.log('Polígono editado', geoJSON);
-            showMessage('Polígono actualizado', 'success');
-        });
-        
-        // Escuchar cuando se mueve un punto
-        mapManager.currentPolygonLayer.on('editdrag', function(e) {
-            const updatedLayer = e.target;
-            const geoJSON = updatedLayer.toGeoJSON();
-            
-            if (mapManager.geometryInput) {
-                mapManager.geometryInput.value = JSON.stringify(geoJSON.geometry);
-            }
-            
-            // Actualizar puntos en tiempo real
-            polygonPoints = extractPointsFromPolygon(updatedLayer);
-            updatePointsList(polygonPoints);
-        });
-        
-        // Agregar popup informativo
-        mapManager.currentPolygonLayer.bindPopup(`
-            <div class="p-3 min-w-[250px]">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-gray-900">{{ $polygon->name }}</h4>
-                        <p class="text-sm text-gray-600">${polygonPoints.length} puntos</p>
-                    </div>
-                </div>
-                
-                <div class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Área:</span>
-                        <span class="font-semibold">${mapManager.areaInput ? mapManager.areaInput.value + ' Ha' : 'Calculando...'}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Puntos:</span>
-                        <span class="font-semibold">${polygonPoints.length}</span>
-                    </div>
-                </div>
-                
-                <div class="mt-4 pt-3 border-t">
-                    <p class="text-xs text-gray-500 mb-2">Usa el panel lateral para editar puntos individualmente</p>
-                    <button class="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded toggle-edit-btn">
-                        ✏️ Editar puntos en mapa
-                    </button>
-                </div>
-            </div>
-        `);
-        
-        // Evento para el botón de edición en el popup
-        mapManager.currentPolygonLayer.on('popupopen', function() {
-            setTimeout(() => {
-                const toggleBtn = document.querySelector('.leaflet-popup-content .toggle-edit-btn');
-                if (toggleBtn) {
-                    toggleBtn.addEventListener('click', () => {
-                        toggleEditMode();
-                        mapManager.currentPolygonLayer.closePopup();
-                    });
-                }
-            }, 100);
-        });
-        
-        showMessage('Polígono cargado. Usa el panel lateral para editar puntos individualmente.', 'info');
-        
-    } catch (error) {
-        console.error('Error habilitando edición:', error);
-        showMessage('Error habilitando edición: ' + error.message, 'error');
-    }
-}
-
-/**
- * Alternar modo de edición
- */
-function toggleEditMode() {
-    if (!mapManager || !mapManager.currentPolygonLayer) return;
-    
-    const toggleEditBtn = document.getElementById('toggle-edit');
-    
-    try {
-        if (!isEditModeActive) {
-            // Activar modo edición
-            isEditModeActive = true;
-            
-            // Asegurar que las herramientas de edición estén activas
-            if (mapManager.currentPolygonLayer.editing) {
-                mapManager.currentPolygonLayer.editing.enable();
-            }
-            
-            // Hacer marcadores arrastrables
-            if (window.pointMarkersLayer) {
-                window.pointMarkersLayer.eachLayer(function(marker) {
-                    marker.dragging.enable();
-                });
-            }
-            
-            // Actualizar botón
-            if (toggleEditBtn) {
-                toggleEditBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check w-6 h-6">
-                        <path d="M20 6 9 17l-5-5"/>
-                    </svg>
-                    Finalizar
-                `;
-                toggleEditBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-                toggleEditBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-                toggleEditBtn.title = 'Finalizar edición';
-            }
-            
-            showMessage('Modo edición activado. Arrastra los puntos para modificar el polígono.', 'info');
-            
-        } else {
-            // Desactivar modo edición
-            isEditModeActive = false;
-            
-            // Desactivar herramientas de edición
-            if (mapManager.currentPolygonLayer.editing) {
-                mapManager.currentPolygonLayer.editing.disable();
-            }
-            
-            // Hacer marcadores no arrastrables
-            if (window.pointMarkersLayer) {
-                window.pointMarkersLayer.eachLayer(function(marker) {
-                    marker.dragging.disable();
-                });
-            }
-            
-            // Actualizar botón
-            if (toggleEditBtn) {
-                toggleEditBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit w-6 h-6">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                    Editar
-                `;
-                toggleEditBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-                toggleEditBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
-                toggleEditBtn.title = 'Editar puntos';
-            }
-            
-            showMessage('Modo edición desactivado', 'info');
-        }
-    } catch (error) {
-        console.error('Error alternando modo edición:', error);
-        showMessage('Error alternando modo edición', 'error');
-    }
-}
-
-/**
- * Mostrar mensaje en la interfaz
- */
-function showMessage(message, type = 'info') {
-    let messageDiv = document.getElementById('map-message');
-    if (!messageDiv) {
-        messageDiv = document.createElement('div');
-        messageDiv.id = 'map-message';
-        messageDiv.style.cssText = `
-            position: absolute;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: none;
-            transition: opacity 0.3s;
-            font-size: 14px;
-            text-align: center;
-            max-width: 80%;
-            word-wrap: break-word;
-        `;
-        document.getElementById('map').parentElement.appendChild(messageDiv);
-    }
-    
-    const colors = {
-        info: '#3498db',
-        success: '#2ecc71',
-        warning: '#f39c12',
-        error: '#e74c3c'
-    };
-    
-    messageDiv.style.backgroundColor = colors[type] || colors.info;
-    messageDiv.style.color = 'white';
-    messageDiv.textContent = message;
-    messageDiv.style.display = 'block';
-    messageDiv.style.opacity = '1';
-    
-    setTimeout(() => {
-        messageDiv.style.opacity = '0';
-        setTimeout(() => {
-            messageDiv.style.display = 'none';
-        }, 300);
-    }, 3000);
-}
-
-/**
- * Dibujar polígono desde coordenadas UTM
- */
-function drawUTMPolygonFromUTM(utmCoordinates, mapManager) {
-    if (!utmCoordinates || utmCoordinates.length < 3) {
-        showMessage('Se necesitan al menos 3 coordenadas', 'error');
-        return;
-    }
-    
-    try {
-        const wgs84Coords = UTMCoordinates.convertToWGS84(utmCoordinates);
-        
-        if (wgs84Coords[0][0] !== wgs84Coords[wgs84Coords.length-1][0] || 
-            wgs84Coords[0][1] !== wgs84Coords[wgs84Coords.length-1][1]) {
-            wgs84Coords.push(wgs84Coords[0]);
-        }
-        
-        mapManager.drawnItems.clearLayers();
-        
-        const polygon = L.polygon(wgs84Coords, {
-            color: '#2b6cb0',
-            fillColor: '#2b6cb0',
-            fillOpacity: 0.25,
-            weight: 3
-        }).addTo(mapManager.drawnItems);
-        
-        mapManager.map.fitBounds(polygon.getBounds());
-        
-        // Extraer puntos
-        polygonPoints = extractPointsFromPolygon(polygon);
-        updatePointsList(polygonPoints);
-        
-        const feature = {
-            type: 'Feature',
-            geometry: {
-                type: 'Polygon',
-                coordinates: [wgs84Coords]
-            },
-            properties: {}
-        };
-        
-        mapManager.updatePolygonData(polygon);
-        mapManager.currentPolygonLayer = polygon;
-        
-        enablePolygonEditing(mapManager);
-        document.getElementById('detect-location').disabled = false;
-        
-        showMessage('Polígono dibujado. Usa el panel lateral para editar puntos.', 'success');
-        
-    } catch (error) {
-        console.error('Error dibujando polígono UTM:', error);
-        showMessage('Error dibujando polígono: ' + error.message, 'error');
-    }
-}
-
-/**
- * Configurar eventos del modal de edición de puntos
- */
+// Configurar eventos del modal de edición de punto
 function setupPointEditModal() {
     const modal = document.getElementById('edit-point-modal');
     const closeBtn = document.getElementById('close-edit-modal');
@@ -1505,83 +2069,73 @@ function setupPointEditModal() {
     
     if (!modal) return;
     
-    // Cerrar modal
     [closeBtn, cancelBtn].forEach(btn => {
         if (btn) {
             btn.addEventListener('click', closeEditPointModal);
         }
     });
     
-    // Eliminar punto
     if (deleteBtn) {
         deleteBtn.addEventListener('click', function() {
             const pointIndex = parseInt(document.getElementById('edit-point-index').value);
-            if (!isNaN(pointIndex)) {
-                if (confirm('¿Estás seguro de que quieres eliminar este punto?')) {
-                    deletePoint(pointIndex);
-                }
+            if (!isNaN(pointIndex) && polygonEditor) {
+                polygonEditor.deleteSelectedPoint();
+                closeEditPointModal();
             }
         });
     }
     
-    // Guardar cambios
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const pointIndex = parseInt(document.getElementById('edit-point-index').value);
-            if (isNaN(pointIndex) || pointIndex < 0 || pointIndex >= polygonPoints.length) {
-                showMessage('Error: Índice de punto inválido', 'error');
-                return;
-            }
+            if (isNaN(pointIndex) || !polygonEditor || !polygonEditor.currentFeature) return;
             
-            // Obtener nuevos valores
             const lat = parseFloat(document.getElementById('edit-point-lat').value);
             const lng = parseFloat(document.getElementById('edit-point-lng').value);
-            const zone = parseInt(document.getElementById('edit-point-zone').value);
-            const hemisphere = document.getElementById('edit-point-hemisphere').value;
-            const elevation = document.getElementById('edit-point-elevation').value;
-            const note = document.getElementById('edit-point-note').value;
             
-            // Validar coordenadas
             if (isNaN(lat) || isNaN(lng)) {
-                showMessage('Por favor ingresa coordenadas válidas', 'error');
+                showAlert('Por favor ingresa coordenadas válidas', 'error');
                 return;
             }
             
             if (lat < -90 || lat > 90) {
-                showMessage('La latitud debe estar entre -90 y 90', 'error');
+                showAlert('La latitud debe estar entre -90 y 90', 'error');
                 return;
             }
             
             if (lng < -180 || lng > 180) {
-                showMessage('La longitud debe estar entre -180 y 180', 'error');
+                showAlert('La longitud debe estar entre -180 y 180', 'error');
                 return;
             }
             
-            // Actualizar punto
-            polygonPoints[pointIndex] = {
-                ...polygonPoints[pointIndex],
-                lat: lat,
-                lng: lng,
-                utmZone: zone,
-                utmHemisphere: hemisphere,
-                elevation: elevation || null,
-                note: note || `Punto ${pointIndex + 1} del polígono`
-            };
+            // Actualizar punto en el polígono
+            const geometry = polygonEditor.currentFeature.getGeometry();
+            const coordinates = geometry.getCoordinates()[0];
+            const newCoord = ol.proj.fromLonLat([lng, lat]);
             
-            // Actualizar polígono
-            updatePolygonFromPoints(polygonPoints);
+            coordinates[pointIndex] = newCoord;
+            coordinates[coordinates.length - 1] = coordinates[0];
             
-            // Actualizar lista
-            updatePointsList(polygonPoints);
+            geometry.setCoordinates([coordinates]);
             
-            showMessage(`Punto ${pointIndex + 1} actualizado`, 'success');
+            // Recalcular área
+            const areaHa = polygonEditor.calculateArea(polygonEditor.currentFeature);
+            polygonEditor.updateAreaDisplay(areaHa);
+            polygonEditor.currentFeature.set('area', areaHa);
+            
+            // Actualizar GeoJSON
+            polygonEditor.updateGeoJSON();
+            
+            // Actualizar lista de puntos
+            polygonEditor.updatePolygonPoints();
+            
+            showAlert(`Punto ${pointIndex + 1} actualizado`, 'success');
             closeEditPointModal();
         });
     }
     
-    // Cerrar modal al hacer clic fuera
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
             closeEditPointModal();
@@ -1589,515 +2143,109 @@ function setupPointEditModal() {
     });
 }
 
-/**
- * Configurar modal UTM
- */
-function setupUTMModal(utmModal) {
-    const methodSingleBtn = document.getElementById('method-single');
-    const methodBulkBtn = document.getElementById('method-bulk');
-    const singleInput = document.getElementById('single-input');
-    const bulkInput = document.getElementById('bulk-input');
-    const addCoordBtn = document.getElementById('add-coord');
-    const clearListBtn = document.getElementById('clear-list');
-    const manualForm = document.getElementById('manual-polygon-form');
-    const bulkCoordsTextarea = document.getElementById('bulk-coords');
-    
-    if (!methodSingleBtn || !methodBulkBtn) return;
-    
-    methodSingleBtn.addEventListener('click', () => {
-        methodSingleBtn.classList.add('bg-blue-600', 'text-white');
-        methodSingleBtn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-        methodBulkBtn.classList.remove('bg-blue-600', 'text-white');
-        methodBulkBtn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-        singleInput.classList.remove('hidden');
-        bulkInput.classList.add('hidden');
-    });
-    
-    methodBulkBtn.addEventListener('click', () => {
-        methodBulkBtn.classList.add('bg-blue-600', 'text-white');
-        methodBulkBtn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-        methodSingleBtn.classList.remove('bg-blue-600', 'text-white');
-        methodSingleBtn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-        bulkInput.classList.remove('hidden');
-        singleInput.classList.add('hidden');
-    });
-    
-    if (addCoordBtn) {
-        addCoordBtn.addEventListener('click', () => {
-            const zone = parseInt(document.getElementById('single-zone').value);
-            const hemisphere = document.getElementById('single-hemisphere').value;
-            const easting = parseFloat(document.getElementById('single-easting').value);
-            const northing = parseFloat(document.getElementById('single-northing').value);
-            
-            const error = UTMCoordinates.validate(zone, hemisphere, easting, northing);
-            if (error) {
-                alert(error);
-                return;
-            }
-            
-            utmModal.coordinatesList.push([easting, northing, zone, hemisphere]);
-            updateCoordsList(utmModal.coordinatesList);
-            
-            document.getElementById('single-easting').value = '';
-            document.getElementById('single-northing').value = '';
-        });
-    }
-    
-    function updateCoordsList(coordinatesList) {
-        const coordsList = document.getElementById('coords-list');
-        const coordsContainer = document.getElementById('coords-container');
-        
-        if (!coordsList || !coordsContainer) return;
-        
-        coordsContainer.innerHTML = '';
-        
-        if (coordinatesList.length === 0) {
-            coordsList.classList.add('hidden');
-            return;
+// Llama a esta función en la inicialización
+setupPointEditModal();
+
+// Configurar redimensionamiento
+function setupMapResizeHandler() {
+    window.addEventListener('resize', debounce(function() {
+        if (polygonEditor && polygonEditor.map) {
+            setTimeout(() => {
+                polygonEditor.map.updateSize();
+            }, 100);
         }
-        
-        coordsList.classList.remove('hidden');
-        
-        coordinatesList.forEach((coord, index) => {
-            const [easting, northing, zone, hemisphere] = coord;
-            const div = document.createElement('div');
-            div.className = 'flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded';
-            div.innerHTML = `
-                <div class="text-xs font-mono">
-                    <span class="text-gray-600 dark:text-gray-400">${zone}${hemisphere}</span>
-                    <span class="mx-2 text-gray-400">|</span>
-                    <span class="text-green-600">E:${easting.toLocaleString()}</span>
-                    <span class="mx-2 text-gray-400">|</span>
-                    <span class="text-blue-600">N:${northing.toLocaleString()}</span>
-                </div>
-                <button type="button" class="text-red-500 hover:text-red-700 text-xs" data-index="${index}">
-                    ✕
-                </button>
-            `;
-            coordsContainer.appendChild(div);
+    }, 250));
+}
+
+// Función de debounce
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Función para mostrar alertas
+function showAlert(message, type = 'info') {
+    if (window.Swal) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: type,
+            title: message,
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
         });
-        
-        coordsContainer.querySelectorAll('button[data-index]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const index = parseInt(e.target.closest('button').dataset.index);
-                coordinatesList.splice(index, 1);
-                updateCoordsList(coordinatesList);
-            });
-        });
-    }
-    
-    if (clearListBtn) {
-        clearListBtn.addEventListener('click', () => {
-            utmModal.coordinatesList = [];
-            updateCoordsList(utmModal.coordinatesList);
-        });
-    }
-    
-    if (manualForm) {
-        manualForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            if (methodSingleBtn.classList.contains('bg-blue-600')) {
-                if (utmModal.coordinatesList.length < 3) {
-                    alert('Se necesitan al menos 3 coordenadas para formar un polígono');
-                    return;
-                }
-                
-                utmModal.drawPolygon(utmModal.coordinatesList);
-                utmModal.close();
-            } else {
-                const bulkText = bulkCoordsTextarea.value.trim();
-                if (!bulkText) {
-                    alert('Ingresa coordenadas en el área de texto');
-                    return;
-                }
-                
-                const lines = bulkText.split('\n').filter(line => line.trim());
-                const bulkCoords = [];
-                
-                for (const line of lines) {
-                    const parts = line.split(',').map(part => part.trim());
-                    if (parts.length !== 4) continue;
-                    
-                    const [zoneStr, hemisphere, eastingStr, northingStr] = parts;
-                    const zone = parseInt(zoneStr);
-                    const easting = parseFloat(eastingStr);
-                    const northing = parseFloat(northingStr);
-                    
-                    const error = UTMCoordinates.validate(zone, hemisphere, easting, northing);
-                    if (error) {
-                        alert(`Error en línea: ${line}\n${error}`);
-                        return;
-                    }
-                    
-                    bulkCoords.push([easting, northing, zone, hemisphere]);
-                }
-                
-                if (bulkCoords.length < 3) {
-                    alert('Se necesitan al menos 3 coordenadas válidas');
-                    return;
-                }
-                
-                utmModal.drawPolygon(bulkCoords);
-                utmModal.close();
-            }
-        });
+    } else {
+        alert(message);
     }
 }
 
-/**
- * Inicialización principal
- */
-document.addEventListener('DOMContentLoaded', () => {
-    // Inicializar gestor del mapa
-    mapManager = new PolygonMapManager('map', {
-        geometryInput: document.getElementById('geometry'),
-        coordsDisplay: document.getElementById('coordinates-display'),
-        detectBtn: document.getElementById('detect-location'),
-        areaInput: document.getElementById('area_ha')
-    });
-    
-    // Configurar modal de edición de puntos
-    setupPointEditModal();
-    
-    // Cargar polígono existente si está disponible
-    @if($polygon->getGeometryGeoJson())
-        const existingPolygonGeoJSON = @json($polygon->getGeometryGeoJson());
-        if (existingPolygonGeoJSON) {
-            loadExistingPolygonFromDB(existingPolygonGeoJSON);
-        }
-    @endif
-    
-    // Inicializar detector de ubicación
-    const locationDetector = new LocationDetector({
-        csrfToken: '{{ csrf_token() }}',
-        findParishUrl: '{{ route("polygons.find-parish-api") }}'
-    });
-    
-    // Inicializar modal UTM
-    const utmModal = new UTMModalManager({
-        modalId: 'manual-polygon-modal',
-        onDrawPolygon: (utmCoordinates) => {
-            drawUTMPolygonFromUTM(utmCoordinates, mapManager);
-        }
-    });
-    
-    // Configurar el modal UTM
-    setupUTMModal(utmModal);
-    
-    // Referencias a elementos
-    const drawBtn = document.getElementById('draw-polygon');
-    const detectBtn = document.getElementById('detect-location');
-    const clearBtn = document.getElementById('clear-map');
-    const manualPolygonToggle = document.getElementById('manual-polygon-toggle');
-    
-    // Event Listeners para controles básicos
-    drawBtn.addEventListener('click', () => {
-        new L.Draw.Polygon(mapManager.map, DrawConfig.polygon).enable();
-    });
-    
-    clearBtn.addEventListener('click', () => {
-        mapManager.clearMap();
-        document.getElementById('toggle-edit').classList.add('hidden');
-        document.getElementById('location-info').classList.add('hidden');
-        document.getElementById('detect-location').disabled = true;
-        isEditModeActive = false;
-        
-        // Limpiar puntos y marcadores
-        polygonPoints = [];
-        updatePointsList(polygonPoints);
-        
-        if (window.pointMarkersLayer) {
-            window.pointMarkersLayer.clearLayers();
-        }
-        if (window.connectionsLayer) {
-            window.connectionsLayer.clearLayers();
-        }
-    });
-    
-    // Abrir modal UTM
-    if (manualPolygonToggle) {
-        manualPolygonToggle.addEventListener('click', () => {
-            utmModal.open();
-        });
-    }
-    
-    // Escuchar cuando se dibuja un nuevo polígono
-    mapManager.map.on(L.Draw.Event.CREATED, function(event) {
-        setTimeout(() => {
-            enablePolygonEditing(mapManager);
-            document.getElementById('detect-location').disabled = false;
-            
-            // Extraer puntos del nuevo polígono
-            polygonPoints = extractPointsFromPolygon(event.layer);
-            updatePointsList(polygonPoints);
-        }, 100);
-    });
-    
-    // Detectar ubicación
-    detectBtn.addEventListener('click', async () => {
-        await handleLocationDetection(mapManager, locationDetector);
-    });
-    
-    // Validación del formulario
-    document.getElementById('polygon-form').addEventListener('submit', function (e) {
-        if (!validatePolygonForm(mapManager, this)) {
-            e.preventDefault();
-        }
-    });
-});
-
-// Funciones auxiliares que deben mantenerse igual
-async function handleLocationDetection(mapManager, locationDetector) {
-    const val = mapManager.geometryInput?.value;
-    if (!val) {
-        showMessage('❌ Debes tener un polígono en el mapa', 'error');
-        return;
-    }
-    
-    let feature;
-    try {
-        feature = JSON.parse(val);
-    } catch (e) {
-        showMessage('❌ GeoJSON inválido', 'error');
-        return;
-    }
-    
-    const centroid = mapManager.calculateCentroid(feature);
-    if (!centroid) {
-        showMessage('❌ No se pudo calcular el centroide', 'error');
-        return;
-    }
-    
-    document.getElementById('centroid_lat').value = centroid.lat;
-    document.getElementById('centroid_lng').value = centroid.lng;
-    
-    const detectBtn = document.getElementById('detect-location');
-    const detectButtonText = document.getElementById('detect-button-text');
-    const originalText = detectButtonText.textContent;
-    detectButtonText.textContent = 'Detectando...';
-    detectBtn.disabled = true;
-    
-    try {
-        const data = await locationDetector.detectLocation(centroid.lat, centroid.lng);
-        
-        const address = data.address || {};
-        const municipality = address.county || address.suburb || address.village || address.town || address.city || '';
-        const parish = address.municipality || address.county || address.city || '';
-        const state = address.state || address.region || '';
-        
-        const cleanParish = locationDetector.cleanLocationString(parish);
-        const cleanMunicipality = locationDetector.cleanLocationString(municipality);
-        const cleanState = locationDetector.cleanLocationString(state);
-        
-        document.getElementById('detected_parish').value = cleanParish;
-        document.getElementById('detected_municipality').value = cleanMunicipality;
-        document.getElementById('detected_state').value = cleanState;
-        
-        updateLocationInfoUI(cleanParish, cleanMunicipality, cleanState, centroid);
-        
-        const assignResult = await locationDetector.findAndAssignParish(
-            cleanParish,
-            cleanMunicipality,
-            cleanState
-        );
-        
-        if (assignResult.success && assignResult.parish) {
-            document.getElementById('parish_id').value = assignResult.parish.id;
-            showMessage('✅ Parroquia encontrada y asignada', 'success');
-        } else {
-            showMessage('ℹ️ No se encontró parroquia exacta. Selecciona manualmente.', 'info');
-        }
-        
-    } catch (error) {
-        console.error('Error en detección de ubicación:', error);
-        showMessage('❌ Error detectando ubicación', 'error');
-    } finally {
-        detectBtn.disabled = false;
-        detectButtonText.textContent = originalText;
-    }
-}
-
-function updateLocationInfoUI(parish, municipality, state, centroid) {
-    document.getElementById('detected-parish-text').textContent = parish || 'No detectado';
-    document.getElementById('detected-municipality-text').textContent = municipality || 'No detectado';
-    document.getElementById('detected-state-text').textContent = state || 'No detectado';
-    
-    if (centroid) {
-        document.getElementById('detected-coords-text').textContent = 
-            `${centroid.lat.toFixed(6)}, ${centroid.lng.toFixed(6)}`;
-    }
-    
-    document.getElementById('location-info').classList.remove('hidden');
-}
-
-function validatePolygonForm(mapManager, form) {
-    const val = mapManager.geometryInput?.value;
-    if (!val) {
-        showMessage('❌ Debes tener un polígono en el mapa', 'error');
-        return false;
-    }
-    
-    const nameInput = document.getElementById('name');
-    if (!nameInput.value.trim()) {
-        nameInput.focus();
-        showMessage('❌ El nombre del polígono es requerido', 'error');
-        return false;
-    }
-    
-    try {
-        const parsed = JSON.parse(val);
-        const feature = (parsed.type && parsed.type === 'Feature') ? 
-            parsed : { type: 'Feature', geometry: parsed };
-        const geom = feature.geometry;
-        
-        if (!geom || !geom.type || !['Polygon', 'MultiPolygon'].includes(geom.type)) {
-            showMessage('❌ La geometría debe ser Polygon o MultiPolygon', 'error');
-            return false;
-        }
-        
-        if (geom.type === 'Polygon' && geom.coordinates && geom.coordinates[0]) {
-            const points = geom.coordinates[0];
-            if (points.length < 4) {
-                showMessage('❌ El polígono debe tener al menos 3 puntos distintos', 'error');
-                return false;
-            }
-        }
-        
-        const submitBtn = document.getElementById('submit-btn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Actualizando...';
-        }
-        
-        return true;
-    } catch (err) {
-        showMessage('❌ Geometría inválida (JSON)', 'error');
-        return false;
-    }
-}
+// Mantén todas las funciones de modal (setInputMethod, updateCoordinatesList, etc.)
+// del código anterior que sean necesarias para el modal de coordenadas manuales
 </script>
 
 <style>
-/* Estilos para los marcadores de puntos */
-.custom-polygon-point-marker {
-    background: transparent;
-    border: none;
+/* Estilos para OpenLayers */
+.ol-viewport {
+    border-radius: 0.5rem;
 }
 
-.point-marker-container {
-    position: relative;
-    width: 40px;
-    height: 50px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.ol-control {
+    background-color: rgba(255,255,255,0.8);
+    border-radius: 4px;
+    padding: 2px;
 }
 
-.point-marker-icon {
-    width: 44px;
-    height: 44px;
-    color: #456deeff; /* Rojo para el ícono de ubicación */
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+.ol-control:hover {
+    background-color: rgba(255,255,255,0.9);
+}
+
+/* Asegurar que el mapa ocupe todo el espacio */
+#map {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+}
+
+/* Display de coordenadas */
+#coordinate-display {
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.dark #coordinate-display {
+    background-color: rgba(21, 23, 29, 0.95);
+    color: #e5e7eb;
+    border: 1px solid #4b5563;
+}
+
+/* Puntos de vértice en modo edición */
+.ol-vertex {
+    cursor: pointer;
+}
+
+/* Información del punto */
+#point-info {
+    max-width: 250px;
+}
+
+/* Controles de edición */
+#edit-controls {
     transition: all 0.3s ease;
 }
 
-.point-marker-label {
-    position: absolute;
-    top: 9px;
-    width: 22px;
-    height: 22px;
-    background: white;
-    border: 2px solid #3b82f6;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 12px;
-    color: #1e40af;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    z-index: 10;
-}
-
-/* Efectos hover para marcadores */
-.custom-polygon-point-marker:hover .point-marker-icon {
-    color: #9fcffcff; /* Rojo más oscuro al hover */
-    transform: scale(1.1);
-}
-
-.custom-polygon-point-marker:hover .point-marker-label {
-    background: #3b82f6;
-    color: white;
-    transform: scale(1.1);
-}
-
-/* Líneas de conexión entre puntos */
-.point-connection-line {
-    pointer-events: none;
-}
-
-/* Estilos para controles de edición */
-#toggle-edit {
-    transition: all 0.3s ease;
-}
-
-.leaflet-editing-icon {
-    background-color: #8b5cf6 !important;
-    border-color: #7c3aed !important;
-}
-
-.leaflet-marker-icon.leaflet-div-icon {
-    background: transparent !important;
-    border: none !important;
-}
-
-/* Estilo para polígono en modo edición */
-.leaflet-polygon-editing {
-    stroke-dasharray: 10, 10 !important;
-    stroke-width: 4px !important;
-}
-
-/* Estilos para controles de mapa */
-#map-controls {
-    pointer-events: auto;
-}
-
-.absolute {
-    position: absolute;
-}
-
-.z-50 {
-    z-index: 50;
-}
-
-/* Animaciones suaves */
-.transition-all {
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
-}
-
-.duration-300 {
-    transition-duration: 300ms;
-}
-
-/* Sombras y bordes */
-.shadow-lg {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-/* Estilo para puntos de vértice */
-.leaflet-div-icon {
-    background: transparent !important;
-    border: none !important;
-}
-
-.leaflet-marker-icon {
-    border-radius: 50% !important;
-}
-
-/* Scroll personalizado */
+/* Estilos para la lista de puntos */
 #points-container::-webkit-scrollbar {
     width: 6px;
 }
@@ -2112,10 +2260,6 @@ function validatePolygonForm(mapManager, form) {
     border-radius: 3px;
 }
 
-#points-container::-webkit-scrollbar-thumb:hover {
-    background: #a1a1a1;
-}
-
 .dark #points-container::-webkit-scrollbar-track {
     background: #374151;
 }
@@ -2124,24 +2268,39 @@ function validatePolygonForm(mapManager, form) {
     background: #4b5563;
 }
 
-.dark #points-container::-webkit-scrollbar-thumb:hover {
-    background: #6b7280;
-}
-
-/* Estilos para popups de Leaflet */
-.leaflet-popup-content {
-    margin: 0;
-    padding: 0;
-}
-
-.leaflet-popup-content-wrapper {
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-}
-
-/* Estilos para los elementos de puntos en el panel */
+/* Resaltar punto seleccionado en la lista */
 .bg-white.dark\\:bg-gray-800:hover {
     border-color: #3b82f6;
     box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+}
+
+/* Estilos para controles de mapa */
+#map-controls {
+    pointer-events: auto;
+    z-index: 1 !important;
+}
+
+
+
+/* Modo edición activo */
+.edit-mode-active {
+    border: 2px solid #8b5cf6 !important;
+}
+
+/* Cursor personalizado para modo edición */
+.edit-cursor {
+    cursor: crosshair !important;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .lg\\:col-span-2 {
+        grid-column: span 3;
+    }
+    
+    .lg\\:col-span-1 {
+        grid-column: span 3;
+        margin-top: 1rem;
+    }
 }
 </style>
