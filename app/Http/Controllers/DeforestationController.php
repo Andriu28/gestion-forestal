@@ -55,197 +55,176 @@ class DeforestationController extends Controller
      * Procesa el análisis de deforestación
      */
     public function analyze(Request $request)
-    {
-        /* dd($request); */
-        $geometryString = $request->input('geometry');
-
-        // NUEVO: Si la geometría viene en formato HEX de PostGIS (empieza por 0103...)
-        if (preg_match('/^[0-9A-Fa-f]+$/', $geometryString)) {
-            $geoJsonRes = DB::selectOne("SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson", [$geometryString]);
-            $geometryString = $geoJsonRes->geojson;
-        }
+{
+    $geometryString = $request->input('geometry');
 /* dd($geometryString); */
-        // Obtener datos
-        $saveAnalysis = $request->boolean('save_analysis');
-        
-        // Validar que si se guarda, el nombre sea obligatorio
-        if ($saveAnalysis) {
-            $request->validate([
-                'name' => 'required|string|min:3|max:255',
-                'start_year' => 'required|integer|min:2001|max:2024',
-                'end_year' => 'required|integer|min:2001|max:2024|gte:start_year',
-                'geometry' => 'required|string',
-                'area_ha' => 'required|numeric|min:0.01',
-                'description' => 'nullable|string|max:1000',
-                'save_analysis' => 'boolean'
-            ], [
-                'name.required' => 'El nombre del área es obligatorio cuando se guarda el análisis.',
-                'name.min' => 'El nombre debe tener al menos 3 caracteres.',
-                'geometry.required' => 'Debe dibujar un polígono en el mapa.',
-                'area_ha.min' => 'El área debe ser mayor a 0 hectáreas.',
-                'end_year.gte' => 'El año de fin debe ser mayor o igual al año de inicio.'
-            ]);
-        } else {
-            $request->validate([
-                'name' => 'nullable|string|max:255',
-                'start_year' => 'required|integer|min:2001|max:2024',
-                'end_year' => 'required|integer|min:2001|max:2025|gte:start_year',
-                'geometry' => 'required|string',
-                'area_ha' => 'required|numeric|min:0.01',
-                'description' => 'nullable|string|max:1000',
-                'save_analysis' => 'boolean'
-            ]);
-        }
+    // 1. Transformación de HEX a GeoJSON si es necesario
+    if (preg_match('/^[0-9A-Fa-f]+$/', $geometryString)) {
+        $geoJsonRes = DB::selectOne("SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson", [$geometryString]);
+        $geometryString = $geoJsonRes->geojson;
+    }
 
-        // 1. Obtener los datos del Request y asignarlos a variables
-        $startYear = (int) $request->input('start_year');
-        $endYear = (int) $request->input('end_year');
-        $areaHa = (float) $request->input('area_ha');
-        $polygonName = $request->input('name', 'Área de Estudio');
-        $description = $request->input('description', '');
+    $saveAnalysis = $request->boolean('save_analysis');
+    
+    // Validaciones (Se mantienen tus reglas actuales)
+    $this->validateAnalyzeRequest($request, $saveAnalysis);
 
-         session(['save_analysis_by_default' => $saveAnalysis]);
+    $startYear = (int) $request->input('start_year');
+    $endYear = (int) $request->input('end_year');
+    $areaHa = (float) $request->input('area_ha');
+    $polygonName = $request->input('name', 'Área de Estudio');
+    $description = $request->input('description', '');
+    $requestedYears = range($startYear, $endYear);
 
-        // Validar que el rango de años sea válido
-        if ($startYear > $endYear) {
-            return back()->withErrors(['error' => 'El año de inicio no puede ser mayor al año de fin.']);
-        }
+    session(['save_analysis_by_default' => $saveAnalysis]);
 
-        // 2. Decodificación y Estructuración del GeoJSON
-        try {
-            $geometryGeoJson = json_decode($geometryString, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
-            }
-
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error procesando la geometría: ' . $e->getMessage()]);
-        }
-
-        // 3. CONSULTAS PARALELAS PARA EL RANGO DE AÑOS ESPECIFICADO
-        $yearsToAnalyze = range($startYear, $endYear);
-
-        // Realizar consultas paralelas para TODOS los años en el rango, incluyendo $endYear
-        $yearlyResults = $this->getParallelYearlyStats($geometryGeoJson, $yearsToAnalyze);
-
-        // Obtener las estadísticas del año final del array de resultados paralelos
-        $mainStatsForEndYear = $yearlyResults[$endYear] ?? ['area__ha' => 0, 'status' => 'error', 'year' => $endYear];
-        $mainStatsAreaHa = $mainStatsForEndYear['area__ha'] ?? 0;
-        $mainStatsStatus = $mainStatsForEndYear['status'] ?? 'error';
-        
-        // Ordenar por año
-        ksort($yearlyResults);
-
-        // 4. EJECUTAR CÁLCULO DE PÉRDIDA TOTAL ACUMULADA
-        $totalLossResults = $this->calculateTotalLossStats($yearlyResults, $areaHa, $startYear, $endYear);
-
-        // 5. Preparar datos para la vista
-        $dataToPass = [
-            'analysis_year' => $endYear, // Sigue siendo el punto focal del análisis
-            'start_year' => $startYear,
-            'end_year' => $endYear,
-            'original_geojson' => $geometryString,
-            'type' => $geometryGeoJson['type'],
-            'geometry' => $geometryGeoJson['coordinates'][0],
-            'area__ha' => $mainStatsAreaHa, // Usamos el dato del array paralelo
-            'polygon_area_ha' => $areaHa < $totalLossResults['totalDeforestedArea'] ? $totalLossResults['totalDeforestedArea'] : $areaHa,
-            'status' => $mainStatsStatus, // Usamos el status del array paralelo
-            'polygon_name' => $polygonName,
-            'description' => $description,
-            'yearly_results' => $yearlyResults,
-            'total_loss' => $totalLossResults, // Añadir el resultado del cálculo
-        ];
-
-
-        // Log para debugging
-        Log::info('Datos enviados a la vista:', [
-            'start_year' => $startYear,
-            'end_year' => $endYear,
-            'years_analyzed' => $yearsToAnalyze,
-            'yearly_results_count' => count($yearlyResults),
-            'total_deforested_area' => $totalLossResults['totalDeforestedArea'],
-            'main_stats_status' => $mainStatsStatus,
-            'save_analysis' => $saveAnalysis
-        ]);
-
-        // 6. GUARDAR EN BASE DE DATOS SOLO SI EL USUARIO LO PERMITE
-        // En el método analyze(), dentro de la condición if ($saveAnalysis):
-if ($saveAnalysis) {
     try {
-        // Declarar la variable fuera de la transacción
-        $newPolygonId = null;
-        
-        DB::transaction(function () use ($dataToPass, &$newPolygonId) { // Usar & para pasar por referencia
-            
-            // 1. Insertar Polígono
-            $polygonRow = DB::selectOne(
-                "INSERT INTO polygons 
-                    (name, description, geometry, area_ha, created_at, updated_at)
-                VALUES 
-                    (?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?, ?)
-                RETURNING id",
-                [
-                    $dataToPass['polygon_name'],
-                    $dataToPass['description'],
-                    $dataToPass['original_geojson'],
-                    $dataToPass['polygon_area_ha'],
-                    now(),
-                    now(),
-                ]
-            );
+        $geometryGeoJson = json_decode($geometryString, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
+        }
+    } catch (\Exception $e) {
+        return back()->withErrors(['error' => 'Error procesando la geometría: ' . $e->getMessage()]);
+    }
 
-            $newPolygonId = $polygonRow->id;
+    // --- NUEVA LÓGICA DE BÚSQUEDA POR GEOMETRÍA ---
+    
+    // Buscamos si ya existe un polígono con ESTA MISMA geometría
+    $existingPolygon = DB::table('polygons')
+        ->select('id', 'area_ha', 'name', 'description')
+        ->whereRaw("ST_Equals(geometry, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326))", [$geometryString])
+        ->first();
 
-            // 2. Insertar análisis de deforestación
-            foreach ($dataToPass['total_loss']['yearlyBreakdown'] as $yearData) {
-                DB::insert(
-                    "INSERT INTO deforestation 
-                        (polygon_id, year, deforested_area_ha, percentage_loss, created_at, updated_at)
-                    VALUES 
-                        (?, ?, ?, ?, ?, ?)",
+    $existingRecords = [];
+    $polygonId = null;
+
+    if ($existingPolygon) {
+        $polygonId = $existingPolygon->id;
+        // Si no se envió nombre nuevo, usamos el que ya existe
+        $polygonName = $request->filled('name') ? $polygonName : $existingPolygon->name;
+        $areaHa = (float) $existingPolygon->area_ha;
+
+        // Consultar qué años ya tenemos guardados para ese polígono
+        $existingRecords = DB::table('deforestation')
+            ->select('year', 'deforested_area_ha as area__ha', DB::raw("'success' as status"))
+            ->where('polygon_id', $polygonId)
+            ->whereBetween('year', [$startYear, $endYear])
+            ->get()
+            ->keyBy('year')
+            ->toArray();
+    }
+
+    // Filtrar años: Solo pedir a la API los que NO están en la base de datos
+    $existingYears = array_keys($existingRecords);
+    $yearsToAnalyze = array_diff($requestedYears, $existingYears);
+
+    // Consultar a la API de GFW solo los años faltantes
+    $newResults = [];
+    if (!empty($yearsToAnalyze)) {
+        $newResults = $this->getParallelYearlyStats($geometryGeoJson, $yearsToAnalyze);
+    }
+
+    // Unificar resultados (Convertimos objetos de BD a arrays para mezclarlos con los de la API)
+    $yearlyResults = array_replace(
+        array_map(fn($item) => (array)$item, $existingRecords),
+        $newResults
+    );
+    ksort($yearlyResults);
+
+    // --- FIN DE LÓGICA DE BÚSQUEDA ---
+
+    // 4. EJECUTAR CÁLCULO DE PÉRDIDA TOTAL ACUMULADA
+    $totalLossResults = $this->calculateTotalLossStats($yearlyResults, $areaHa, $startYear, $endYear);
+
+    // 5. Preparar datos para la vista
+    $dataToPass = [
+        'polygon_id' => $polygonId,
+        'analysis_year' => $endYear,
+        'start_year' => $startYear,
+        'end_year' => $endYear,
+        'original_geojson' => $geometryString,
+        'type' => $geometryGeoJson['type'],
+        'geometry' => $geometryGeoJson['coordinates'][0],
+        'area__ha' => $yearlyResults[$endYear]['area__ha'] ?? 0,
+        'polygon_area_ha' => max($areaHa, $totalLossResults['totalDeforestedArea']),
+        'status' => $yearlyResults[$endYear]['status'] ?? 'success',
+        'polygon_name' => $polygonName,
+        'description' => $description,
+        'yearly_results' => $yearlyResults,
+        'total_loss' => $totalLossResults,
+    ];
+
+    // 6. GUARDAR SI ES NECESARIO
+    if ($saveAnalysis) {
+        $this->saveAnalysisData($dataToPass, $polygonId);
+    }
+    
+    return view('deforestation.results', compact('dataToPass'));
+}
+
+/**
+ * Función auxiliar para guardar (Lógica separada para limpieza)
+ */
+private function saveAnalysisData(&$dataToPass, $existingId)
+{
+    try {
+        DB::transaction(function () use (&$dataToPass, $existingId) {
+            $polygonId = $existingId;
+
+            // 1. Si el polígono no existe, se crea. Si existe, se puede actualizar el nombre/descripción
+            if (!$polygonId) {
+                $polygonRow = DB::selectOne(
+                    "INSERT INTO polygons (name, description, geometry, area_ha, created_at, updated_at)
+                     VALUES (?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?, ?) RETURNING id",
                     [
-                        $newPolygonId,
-                        $yearData['year'],
-                        $yearData['area_ha'],
-                        $yearData['percentage'],
-                        now(),
-                        now(),
+                        $dataToPass['polygon_name'],
+                        $dataToPass['description'],
+                        $dataToPass['original_geojson'],
+                        $dataToPass['polygon_area_ha'],
+                        now(), now()
                     ]
                 );
+                $polygonId = $polygonRow->id;
             }
 
-            Log::info("Análisis guardado. Polígono ID: {$newPolygonId}");
-        });
+            // 2. Insertar o actualizar los años del desglose
+foreach ($dataToPass['total_loss']['yearlyBreakdown'] as $yearData) {
+    // Primero verificamos si el registro ya existe
+    $exists = DB::table('deforestation')
+        ->where('polygon_id', $polygonId)
+        ->where('year', $yearData['year'])
+        ->exists();
 
-        // IMPORTANTE: Verificar que $newPolygonId fue asignado
-        if ($newPolygonId) {
-            // Guardar el ID en $dataToPass
-            $dataToPass['polygon_id'] = $newPolygonId;
-            
-            // Guardar también en sesión para uso posterior
-            session(['last_polygon_id' => $newPolygonId]);
-            
-            session()->flash('save_success', 'Análisis guardado exitosamente.');
-            
-            Log::info("Polígono ID asignado a dataToPass: {$newPolygonId}");
-        } else {
-            throw new \Exception("No se pudo obtener el ID del polígono insertado");
-        }
-
-    } catch (\Exception $e) {
-        Log::error('Error al guardar en base de datos: ' . $e->getMessage());
-        Log::error('Trace completo: ' . $e->getTraceAsString());
-        
-        $dataToPass['save_error'] = 'No se pudo guardar el análisis: ' . $e->getMessage();
+    if ($exists) {
+        // Si existe, solo actualizamos los datos y el updated_at
+        DB::table('deforestation')
+            ->where('polygon_id', $polygonId)
+            ->where('year', $yearData['year'])
+            ->update([
+                'deforested_area_ha' => $yearData['area_ha'],
+                'percentage_loss'    => $yearData['percentage'],
+                'updated_at'         => now(),
+            ]);
+    } else {
+        // Si no existe, insertamos todo incluyendo el created_at
+        DB::table('deforestation')->insert([
+            'polygon_id'         => $polygonId,
+            'year'               => $yearData['year'],
+            'deforested_area_ha' => $yearData['area_ha'],
+            'percentage_loss'    => $yearData['percentage'],
+            'created_at'         => now(),
+            'updated_at'         => now(),
+        ]);
     }
-} else {
-    Log::info('Análisis NO guardado por solicitud del usuario');
-    $dataToPass['save_message'] = 'Este análisis no fue guardado.';
 }
-        
-       return view('deforestation.results', compact('dataToPass'));
+            $dataToPass['polygon_id'] = $polygonId;
+        });
+        session()->flash('save_success', 'Análisis actualizado y guardado correctamente.');
+    } catch (\Exception $e) {
+        Log::error('Error al guardar: ' . $e->getMessage());
+        $dataToPass['save_error'] = 'Error al guardar: ' . $e->getMessage();
     }
+}
 
     
 
@@ -549,6 +528,154 @@ private function isPolygonClosed($coordinates)
         
         return redirect()->route('deforestation.create')
             ->withErrors(['error' => 'Ocurrió un error técnico al generar el PDF: ' . $e->getMessage()]);
+    }
+}
+
+public function polygon(Request $request)
+{
+    /* dd($request); */
+    $geometryString = $request->input('geometry');
+    $startYear = (int) $request->input('start_year');
+    $end_year = (int) $request->input('end_year');
+    $polygonId = $request->input('id');
+    $polygonName = $request->input('name', 'Área de Estudio');
+    $saveAnalysis = $request->boolean('save_analysis'); // Detectar si el usuario quiere guardar
+
+    // 1. Transformación de Geometría (HEX a GeoJSON)
+    if (preg_match('/^[0-9A-Fa-f]+$/', $geometryString)) {
+        $geoJsonRes = DB::selectOne("SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson", [$geometryString]);
+        $geometryString = $geoJsonRes->geojson;
+    }
+
+    try {
+        $geometryGeoJson = json_decode($geometryString, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
+        }
+    } catch (\Exception $e) {
+        return back()->withErrors(['error' => 'Error procesando la geometría: ' . $e->getMessage()]);
+    }
+
+    // 2. Obtener años existentes y años faltantes
+    $requestedYears = range($startYear, $end_year);
+
+    // 1. Obtener el área total directamente de la tabla polygons
+$polygonData = DB::table('polygons')
+    ->where('id', $polygonId)
+    ->select('area_ha')
+    ->first();
+
+// Asignar el valor a la variable $areaHa (si no existe el polígono, podrías usar el del request)
+$areaHa = $polygonData ? (float)$polygonData->area_ha : (float)$request->input('area_ha');
+
+// 2. Consultar registros existentes en la tabla deforestation
+$existingRecords = DB::table('deforestation')
+    ->select('year', 'deforested_area_ha as area__ha', DB::raw("'success' as status"))
+    ->where('polygon_id', $polygonId)
+    ->whereBetween('year', [$startYear, $end_year])
+    ->get()
+    ->keyBy('year')
+    ->toArray();
+
+/* dd($existingRecords); */
+    $existingYears = array_keys($existingRecords);
+    $yearsToAnalyze = array_diff($requestedYears, $existingYears);
+
+    // 3. Consultar solo lo que falta a la API
+    $newResults = [];
+    if (!empty($yearsToAnalyze)) {
+        $newResults = $this->getParallelYearlyStats($geometryGeoJson, $yearsToAnalyze);
+
+        // --- LÓGICA DE GUARDADO ---
+        if ($saveAnalysis) {
+            try {
+                DB::transaction(function () use ($newResults, $polygonId, $areaHa) {
+                    foreach ($newResults as $year => $data) {
+                        if ($data['status'] === 'success') {
+                            // Calcular el porcentaje para este año específico
+                            $currentArea = (float) $data['area__ha'];
+                            $percentage = $areaHa > 0 ? ($currentArea / $areaHa) * 100 : 0;
+
+                            DB::table('deforestation')->insert([
+                                'polygon_id' => $polygonId,
+                                'year' => (int) $year,
+                                'deforested_area_ha' => $currentArea,
+                                'percentage_loss' => $percentage > 100 ? 100 : $percentage,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+                });
+                session()->flash('save_success', 'Los nuevos datos del análisis han sido guardados.');
+            } catch (\Exception $e) {
+                Log::error("Error al guardar nuevos años para polígono {$polygonId}: " . $e->getMessage());
+            }
+        }
+    }
+
+    // 4. UNIFICAR: Mezclar registros viejos con resultados nuevos
+    $combinedResults = array_replace(
+        array_map(fn($item) => (array)$item, $existingRecords), 
+        $newResults
+    );
+    ksort($combinedResults);
+
+    // 5. Calcular estadísticas totales con la data unificada
+    $totalLossResults = $this->calculateTotalLossStats($combinedResults, $areaHa, $startYear, $end_year);
+
+    // 6. Preparar datos para la vista
+    $dataToPass = [
+        'polygon_id' => $polygonId,
+        'analysis_year' => $end_year,
+        'start_year' => $startYear,
+        'end_year' => $end_year,
+        'original_geojson' => $geometryString,
+        'type' => $geometryGeoJson['type'] ?? 'Polygon',
+        'geometry' => $geometryGeoJson['coordinates'][0] ?? [],
+        'area__ha' => $areaHa < $totalLossResults['totalDeforestedArea'] ? $totalLossResults['totalDeforestedArea'] : $areaHa,
+        'polygon_area_ha' => $areaHa,
+        'status' => 'success',
+        'polygon_name' => $polygonName,
+        'description' => $request->input('description', ''),
+        'yearly_results' => $combinedResults,
+        'total_loss' => $totalLossResults,
+    ];
+
+    return view('deforestation.results', compact('dataToPass'));
+}
+
+/**
+ * Valida la petición del análisis de deforestación
+ */
+private function validateAnalyzeRequest(Request $request, bool $saveAnalysis)
+{
+    if ($saveAnalysis) {
+        $request->validate([
+            'name'          => 'required|string|min:3|max:255',
+            'start_year'    => 'required|integer|min:2001|max:2024',
+            'end_year'      => 'required|integer|min:2001|max:2025|gte:start_year',
+            'geometry'      => 'required|string',
+            'area_ha'       => 'required|numeric|min:0.01',
+            'description'   => 'nullable|string|max:1000',
+            'save_analysis' => 'boolean'
+        ], [
+            'name.required'     => 'El nombre del área es obligatorio cuando se guarda el análisis.',
+            'name.min'          => 'El nombre debe tener al menos 3 caracteres.',
+            'geometry.required' => 'Debe dibujar un polígono en el mapa.',
+            'area_ha.min'       => 'El área debe ser mayor a 0 hectáreas.',
+            'end_year.gte'      => 'El año de fin debe ser mayor o igual al año de inicio.'
+        ]);
+    } else {
+        $request->validate([
+            'name'          => 'nullable|string|max:255',
+            'start_year'    => 'required|integer|min:2001|max:2024',
+            'end_year'      => 'required|integer|min:2001|max:2025|gte:start_year',
+            'geometry'      => 'required|string',
+            'area_ha'       => 'required|numeric|min:0.01',
+            'description'   => 'nullable|string|max:1000',
+            'save_analysis' => 'boolean'
+        ]);
     }
 }
 }

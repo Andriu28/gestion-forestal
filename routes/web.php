@@ -189,6 +189,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Procesar análisis 
         Route::post('/analyze', [DeforestationController::class, 'analyze'])
             ->name('analyze');
+
+        Route::post('/polygon', [DeforestationController::class, 'polygon'])
+            ->name('polygon');
         
         // Mostrar resultados para múltiples polígonos
         Route::get('/multiple-results', [DeforestationController::class, 'multipleResults'])

@@ -94,8 +94,15 @@ window.showCustomConfirmation = function(isEnable = false, customMessage = null)
 /* funcion agregadas por geral */
 
 window.confirmAnalysis = function(polygonId, polygonName) {
-    const currentYear = new Date().getFullYear();
+    const startYear = 2001; // Definimos el inicio fijo
+    const endYear = 2024;   // Definimos el fin fijo
     const iconColor = '#f59f0bea';
+
+    // Generamos el array de años una sola vez para reutilizarlo
+    const yearOptions = Array.from(
+        { length: endYear - startYear + 1 }, 
+        (_, i) => startYear + i
+    );
 
     return Swal.fire({
         title: `Analizar deforestación`,
@@ -110,15 +117,15 @@ window.confirmAnalysis = function(polygonId, polygonName) {
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Año Inicio</label>
                         <select id="swal-start" class="w-full p-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500">
-                            ${Array.from({length: currentYear - 2002}, (_, i) => 2001 + i)
-                                .map(y => `<option value="${y}">${y}</option>`).join('')}
+                            ${yearOptions.map(y => `<option value="${y}">${y}</option>`).join('')}
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Año Fin</label>
                         <select id="swal-end" class="w-full p-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500">
-                            ${Array.from({length: currentYear - 2002}, (_, i) => 2001 + i)
-                                .map(y => `<option value="${y}" ${y === currentYear - 1 ? 'selected' : ''}>${y}</option>`).join('')}
+                            ${yearOptions.map(y => 
+                                `<option value="${y}" ${y === endYear ? 'selected' : ''}>${y}</option>`
+                            ).join('')}
                         </select>
                     </div>
                 </div>
@@ -153,12 +160,10 @@ window.confirmAnalysis = function(polygonId, polygonName) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            // 1. Asignar valores al formulario oculto
             document.getElementById(`start-${polygonId}`).value = result.value.start;
             document.getElementById(`end-${polygonId}`).value = result.value.end;
             document.getElementById(`save-${polygonId}`).value = result.value.save ? '1' : '0';
 
-            // 2. Activar tu Loader personalizado
             const loaderOverlay = document.getElementById('loader-overlay');
             const progressBar = document.getElementById('progress-bar');
             const progressText = document.getElementById('progress-text');
@@ -166,13 +171,11 @@ window.confirmAnalysis = function(polygonId, polygonName) {
 
             if (loaderOverlay) {
                 loaderOverlay.classList.remove('hidden');
-                
-                // Simulación de progreso inicial para dar feedback visual inmediato
                 let progress = 0;
                 const interval = setInterval(() => {
                     progress += Math.random() * 15;
                     if (progress > 90) {
-                        progress = 95; // Se queda ahí hasta que el servidor responda
+                        progress = 95;
                         clearInterval(interval);
                     }
                     if (progressBar) progressBar.style.width = `${progress}%`;
@@ -181,7 +184,6 @@ window.confirmAnalysis = function(polygonId, polygonName) {
                 }, 400);
             }
 
-            // 3. Enviar el formulario
             document.getElementById(`analyze-form-${polygonId}`).submit();
         }
     });

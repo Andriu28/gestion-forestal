@@ -251,7 +251,12 @@
                                 </div>
                                
                                <textarea id="bulk-coords" rows="6" class="w-full rounded-md border-gray-300 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 text-sm p-2 font-mono text-xs" 
-          placeholder="Ejemplo:&#10;&#9;Zona,Hemisferio,Este,Norte&#10;&#9;20,N,476097.904,1157477.299&#10;&#9;20,N,476181.804,1157432.362&#10;&#9;20,N,475211.522,1157534.959"></textarea>
+                                    placeholder="Ejemplo:&#10;&#9;Zona,Hemisferio,Este,Norte&#10;&#9;20,N,476097.904,1157477.299&#10;&#9;20,N,476181.804,1157432.362&#10;&#9;20,N,475211.522,1157534.959">20,N,480959.78, 1166968.42
+20,N,480959.72, 1166748.96
+20,N,481267.01, 1166748.83
+20,N,481267.06, 1166968.29
+20,N,480959.78, 1166968.42
+</textarea>
                             </div>
 
                             <!-- Lista de coordenadas agregadas -->
