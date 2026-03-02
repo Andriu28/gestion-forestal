@@ -23,12 +23,12 @@ class ProducerController extends Controller
             });
 
         match ($status) {
-        'active'   => $query->where('is_active', true),
-        'inactive' => $query->where('is_active', false),
-        'deleted'  => $query->onlyTrashed(),
-        'all'      => $query, // ¡CORREGIDO! No usar withTrashed()
-        default    => $query->where('is_active', true), // Por defecto solo activos
-    };
+            'active'   => $query->where('is_active', true),
+            'inactive' => $query->where('is_active', false),
+            'deleted'  => $query->onlyTrashed(),
+            'all'      => $query, // ¡CORREGIDO! No usar withTrashed()
+            default    => $query->where('is_active', true), // Por defecto solo activos
+        };
 
         $producers = $query
             ->orderBy('name')
@@ -303,7 +303,8 @@ class ProducerController extends Controller
                     'icon' => 'success',
                     'title' => 'Éxito',
                     'text' => "Productor {$statusText} exitosamente."
-                ]);
+                ]); 
+
         } catch (\Exception $e) {
             // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
@@ -319,7 +320,7 @@ class ProducerController extends Controller
                     'icon' => 'error',
                     'title' => 'Error',
                     'text' => 'Error al cambiar el estado del productor: ' . $e->getMessage()
-                ]);
+                ]); 
         }
     }
 
