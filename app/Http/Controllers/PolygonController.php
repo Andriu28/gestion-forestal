@@ -22,15 +22,16 @@ class PolygonController extends Controller
      * Display a listing of the resource.
      */
     // En PolygonController.php - método index()
+    // En PolygonController.php - método index() corregido
     public function index(Request $request): View
     {
         $search = $request->get('search');
         $status = $request->get('status', 'all');
         $type = $request->get('type', 'all');
 
-        // Iniciar query incluyendo soft deleted
-        $query = Polygon::with(['producer', 'parish.municipality.state'])
-            ->withTrashed(); // ← AÑADE ESTA LÍNEA
+        // QUITAR withTrashed() - solo obtener polígonos NO eliminados por defecto
+        $query = Polygon::with(['producer', 'parish.municipality.state']);
+        // NO USAR withTrashed() aquí
 
         // Aplicar búsqueda
         if ($search) {
@@ -39,15 +40,15 @@ class PolygonController extends Controller
 
         // Aplicar filtro de estado
         if ($status === 'active') {
-            $query->where('is_active', true)
-                ->whereNull('deleted_at'); // Solo activos no eliminados
+            $query->where('is_active', true);
         } elseif ($status === 'inactive') {
-            $query->where('is_active', false)
-                ->whereNull('deleted_at'); // Solo inactivos no eliminados
+            $query->where('is_active', false);
         } elseif ($status === 'deleted') {
-            $query->onlyTrashed(); // Solo eliminados
+            // Este caso muestra solo eliminados, pero normalmente se usa la vista dedicada
+            $query->onlyTrashed();
         } else {
-            // 'all' - ya tenemos withTrashed() arriba, muestra todos incluyendo eliminados
+            // 'all' - solo activos e inactivos (NO eliminados)
+            // No aplicar ningún filtro de deleted_at
         }
 
         // Aplicar filtro de tipo
@@ -575,6 +576,9 @@ class PolygonController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    /**
+ * Remove the specified resource from storage.
+ */
     public function destroy(Request $request, Polygon $polygon): JsonResponse|RedirectResponse
     {
         try {
@@ -585,7 +589,8 @@ class PolygonController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Polígono eliminado exitosamente.',
-                    'polygon_id' => $polygon->id
+                    'polygon_id' => $polygon->id,
+                    'redirect' => route('polygons.deleted') // Opcional
                 ]);
             }
             
@@ -610,6 +615,9 @@ class PolygonController extends Controller
     /**
      * Restore the specified soft deleted resource.
      */
+    /**
+ * Restore the specified soft deleted resource.
+ */
     public function restore(Request $request, $id): JsonResponse|RedirectResponse
     {
         try {
@@ -622,7 +630,8 @@ class PolygonController extends Controller
                     'success' => true,
                     'message' => 'Polígono restaurado exitosamente.',
                     'polygon_id' => $polygon->id,
-                    'is_active' => $polygon->is_active
+                    'is_active' => $polygon->is_active,
+                    'redirect' => route('polygons.index') // Opcional
                 ]);
             }
             
@@ -857,6 +866,26 @@ class PolygonController extends Controller
         }
 
         return "Ubicación no detectada";
+    }
+
+    /**
+     * Display a listing of soft deleted polygons.
+     */
+    public function deleted(Request $request): View
+    {
+        $search = $request->get('search');
+
+        $query = Polygon::onlyTrashed() // ← SOLO eliminados
+            ->with(['producer', 'parish.municipality.state']);
+
+        // Aplicar búsqueda
+        if ($search) {
+            $query->search($search);
+        }
+
+        $polygons = $query->latest('deleted_at')->paginate(10);
+
+        return view('polygons.deleted', compact('polygons', 'search'));
     }
 
     /**

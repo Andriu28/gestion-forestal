@@ -87,6 +87,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/support', [SupportController::class, 'index'])->name('support');
     Route::get('/support/download', [SupportController::class, 'generatePdf'])->name('support.pdf');
 
+    // AÑADE ESTA NUEVA RUTA PARA DESARROLLADORES
+Route::get('/developers', function () {
+    return view('developers.developers');
+})->name('developers');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -169,6 +174,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/polygons/{polygon}/details', [PolygonController::class, 'details'])
             ->name('polygons.details')
             ->middleware('auth');
+
+        // AÑADE ESTA NUEVA RUTA PARA POLÍGONOS ELIMINADOS
+        Route::get('/polygons/deleted', [PolygonController::class, 'deleted'])
+            ->name('polygons.deleted');
 
         // RUTAS DE ESTADO Y RESTAURACIÓN
         Route::post('/polygons/{polygon}/toggle-status', [PolygonController::class, 'toggleStatus'])->name('polygons.toggle-status');

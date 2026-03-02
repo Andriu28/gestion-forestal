@@ -100,7 +100,7 @@
                                 </a>
                             </div>
                         </li>
-                        <li>
+                        <!-- <li>
                             <div class="transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-2">
                                 <a href="#" class="nav-item transition-all duration-300 ease-in-out hover:font-bold hover:shadow-md group">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-clock-icon lucide-file-clock transition-all duration-500 group-hover:scale-[1.15] group-hover-ml-2">
@@ -109,7 +109,7 @@
                                     <span class="sidebar-text">Reportes.X</span>
                                 </a>
                             </div>
-                        </li>
+                        </li> -->
                        
                         @endif
                        
@@ -117,14 +117,14 @@
                 </div>
             </nav>
             <!-- Sidebar Footer -->
-            <!-- <div class="sidebar-header" style="padding-bottom:2rem;">
-                <a href="#" class="nav-item transition-all duration-300 ease-in-out hover:font-bold hover:shadow-md group">
+             <div class="sidebar-header" style="padding-bottom:2rem;">
+                <a href="{{ route('developers') }}"  class="nav-item transition-all duration-300 ease-in-out hover:font-bold hover:shadow-md group">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-icon lucide-settings transition-all duration-500 group-hover:scale-[1.15] group-hover-ml-2">
                         <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>
                     </svg>
-                    <span class="sidebar-text">Configuración.X</span>
+                    <span class="sidebar-text">Desarrolladores</span>
                 </a>
-            </div> -->
+            </div> 
         </aside>
     <div class="flex-1 flex flex-col overflow-hidden">
         <!-- Este codigo usa un arreglo para  especificar segun la ruta en la cabecera donde esta ubicado -->

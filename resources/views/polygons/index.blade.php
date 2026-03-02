@@ -25,6 +25,13 @@
                                 </svg>
                                 <span>{{ __('Mapa') }}</span>
                             </a>
+                            <!-- AÑADE ESTE BOTÓN PARA VER DESHABILITADOS -->
+                            <a href="{{ route('polygons.deleted') }}" class="px-4 py-2 bg-orange-600/90 text-white rounded-md hover:bg-orange-600 flex items-center space-x-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                </svg>
+                                <span>{{ __('Deshabilitados') }}</span>
+                            </a>
                             
                         </div>
                     </div>
@@ -156,11 +163,12 @@
                                                             @endif
                                                         </button>
 
+                                                        <!-- Botón Eliminar -->
                                                         <button type="button" 
                                                                 class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Eliminar"
                                                                 onclick="handleDeletePolygon({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')">
-                                                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                 <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                                                             </svg>
                                                         </button>
@@ -420,6 +428,7 @@ async function handleRestorePolygon(polygonId, polygonName) {
 }
 
 // Función para actualizar fila cuando se elimina - CORREGIDA
+// Función para actualizar fila cuando se elimina - CORREGIDA
 function updatePolygonRowForDeleted(polygonId, polygonName) {
     const row = document.getElementById(`polygon-row-${polygonId}`);
     if (!row) {
@@ -427,26 +436,21 @@ function updatePolygonRowForDeleted(polygonId, polygonName) {
         return;
     }
     
-    // Actualizar estado a "Eliminado"
-    const statusCell = row.querySelector('td:nth-child(5)');
-    if (statusCell) {
-        statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">Eliminado</span>';
-    }
+    // ELIMINAR la fila completamente, no solo actualizarla
+    row.remove();
     
-    // Actualizar acciones
-    const actionsCell = row.querySelector('td:nth-child(6)');
-    if (actionsCell) {
-        actionsCell.innerHTML = `
-            <div class="flex items-center gap-2">
-                <button type="button" 
-                        class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
-                        title="Restaurar"
-                        onclick="handleRestorePolygon(${polygonId}, '${polygonName.replace(/'/g, "\\'")}')">
-                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
-                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+    // Verificar si la tabla quedó vacía
+    const tableBody = document.querySelector('table tbody');
+    if (tableBody && tableBody.children.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                </button>
-            </div>
+                    <p class="text-gray-600 dark:text-gray-400">No se encontraron polígonos.</p>
+                </td>
+            </tr>
         `;
     }
 }

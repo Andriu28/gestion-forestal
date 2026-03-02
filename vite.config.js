@@ -10,6 +10,7 @@ export default defineConfig({
                 'resources/css/DataTableCss.css',
 
                 'resources/img/user.jpg',
+                'resources/img/KS.jpg',
                 'resources/img/favicon.png',
 
                 'resources/js/app.js',
