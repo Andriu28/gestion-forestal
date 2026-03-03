@@ -47,6 +47,31 @@ Route::get('/run-producers', function() {
     }
 });
 
+// ===== NUEVA RUTA PARA EJECUTAR EL POLYGONS SEEDER =====
+Route::get('/run-polygons', function() {
+    try {
+        // Opcional: Limpiar la tabla antes de sembrar (descomenta si quieres borrar todo)
+        \App\Models\Polygon::truncate();
+        
+        \Artisan::call('db:seed', [
+            '--class' => 'PolygonsSeeder',
+            '--force' => true
+        ]);
+        
+        $polygonCount = \App\Models\Polygon::count();
+        $output = \Artisan::output();
+        
+        return "Seeder PolygonsSeeder ejecutado exitosamente. Polígonos en la base de datos: $polygonCount";
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
+
 
 // RUTA PARA VERIFICAR CONFIGURACIÓN DE CORREO
 Route::get('/check-mail-config', function() {

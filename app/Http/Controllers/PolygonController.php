@@ -888,6 +888,8 @@ class PolygonController extends Controller
         return view('polygons.deleted', compact('polygons', 'search'));
     }
 
+    
+
     /**
  * Get polygon details for modal view.
  */

@@ -20,7 +20,7 @@
                     <div class="group bg-gradient-to-br from-stone-50 to-stone-100 dark:from-custom-gray dark:to-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-stone-200 dark:border-gray-700">
                         <div class="flex flex-col items-center text-center">
                             {{-- Avatar con soporte para foto real --}}
-                            <div class="w-32 h-32 rounded-full bg-gray-400  p-1.5 mb-4 shadow-lg group-hover:scale-105 transition-transform duration-500">
+                            <div class="w-32 h-32 rounded-full bg-gray-400 dark:bg-gray-600 p-1.5 mb-4 shadow-lg group-hover:scale-105 transition-transform duration-500">
                                 <div class="w-full h-full rounded-full bg-stone-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                                     {{-- PARA USAR FOTO REAL: Reemplaza el SVG con una etiqueta img --}}
                                      <img src="{{ Vite::asset('resources/img/KS.jpg') }}" alt="Kevin Salazar" class="w-full h-full object-cover"> 
