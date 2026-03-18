@@ -43,17 +43,17 @@
                             {{-- Contacto: Correo y WhatsApp --}}
                             <div class="flex justify-center space-x-6 mt-2">
                                 {{-- Correo electrónico --}}
-                                <a href="mailto:alexander.garcia@cacaosanjose.com" 
+                                <a href="#" 
                                    class="flex flex-col items-center text-gray-500 hover:text-lime-600 dark:text-gray-400 dark:hover:text-lime-400 transition-all duration-300 hover:scale-110"
                                    title="Enviar correo">
                                     <svg class="w-7 h-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                     </svg>
-                                    <span class="text-xs">Correo</span>
+                                    <span class="text-xs">kevinsalazaroriginal@gmail.com</span>
                                 </a>
 
                                 {{-- WhatsApp --}}
-                                <a href="https://wa.me/584241234567?text=Hola%20Alexander,%20te%20contacto%20desde%20el%20sistema%20Cacao%20San%20José" 
+                                <a href="#" 
                                    target="_blank"
                                    class="flex flex-col items-center text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 transition-all duration-300 hover:scale-110"
                                    title="Enviar WhatsApp">
@@ -93,7 +93,7 @@
                             {{-- Contacto: Correo y WhatsApp --}}
                             <div class="flex justify-center space-x-6 mt-2">
                                 {{-- Correo electrónico --}}
-                                <a href="mailto:maria.gonzalez@cacaosanjose.com" 
+                                <a href="" 
                                    class="flex flex-col items-center text-gray-500 hover:text-lime-600 dark:text-gray-400 dark:hover:text-lime-400 transition-all duration-300 hover:scale-110"
                                    title="Enviar correo">
                                     <svg class="w-7 h-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +103,7 @@
                                 </a>
 
                                 {{-- WhatsApp --}}
-                                <a href="https://wa.me/584245678901?text=Hola%20María,%20te%20contacto%20desde%20el%20sistema%20Cacao%20San%20José" 
+                                <a href=""
                                    target="_blank"
                                    class="flex flex-col items-center text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 transition-all duration-300 hover:scale-110"
                                    title="Enviar WhatsApp">
