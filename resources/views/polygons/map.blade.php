@@ -19,15 +19,12 @@
                 <div class="relative rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 75vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
                     <div id="map" class="h-full w-full"></div>
                     
-                    <!-- Controles del mapa - IGUALES A ANALISIS Y POLYGONS -->
+                    <!-- Controles del mapa -->
                     <div id="map-controls" style="position: absolute; top: 10px; right: 10px; z-index: 1;">
-                        <!-- Contenedor para los botones superiores (Cambiar Mapa y Pantalla Completa) -->
                         <div class="flex flex-col items-end space-y-2">
-                            <!-- Fila superior: Cambiar Mapa y Pantalla Completa -->
                             <div class="flex space-x-2">
                                 <!-- Contenedor para Cambiar Mapa con menú -->
                                 <div class="relative">
-                                    <!-- Botón de cambio de mapa -->
                                     <button id="base-map-toggle" title="Cambiar mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
@@ -39,13 +36,11 @@
                                     <div id="base-map-menu"
                                         class="absolute mt-3 w-40 rounded-xl shadow-lg bg-gray-100 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 right-0
                                                 transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none hidden">
-                                        <!-- Flechita -->
                                         <div class="absolute -top-2 right-6 w-8 h-2 pointer-events-none">
                                             <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
                                                 <polygon points="8,0 16,8 0,8" fill="currentColor"/>
                                             </svg>
                                         </div>
-                                        <!-- Menú -->
                                         <div class="py-2 " role="menu" aria-orientation="vertical">
                                             <button data-layer="osm" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">OpenStreetMap</button>
                                             <button data-layer="satellite" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Satélite Esri</button>
@@ -65,9 +60,6 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Display de coordenadas - IGUAL A ANALISIS Y POLYGONS -->
-                    <!-- Se mostrará automáticamente cuando se mueva el mouse -->
                 </div>
 
                 <!-- Leyenda -->
@@ -85,14 +77,325 @@
         </div>
     </div>
 
+    <!-- Elemento popup - AHORA VISIBLE POR DEFECTO -->
+    <div id="popup" class="ol-popup" style="display: block; position: absolute; visibility: hidden;">
+        <div class="popup-content bg-gray-50 dark:bg-gray-800 rounded-lg shadow-lg"></div>
+        <div class="popup-arrow" aria-hidden="true"></div>
+    </div>
+
     <!-- Incluir OpenLayers -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css">
     <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
-
-    <!-- SweetAlert2 para notificaciones -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* Estilos para OpenLayers */
+        .ol-viewport {
+            border-radius: 0.5rem;
+        }
+
+        .ol-control {
+            background-color: rgba(255,255,255,0.8);
+            border-radius: 4px;
+            padding: 2px;
+        }
+
+        .ol-control:hover {
+            background-color: rgba(255,255,255,0.9);
+        }
+
+        /* Asegurar que el mapa ocupe todo el espacio */
+        #map {
+            width: 100% !important;
+            height: 100% !important;
+            position: absolute !important;
+            top: 0;
+            left: 0;
+        }
+
+        /* Estilos para controles de mapa */
+        #map-controls {
+            pointer-events: auto;
+            z-index: 1 !important;
+        }
+
+        .absolute {
+            position: absolute;
+        }
+
+        /* Animaciones suaves */
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+
+        .duration-300 {
+            transition-duration: 300ms;
+        }
+
+        /* Sombras y bordes */
+        .shadow-lg {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Estilos para el display de coordenadas */
+        .coordinate-display {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1;
+            font-family: monospace;
+            display: none;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilo para modo oscuro */
+        .dark .coordinate-display {
+            background-color: rgba(21, 23, 29, 0.9);
+            color: #e5e7eb;
+            border: 1px solid #4b5563;
+        }
+
+        /* Asegurar que el contenedor del mapa se ajuste al sidebar */
+        .mx-auto {
+            transition: margin-left 0.35s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .sidebar:not(.collapsed) ~ .flex-1 .mx-auto {
+            margin-left: 0;
+        }
+
+        .sidebar.collapsed ~ .flex-1 .mx-auto {
+            margin-left: 0;
+        }
+
+        /* Forzar que el contenedor del mapa sea responsivo */
+        #map {
+            transition: width 0.35s cubic-bezier(.4, 0, .2, 1), height 0.35s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        /* Asegurar que el contenedor del mapa tenga dimensiones adecuadas */
+        #map {
+            min-height: 400px;
+        }
+
+        /* Animación suave para el redimensionamiento del mapa */
+        #map .ol-viewport {
+            transition: transform 0.3s ease-out;
+        }
+
+        /* Popup - AHORA CON ESTILOS CORREGIDOS */
+        .ol-popup {
+            position: absolute;
+            transform: translateX(-50%);
+            min-width: 260px;
+            max-width: 320px;
+            left: 50%;
+            bottom: 12px;
+            pointer-events: auto;
+            z-index: 1000;
+            display: block;
+        }
+
+        .ol-popup .popup-content {
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+            border: 1px solid rgba(0,0,0,0.06);
+            color: #111827;
+            background-clip: padding-box;
+            background-color: #f9fafb;
+        }
+
+        .dark .ol-popup .popup-content {
+            background-color: #1f2937;
+            color: #e5e7eb;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .ol-popup .popup-arrow {
+            width: 16px;
+            height: 16px;
+            background: #f9fafb;
+            border-left: 1px solid rgba(0,0,0,0.06);
+            border-top: 1px solid rgba(0,0,0,0.06);
+            transform: translateX(-50%) rotate(45deg);
+            position: absolute;
+            left: 50%;
+            bottom: -8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        }
+
+        .dark .ol-popup .popup-arrow {
+            background: #1f2937;
+            border-left: 1px solid rgba(255,255,255,0.04);
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+
+        /* ESTILOS PARA INDICADORES */
+        .owner-bubble-wrapper {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            pointer-events: auto;
+            transform: translateY(-4px);
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+            opacity: 0;
+            animation: fadeInUp 0.3s ease-out forwards;
+            animation-delay: 0.5s;
+        }
+
+        .owner-bubble {
+            background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+            border-radius: 10px;
+            padding: 6px 10px;
+            border: 1px solid #e5e7eb;
+            display: inline-block;
+            max-width: 200px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            transition: all 0.2s ease;
+        }
+
+        .owner-bubble-wrapper:hover .owner-bubble {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            border-color: #d1d5db;
+        }
+
+        .owner-bubble .owner-text {
+            color: #111827;
+            font-weight: 600;
+            font-size: 11px;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            letter-spacing: 0.01em;
+        }
+
+        .owner-pin {
+            width: 18px;
+            height: 18px;
+            background: #3b82f6;
+            transform: rotate(45deg);
+            margin-top: -9px;
+            border-radius: 2px;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .owner-pin::after {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .owner-bubble-wrapper.no-producer .owner-bubble {
+            background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%);
+            border-color: #bbf7d0;
+        }
+        
+        .owner-bubble-wrapper.no-producer .owner-pin {
+            background: #10b981;
+        }
+
+        .owner-bubble-wrapper.with-producer .owner-bubble {
+            background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+            border-color: #bfdbfe;
+        }
+        
+        .owner-bubble-wrapper.with-producer .owner-pin {
+            background: #3b82f6;
+        }
+
+        /* Modo oscuro */
+        @media (prefers-color-scheme: dark) {
+            .owner-bubble {
+                background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+                border: 1px solid #334155;
+                color: #f8fafc;
+            }
+
+            .owner-bubble .owner-text {
+                color: #f1f5f9;
+            }
+
+            .owner-bubble-wrapper.no-producer .owner-bubble {
+                background: linear-gradient(180deg, #064e3b 0%, #022c22 100%);
+                border-color: #065f46;
+            }
+            
+            .owner-bubble-wrapper.no-producer .owner-pin {
+                background: #10b981;
+                border-color: #1e293b;
+            }
+
+            .owner-bubble-wrapper.with-producer .owner-bubble {
+                background: linear-gradient(180deg, #464f69ff 0%, #323542ff 100%);
+                border-color: #888888ff;
+            }
+            
+            .owner-bubble-wrapper.with-producer .owner-pin {
+                background: #3b82f6;
+                border-color: #1e293b;
+            }
+
+            .owner-pin {
+                border-color: #1e293b;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .owner-bubble .owner-text {
+                font-size: 10px;
+                padding: 6px 10px;
+            }
+            
+            .owner-bubble {
+                max-width: 160px;
+            }
+        }
+
+        .ol-overlay-container .owner-bubble-wrapper {
+            transform: translate(0%, 24%) !important;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .owner-bubble-wrapper {
+            opacity: 0;
+            animation: fadeInUp 0.3s ease-out forwards;
+            animation-delay: 0.5s;
+        }
+    </style>
 
     <script>
         // =============================================
@@ -106,6 +409,7 @@
                 this.coordinateDisplay = null;
                 this.baseLayers = {};
                 this.currentBaseLayer = null;
+                this.popup = null; // Añadimos referencia al popup
 
                 // Coordenadas de Venezuela por defecto
                 this.INITIAL_CENTER = [-66.9036, 10.4806];
@@ -126,7 +430,6 @@
             init() {
                 console.log('Ejecutando init()...');
                 
-                // Verificar que el elemento map existe
                 const mapElement = document.getElementById('map');
                 if (!mapElement) {
                     console.error('ERROR: No se encontró el elemento #map');
@@ -139,7 +442,6 @@
                 this.setupCoordinateDisplay();
                 this.setupMapResizeObserver();
                 
-                // Forzar redimensionamiento después de la inicialización
                 setTimeout(() => {
                     if (this.map) {
                         this.map.updateSize();
@@ -155,7 +457,6 @@
                     if (mapElement && mapElement.parentElement) {
                         const observer = new ResizeObserver(entries => {
                             for (let entry of entries) {
-                                console.log('Cambio detectado en contenedor del mapa:', entry.contentRect);
                                 if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
                                     this.updateMapSize();
                                 }
@@ -163,25 +464,14 @@
                         });
                         
                         observer.observe(mapElement.parentElement);
-                        console.log('Observador de redimensionamiento configurado para contenedor padre');
                     }
-                } else {
-                    console.warn('ResizeObserver no está disponible en este navegador');
                 }
             }
             
             updateMapSize() {
                 if (this.map) {
-                    console.log('Actualizando tamaño del mapa...');
                     setTimeout(() => {
                         this.map.updateSize();
-                        
-                        if (this.polygonsLayer && this.polygonsLayer.getSource().getFeatures().length > 0) {
-                            const extent = this.polygonsLayer.getSource().getExtent();
-                            
-                        }
-                        
-                        console.log('Tamaño del mapa actualizado');
                     }, 100);
                 }
             }
@@ -193,7 +483,6 @@
                     this.setupBaseLayers();
                     this.setupPolygonsLayer();
                     this.setupMapInstance();
-                    console.log('Mapa inicializado correctamente');
                     
                     // Cargar polígonos después de inicializar el mapa
                     this.loadPolygons();
@@ -295,55 +584,130 @@
             }
 
             setupEventListeners() {
-                // Setup popup
+                // IMPORTANTE: Configurar el popup ANTES de los controles
                 this.setupPopup();
                 
-                // Setup map controls
+                // Luego configurar los controles
                 this.setupMapControls();
             }
 
+            // =============================================
+            // POPUP CORREGIDO
+            // =============================================
             setupPopup() {
-                const popup = new ol.Overlay({
-                    element: document.getElementById('popup'),
+                console.log('Configurando popup...');
+                
+                // Obtener el elemento del popup
+                const popupElement = document.getElementById('popup');
+                if (!popupElement) {
+                    console.error('No se encontró el elemento #popup');
+                    return;
+                }
+                
+                console.log('Elemento popup encontrado:', popupElement);
+                
+                // Crear el overlay del popup
+                this.popup = new ol.Overlay({
+                    element: popupElement,
                     positioning: 'bottom-center',
                     stopEvent: false,
-                    offset: [0, -12]
+                    offset: [0, -15],
+                    autoPan: true,
+                    autoPanAnimation: {
+                        duration: 250
+                    }
                 });
-                this.map.addOverlay(popup);
-
+                
+                // Agregar el popup al mapa
+                this.map.addOverlay(this.popup);
+                console.log('Popup agregado al mapa');
+                
+                // Configurar el evento de clic en el mapa
                 this.map.on('click', (evt) => {
+                    console.log('Clic en el mapa en coordenadas:', evt.coordinate);
+                    
+                    // Buscar si hay un polígono en la posición del clic
                     const feature = this.map.forEachFeatureAtPixel(evt.pixel, (feature) => {
                         return feature;
                     });
-
+                    
+                    console.log('Feature encontrado:', feature);
+                    
                     if (feature) {
+                        // Obtener las propiedades del feature
                         const properties = feature.getProperties();
-                        const coordinate = evt.coordinate;
-
-                        const popupContent = `
-                            <div class="p-3">
-                                <h3 class="font-bold text-lg mb-2 text-gray-900 dark:text-white">${properties.name || 'Polígono'}</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                                    <strong>Productor:</strong> ${properties.producer || 'N/A'}
-                                </p>
-                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                                    <strong>Área:</strong> ${properties.area_ha ? properties.area_ha.toFixed(2) + ' Ha' : 'N/A'}
-                                </p>
-                                ${properties.description ? `<p class="text-sm text-gray-600 dark:text-gray-300">${properties.description}</p>` : ''}
-                                <div class="mt-2">
-                                    <a href="/polygons/${properties.id}" class="text-blue-600 hover:text-blue-800 text-sm">Ver detalles</a>
-                                </div>
-                            </div>
-                        `;
-
-                        const el = popup.getElement();
-                        const contentEl = el.querySelector('.popup-content');
-                        if (contentEl) contentEl.innerHTML = popupContent;
-                        popup.setPosition(coordinate);
+                        console.log('Propiedades del feature:', properties);
+                        
+                        // Construir el contenido del popup
+                        const popupContent = this.buildPopupContent(properties);
+                        
+                        // Actualizar el contenido del popup
+                        const contentEl = popupElement.querySelector('.popup-content');
+                        if (contentEl) {
+                            contentEl.innerHTML = popupContent;
+                        }
+                        
+                        // Posicionar el popup
+                        this.popup.setPosition(evt.coordinate);
+                        console.log('Popup posicionado en:', evt.coordinate);
                     } else {
-                        popup.setPosition(undefined);
+                        // Si no hay feature, ocultar el popup
+                        this.popup.setPosition(undefined);
+                        console.log('Popup ocultado');
                     }
                 });
+                
+                // Opcional: cambiar el cursor cuando se pasa sobre un polígono
+                this.map.on('pointermove', (evt) => {
+                    const hit = this.map.hasFeatureAtPixel(evt.pixel);
+                    this.map.getTargetElement().style.cursor = hit ? 'pointer' : '';
+                });
+            }
+            
+            // Método auxiliar para construir el contenido del popup
+            buildPopupContent(properties) {
+                const name = properties.name || 'Polígono sin nombre';
+                const producer = properties.producer || 'Sin productor asignado';
+                const area = properties.area_ha ? properties.area_ha.toFixed(2) : 'No calculada';
+                const description = properties.description || '';
+                const type = properties.type || 'without_producer';
+                const typeText = type === 'with_producer' ? 'Con Productor' : 'Sin Productor';
+                const id = properties.id || 'N/A';
+                
+                // Determinar color de fondo según el tipo
+                const typeClass = type === 'with_producer' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
+                
+                return `
+                    <div class="p-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-gray-900 dark:text-white">${this.escapeHtml(name)}</h3>
+                            <span class="text-xs px-2 py-1 rounded-full ${typeClass}">${typeText}</span>
+                        </div>
+                        
+                        <div class="space-y-2 text-sm">
+                            <p class="text-gray-700 dark:text-gray-300">
+                                <span class="font-semibold">ID:</span> ${id}
+                            </p>
+                            <p class="text-gray-700 dark:text-gray-300">
+                                <span class="font-semibold">Productor:</span> ${this.escapeHtml(producer)}
+                            </p>
+                            <p class="text-gray-700 dark:text-gray-300">
+                                <span class="font-semibold">Área:</span> ${area} ha
+                            </p>
+                            ${description ? `
+                                <p class="text-gray-600 dark:text-gray-400 text-sm border-t pt-2 mt-2">
+                                    ${this.escapeHtml(description)}
+                                </p>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="mt-3 flex justify-end">
+                            <a href="/polygons/${id}" class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+                                Ver detalles completos →
+                            </a>
+                        </div>
+                    </div>
+                `;
             }
 
             setupMapControls() {
@@ -422,17 +786,11 @@
             createCoordinateDisplayElement() {
                 console.log('Creando elemento display de coordenadas...');
                 
-                // Eliminar cualquier display existente
                 const existingDisplays = document.querySelectorAll('.coordinate-display');
-                existingDisplays.forEach(display => {
-                    console.log('Eliminando display existente:', display);
-                    display.remove();
-                });
+                existingDisplays.forEach(display => display.remove());
                 
-                // Crear nuevo elemento
                 this.coordinateDisplay = document.createElement('div');
                 this.coordinateDisplay.className = 'coordinate-display';
-                this.coordinateDisplay.style.cssText = 'position: absolute; bottom: 10px; left: 10px; background-color: rgba(255, 255, 255, 0.9); padding: 5px 10px; border-radius: 4px; font-size: 12px; z-index: 1; font-family: monospace; display: none; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);';
                 
                 const mapContainer = this.map.getTargetElement();
                 if (mapContainer) {
@@ -507,16 +865,13 @@
                     return;
                 }
                 
-                // Ocultar todas las capas base
                 Object.values(this.baseLayers).forEach(layer => {
                     layer.setVisible(false);
                 });
                 
-                // Mostrar la nueva capa base
                 this.baseLayers[layerKey].setVisible(true);
                 this.currentBaseLayer = this.baseLayers[layerKey];
                 
-                // Actualizar texto del botón
                 const buttonElement = document.getElementById('base-map-toggle');
                 if (buttonElement) {
                     const layerTitle = this.baseLayers[layerKey].get('title') || layerKey;
@@ -578,8 +933,9 @@
             }
 
             escapeHtml(text) {
+                if (!text) return '';
                 const div = document.createElement('div');
-                div.appendChild(document.createTextNode(text));
+                div.appendChild(document.createTextNode(String(text)));
                 return div.innerHTML;
             }
 
@@ -589,10 +945,14 @@
                     const response = await fetch('{{ route("polygons.geojson") }}');
                     const data = await response.json();
                     
+                    console.log('Datos GeoJSON recibidos:', data);
+                    
                     const features = new ol.format.GeoJSON().readFeatures(data, {
                         dataProjection: 'EPSG:4326',
                         featureProjection: 'EPSG:3857'
                     });
+
+                    console.log('Features procesados:', features);
 
                     this.polygonsLayer.getSource().clear();
                     this.clearOwnerOverlays();
@@ -615,10 +975,6 @@
                     console.error('Error loading polygons:', error);
                 }
             }
-
-            // =============================================
-            // UTILIDADES
-            // =============================================
 
             showAlert(message, icon = 'info') {
                 if (window.Swal) {
@@ -679,10 +1035,6 @@
             }, 400);
         }
 
-        // =============================================
-        // FUNCIÓN DEBOUCE PARA OPTIMIZAR EVENTOS
-        // =============================================
-
         function debounce(func, wait) {
             let timeout;
             return function executedFunction(...args) {
@@ -695,10 +1047,6 @@
             };
         }
 
-        // =============================================
-        // OBSERVADOR PARA EL SIDEBAR (Solución completa)
-        // =============================================
-
         function setupSidebarObserver() {
             const sidebar = document.getElementById('sidebar');
             if (!sidebar) {
@@ -708,12 +1056,10 @@
             
             console.log('Configurando observador para sidebar...');
             
-            // Observer para cambios en el sidebar
             const sidebarObserver = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                         console.log('Sidebar cambió de estado, redimensionando mapa...');
-                        // Esperar a que la animación del sidebar termine
                         setTimeout(() => {
                             if (window.polygonsMapInstance && window.polygonsMapInstance.map) {
                                 window.polygonsMapInstance.map.updateSize();
@@ -724,18 +1070,15 @@
                 });
             });
             
-            // Observar cambios en el sidebar
             sidebarObserver.observe(sidebar, {
                 attributes: true,
                 attributeFilter: ['class']
             });
             
-            // También escuchar clics en el botón del sidebar
             const sidebarToggle = document.getElementById('sidebarToggle');
             if (sidebarToggle) {
                 sidebarToggle.addEventListener('click', function() {
                     console.log('Botón del sidebar clickeado, redimensionando mapa...');
-                    // Esperar a que la animación del sidebar termine
                     setTimeout(() => {
                         if (window.polygonsMapInstance && window.polygonsMapInstance.map) {
                             window.polygonsMapInstance.map.updateSize();
@@ -745,10 +1088,6 @@
                 });
             }
         }
-
-        // =============================================
-        // CONFIGURAR REDIMENSIONAMIENTO CON LA VENTANA
-        // =============================================
 
         function setupWindowResizeHandler() {
             window.addEventListener('resize', debounce(function() {
@@ -781,339 +1120,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM completamente cargado, inicializando mapa...');
             
-            // Inicializar el mapa
             window.polygonsMapInstance = new PolygonsMap();
             
-            // Configurar observer para el sidebar
             setupSidebarObserver();
-            
-            // Configurar redimensionamiento de la ventana
             setupWindowResizeHandler();
         });
     </script>
-
-    <!-- Elemento popup (oculto inicialmente) -->
-    <div id="popup" class="ol-popup" style="display: none;">
-        <div class="popup-content bg-gray-50 dark:bg-gray-800 rounded-lg shadow-lg"></div>
-        <div class="popup-arrow" aria-hidden="true"></div>
-    </div>
-
-    <!-- Estilos CSS -->
-    <style>
-        /* Estilos para OpenLayers */
-        .ol-viewport {
-            border-radius: 0.5rem;
-        }
-
-        .ol-control {
-            background-color: rgba(255,255,255,0.8);
-            border-radius: 4px;
-            padding: 2px;
-        }
-
-        .ol-control:hover {
-            background-color: rgba(255,255,255,0.9);
-        }
-
-        /* Asegurar que el mapa ocupe todo el espacio */
-        #map {
-            width: 100% !important;
-            height: 100% !important;
-            position: absolute !important;
-            top: 0;
-            left: 0;
-        }
-
-        /* Estilos para controles de mapa */
-        #map-controls {
-            pointer-events: auto;
-            z-index: 1 !important;
-        }
-
-        .absolute {
-            position: absolute;
-        }
-
-        /* Animaciones suaves */
-        .transition-all {
-            transition-property: all;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms;
-        }
-
-        .duration-300 {
-            transition-duration: 300ms;
-        }
-
-        /* Sombras y bordes */
-        .shadow-lg {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Estilos para el display de coordenadas - IGUAL QUE ANALISIS Y POLYGONS */
-        .coordinate-display {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            z-index: 1;
-            font-family: monospace;
-            display: none;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Estilo para modo oscuro */
-        .dark .coordinate-display {
-            background-color: rgba(21, 23, 29, 0.9);
-            color: #e5e7eb;
-            border: 1px solid #4b5563;
-        }
-
-        /* Asegurar que el contenedor del mapa se ajuste al sidebar */
-        .mx-auto {
-            transition: margin-left 0.35s cubic-bezier(.4, 0, .2, 1);
-        }
-
-        .sidebar:not(.collapsed) ~ .flex-1 .mx-auto {
-            margin-left: 0;
-        }
-
-        .sidebar.collapsed ~ .flex-1 .mx-auto {
-            margin-left: 0;
-        }
-
-        /* Forzar que el contenedor del mapa sea responsivo */
-        #map {
-            transition: width 0.35s cubic-bezier(.4, 0, .2, 1), height 0.35s cubic-bezier(.4, 0, .2, 1);
-        }
-
-        /* Asegurar que el contenedor del mapa tenga dimensiones adecuadas */
-        #map {
-            min-height: 400px;
-        }
-
-        /* Animación suave para el redimensionamiento del mapa */
-        #map .ol-viewport {
-            transition: transform 0.3s ease-out;
-        }
-
-        /* Popup base - OCULTO INICIALMENTE */
-        .ol-popup {
-            position: absolute;
-            transform: translateX(-50%);
-            min-width: 260px;
-            max-width: 320px;
-            left: 50%;
-            bottom: 12px;
-            pointer-events: auto;
-            z-index: 1000;
-            display: none; /* Oculto inicialmente */
-        }
-
-        /* Contenido: fondo redondeado y sombra */
-        .ol-popup .popup-content {
-            border-radius: 12px;
-            padding: 12px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-            border: 1px solid rgba(0,0,0,0.06);
-            color: #111827;
-            background-clip: padding-box;
-        }
-
-        /* Flecha: cuadro rotado 45deg para simular triángulo */
-        .ol-popup .popup-arrow {
-            width: 16px;
-            height: 16px;
-            background: #ffffff;
-            border-left: 1px solid rgba(0,0,0,0.06);
-            border-top: 1px solid rgba(0,0,0,0.06);
-            transform: translateX(-50%) rotate(45deg);
-            position: absolute;
-            left: 50%;
-            bottom: -8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-        }
-
-        /* ESTILOS PARA INDICADORES */
-        .owner-bubble-wrapper {
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-            pointer-events: auto;
-            transform: translateY(-4px);
-            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
-            opacity: 0; /* Oculto inicialmente */
-            animation: fadeInUp 0.3s ease-out forwards; /* Aparece con animación */
-        }
-
-        .owner-bubble {
-            background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
-            border-radius: 10px;
-            padding: 6px 10px;
-            border: 1px solid #e5e7eb;
-            display: inline-block;
-            max-width: 200px;
-            text-align: center;
-            position: relative;
-            z-index: 2;
-            transition: all 0.2s ease;
-        }
-
-        /* Efecto hover sutil */
-        .owner-bubble-wrapper:hover .owner-bubble {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-            border-color: #d1d5db;
-        }
-
-        .owner-bubble .owner-text {
-            color: #111827;
-            font-weight: 600;
-            font-size: 11px;
-            line-height: 1.2;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            letter-spacing: 0.01em;
-        }
-
-        /* Pin mejorado - diseño más limpio */
-        .owner-pin {
-            width: 18px;
-            height: 18px;
-            background: #3b82f6; /* Azul más profesional */
-            transform: rotate(45deg);
-            margin-top: -9px;
-            border-radius: 2px;
-            border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Círculo central del pin */
-        .owner-pin::after {
-            content: '';
-            display: block;
-            width: 6px;
-            height: 6px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Indicador para polígonos sin productor (verde) */
-        .owner-bubble-wrapper.no-producer .owner-bubble {
-            background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%);
-            border-color: #bbf7d0;
-        }
-        
-        .owner-bubble-wrapper.no-producer .owner-pin {
-            background: #10b981; /* Verde para sin productor */
-        }
-
-        /* Indicador para polígonos con productor (azul) */
-        .owner-bubble-wrapper.with-producer .owner-bubble {
-            background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
-            border-color: #bfdbfe;
-        }
-        
-        .owner-bubble-wrapper.with-producer .owner-pin {
-            background: #3b82f6; /* Azul para con productor */
-        }
-
-        /* Modo oscuro mejorado */
-        @media (prefers-color-scheme: dark) {
-            .ol-popup .popup-content {
-                background: #1f2937;
-                color: #e5e7eb;
-                border: 1px solid rgba(255,255,255,0.04);
-            }
-            
-            .ol-popup .popup-arrow {
-                background: #1f2937;
-                border-left: 1px solid rgba(255,255,255,0.04);
-                border-top: 1px solid rgba(255,255,255,0.04);
-            }
-
-            .owner-bubble {
-                background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-                border: 1px solid #334155;
-                color: #f8fafc;
-            }
-
-            .owner-bubble .owner-text {
-                color: #f1f5f9;
-            }
-
-            /* Modo oscuro - sin productor */
-            .owner-bubble-wrapper.no-producer .owner-bubble {
-                background: linear-gradient(180deg, #064e3b 0%, #022c22 100%);
-                border-color: #065f46;
-            }
-            
-            .owner-bubble-wrapper.no-producer .owner-pin {
-                background: #10b981;
-                border-color: #1e293b;
-            }
-
-            /* Modo oscuro - con productor */
-            .owner-bubble-wrapper.with-producer .owner-bubble {
-                background: linear-gradient(180deg, #464f69ff 0%, #323542ff 100%);
-                border-color: #888888ff;
-            }
-            
-            .owner-bubble-wrapper.with-producer .owner-pin {
-                background: #3b82f6;
-                border-color: #1e293b;
-            }
-
-            .owner-pin {
-                border-color: #1e293b;
-            }
-        }
-
-        /* Responsive: textos más pequeños en pantallas medianas */
-        @media (max-width: 1024px) {
-            .owner-bubble .owner-text {
-                font-size: 10px;
-                padding: 6px 10px;
-            }
-            
-            .owner-bubble {
-                max-width: 160px;
-            }
-        }
-
-        /* Agrega esto al final de tu sección <style> */
-        .ol-overlay-container .owner-bubble-wrapper {
-            transform: translate(0%, 24%) !important;
-        }
-
-        /* Animación sutil al cargar */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Asegurar que los elementos se vean solo después de cargar */
-        .owner-bubble-wrapper {
-            opacity: 0;
-            animation: fadeInUp 0.3s ease-out forwards;
-            animation-delay: 0.5s; /* Esperar a que el mapa cargue */
-        }
-    </style>
 </x-app-layout>
