@@ -2124,7 +2124,7 @@ function setupMapContainerObserver() {
 
 /* Estilo para modo oscuro */
 .dark .coordinate-display {
-    background-color: rgba(21, 23, 29, 0.9);
+    background-color: rgba(21, 23, 29, 0.9) !important;
     color: #e5e7eb;
     border: 1px solid #4b5563;
 }
