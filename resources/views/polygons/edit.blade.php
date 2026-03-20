@@ -665,7 +665,7 @@ class PolygonEditor {
             }),
             maptiler_satellite: new ol.layer.Tile({
                 source: new ol.source.XYZ({
-                    url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=scUozK4fig7bE6jg7TPi',
+                    url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key= ',// Reemplaza con tu clave de API de MapTiler
                     attributions: '© MapTiler & OpenStreetMap',
                     tileSize: 512,
                     maxZoom: 20
@@ -689,7 +689,6 @@ class PolygonEditor {
         const styles = [];
         const areaHa = feature.get('area') || 0;
         
-        // Estilo base del polígono
         styles.push(new ol.style.Style({
             stroke: new ol.style.Stroke({
                 color: this.isEditMode ? '#8b5cf6' : '#10b981',
@@ -702,7 +701,6 @@ class PolygonEditor {
             })
         }));
         
-        // Texto del área
         if (areaHa > 0) {
             styles.push(new ol.style.Style({
                 text: new ol.style.Text({
@@ -719,14 +717,13 @@ class PolygonEditor {
             }));
         }
         
-        // Puntos de vértice en modo edición
         if (this.isEditMode && feature === this.currentFeature) {
             const geometry = feature.getGeometry();
             if (geometry.getType() === 'Polygon') {
                 const coordinates = geometry.getCoordinates()[0];
                 
                 coordinates.forEach((coord, index) => {
-                    if (index < coordinates.length - 1) { // No mostrar el último punto duplicado
+                    if (index < coordinates.length - 1) { 
                         styles.push(new ol.style.Style({
                             image: new ol.style.Circle({
                                 radius: 8,
@@ -782,7 +779,6 @@ class PolygonEditor {
     }
 
     setupEventListeners() {
-        // Evento para clic en el mapa (selección de puntos)
         this.map.on('click', (evt) => {
             if (!this.isEditMode || !this.currentFeature) return;
             
@@ -792,19 +788,17 @@ class PolygonEditor {
             });
             
             if (feature === this.currentFeature) {
-                // Verificar si se hizo clic en un punto de vértice
                 const geometry = feature.getGeometry();
                 if (geometry.getType() === 'Polygon') {
                     const coordinates = geometry.getCoordinates()[0];
                     const clickedCoord = evt.coordinate;
                     
-                    // Buscar el punto más cercano
                     let minDistance = Infinity;
                     let closestIndex = -1;
                     
                     for (let i = 0; i < coordinates.length - 1; i++) {
                         const distance = this.calculateDistance(coordinates[i], clickedCoord);
-                        if (distance < minDistance && distance < 20) { // 20 píxeles de tolerancia
+                        if (distance < minDistance && distance < 20) { 
                             minDistance = distance;
                             closestIndex = i;
                         }
@@ -821,7 +815,6 @@ class PolygonEditor {
             }
         });
         
-        // Evento para mover puntos
         this.map.on('pointermove', (evt) => {
             if (!this.isEditMode || !this.currentFeature || this.selectedPointIndex === -1) return;
             
@@ -829,22 +822,18 @@ class PolygonEditor {
                 const geometry = this.currentFeature.getGeometry();
                 const coordinates = geometry.getCoordinates()[0];
                 
-                // Actualizar coordenada seleccionada
                 coordinates[this.selectedPointIndex] = evt.coordinate;
-                coordinates[coordinates.length - 1] = coordinates[0]; // Cerrar el polígono
+                coordinates[coordinates.length - 1] = coordinates[0]; 
                 
                 geometry.setCoordinates([coordinates]);
                 
-                // Actualizar información del punto
                 const lonLat = ol.proj.toLonLat(evt.coordinate);
                 this.updatePointInfo(this.selectedPointIndex, lonLat[1], lonLat[0]);
                 
-                // Recalcular área
                 const areaHa = this.calculateArea(this.currentFeature);
                 this.updateAreaDisplay(areaHa);
                 this.currentFeature.set('area', areaHa);
                 
-                // Actualizar lista de puntos
                 this.updatePolygonPoints();
                 this.updateGeoJSON();
             }
@@ -935,20 +924,14 @@ class PolygonEditor {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    // =============================================
-    // CARGA DE POLÍGONO EXISTENTE
-    // =============================================
-
     loadExistingPolygon() {
         if (!this.existingPolygon || !this.map) return;
         
         try {
             console.log('Cargando polígono existente...');
             
-            // Limpiar cualquier polígono existente
             this.source.clear();
             
-            // Parsear el GeoJSON
             const geojsonFormat = new ol.format.GeoJSON();
             const features = geojsonFormat.readFeatures(this.existingPolygon, {
                 dataProjection: 'EPSG:4326',
@@ -958,30 +941,24 @@ class PolygonEditor {
             if (features.length > 0) {
                 this.currentFeature = features[0];
                 
-                // Calcular área
                 const areaHa = this.calculateArea(this.currentFeature);
                 this.currentFeature.set('area', areaHa);
                 
-                // Agregar al mapa
                 this.source.addFeature(this.currentFeature);
                 
-                // Ajustar vista al polígono
                 this.map.getView().fit(this.currentFeature.getGeometry().getExtent(), {
                     padding: [50, 50, 50, 50],
                     duration: 1000
                 });
                 
-                // Actualizar campos del formulario
                 this.updateAreaDisplay(areaHa);
                 this.updateGeoJSON();
                 
-                // Habilitar botón de detección y edición
                 const detectBtn = document.getElementById('detect-location');
                 const editBtn = document.getElementById('edit-polygon');
                 if (detectBtn) detectBtn.disabled = false;
                 if (editBtn) editBtn.classList.remove('hidden');
                 
-                // Actualizar lista de puntos
                 this.updatePolygonPoints();
             }
         } catch (error) {
@@ -990,18 +967,12 @@ class PolygonEditor {
         }
     }
 
-    // =============================================
-    // FUNCIONALIDADES DE DIBUJO
-    // =============================================
-
     activateDrawing() {
         console.log('Activando dibujo de polígonos...');
         
-        // Limpiar interacciones existentes
         this.deactivateModify();
         this.deactivateDrawing();
         
-        // Salir del modo edición
         this.exitEditMode();
         
         this.draw = new ol.interaction.Draw({
@@ -1057,16 +1028,13 @@ class PolygonEditor {
         this.updateAreaDisplay(areaHa);
         this.updateGeoJSON();
         
-        // Habilitar botones
         const detectBtn = document.getElementById('detect-location');
         const editBtn = document.getElementById('edit-polygon');
         if (detectBtn) detectBtn.disabled = false;
         if (editBtn) editBtn.classList.remove('hidden');
         
-        // Actualizar lista de puntos
         this.updatePolygonPoints();
         
-        // Remover interacción de dibujo
         this.deactivateDrawing();
         
         this.showAlert(`Polígono completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
@@ -1079,10 +1047,6 @@ class PolygonEditor {
         }
     }
 
-    // =============================================
-    // FUNCIONALIDADES DE EDICIÓN MEJORADAS
-    // =============================================
-
     activateEditMode() {
         if (!this.currentFeature) {
             this.showAlert('Primero debes cargar o dibujar un polígono', 'warning');
@@ -1091,15 +1055,12 @@ class PolygonEditor {
         
         console.log('Activando modo edición...');
         
-        // Desactivar dibujo si está activo
         this.deactivateDrawing();
         
         this.isEditMode = true;
         
-        // Actualizar estilo del polígono
         this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
         
-        // Mostrar controles de edición
         document.getElementById('edit-controls').classList.remove('hidden');
         document.getElementById('edit-polygon').innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check w-6 h-6">
@@ -1110,10 +1071,8 @@ class PolygonEditor {
         document.getElementById('edit-polygon').classList.remove('bg-purple-600', 'hover:bg-purple-700');
         document.getElementById('edit-polygon').classList.add('bg-green-600', 'hover:bg-green-700');
         
-        // Actualizar puntos del polígono
         this.updatePolygonPoints();
         
-        // Activar interacción de modificación
         this.activateModify();
         
         this.showAlert('Modo edición activado. Haz clic en los puntos para seleccionarlos y arrástralos para moverlos.', 'info');
@@ -1126,10 +1085,8 @@ class PolygonEditor {
         this.selectedPointIndex = -1;
         this.selectedFeature = null;
         
-        // Ocultar información del punto
         document.getElementById('point-info').classList.add('hidden');
         
-        // Ocultar controles de edición
         document.getElementById('edit-controls').classList.add('hidden');
         document.getElementById('edit-polygon').innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit w-6 h-6">
@@ -1141,10 +1098,8 @@ class PolygonEditor {
         document.getElementById('edit-polygon').classList.remove('bg-green-600', 'hover:bg-green-700');
         document.getElementById('edit-polygon').classList.add('bg-gray-600', 'hover:bg-gray-700');
         
-        // Desactivar interacción de modificación
         this.deactivateModify();
         
-        // Actualizar estilo del polígono
         this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
         
         this.showAlert('Modo edición desactivado', 'info');
@@ -1170,15 +1125,15 @@ class PolygonEditor {
         this.modify.on('modifyend', (event) => {
             const feature = event.features.getArray()[0];
             if (feature === this.currentFeature) {
-                // Recalcular área
+                
                 const areaHa = this.calculateArea(feature);
                 this.updateAreaDisplay(areaHa);
                 feature.set('area', areaHa);
                 
-                // Actualizar GeoJSON
+                
                 this.updateGeoJSON();
                 
-                // Actualizar lista de puntos
+                
                 this.updatePolygonPoints();
                 
                 this.showAlert('Polígono modificado', 'success');
@@ -1198,16 +1153,16 @@ class PolygonEditor {
     selectPoint(index, coordinate) {
         this.selectedPointIndex = index;
         
-        // Convertir coordenadas a lat/lng
+        
         const lonLat = ol.proj.toLonLat(coordinate);
         
-        // Actualizar información del punto
+        
         this.updatePointInfo(index, lonLat[1], lonLat[0]);
         
-        // Mostrar panel de información
+        
         document.getElementById('point-info').classList.remove('hidden');
         
-        // Actualizar estilo del polígono para resaltar el punto seleccionado
+        
         this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
     }
 
@@ -1215,7 +1170,7 @@ class PolygonEditor {
         this.selectedPointIndex = -1;
         document.getElementById('point-info').classList.add('hidden');
         
-        // Actualizar estilo del polígono
+        
         this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
     }
 
@@ -1231,31 +1186,31 @@ class PolygonEditor {
         const geometry = this.currentFeature.getGeometry();
         const coordinates = geometry.getCoordinates()[0];
         
-        if (coordinates.length <= 4) { // 3 puntos + el punto de cierre
+        if (coordinates.length <= 4) { 
             this.showAlert('El polígono debe tener al menos 3 puntos', 'warning');
             return;
         }
         
-        // Eliminar el punto seleccionado
+        
         coordinates.splice(this.selectedPointIndex, 1);
         
-        // Actualizar el último punto para cerrar el polígono
+        
         coordinates[coordinates.length - 1] = coordinates[0];
         
         geometry.setCoordinates([coordinates]);
         
-        // Recalcular área
+        
         const areaHa = this.calculateArea(this.currentFeature);
         this.updateAreaDisplay(areaHa);
         this.currentFeature.set('area', areaHa);
         
-        // Actualizar GeoJSON
+        
         this.updateGeoJSON();
         
-        // Actualizar lista de puntos
+        
         this.updatePolygonPoints();
         
-        // Deseleccionar punto
+        
         this.deselectPoint();
         
         this.showAlert(`Punto ${this.selectedPointIndex + 1} eliminado`, 'success');
@@ -1268,7 +1223,7 @@ class PolygonEditor {
         const geometry = this.currentFeature.getGeometry();
         const coordinates = geometry.getCoordinates()[0];
         
-        // Encontrar el segmento más cercano
+        
         let minDistance = Infinity;
         let insertIndex = -1;
         
@@ -1277,30 +1232,30 @@ class PolygonEditor {
             const segmentEnd = coordinates[i + 1];
             const distance = this.pointToSegmentDistance(coordinate, segmentStart, segmentEnd);
             
-            if (distance < minDistance && distance < 25) { // 25 píxeles de tolerancia
+            if (distance < minDistance && distance < 25) { 
                 minDistance = distance;
                 insertIndex = i + 1;
             }
         }
         
         if (insertIndex !== -1) {
-            // Insertar nuevo punto
+            
             coordinates.splice(insertIndex, 0, coordinate);
             
-            // Actualizar el último punto para cerrar el polígono
+            
             coordinates[coordinates.length - 1] = coordinates[0];
             
             geometry.setCoordinates([coordinates]);
             
-            // Recalcular área
+            
             const areaHa = this.calculateArea(this.currentFeature);
             this.updateAreaDisplay(areaHa);
             this.currentFeature.set('area', areaHa);
             
-            // Actualizar GeoJSON
+            
             this.updateGeoJSON();
             
-            // Actualizar lista de puntos
+            
             this.updatePolygonPoints();
             
             this.showAlert('Nuevo punto agregado', 'success');
@@ -1353,7 +1308,7 @@ class PolygonEditor {
         const coordinates = geometry.getCoordinates()[0];
         this.polygonPoints = [];
         
-        for (let i = 0; i < coordinates.length - 1; i++) { // Excluir el último punto duplicado
+        for (let i = 0; i < coordinates.length - 1; i++) { 
             const coord = coordinates[i];
             const lonLat = ol.proj.toLonLat(coord);
             
@@ -1375,31 +1330,25 @@ class PolygonEditor {
         
         if (!container || !pointsCount) return;
         
-        // Actualizar contador
         pointsCount.textContent = this.polygonPoints.length;
         if (summaryPoints) summaryPoints.textContent = this.polygonPoints.length;
         
-        // Ocultar/mostrar mensaje
         if (noPointsMessage) {
             noPointsMessage.classList.toggle('hidden', this.polygonPoints.length > 0);
         }
         
-        // Mostrar/ocultar resumen
         const summary = document.getElementById('polygon-summary');
         if (summary) {
             summary.classList.toggle('hidden', this.polygonPoints.length === 0);
         }
         
-        // Limpiar contenedor
         container.innerHTML = '';
         
-        // Agregar cada punto
         this.polygonPoints.forEach((point, index) => {
             const pointElement = this.createPointElement(point, index);
             container.appendChild(pointElement);
         });
         
-        // Calcular y actualizar resumen
         if (this.polygonPoints.length > 2) {
             this.updatePolygonSummary();
         }
@@ -1410,7 +1359,6 @@ class PolygonEditor {
         element.className = 'bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 ';
         element.dataset.index = index;
         
-        // Convertir a UTM
         const zone = Math.floor((point.lng + 180) / 6) + 1;
         const hemisphere = point.lat >= 0 ? 'N' : 'S';
         const epsgCode = this.setupUTMProjection(zone, hemisphere);
@@ -1458,14 +1406,14 @@ class PolygonEditor {
             
         `;
         
-        // Evento para seleccionar el punto
+        
         element.addEventListener('click', (e) => {
             if (!e.target.closest('button')) {
                 this.selectPoint(index, ol.proj.fromLonLat([point.lng, point.lat]));
             }
         });
         
-        // Evento para el botón de editar
+        
         const editBtn = element.querySelector('.edit-point-btn');
         if (editBtn) {
             editBtn.addEventListener('click', (e) => {
@@ -1480,15 +1428,15 @@ class PolygonEditor {
     updatePolygonSummary() {
         if (this.polygonPoints.length < 3) return;
         
-        // Calcular perímetro
+        
         let perimeter = 0;
         for (let i = 0; i < this.polygonPoints.length; i++) {
             const nextIndex = (i + 1) % this.polygonPoints.length;
             const point1 = this.polygonPoints[i];
             const point2 = this.polygonPoints[nextIndex];
             
-            // Calcular distancia en kilómetros
-            const R = 6371; // Radio de la Tierra en km
+            
+            const R = 6371; 
             const dLat = (point2.lat - point1.lat) * Math.PI / 180;
             const dLon = (point2.lng - point1.lng) * Math.PI / 180;
             const a = 
@@ -1499,7 +1447,7 @@ class PolygonEditor {
             perimeter += R * c;
         }
         
-        // Actualizar elementos
+        
         const summaryPerimeter = document.getElementById('summary-perimeter');
         const summaryArea = document.getElementById('summary-area');
         
@@ -1513,9 +1461,6 @@ class PolygonEditor {
         }
     }
 
-    // =============================================
-    // UTILIDADES
-    // =============================================
 
     calculateArea(feature) {
         if (!feature || !feature.getGeometry) return 0;
@@ -1641,10 +1586,6 @@ class PolygonEditor {
             alert(message);
         }
     }
-
-    // =============================================
-    // DETECCIÓN DE UBICACIÓN
-    // =============================================
 
     calculateCentroidFromGeoJSON(geojson) {
         try {
@@ -1851,9 +1792,6 @@ class PolygonEditor {
     }
 }
 
-// =============================================
-// FUNCIONES GLOBALES Y CONFIGURACIÓN
-// =============================================
 
 let polygonEditor = null;
 let coordinatesList = [];
@@ -1861,7 +1799,6 @@ let coordinatesList = [];
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM completamente cargado, inicializando editor...');
     
-    // Obtener el polígono existente del campo hidden
     const geometryInput = document.getElementById('geometry');
     let existingPolygon = null;
     
@@ -1873,10 +1810,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Inicializar el editor con el polígono existente
     polygonEditor = new PolygonEditor(existingPolygon);
     
-    // Configurar event listeners
     setupEventListeners();
     setupModalFunctions();
     setupFormValidation();
@@ -1884,14 +1819,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function setupEventListeners() {
-    // Botón de dibujar
     document.getElementById('draw-polygon').addEventListener('click', () => {
         if (polygonEditor) {
             polygonEditor.activateDrawing();
         }
     });
     
-    // Botón de editar
     document.getElementById('edit-polygon').addEventListener('click', () => {
         if (polygonEditor) {
             if (polygonEditor.isEditMode) {
@@ -1902,17 +1835,15 @@ function setupEventListeners() {
         }
     });
     
-    // Botón de limpiar
     document.getElementById('clear-map').addEventListener('click', () => {
         if (polygonEditor) {
             polygonEditor.clearMap();
         }
     });
     
-    // Botón de agregar punto
     document.getElementById('add-point').addEventListener('click', () => {
         if (polygonEditor && polygonEditor.isEditMode) {
-            // Activar modo para agregar punto al hacer clic
+    
             const mapElement = document.getElementById('map');
             mapElement.style.cursor = 'crosshair';
             
@@ -1928,21 +1859,18 @@ function setupEventListeners() {
         }
     });
     
-    // Botón de finalizar edición
     document.getElementById('finish-edit').addEventListener('click', () => {
         if (polygonEditor) {
             polygonEditor.exitEditMode();
         }
     });
     
-    // Botón de eliminar punto
     document.getElementById('delete-point').addEventListener('click', () => {
         if (polygonEditor) {
             polygonEditor.deleteSelectedPoint();
         }
     });
     
-    // Botón de actualizar coordenadas
     document.getElementById('update-point').addEventListener('click', () => {
         if (polygonEditor && polygonEditor.selectedPointIndex !== -1) {
             const point = polygonEditor.polygonPoints[polygonEditor.selectedPointIndex];
@@ -1952,14 +1880,12 @@ function setupEventListeners() {
         }
     });
     
-    // Botón de detección de ubicación
     document.getElementById('detect-location').addEventListener('click', async () => {
         if (polygonEditor) {
             await polygonEditor.detectLocation();
         }
     });
     
-    // Menú de capas base
     document.getElementById('base-map-toggle').addEventListener('click', (e) => {
         e.stopPropagation();
         const menu = document.getElementById('base-map-menu');
@@ -1978,7 +1904,6 @@ function setupEventListeners() {
         });
     });
     
-    // Pantalla completa
     document.getElementById('fullscreen-toggle').addEventListener('click', () => {
         const mapElement = document.getElementById('map');
         if (!document.fullscreenElement) {
@@ -2000,7 +1925,6 @@ function setupEventListeners() {
         }
     });
     
-    // Cerrar menús al hacer clic fuera
     document.addEventListener('click', (e) => {
         const baseMapToggle = document.getElementById('base-map-toggle');
         const baseMapMenu = document.getElementById('base-map-menu');
@@ -2014,10 +1938,6 @@ function setupEventListeners() {
     });
 }
 
-// Resto de las funciones auxiliares (toggleMenu, closeMenu, etc.)
-// ... [Mantén todas las funciones auxiliares del código anterior]
-
-// Función para abrir modal de edición de punto
 function openEditPointModal(index, point) {
     const modal = document.getElementById('edit-point-modal');
     const title = document.getElementById('edit-point-title');
@@ -2034,7 +1954,6 @@ function openEditPointModal(index, point) {
     latInput.value = point.lat.toFixed(6);
     lngInput.value = point.lng.toFixed(6);
     
-    // Calcular zona UTM
     const zone = Math.floor((point.lng + 180) / 6) + 1;
     const hemisphere = point.lat >= 0 ? 'N' : 'S';
     zoneInput.value = zone;
@@ -2051,7 +1970,6 @@ function openEditPointModal(index, point) {
     }, 100);
 }
 
-// Función para cerrar modal de edición de punto
 function closeEditPointModal() {
     const modal = document.getElementById('edit-point-modal');
     if (modal) {
@@ -2059,7 +1977,6 @@ function closeEditPointModal() {
     }
 }
 
-// Configurar eventos del modal de edición de punto
 function setupPointEditModal() {
     const modal = document.getElementById('edit-point-modal');
     const closeBtn = document.getElementById('close-edit-modal');
@@ -2110,7 +2027,6 @@ function setupPointEditModal() {
                 return;
             }
             
-            // Actualizar punto en el polígono
             const geometry = polygonEditor.currentFeature.getGeometry();
             const coordinates = geometry.getCoordinates()[0];
             const newCoord = ol.proj.fromLonLat([lng, lat]);
@@ -2120,15 +2036,12 @@ function setupPointEditModal() {
             
             geometry.setCoordinates([coordinates]);
             
-            // Recalcular área
             const areaHa = polygonEditor.calculateArea(polygonEditor.currentFeature);
             polygonEditor.updateAreaDisplay(areaHa);
             polygonEditor.currentFeature.set('area', areaHa);
             
-            // Actualizar GeoJSON
             polygonEditor.updateGeoJSON();
             
-            // Actualizar lista de puntos
             polygonEditor.updatePolygonPoints();
             
             showAlert(`Punto ${pointIndex + 1} actualizado`, 'success');
@@ -2143,10 +2056,8 @@ function setupPointEditModal() {
     });
 }
 
-// Llama a esta función en la inicialización
 setupPointEditModal();
 
-// Configurar redimensionamiento
 function setupMapResizeHandler() {
     window.addEventListener('resize', debounce(function() {
         if (polygonEditor && polygonEditor.map) {
@@ -2157,7 +2068,6 @@ function setupMapResizeHandler() {
     }, 250));
 }
 
-// Función de debounce
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -2170,7 +2080,6 @@ function debounce(func, wait) {
     };
 }
 
-// Función para mostrar alertas
 function showAlert(message, type = 'info') {
     if (window.Swal) {
         Swal.fire({
@@ -2187,12 +2096,9 @@ function showAlert(message, type = 'info') {
     }
 }
 
-// Mantén todas las funciones de modal (setInputMethod, updateCoordinatesList, etc.)
-// del código anterior que sean necesarias para el modal de coordenadas manuales
 </script>
 
 <style>
-/* Estilos para OpenLayers */
 .ol-viewport {
     border-radius: 0.5rem;
 }
@@ -2207,7 +2113,6 @@ function showAlert(message, type = 'info') {
     background-color: rgba(255,255,255,0.9);
 }
 
-/* Asegurar que el mapa ocupe todo el espacio */
 #map {
     width: 100% !important;
     height: 100% !important;
@@ -2216,7 +2121,6 @@ function showAlert(message, type = 'info') {
     left: 0;
 }
 
-/* Display de coordenadas */
 #coordinate-display {
     background-color: rgba(255, 255, 255, 0.95);
     border: 1px solid #e5e7eb;
@@ -2230,22 +2134,18 @@ function showAlert(message, type = 'info') {
     border: 1px solid #4b5563;
 }
 
-/* Puntos de vértice en modo edición */
 .ol-vertex {
     cursor: pointer;
 }
 
-/* Información del punto */
 #point-info {
     max-width: 250px;
 }
 
-/* Controles de edición */
 #edit-controls {
     transition: all 0.3s ease;
 }
 
-/* Estilos para la lista de puntos */
 #points-container::-webkit-scrollbar {
     width: 6px;
 }
@@ -2268,13 +2168,11 @@ function showAlert(message, type = 'info') {
     background: #4b5563;
 }
 
-/* Resaltar punto seleccionado en la lista */
 .bg-white.dark\\:bg-gray-800:hover {
     border-color: #3b82f6;
     box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
 }
 
-/* Estilos para controles de mapa */
 #map-controls {
     pointer-events: auto;
     z-index: 1 !important;
@@ -2282,17 +2180,14 @@ function showAlert(message, type = 'info') {
 
 
 
-/* Modo edición activo */
 .edit-mode-active {
     border: 2px solid #8b5cf6 !important;
 }
 
-/* Cursor personalizado para modo edición */
 .edit-cursor {
     cursor: crosshair !important;
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
     .lg\\:col-span-2 {
         grid-column: span 3;

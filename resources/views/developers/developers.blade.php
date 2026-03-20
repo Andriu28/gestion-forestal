@@ -1,4 +1,3 @@
-{{-- resources/views/developers/developers.blade.php --}}
 <x-app-layout>
     <div class="mx-auto">
         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
@@ -13,26 +12,19 @@
                     </p>
                 </div>
 
-                {{-- Grid para los dos desarrolladores --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
                     
-                    {{-- Tarjeta del Desarrollador 1 --}}
                     <div class="group bg-gradient-to-br from-stone-50 to-stone-100 dark:from-custom-gray dark:to-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-stone-200 dark:border-gray-700">
                         <div class="flex flex-col items-center text-center">
-                            {{-- Avatar con soporte para foto real --}}
                             <div class="w-32 h-32 rounded-full bg-gray-400 dark:bg-gray-600 p-1.5 mb-4 shadow-lg group-hover:scale-105 transition-transform duration-500">
                                 <div class="w-full h-full rounded-full bg-stone-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                                    {{-- PARA USAR FOTO REAL: Reemplaza el SVG con una etiqueta img --}}
                                      <img src="{{ Vite::asset('resources/img/KS.jpg') }}" alt="Kevin Salazar" class="w-full h-full object-cover"> 
-                                    
-                                    {{-- SVG por defecto (se muestra si no hay foto) --}}
                                     <svg class="w-16 h-16 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                                     </svg>
                                 </div>
                             </div>
 
-                            {{-- Información del desarrollador --}}
                             <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">Kevin Salazar</h3>
                             <p class="text-lime-600 dark:text-lime-400 font-semibold mb-3">Desarrolladora Frontend & UI/UX Designer</p>
                             
@@ -40,7 +32,6 @@
                                 Especialista en HTML, CSS, tailwindCSS, Javascript, Laravel y bases de datos geoespaciales. Apasionado por crear interfaces intuitivas y atractivas. Encargada del diseño visual, la experiencia de usuario y la implementación de componentes frontend con Tailwind CSS.
                             </p>
 
-                            {{-- Contacto: Correo y WhatsApp --}}
                             <div class="flex justify-center space-x-6 mt-2">
                                 {{-- Correo electrónico --}}
                                 <a href="mailto:alexander.garcia@cacaosanjose.com" 
@@ -52,7 +43,6 @@
                                     <span class="text-xs">Correo</span>
                                 </a>
 
-                                {{-- WhatsApp --}}
                                 <a href="https://wa.me/584241234567?text=Hola%20Alexander,%20te%20contacto%20desde%20el%20sistema%20Cacao%20San%20José" 
                                    target="_blank"
                                    class="flex flex-col items-center text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 transition-all duration-300 hover:scale-110"
@@ -66,23 +56,19 @@
                         </div>
                     </div>
 
-                    {{-- Tarjeta del Desarrollador 2 --}}
                     <div class="group bg-gradient-to-br from-stone-50 to-stone-100 dark:from-custom-gray dark:to-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-stone-200 dark:border-gray-700">
                         <div class="flex flex-col items-center text-center">
                             {{-- Avatar con soporte para foto real --}}
                             <div class="w-32 h-32 rounded-full bg-gray-500  p-2 mb-4 shadow-lg group-hover:scale-105 transition-transform duration-500">
                                 <div class="w-full h-full rounded-full bg-stone-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                                    {{-- PARA USAR FOTO REAL: Reemplaza el SVG con una etiqueta img --}}
                                     {{-- <img src="{{ asset('images/developers/developer2.jpg') }}" alt="Geral Serrano" class="w-full h-full object-cover"> --}}
                                     
-                                    {{-- SVG por defecto (se muestra si no hay foto) --}}
                                     <svg class="w-16 h-16 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                                     </svg>
                                 </div>
                             </div>
 
-                            {{-- Información del desarrollador --}}
                             <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">Geral Serrano</h3>
                             <p class="text-lime-600 dark:text-lime-400 font-semibold mb-3">Desarrolladora Frontend & UI/UX Designer</p>
                             
@@ -90,7 +76,6 @@
                                 Apasionada por crear interfaces intuitivas y atractivas. Encargada del diseño visual, la experiencia de usuario y la implementación de componentes frontend con Alpine.js y Tailwind CSS.
                             </p>
 
-                            {{-- Contacto: Correo y WhatsApp --}}
                             <div class="flex justify-center space-x-6 mt-2">
                                 {{-- Correo electrónico --}}
                                 <a href="mailto:maria.gonzalez@cacaosanjose.com" 
@@ -102,7 +87,6 @@
                                     <span class="text-xs">Correo</span>
                                 </a>
 
-                                {{-- WhatsApp --}}
                                 <a href="https://wa.me/584245678901?text=Hola%20María,%20te%20contacto%20desde%20el%20sistema%20Cacao%20San%20José" 
                                    target="_blank"
                                    class="flex flex-col items-center text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 transition-all duration-300 hover:scale-110"
@@ -117,7 +101,6 @@
                     </div>
                 </div>
 
-                {{-- Pie de página con info del sistema --}}
                 <div class="mt-12 text-center border-t border-stone-200 dark:border-gray-700 pt-8">
                     <p class="text-gray-600 dark:text-gray-400 text-sm mb-2">
                         {{ __('Sistema de Gestión Geográfica v7.4.19 - Monitoreo de Deforestación') }}

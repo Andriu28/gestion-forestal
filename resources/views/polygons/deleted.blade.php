@@ -1,4 +1,3 @@
-{{-- resources/views/polygons/deleted.blade.php --}}
 <x-app-layout>
     <div class="mx-auto">
         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
@@ -74,7 +73,6 @@
                                         </td>
                                         <td class="px-6 py-2 whitespace-nowrap">
                                             <div class="flex items-center gap-2">
-                                                <!-- Botón Ver Detalles -->
                                                 <button type="button" 
                                                         class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                         title="Ver detalles"
@@ -85,7 +83,6 @@
                                                     </svg>
                                                 </button>
 
-                                                <!-- Botón Restaurar -->
                                                 <button type="button" 
                                                         class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                         title="Restaurar"
@@ -116,7 +113,6 @@
         </div>
     </div>
 
-    <!-- Modal para ver detalles del polígono (reutilizado) -->
     <x-modal name="view-polygon-details" maxWidth="2xl" :showClose="true">
         <div class="p-0 overflow-hidden">
             <div class="bg-[linear-gradient(135deg,_#3f2c1bdc_0%,_#30201b_100%)] px-6 py-4">
@@ -158,7 +154,6 @@
 </x-app-layout>
 
 <script>
-// Función para hacer peticiones fetch (igual que en productores)
 async function makePolygonRequest(url, method = 'POST', data = null) {
     try {
         const options = {
@@ -183,7 +178,6 @@ async function makePolygonRequest(url, method = 'POST', data = null) {
     }
 }
 
-// Función para eliminar polígono (AJAX)
 async function handleDeletePolygon(polygonId, polygonName) {
     const result = await showCustomConfirmation(
         false,
@@ -195,15 +189,13 @@ async function handleDeletePolygon(polygonId, polygonName) {
         const data = await makePolygonRequest(`/polygons/${polygonId}`, 'DELETE');
         
         if (data.success) {
-            // Eliminar la fila de la tabla inmediatamente
             const row = document.getElementById(`polygon-row-${polygonId}`);
             if (row) {
                 row.remove();
             }
             
             showCustomAlert('success', 'Éxito', 'Polígono eliminado exitosamente.');
-            
-            // Si no quedan polígonos, mostrar mensaje
+
             const tableBody = document.querySelector('table tbody');
             if (tableBody && tableBody.children.length === 0) {
                 tableBody.innerHTML = `
@@ -223,7 +215,6 @@ async function handleDeletePolygon(polygonId, polygonName) {
     }
 }
 
-// Función para restaurar polígono (AJAX)
 async function handleRestorePolygon(polygonId, polygonName) {
     const result = await showCustomConfirmation(
         true,
@@ -234,15 +225,13 @@ async function handleRestorePolygon(polygonId, polygonName) {
         const data = await makePolygonRequest(`/polygons/${polygonId}/restore`, 'POST');
         
         if (data.success) {
-            // Eliminar la fila de la tabla inmediatamente
             const row = document.getElementById(`polygon-row-${polygonId}`);
             if (row) {
                 row.remove();
             }
             
             showCustomAlert('success', 'Éxito', 'Polígono restaurado exitosamente.');
-            
-            // Si no quedan polígonos, mostrar mensaje
+
             const tableBody = document.querySelector('table tbody');
             if (tableBody && tableBody.children.length === 0) {
                 tableBody.innerHTML = `
@@ -263,7 +252,6 @@ async function handleRestorePolygon(polygonId, polygonName) {
     }
 }
 
-// Función para cambiar estado (activo/inactivo)
 async function handleTogglePolygonStatus(polygonId, polygonName, isCurrentlyActive) {
     const action = isCurrentlyActive ? 'desactivar' : 'activar';
     
@@ -284,16 +272,13 @@ async function handleTogglePolygonStatus(polygonId, polygonName, isCurrentlyActi
     }
 }
 
-// Función para actualizar la UI del estado
 function updatePolygonStatusUI(polygonId, polygonName, isActive) {
     const row = document.getElementById(`polygon-row-${polygonId}`);
     if (!row) return;
     
-    // Encontrar la celda de estado (5ta columna)
     const statusCell = row.querySelector('td:nth-child(5)');
     const toggleButton = row.querySelector('button[onclick*="handleTogglePolygonStatus"]');
     
-    // Actualizar badge de estado
     if (statusCell) {
         if (isActive) {
             statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">Activo</span>';
@@ -302,14 +287,12 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive) {
         }
     }
     
-    // Actualizar botón de toggle
     if (toggleButton) {
         let newSvg;
         let newTitle;
         let newOnclick;
         
         if (isActive) {
-            // Icono para desactivar
             newSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
                 <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
                 <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
@@ -318,7 +301,6 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive) {
             newTitle = 'Desactivar';
             newOnclick = `handleTogglePolygonStatus(${polygonId}, '${polygonName.replace(/'/g, "\\'")}', true)`;
         } else {
-            // Icono para activar
             newSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
                 <circle cx="12" cy="12" r="10" class="fill-green-100"/>
                 <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
@@ -327,7 +309,6 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive) {
             newOnclick = `handleTogglePolygonStatus(${polygonId}, '${polygonName.replace(/'/g, "\\'")}', false)`;
         }
         
-        // Reemplazar el contenido del botón
         toggleButton.innerHTML = newSvg;
         toggleButton.setAttribute('title', newTitle);
         toggleButton.setAttribute('onclick', newOnclick);

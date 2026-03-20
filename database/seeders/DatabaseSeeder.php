@@ -19,22 +19,23 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@gmail.com',
             'password' => Hash::make('12345678'),
             'role' => 'administrador',
-            'email_verified_at' => now(), // ← AGREGAR ESTA LÍNEA
+            'email_verified_at' => now(), 
         ]);
 
          User::create([
-            'name' => 'Dipert',
-            'email' => 'diperishilla2468@gmail.com',
-            'password' => Hash::make('1234'), // Hash con mayúscula
-            'role' => 'administrador'
+            'name' => 'user',
+            'email' => 'user@gmail.com',
+            'password' => Hash::make('1234'),
+            'role' => 'administrador',
+            'email_verified_at' => now(), 
         ]);
 
         User::create([
             'name' => 'Básico',
             'email' => 'basico@gmail.com',
-            'password' => Hash::make('1234'), // Hash con mayúscula
+            'password' => Hash::make('1234'), 
             'role' => 'basico',
-            'email_verified_at' => now(), // ← AGREGAR ESTA LÍNEA
+            'email_verified_at' => now(), 
         ]);
         
     }

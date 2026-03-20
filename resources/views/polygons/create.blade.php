@@ -1,5 +1,3 @@
-<!-- resources/views/polygons/create.blade.php -->
-
 <x-app-layout>
     <div class="mx-auto ">
         <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
@@ -12,20 +10,14 @@
                     @csrf
 
                     <div class="grid grid-cols-1 gap-6">
-                        <!-- Columna del Mapa -->
                         <div class="lg:col-span-1">
                             <x-input-label for="map" class="sr-only">Mapa</x-input-label>
                             <div class="relative  rounded-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-700 mt-1" style="height: 77vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
                                 <div id="map" class="h-full w-full"></div>
-
-                                <!-- Controles del mapa - IGUALES A ANALISIS -->
                                 <div id="map-controls">
-                                    <!-- Contenedor para los botones superiores (Cambiar Mapa y Pantalla Completa) -->
                                     <div class="flex flex-col items-end space-y-2">
-                                        <!-- Fila superior: Cambiar Mapa y Pantalla Completa -->
                                         <div class="flex space-x-2">
 
-                                            <!-- Botón para cambiar mapa base -->
                                             <div class="relative">
                                                 <button id="base-map-toggle" title="Cambiar mapa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,19 +25,16 @@
                                                     </svg>
                                                     Mapas
                                                 </button>
-                                                
-                                                <!-- Menú de cambio de mapa -->
+
                                                 <div id="base-map-menu"
                                                     class="absolute mt-3 w-40 rounded-xl shadow-lg bg-gray-50 dark:bg-custom-gray ring-1 ring-black ring-opacity-5 z-10 
                                                             transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none hidden"
                                                     style="right: 1px;">
-                                                    <!-- Flechita -->
                                                     <div class="absolute -top-2 right-6 w-8 h-2 pointer-events-none">
                                                         <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-custom-gray">
                                                             <polygon points="8,0 16,8 0,8" fill="currentColor"/>
                                                         </svg>
                                                     </div>
-                                                    <!-- Menú -->
                                                     <div class="py-2" role="menu" aria-orientation="vertical">
                                                         <button data-layer="osm" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">OpenStreetMap</button>
                                                         <button data-layer="satellite" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700" role="menuitem">Satélite Esri</button>
@@ -55,16 +44,14 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <!-- Botón de pantalla completa -->
+
                                             <button id="fullscreen-toggle" title="Pantalla Completa" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"></path>
                                                 </svg>
                                             </button>
                                         </div>
-                                        
-                                        <!-- Fila inferior: Solo el botón de coordenadas manuales -->
+
                                         <div class="flex space-x-2"> 
                                             <button id="manual-polygon-toggle" title="Escribir Coordenadas" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6 lucide-pencil-line">
@@ -91,13 +78,10 @@
                                     </div>
                                 </div>
 
-                                <!-- Display de coordenadas - MISMAS QUE ANALISIS -->
-                                <!-- Se mostrará automáticamente cuando se mueva el mouse -->
                             </div>
                             <x-input-error class="mt-2" :messages="$errors->get('geometry')" />
                         </div>
 
-                        <!-- Columna del Formulario -->
                         <div class="lg:col-span-1">
                             <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl p-4 md:p-6 lg:p-8 h-full">
                                 <div class="text-gray-900 dark:text-gray-100">
@@ -155,7 +139,6 @@
                                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Se calcula automáticamente desde el mapa</p>
                                         </div>
 
-                                        <!-- Campos ocultos para la detección y el envío -->
                                         <input type="hidden" id="geometry" name="geometry" value="{{ old('geometry', '') }}" required>
                                         <input type="hidden" id="detected_parish" name="detected_parish" value="{{ old('detected_parish') }}">
                                         <input type="hidden" id="detected_municipality" name="detected_municipality" value="{{ old('detected_municipality') }}">
@@ -174,7 +157,6 @@
                                             </div>
                                         </div>
 
-                                        <!-- Botón de detección de ubicación -->
                                         <div class="pt-4">
                                             <button type="button" id="detect-location" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300" disabled>
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -187,7 +169,6 @@
                                             </p>
                                         </div>
 
-                                        <!-- Botones de acción -->
                                         <div class="flex items-center justify-end space-x-4 pt-6">
                                             <x-go-back-button />
                                             <x-primary-button type="submit" id="submit-btn" class="bg-green-600 hover:bg-green-700">
@@ -204,10 +185,8 @@
         </div>
     </div>
 
-    <!-- Modal para coordenadas manuales - MISMOS ESTILOS QUE ANALISIS -->
     <div id="manual-polygon-modal" class="hidden">
         <div class="bg-white dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-lg">
-            <!-- Header -->
             <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ingresar Coordenadas UTM</h3>
                 <button id="close-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ">
@@ -216,11 +195,9 @@
                     </svg>
                 </button>
             </div>
-            
-            <!-- Formulario UTM Universal -->
+
             <form id="manual-polygon-form" class="p-6 space-y-4">
                 
-                <!-- Método de entrada -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Método de entrada:</label>
                     <div class="flex space-x-2">
@@ -229,7 +206,6 @@
                     </div>
                 </div>
 
-                <!-- Entrada individual -->
                 <div id="single-input" class="space-y-3">
                     <div class="grid grid-cols-4 gap-2">
                         <div>
@@ -258,7 +234,6 @@
                     </button>
                 </div>
 
-                <!-- Entrada por lote -->
                 <div id="bulk-input" class="hidden">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Coordenadas UTM (Zona,Hemisferio,Este,Norte por línea):
@@ -276,7 +251,6 @@
           placeholder="Ejemplo:&#10;&#9;Zona,Hemisferio,Este,Norte&#10;&#9;20,N,476097.904,1157477.299&#10;&#9;20,N,476181.804,1157432.362&#10;&#9;20,N,475211.522,1157534.959"></textarea>
                 </div>
 
-                <!-- Lista de coordenadas agregadas -->
                 <div id="coords-list" class="hidden">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Coordenadas UTM agregadas:</label>
                     <div class="max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-500 rounded-md p-2 bg-gray-50 dark:bg-gray-800/80">
@@ -298,17 +272,14 @@
     </div>
 </x-app-layout>
 
-<!-- Incluir OpenLayers PRIMERO -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css">
 <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js"></script>
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
 
-<!-- SweetAlert2 para notificaciones -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-// ARCHIVO polygon-map.js MODIFICADO PARA INCLUIR DISPLAY DE COORDENADAS COMO ANALISIS
 class PolygonMap {
     constructor() {
         this.map = null;
@@ -320,15 +291,11 @@ class PolygonMap {
         this.currentBaseLayer = null;
         this.drawingFeature = null;
 
-        // Coordenadas de Venezuela por defecto
         this.INITIAL_CENTER = [-63.172905251869125, 10.555594747510682];
         this.INITIAL_ZOOM = 15;
         this.MINZOOM = 5;
         this.MAXZOOM = 18;
-
-        console.log('Inicializando PolygonMap...');
         
-        // Esperar a que el DOM esté completamente listo
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.init());
         } else {
@@ -337,24 +304,20 @@ class PolygonMap {
     }
 
     init() {
-        console.log('Ejecutando init()...');
         
-        // Verificar que el elemento map existe
         const mapElement = document.getElementById('map');
         if (!mapElement) {
             console.error('ERROR: No se encontró el elemento #map');
             return;
         }
-        console.log('Elemento #map encontrado:', mapElement);
 
         this.defineCustomProjections();
         this.initializeMap();
         this.setupEventListeners();
         this.setupCoordinateDisplay();
         this.verifyDependencies();
-        this.setupMapResizeObserver(); // NUEVO: Configurar observer para redimensionamiento
+        this.setupMapResizeObserver();
         
-        // Forzar redimensionamiento después de la inicialización
         setTimeout(() => {
             if (this.map) {
                 this.map.updateSize();
@@ -363,16 +326,12 @@ class PolygonMap {
     }
 
     setupMapResizeObserver() {
-        console.log('Configurando observador de redimensionamiento...');
         
-        // Verificar si el API ResizeObserver está disponible
         if ('ResizeObserver' in window) {
             const mapElement = document.getElementById('map');
             if (mapElement && mapElement.parentElement) {
                 const observer = new ResizeObserver(entries => {
                     for (let entry of entries) {
-                        console.log('Cambio detectado en contenedor del mapa:', entry.contentRect);
-                        // Verificar si el cambio es significativo
                         if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
                             this.updateMapSize();
                         }
@@ -380,13 +339,10 @@ class PolygonMap {
                 });
                 
                 observer.observe(mapElement.parentElement);
-                console.log('Observador de redimensionamiento configurado para contenedor padre');
                 
-                // También observar cambios en el sidebar
                 const sidebar = document.getElementById('sidebar');
                 if (sidebar) {
                     observer.observe(sidebar);
-                    console.log('Observador de redimensionamiento configurado para sidebar');
                 }
             }
         } else {
@@ -396,12 +352,9 @@ class PolygonMap {
     
     updateMapSize() {
         if (this.map) {
-            console.log('Actualizando tamaño del mapa...');
-            // Pequeño retraso para asegurar que los cambios CSS se hayan aplicado
             setTimeout(() => {
                 this.map.updateSize();
                 
-                // Si hay un polígono dibujado, ajustar la vista
                 if (this.source && this.source.getFeatures().length > 0) {
                     const extent = this.source.getExtent();
                     if (extent && extent[0] !== Infinity) {
@@ -411,20 +364,12 @@ class PolygonMap {
                         });
                     }
                 }
-                
-                console.log('Tamaño del mapa actualizado');
             }, 100);
         }
     }
 
-    verifyDependencies() {
-        console.log('=== VERIFICACIÓN DE DEPENDENCIAS ===');
-        console.log('OpenLayers:', typeof ol !== 'undefined');
-        console.log('Turf.js:', typeof turf !== 'undefined');
-        console.log('Proj4:', typeof proj4 !== 'undefined');
-        
+    verifyDependencies() {    
         if (typeof ol === 'undefined') {
-            console.error('ERROR: OpenLayers no está cargado');
             this.showAlert('Error crítico: OpenLayers no se cargó correctamente', 'error');
         }
     }
@@ -497,7 +442,7 @@ class PolygonMap {
             }),
             maptiler_satellite: new ol.layer.Tile({
                 source: new ol.source.XYZ({
-                    url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=scUozK4fig7bE6jg7TPi',
+                    url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key= ',// Reemplaza con tu clave de API de MapTiler
                     attributions: '© MapTiler & OpenStreetMap',
                     tileSize: 512,
                     maxZoom: 20
@@ -637,10 +582,6 @@ class PolygonMap {
         this.updateAreaDisplay(0);
     }
 
-    // =============================================
-    // DISPLAY DE COORDENADAS - COMO ANALISIS
-    // =============================================
-
     setupCoordinateDisplay() {
         console.log('Configurando display de coordenadas...');
         this.createCoordinateDisplayElement();
@@ -654,14 +595,12 @@ class PolygonMap {
     createCoordinateDisplayElement() {
         console.log('Creando elemento display de coordenadas...');
         
-        // Eliminar cualquier display existente
         const existingDisplays = document.querySelectorAll('.coordinate-display');
         existingDisplays.forEach(display => {
             console.log('Eliminando display existente:', display);
             display.remove();
         });
         
-        // Crear nuevo elemento
         this.coordinateDisplay = document.createElement('div');
         this.coordinateDisplay.className = 'coordinate-display';
         this.coordinateDisplay.style.cssText = 'position: absolute; bottom: 10px; left: 10px; background-color: rgba(255, 255, 255, 0.9); padding: 5px 10px; border-radius: 4px; font-size: 12px; z-index: 1; font-family: monospace; display: none; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);';
@@ -726,10 +665,6 @@ class PolygonMap {
         }
     }
 
-    // =============================================
-    // FUNCIONALIDADES DE DIBUJO
-    // =============================================
-
     activateDrawing() {
         console.log('Activando dibujo de polígonos...');
         
@@ -758,7 +693,6 @@ class PolygonMap {
             const detectBtn = document.getElementById('detect-location');
             if (detectBtn) detectBtn.disabled = true;
             
-            // Ocultar información de ubicación previa
             const locationInfo = document.getElementById('location-info');
             if (locationInfo) locationInfo.classList.add('hidden');
         });
@@ -886,16 +820,13 @@ class PolygonMap {
             return;
         }
         
-        // Ocultar todas las capas base
         Object.values(this.baseLayers).forEach(layer => {
             layer.setVisible(false);
         });
         
-        // Mostrar la nueva capa base
         this.baseLayers[layerKey].setVisible(true);
         this.currentBaseLayer = this.baseLayers[layerKey];
         
-        // Actualizar texto del botón
         const buttonElement = document.getElementById('base-map-toggle');
         if (buttonElement) {
             const layerTitle = this.baseLayers[layerKey].get('title') || layerKey;
@@ -1000,10 +931,6 @@ class PolygonMap {
             'success'
         );
     }
-
-    // =============================================
-    // DETECCIÓN DE UBICACIÓN
-    // =============================================
 
     calculateCentroidFromGeoJSON(geojson) {
         try {
@@ -1218,7 +1145,6 @@ class PolygonMap {
             parishSelect.value = foundOption.value;
             this.showAlert(`Parroquia "${foundOption.text}" asignada automáticamente`, 'success');
         } else {
-            console.log('No se encontró coincidencia para:', parishName);
             this.showAlert('No se encontró parroquia exacta. Selecciona manualmente.', 'info');
         }
     }
@@ -1253,13 +1179,8 @@ class PolygonMap {
     }
 }
 
-// =============================================
-// CÓDIGO PARA EL MODAL Y CONTROLES
-// =============================================
-
 let coordinatesList = [];
 
-// Función para abrir el modal
 function openCoordinateModal() {
     const modal = document.getElementById('manual-polygon-modal');
     modal.classList.remove('hidden');
@@ -1272,7 +1193,6 @@ function openCoordinateModal() {
     }, 100);
 }
 
-// Función para cerrar el modal
 function closeCoordinateModal() {
     const modal = document.getElementById('manual-polygon-modal');
     
@@ -1291,7 +1211,6 @@ function closeCoordinateModal() {
     }, 300);
 }
 
-// Función para validar coordenadas UTM
 function validateUTMCoordinates(zone, hemisphere, easting, northing) {
     if (zone < 1 || zone > 60) {
         return 'Zona UTM debe estar entre 1 y 60';
@@ -1317,10 +1236,6 @@ function validateUTMCoordinates(zone, hemisphere, easting, northing) {
     
     return null;
 }
-
-// =============================================
-// VALIDACIÓN DEL FORMULARIO
-// =============================================
 
 function handleSubmitClick(e) {
     console.log('Botón submit clickeado');
@@ -1486,10 +1401,6 @@ function setupFormValidation() {
     polygonForm.addEventListener('submit', handleFormSubmit, true);
 }
 
-// =============================================
-// FUNCIÓN DEBOUCE PARA OPTIMIZAR EVENTOS DE REDIMENSIONAMIENTO
-// =============================================
-
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -1502,29 +1413,18 @@ function debounce(func, wait) {
     };
 }
 
-// =============================================
-// INICIALIZACIÓN Y EVENT LISTENERS
-// =============================================
-
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM completamente cargado, inicializando mapa...');
     
-    // Inicializar el mapa
     window.polygonMapInstance = new PolygonMap();
     
-    // Configurar otros event listeners
     setupEventListeners();
     
-    // Inicializar modal
     setInputMethod('single');
     
-    // Configurar validación del formulario
     setupFormValidation();
     
-    // Configurar redimensionamiento del mapa (MEJORADO)
     setupMapResizeHandler();
     
-    // Configurar observer para el sidebar
     setupSidebarObserver();
     
     const formButtons = document.querySelectorAll('#polygon-form button:not(#submit-btn)');
@@ -1547,7 +1447,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupEventListeners() {
     console.log('Configurando event listeners...');
     
-    // Modal de coordenadas
     const manualToggle = document.getElementById('manual-polygon-toggle');
     if (manualToggle) {
         manualToggle.addEventListener('click', function(e) {
@@ -1562,7 +1461,6 @@ function setupEventListeners() {
     document.getElementById('close-modal')?.addEventListener('click', closeCoordinateModal);
     document.getElementById('cancel-modal')?.addEventListener('click', closeCoordinateModal);
     
-    // Métodos de entrada del modal
     document.getElementById('method-single')?.addEventListener('click', function() {
         setInputMethod('single');
     });
@@ -1571,7 +1469,6 @@ function setupEventListeners() {
         setInputMethod('bulk');
     });
     
-    // Agregar coordenada individual
     document.getElementById('add-coord')?.addEventListener('click', function() {
         const zone = parseInt(document.getElementById('single-zone').value);
         const hemisphere = document.getElementById('single-hemisphere').value;
@@ -1608,13 +1505,11 @@ function setupEventListeners() {
         showAlert(`Coordenada agregada (Zona ${zone}${hemisphere})`, 'success');
     });
     
-    // Limpiar lista de coordenadas
     document.getElementById('clear-list')?.addEventListener('click', function() {
         coordinatesList = [];
         updateCoordinatesList();
     });
     
-    // Enviar formulario del modal
     const manualForm = document.getElementById('manual-polygon-form');
     if (manualForm) {
         manualForm.addEventListener('submit', function(e) {
@@ -1691,7 +1586,6 @@ function setupEventListeners() {
         });
     }
     
-    // Controles del mapa
     document.getElementById('draw-polygon')?.addEventListener('click', function() {
         console.log('Botón dibujar clickeado');
         if (window.polygonMapInstance) {
@@ -1712,7 +1606,6 @@ function setupEventListeners() {
         }
     });
     
-    // Detección de ubicación
     document.getElementById('detect-location')?.addEventListener('click', async function() {
         console.log('Botón detectar ubicación clickeado');
         if (window.polygonMapInstance && window.polygonMapInstance.detectLocation) {
@@ -1723,7 +1616,6 @@ function setupEventListeners() {
         }
     });
     
-    // Menú de capas base
     const baseMapToggle = document.getElementById('base-map-toggle');
     if (baseMapToggle) {
         baseMapToggle.addEventListener('click', function(e) {
@@ -1736,7 +1628,6 @@ function setupEventListeners() {
         });
     }
     
-    // Cambiar capas base
     document.querySelectorAll('#base-map-menu button').forEach(button => {
         button.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -1754,7 +1645,6 @@ function setupEventListeners() {
         });
     });
     
-    // Pantalla completa
     document.getElementById('fullscreen-toggle')?.addEventListener('click', function() {
         const mapElement = document.getElementById('map');
         if (!document.fullscreenElement) {
@@ -1776,7 +1666,6 @@ function setupEventListeners() {
         }
     });
     
-    // Cerrar menús al hacer clic fuera
     document.addEventListener('click', function(e) {
         const baseMapToggle = document.getElementById('base-map-toggle');
         const baseMapMenu = document.getElementById('base-map-menu');
@@ -1793,7 +1682,6 @@ function setupEventListeners() {
         }
     });
     
-    // Escape para cerrar modal
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeCoordinateModal();
@@ -1801,7 +1689,6 @@ function setupEventListeners() {
     });
 }
 
-// Funciones auxiliares para el modal
 function setInputMethod(method) {
     const singleBtn = document.getElementById('method-single');
     const bulkBtn = document.getElementById('method-bulk');
@@ -1875,7 +1762,6 @@ function removeCoordinate(index) {
     updateCoordinatesList();
 }
 
-// Funciones para menús desplegables
 function toggleMenu(menuId, show) {
     const menu = document.getElementById(menuId);
     if (!menu) {
@@ -1914,7 +1800,6 @@ function closeMenu(menuId) {
     }, 400);
 }
 
-// Función para mostrar alertas
 function showAlert(message, type = 'info') {
     if (window.Swal) {
         Swal.fire({
@@ -1931,12 +1816,7 @@ function showAlert(message, type = 'info') {
     }
 }
 
-// =============================================
-// FUNCIONES PARA MANEJAR REDIMENSIONAMIENTO DEL MAPA (MEJORADO)
-// =============================================
-
 function setupMapResizeHandler() {
-    // Redimensionar cuando cambia el tamaño de la ventana
     window.addEventListener('resize', debounce(function() {
         if (window.polygonMapInstance && window.polygonMapInstance.map) {
             setTimeout(() => {
@@ -1945,7 +1825,6 @@ function setupMapResizeHandler() {
         }
     }, 250));
     
-    // Redimensionar cuando se carga la página
     window.addEventListener('load', function() {
         if (window.polygonMapInstance && window.polygonMapInstance.map) {
             setTimeout(() => {
@@ -1954,7 +1833,6 @@ function setupMapResizeHandler() {
         }
     });
     
-    // También redimensionar después de que la página esté completamente cargada
     setTimeout(() => {
         if (window.polygonMapInstance && window.polygonMapInstance.map) {
             window.polygonMapInstance.map.updateSize();
@@ -1962,7 +1840,6 @@ function setupMapResizeHandler() {
     }, 1000);
 }
 
-// Nueva función para observar el sidebar
 function setupSidebarObserver() {
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) {
@@ -1972,12 +1849,10 @@ function setupSidebarObserver() {
     
     console.log('Configurando observador para sidebar...');
     
-    // Observer para cambios en el sidebar
     const sidebarObserver = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                 console.log('Sidebar cambió de estado, redimensionando mapa...');
-                // Esperar a que la animación del sidebar termine
                 setTimeout(() => {
                     if (window.polygonMapInstance && window.polygonMapInstance.map) {
                         window.polygonMapInstance.map.updateSize();
@@ -1988,18 +1863,15 @@ function setupSidebarObserver() {
         });
     });
     
-    // Observar cambios en el sidebar
     sidebarObserver.observe(sidebar, {
         attributes: true,
         attributeFilter: ['class']
     });
-    
-    // También escuchar clics en el botón del sidebar
+
     const sidebarToggle = document.getElementById('sidebarToggle');
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
             console.log('Botón del sidebar clickeado, redimensionando mapa...');
-            // Esperar a que la animación del sidebar termine
             setTimeout(() => {
                 if (window.polygonMapInstance && window.polygonMapInstance.map) {
                     window.polygonMapInstance.map.updateSize();
@@ -2010,7 +1882,6 @@ function setupSidebarObserver() {
     }
 }
 
-// También configurar observer para cambios en el contenedor del mapa
 function setupMapContainerObserver() {
     const mapContainer = document.getElementById('map');
     if (mapContainer && mapContainer.parentElement) {
@@ -2033,7 +1904,7 @@ function setupMapContainerObserver() {
 </script>
 
 <style>
-/* Estilos CSS adicionales para OpenLayers */
+
 .ol-viewport {
     border-radius: 0.5rem;
 }
@@ -2048,7 +1919,6 @@ function setupMapContainerObserver() {
     background-color: rgba(255,255,255,0.9);
 }
 
-/* Asegurar que el mapa ocupe todo el espacio */
 #map {
     width: 100% !important;
     height: 100% !important;
@@ -2057,7 +1927,6 @@ function setupMapContainerObserver() {
     left: 0;
 }
 
-/* Estilos para el modal */
 #manual-polygon-modal {
     transition: opacity 0.3s ease;
 }
@@ -2066,7 +1935,6 @@ function setupMapContainerObserver() {
     opacity: 0;
 }
 
-/* Estilos para controles de mapa */
 #map-controls {
     pointer-events: auto;
     z-index: 1 !important;
@@ -2076,7 +1944,6 @@ function setupMapContainerObserver() {
     position: absolute;
 }
 
-/* Animaciones suaves */
 .transition-all {
     transition-property: all;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -2087,12 +1954,10 @@ function setupMapContainerObserver() {
     transition-duration: 300ms;
 }
 
-/* Sombras y bordes */
 .shadow-lg {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Aplicar a TODAS las páginas con mapa, no solo análisis */
 .map-container::before {
     content: '';
     position: absolute;
@@ -2106,7 +1971,6 @@ function setupMapContainerObserver() {
     transition: right 0.35s cubic-bezier(.4, 0, .2, 1);
 }
 
-/* Estilos para el display de coordenadas - IGUAL QUE ANALISIS */
 .coordinate-display {
     position: absolute;
     bottom: 10px;
@@ -2122,20 +1986,17 @@ function setupMapContainerObserver() {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilo para modo oscuro */
 .dark .coordinate-display {
     background-color: rgba(21, 23, 29, 0.9) !important;
     color: #e5e7eb;
     border: 1px solid #4b5563;
 }
 
-/* Estilos para botones deshabilitados */
 button:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
 
-/* Mejoras visuales para el formulario */
 textarea, select, input[type="text"], input[type="number"] {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -2145,10 +2006,8 @@ textarea:focus, select:focus, input[type="text"]:focus, input[type="number"]:foc
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
-/* Grid responsivo */
 
 
-/* Asegurar que los controles de OpenLayers estén visibles */
 .ol-zoom {
     top: 0.5em;
     left: 0.5em;
@@ -2164,11 +2023,7 @@ textarea:focus, select:focus, input[type="text"]:focus, input[type="number"]:foc
     right: 0.5em;
 }
 
-/* ============================================= */
-/* ESTILOS PARA REDIMENSIONAMIENTO DEL MAPA */
-/* ============================================= */
 
-/* Asegurar que el contenedor del mapa se ajuste al sidebar */
 .mx-auto {
     transition: margin-left 0.35s cubic-bezier(.4, 0, .2, 1);
 }
@@ -2181,21 +2036,18 @@ textarea:focus, select:focus, input[type="text"]:focus, input[type="number"]:foc
     margin-left: 0;
 }
 
-/* Forzar que el contenedor del mapa sea responsivo */
 #map {
     transition: width 0.35s cubic-bezier(.4, 0, .2, 1), height 0.35s cubic-bezier(.4, 0, .2, 1);
 }
 
 
 
-/* Asegurar que el contenedor del mapa tenga dimensiones adecuadas */
 #map {
     min-height: 400px;
 }
 
 
 
-/* Animación suave para el redimensionamiento del mapa */
 #map .ol-viewport {
     transition: transform 0.3s ease-out;
 }

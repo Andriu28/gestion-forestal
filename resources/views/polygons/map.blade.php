@@ -242,7 +242,7 @@
                     }),
                     maptiler_satellite: new ol.layer.Tile({
                         source: new ol.source.XYZ({
-                            url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=scUozK4fig7bE6jg7TPi',
+                            url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key= ',// Reemplaza con tu clave de API de MapTiler
                             attributions: '© MapTiler & OpenStreetMap',
                             tileSize: 512,
                             maxZoom: 20

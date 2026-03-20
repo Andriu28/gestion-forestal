@@ -25,7 +25,7 @@
                                 </svg>
                                 <span>{{ __('Mapa') }}</span>
                             </a>
-                            <!-- AÑADE ESTE BOTÓN PARA VER DESHABILITADOS -->
+                           
                             <a href="{{ route('polygons.deleted') }}" class="px-4 py-2 bg-orange-600/90 text-white rounded-md hover:bg-orange-600 flex items-center space-x-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                                     <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -36,10 +36,10 @@
                         </div>
                     </div>
 
-                    <!-- Filtros -->
+                    
                     <form method="GET" action="{{ route('polygons.index') }}" class="mb-6">
                         <div class="flex flex-wrap gap-4">
-                            <!-- focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 -->
+                            
                             <input type="text" name="search" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
                                    placeholder="Buscar por nombre, descripción o productor..." value="{{ $search ?? '' }}">
                             
@@ -163,7 +163,7 @@
                                                             @endif
                                                         </button>
 
-                                                        <!-- Botón Eliminar -->
+                                                        
                                                         <button type="button" 
                                                                 class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Eliminar"
@@ -206,10 +206,10 @@
         </div>
     </div>
    
-<!-- Modal mejorado con diseño profesional -->
+
 <x-modal name="view-polygon-details" maxWidth="2xl" :showClose="true">
     <div class="p-0 overflow-hidden">
-        <!-- Encabezado del modal -->
+        
         <div class="bg-[linear-gradient(135deg,_#3f2c1bdc_0%,_#30201b_100%)]  px-6 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
@@ -233,9 +233,9 @@
             </div>
         </div>
 
-        <!-- Contenido del modal -->
+        
         <div class="p-6" id="polygon-details-content">
-            <!-- Spinner de carga -->
+            
             <div class="flex flex-col items-center justify-center py-12">
                 <div class="relative">
                     <div class="animate-spin rounded-full h-16 w-16 border-4 border-blue-200"></div>
@@ -251,33 +251,33 @@
 <div id="loader-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden">
     <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl transform transition-all duration-300">
         <div class="flex flex-col items-center">
-            <!-- Spinner mejorado -->
+            
             <div class="relative mb-6">
                 <div class="w-20 h-20 border-4 border-green-100 dark:border-green-900 rounded-full"></div>
                 <div class="absolute top-0 left-0 w-20 h-20 border-4 border-transparent border-t-green-600 rounded-full animate-spin"></div>
                 <div class="absolute top-2 left-2 w-16 h-16 border-4 border-transparent border-b-green-400 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s"></div>
             </div>
             
-            <!-- Texto principal -->
+            
             <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">Analizando Deforestación</h3>
             <p class="text-gray-600 dark:text-gray-300 text-center mb-6">
                 Procesando el área seleccionada. Esto puede tomar unos segundos...
             </p>
             
-            <!-- Barra de progreso mejorada -->
+            
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2 overflow-hidden">
                 <div id="progress-bar" class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full w-0 transition-all duration-500 ease-out relative">
                     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
                 </div>
             </div>
             
-            <!-- Información de progreso -->
+            
             <div class="flex justify-between w-full text-xs text-gray-500 dark:text-gray-400 mb-1">
                 <span id="progress-text">Iniciando...</span>
                 <span id="progress-percentage">0%</span>
             </div>
             
-            <!-- Tiempo estimado -->
+            
             <div class="text-xs text-gray-400 dark:text-gray-500 mt-2">
                 <span id="time-estimate">Tiempo estimado: 15-30 segundos</span>
             </div>
@@ -611,7 +611,7 @@ function formatPolygonDetails(polygon) {
 
     return `
         <div class="space-y-6">
-            <!-- Tarjeta de información principal -->
+            
             <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <div class="flex items-start justify-between mb-4">
                     <div>
@@ -637,9 +637,9 @@ function formatPolygonDetails(polygon) {
                     </div>
                 </div>
 
-                <!-- Grid de información -->
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-6">
-                    <!-- Información del productor -->
+                    
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
                         <div class="flex items-center mb-2">
                             <div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg mr-3">
@@ -656,7 +656,7 @@ function formatPolygonDetails(polygon) {
                         </div>
                     </div>
 
-                    <!-- Ubicación -->
+                    
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
                         <div class="flex items-center mb-2">
                             <div class="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg mr-3">
@@ -674,7 +674,7 @@ function formatPolygonDetails(polygon) {
                         </div>
                     </div>
 
-                    <!-- Coordenadas -->
+                    
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
                         <div class="flex items-center mb-2">
                             <div class="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg mr-3">
@@ -695,7 +695,7 @@ function formatPolygonDetails(polygon) {
                 </div>
             </div>
 
-            <!-- Descripción -->
+            
             ${polygon.description ? `
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <div class="flex items-center mb-4">
@@ -710,7 +710,7 @@ function formatPolygonDetails(polygon) {
 
                 
 
-                <!-- Detección automática -->
+                
                     <div class="space-y-3">
                             <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
                         <p class="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">${polygon.description}</p>
@@ -718,7 +718,7 @@ function formatPolygonDetails(polygon) {
                         ${polygon.parish ? `
                         <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                             <div class="flex items-center">
-                                <!-- Icono de cruz para parroquia -->
+                                
                                 <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">  
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
                                 </svg>
@@ -732,7 +732,7 @@ function formatPolygonDetails(polygon) {
                         ${polygon.parish.municipality ? `
                         <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                             <div class="flex items-center">
-                                <!-- Icono de edificios para municipio -->
+                                
                                 <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                                 </svg>
