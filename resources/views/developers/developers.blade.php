@@ -37,7 +37,7 @@
                             <p class="text-lime-600 dark:text-lime-400 font-semibold mb-3">Desarrolladora Frontend & UI/UX Designer</p>
                             
                             <p class="text-gray-600 dark:text-gray-400 mb-4 max-w-md">
-                                Especialista en HTML, CSS, tailwindCSS, Javascript, Laravel y bases de datos geoespaciales. Apasionado por crear interfaces intuitivas y atractivas. Encargada del diseño visual, la experiencia de usuario y la implementación de componentes frontend con Tailwind CSS.
+                                Especialista en HTML, CSS, tailwindCSS, Javascript, Laravel y bases de datos geoespaciales. Apasionado por crear interfaces intuitivas y atractivas. Encargado del diseño visual, la experiencia de usuario y la implementación de componentes frontend con Tailwind CSS.
                             </p>
 
                             {{-- Contacto: Correo y WhatsApp --}}
