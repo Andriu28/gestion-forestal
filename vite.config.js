@@ -11,6 +11,7 @@ export default defineConfig({
 
                 'resources/img/user.jpg',
                 'resources/img/KS.jpg',
+                'resources/img/GS.jpg',
                 'resources/img/favicon.png',
 
                 'resources/js/app.js',
