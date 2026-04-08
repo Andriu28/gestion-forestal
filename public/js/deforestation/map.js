@@ -74,9 +74,7 @@ class DeforestationMap {
     defineCustomProjections() {
         if (typeof proj4 !== 'undefined') {
             // EPSG:2203 - UTM Zone 20S (Venezuela)
-            proj4.defs('EPSG:2203', 
-                '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs'
-            );
+           proj4.defs('EPSG:2203', '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs');
             
             // EPSG:32620 - UTM Zone 20N (WGS84)
             proj4.defs('EPSG:32620',
@@ -705,164 +703,181 @@ class DeforestationMap {
     // =============================================
 
     /**
-     * IMPORTA GEOJSON CON SOPORTE PARA EPSG:2203
-     * @param {Object|string} geojson - Objeto GeoJSON o string
-     * USADO EN: Event listener de importación de archivos
-     */
-    importGeoJSON(geojson) {
-        console.log('=== INICIANDO IMPORTACIÓN GEOJSON CON EPSG:2203 ===');
+ * IMPORTA GEOJSON CON DETECCIÓN AUTOMÁTICA DE PROYECCIÓN (UTM 20N o WGS84)
+ * @param {Object} geojson - Objeto GeoJSON cargado
+ */
+importGeoJSON(geojson) {
+    console.log('=== INICIANDO IMPORTACIÓN GEOJSON ===');
+    
+    try {
+        if (!geojson || typeof geojson !== 'object') {
+            throw new Error('El archivo no es un objeto GeoJSON válido');
+        }
+
+        this.clearMap();
         
+        const format = new ol.format.GeoJSON();
+        let features = [];
+
+        // 1. Detectar si el archivo usa la proyección EPSG:2203 (errónea) o coordenadas en metros
+        const crsName = geojson.crs && geojson.crs.properties ? geojson.crs.properties.name : '';
+        const isEPSG2203 = crsName.includes('2203');
+        
+        // 2. Detección por coordenadas: si el primer valor absoluto es > 180 (longitud) o > 90 (latitud)
+        let isProjected = false;
+        if (!isEPSG2203 && geojson.features && geojson.features.length > 0) {
+            const firstCoords = this.getFirstCoordinate(geojson.features[0]);
+            if (firstCoords && (Math.abs(firstCoords[0]) > 180 || Math.abs(firstCoords[1]) > 90)) {
+                isProjected = true;
+                console.warn('Coordenadas fuera de rango geográfico. Asumiendo UTM zona 20 Norte.');
+            }
+        }
+
+        // 3. Si es EPSG:2203 o coordenadas proyectadas, convertimos de UTM 20N a WGS84
+        if (isEPSG2203 || isProjected) {
+            console.log('Proyección UTM detectada. Usando conversor UTM 20N -> WGS84.');
+            features = this.readFeaturesFromUTM20N(geojson, format);
+        } else {
+            // Archivo normal en grados decimales (WGS84)
+            features = format.readFeatures(geojson, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+        }
+
+        if (!features || features.length === 0) {
+            this.showAlert('El archivo no contiene geometrías válidas.', 'error');
+            return;
+        }
+
+        // 4. Procesar etiquetas, áreas y añadir al mapa
+        const processedData = this.processImportedFeatures(features, 'geojson', geojson);
+        
+        // 5. Ajustar vista y mostrar resultados
+        this.finalizeImport(features, geojson, processedData.totalArea, 'GeoJSON');
+        
+        console.log('Importación finalizada con éxito.');
+
+    } catch (error) {
+        console.error('Error en importGeoJSON:', error);
+        this.showAlert(`Error al importar: ${error.message}`, 'error');
+    }
+}
+
+/**
+ * OBTIENE LA PRIMERA COORDENADA DE UNA FEATURE (para detectar proyección)
+ * @param {Object} feature - Feature GeoJSON
+ * @returns {Array|null} [x, y] o null
+ */
+getFirstCoordinate(feature) {
+    try {
+        const geom = feature.geometry;
+        if (!geom || !geom.coordinates) return null;
+        
+        if (geom.type === 'Point') return geom.coordinates;
+        if (geom.type === 'Polygon') return geom.coordinates[0]?.[0] || null;
+        if (geom.type === 'MultiPolygon') return geom.coordinates[0]?.[0]?.[0] || null;
+        return null;
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * LEE FEATURES DESDE GEOJSON CON COORDENADAS EN UTM ZONA 20 NORTE
+ * @param {Object} geojsonObj - Objeto GeoJSON con coordenadas en metros (UTM 20N)
+ * @param {ol.format.GeoJSON} format - No utilizado directamente
+ * @returns {Array} Features en EPSG:3857
+ */
+readFeaturesFromUTM20N(geojsonObj, format) {
+    const features = [];
+    
+    if (typeof proj4 === 'undefined') {
+        throw new Error('Se requiere la biblioteca proj4 para transformar coordenadas UTM a WGS84');
+    }
+    
+    // Definir proyección UTM zona 20 Norte (WGS84) – la correcta para Venezuela
+    const utm20nProj = '+proj=utm +zone=20 +ellps=WGS84 +datum=WGS84 +units=m +no_defs';
+    if (!proj4.defs('EPSG:32620')) {
+        proj4.defs('EPSG:32620', utm20nProj);
+    }
+    
+    geojsonObj.features.forEach((featureData, index) => {
         try {
-            let geojsonObj;
-            if (typeof geojson === 'string') {
-                try {
-                    geojsonObj = JSON.parse(geojson);
-                } catch (parseError) {
-                    throw new Error('El texto proporcionado no es un JSON válido');
-                }
-            } else if (typeof geojson === 'object' && geojson !== null) {
-                geojsonObj = geojson;
-            } else {
-                throw new Error('El parámetro debe ser un objeto GeoJSON o un string JSON');
-            }
-
-            if (!geojsonObj.type) {
-                throw new Error('El objeto no tiene propiedad "type" (no es GeoJSON válido)');
-            }
-
-            const hasCustomCRS = geojsonObj.crs && 
-                                geojsonObj.crs.properties && 
-                                geojsonObj.crs.properties.name && 
-                                geojsonObj.crs.properties.name.includes('EPSG::2203');
+            const geometry = featureData.geometry;
+            const properties = featureData.properties || {};
             
-            console.log(`GeoJSON tiene CRS personalizado (EPSG:2203): ${hasCustomCRS}`);
-
-            this.clearMap();
-            
-            const format = new ol.format.GeoJSON();
-            let features;
-            
-            try {
-                if (hasCustomCRS) {
-                    console.log('Procesando GeoJSON con EPSG:2203...');
-                    features = this.readFeaturesFromEPSG2203(geojsonObj, format);
-                } else {
-                    console.log('Procesando GeoJSON estándar (EPSG:4326)...');
-                    features = format.readFeatures(geojsonObj, {
-                        dataProjection: 'EPSG:4326',
-                        featureProjection: 'EPSG:3857'
-                    });
-                }
-            } catch (projectionError) {
-                console.warn('Error en conversión de proyección:', projectionError);
-                try {
-                    features = format.readFeatures(geojsonObj);
-                } catch (fallbackError) {
-                    throw new Error(`No se pudo leer el GeoJSON: ${fallbackError.message}`);
-                }
-            }
-
-            if (!features || features.length === 0) {
-                this.showAlert('El archivo no contiene geometrías válidas.', 'error');
+            if (!geometry || !geometry.coordinates) {
+                console.warn(`Feature ${index}: Sin geometría válida`);
                 return;
             }
-
-            console.log(`Features importadas: ${features.length}`);
             
-            const processedData = this.processImportedFeatures(features, 'geojson', geojsonObj);
-            this.finalizeImport(features, geojsonObj, processedData.totalArea, 'GeoJSON');
+            // Convertir coordenadas de UTM 20N a WGS84
+            const wgs84Coordinates = this.convertUTM20NToWGS84(geometry);
+            
+            let olGeometry;
+            if (geometry.type === 'MultiPolygon') {
+                olGeometry = new ol.geom.MultiPolygon(wgs84Coordinates);
+            } else if (geometry.type === 'Polygon') {
+                olGeometry = new ol.geom.Polygon(wgs84Coordinates);
+            } else {
+                console.warn(`Feature ${index}: Tipo de geometría no soportado: ${geometry.type}`);
+                return;
+            }
+            
+            // Convertir a la proyección del mapa (EPSG:3857)
+            olGeometry.transform('EPSG:4326', 'EPSG:3857');
+            
+            const feature = new ol.Feature({ geometry: olGeometry });
+            
+            let productor = properties.Productor || properties.productor || null;
+            let areaHa = properties.Area_Ha || properties.area || 0;
+            
+            if (!productor || productor === 'null' || productor === '') {
+                productor = `Polígono ${index + 1}`;
+            }
+            
+            feature.setProperties({
+                id: properties.id || index,
+                area: parseFloat(areaHa) || 0,
+                productor: String(productor),
+                label: String(productor)
+            });
+            
+            features.push(feature);
             
         } catch (error) {
-            console.error('Error completo en importGeoJSON:', error);
-            this.showAlert(`Error al importar GeoJSON: ${error.message}`, 'error');
+            console.error(`Error procesando feature ${index}:`, error);
         }
-    }
+    });
+    
+    return features;
+}
 
-    /**
-     * LEE FEATURES DESDE GEOJSON CON EPSG:2203
-     * @param {Object} geojsonObj - Objeto GeoJSON
-     * @param {ol.format.GeoJSON} format - Formato GeoJSON
-     * @returns {Array} Features procesadas
-     * USADO EN: importGeoJSON()
-     */
-    readFeaturesFromEPSG2203(geojsonObj, format) {
-        const features = [];
-        
-        if (typeof proj4 === 'undefined') {
-            throw new Error('Se requiere la biblioteca proj4 para transformar EPSG:2203 a WGS84');
-        }
-        
-        geojsonObj.features.forEach((featureData, index) => {
-            try {
-                const geometry = featureData.geometry;
-                const properties = featureData.properties || {};
-                
-                if (!geometry || !geometry.coordinates) {
-                    console.warn(`Feature ${index}: Sin geometría válida`);
-                    return;
-                }
-                
-                const wgs84Coordinates = this.convertEPSG2203ToWGS84(geometry);
-                
-                let olGeometry;
-                if (geometry.type === 'MultiPolygon') {
-                    olGeometry = new ol.geom.MultiPolygon(wgs84Coordinates);
-                } else if (geometry.type === 'Polygon') {
-                    olGeometry = new ol.geom.Polygon(wgs84Coordinates);
-                } else {
-                    console.warn(`Feature ${index}: Tipo de geometría no soportado: ${geometry.type}`);
-                    return;
-                }
-                
-                olGeometry.transform('EPSG:4326', 'EPSG:3857');
-                
-                const feature = new ol.Feature({ geometry: olGeometry });
-                
-                feature.setProperties({
-                    id: properties.id || index,
-                    area: properties.Area_Ha || 0,
-                    productor: properties.Productor || 'Desconocido',
-                    label: properties.Productor || `Polígono ${index + 1}`
-                });
-                
-                features.push(feature);
-                
-            } catch (error) {
-                console.error(`Error procesando feature ${index}:`, error);
-            }
-        });
-        
-        return features;
+/**
+ * CONVIERTE COORDENADAS DE UTM ZONA 20 NORTE A WGS84
+ * @param {Object} geometry - Geometría en UTM 20N (coordenadas en metros)
+ * @returns {Array} Coordenadas en EPSG:4326 (grados decimales)
+ */
+convertUTM20NToWGS84(geometry) {
+    const transformCoord = (coord) => {
+        if (!Array.isArray(coord) || coord.length < 2) return coord;
+        const [x, y] = coord;
+        // Transformar de UTM 20N a WGS84
+        const transformed = proj4('EPSG:32620', 'EPSG:4326', [x, y]);
+        return transformed;
+    };
+    
+    const transformRing = (ring) => ring.map(transformCoord);
+    const transformPolygon = (polygon) => polygon.map(transformRing);
+    
+    if (geometry.type === 'MultiPolygon') {
+        return geometry.coordinates.map(polygon => transformPolygon(polygon));
+    } else if (geometry.type === 'Polygon') {
+        return transformPolygon(geometry.coordinates);
     }
-
-    /**
-     * CONVIERTE COORDENADAS DE EPSG:2203 A WGS84
-     * @param {Object} geometry - Geometría en EPSG:2203
-     * @returns {Array} Coordenadas convertidas
-     * USADO EN: readFeaturesFromEPSG2203()
-     */
-    convertEPSG2203ToWGS84(geometry) {
-        if (geometry.type === 'MultiPolygon') {
-            return geometry.coordinates.map(polygon =>
-                polygon.map(ring =>
-                    ring.map(coord => {
-                        const [x, y] = coord;
-                        const transformed = proj4('EPSG:2203', 'EPSG:4326', [x, y]);
-                        return transformed;
-                    })
-                )
-            );
-        } else if (geometry.type === 'Polygon') {
-            return geometry.coordinates.map(ring =>
-                ring.map(coord => {
-                    const [x, y] = coord;
-                    const transformed = proj4('EPSG:2203', 'EPSG:4326', [x, y]);
-                    return transformed;
-                })
-            );
-        }
-        throw new Error(`Tipo de geometría no soportado: ${geometry.type}`);
-    }
+    throw new Error(`Tipo de geometría no soportado: ${geometry.type}`);
+}
 
     /**
      * IMPORTA DATOS DESDE KML
