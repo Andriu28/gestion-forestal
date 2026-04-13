@@ -1037,7 +1037,11 @@ convertUTM20NToWGS84(geometry) {
         const extent = this.source.getExtent();
         this.map.getView().fit(extent, { padding: [50, 50, 50, 50], duration: 1000 });
 
-        document.getElementById('geometry').value = JSON.stringify(data);
+        const geojsonWGS84 = this.getGeoJSONInWGS84();
+        document.getElementById('geometry').value = JSON.stringify(geojsonWGS84);
+        // --- CAMBIO 2: Asignar área total al campo oculto ---
+        document.getElementById('area_ha').value = totalArea.toFixed(6);
+        
         this.updateAreaDisplay(totalArea);
         this.processMultiPolygonInfo(features);
 
@@ -1096,32 +1100,44 @@ convertUTM20NToWGS84(geometry) {
      * USADO EN: finalizeDrawing(), createPolygonFromCoordinates()
      */
     convertToGeoJSON(feature, existingArea = null) {
-        try {
-            const format = new ol.format.GeoJSON();
-            const geojson = format.writeFeature(feature, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857'
-            });
-            const geojsonObj = JSON.parse(geojson);
-            
-            if (!geojsonObj.geometry) {
-                throw new Error('El polígono no tiene geometría válida');
-            }
-            
-            document.getElementById('geometry').value = JSON.stringify(geojsonObj.geometry);
-            
-            const areaHa = existingArea !== null ? existingArea : feature.get('area') || this.calculateArea(feature);
-            document.getElementById('area_ha').value = areaHa.toFixed(6);
-            
-            if (existingArea === null) {
-                this.showAlert(`Polígono guardado. Área: ${areaHa.toFixed(6)} ha`);
-            }
-            
-        } catch (error) {
-            console.error('Error al convertir GeoJSON:', error);
-            this.showAlert('Error al guardar el polígono: ' + error.message, 'error');
+    try {
+        const format = new ol.format.GeoJSON();
+        // Clonar la geometría para no modificar la original
+        let geom = feature.getGeometry().clone();
+        // Transformar directamente de la proyección del mapa (3857) a WGS84 (4326)
+        geom.transform('EPSG:3857', 'EPSG:4326');
+        
+        // Escribir solo la geometría en GeoJSON
+        const geojsonGeometry = format.writeGeometry(geom, {
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:4326'
+        });
+        const geojsonObj = JSON.parse(geojsonGeometry);
+        if (!geojsonObj || !geojsonObj.coordinates) {
+            throw new Error('Geometría no válida');
         }
+        
+        // Guardar en el formulario
+        document.getElementById('geometry').value = JSON.stringify(geojsonObj);
+        
+        // Calcular área si no se proporcionó
+        let areaHa = existingArea;
+        if (areaHa === null) {
+            areaHa = feature.get('area');
+            if (!areaHa || areaHa === 0) {
+                areaHa = this.calculateArea(feature);
+            }
+        }
+        document.getElementById('area_ha').value = areaHa.toFixed(6);
+        
+        if (existingArea === null) {
+            this.showAlert(`Polígono guardado. Área: ${areaHa.toFixed(6)} ha`);
+        }
+    } catch (error) {
+        console.error('Error al convertir a GeoJSON:', error);
+        this.showAlert('Error al guardar el polígono: ' + error.message, 'error');
     }
+}
 
     // =============================================
     // 12. MANEJO DE CAPAS
@@ -1544,6 +1560,36 @@ updateGfwIcons(isVisible) {
 
         this.displayPolygonsInfo(polygonsInfo);
     }
+
+    /**
+ * Obtiene el GeoJSON de todos los polígonos en WGS84 (EPSG:4326)
+ * @returns {Object} FeatureCollection en coordenadas geográficas (longitud, latitud)
+ */
+getGeoJSONInWGS84() {
+    const features = this.source.getFeatures();
+    const format = new ol.format.GeoJSON();
+    const geojsonFeatures = [];
+    features.forEach(feature => {
+        const geom = feature.getGeometry();
+        if (!geom) return;
+        // Clonar y transformar a 4326
+        const geom4326 = geom.clone().transform('EPSG:3857', 'EPSG:4326');
+        const newFeature = new ol.Feature({ geometry: geom4326 });
+        // Copiar propiedades (id, productor, area, etc.) excepto la geometría original
+        const props = feature.getProperties();
+        delete props.geometry;
+        newFeature.setProperties(props);
+        const geojsonStr = format.writeFeature(newFeature, {
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:4326'
+        });
+        geojsonFeatures.push(JSON.parse(geojsonStr));
+    });
+    return {
+        type: 'FeatureCollection',
+        features: geojsonFeatures
+    };
+}
 
     /**
      * MUESTRA INFORMACIÓN DE POLÍGONOS EN TABLA
