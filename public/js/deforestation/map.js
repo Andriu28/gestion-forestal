@@ -1572,10 +1572,12 @@ getGeoJSONInWGS84() {
     features.forEach(feature => {
         const geom = feature.getGeometry();
         if (!geom) return;
-        // Clonar y transformar a 4326
+        // Solo incluir polígonos o multipolígonos, ignorar puntos
+        const geomType = geom.getType();
+        if (geomType !== 'Polygon' && geomType !== 'MultiPolygon') return;
+        
         const geom4326 = geom.clone().transform('EPSG:3857', 'EPSG:4326');
         const newFeature = new ol.Feature({ geometry: geom4326 });
-        // Copiar propiedades (id, productor, area, etc.) excepto la geometría original
         const props = feature.getProperties();
         delete props.geometry;
         newFeature.setProperties(props);
