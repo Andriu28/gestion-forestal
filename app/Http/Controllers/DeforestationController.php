@@ -82,17 +82,22 @@ class DeforestationController extends Controller
             return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
         }
 
-        // Determinar si es una FeatureCollection o un solo polígono
         if ($geojson['type'] === 'FeatureCollection') {
-            $multiResults = [];
-            foreach ($geojson['features'] as $feature) {
-                $multiResults[] = $this->processSinglePolygon($feature, $globalParams);
+            $features = $geojson['features'];
+            if (count($features) === 1) {
+                // Tratar como un solo polígono
+                $singleFeature = $features[0];
+                $dataToPass = $this->processSinglePolygon($singleFeature, $globalParams);
+                return view('deforestation.results', compact('dataToPass'));
+            } else {
+                $multiResults = [];
+                foreach ($features as $feature) {
+                    $multiResults[] = $this->processSinglePolygon($feature, $globalParams);
+                }
+                return view('deforestation.multi-results', compact('multiResults'));
             }
-            /* dd($multiResults); */
-            // Vista para múltiples resultados (debes crearla)
-            return view('deforestation.multi-results', compact('multiResults'));
         } else {
-            // Si no es Feature, lo envolvemos en una estructura de Feature
+            // Si no es FeatureCollection, lo envolvemos en una estructura de Feature
             if ($geojson['type'] !== 'Feature') {
                 $geojson = ['type' => 'Feature', 'geometry' => $geojson, 'properties' => []];
             }
