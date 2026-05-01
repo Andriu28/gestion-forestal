@@ -4,8 +4,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProviderController;
-use App\Http\Controllers\ProducerController; 
-use App\Http\Controllers\PolygonController; 
+use App\Http\Controllers\ProducerController;
+use App\Http\Controllers\PolygonController;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -13,207 +13,156 @@ use App\Http\Controllers\DeforestationController;
 use App\Http\Controllers\ForestController;
 use App\Http\Controllers\SupportController;
 
+/*
+|--------------------------------------------------------------------------
+| Rutas de Diagnóstico (SOLO DESARROLLO)
+|--------------------------------------------------------------------------
+| IMPORTANTE: Estas rutas deben estar deshabilitadas en producción.
+| Se recomienda eliminarlas o envolverlas en un condicional de entorno.
+*/
 
-// RUTA PARA VERIFICAR CONFIGURACIÓN DE CORREO
-Route::get('/check-mail-config', function() {
-    return [
-        'mail_mailer' => config('mail.default'),
-        'mail_host' => config('mail.mailers.smtp.host'),
-        'mail_timeout' => config('mail.mailers.smtp.timeout'),
-        'env_mailer' => env('MAIL_MAILER'),
-    ];
-});
 
-// En routes/web.php
-Route::get('/test-email', function() {
-    try {
-        \Mail::raw('Email de prueba', function($message) {
-            $message->to('diperishilla2468@gmail.com')
-                    ->subject('Prueba de correo');
-        });
-        return 'Email enviado correctamente';
-    } catch (\Exception $e) {
-        return 'Error: ' . $e->getMessage();
-    }
-});
 
-// Rutas públicas
+/*
+|--------------------------------------------------------------------------
+| Rutas Públicas
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/', function () {
     return view('auth.login');
 });
 
-Route::get('/producers/generate-pdf', [ProducerController::class, 'generatePdf'])
-    ->name('producers.generate.pdf');
+/*
+|--------------------------------------------------------------------------
+| Rutas para Usuarios Autenticados y Verificados
+|--------------------------------------------------------------------------
+*/
 
-// Rutas accesibles para cualquier usuario autenticado (básico o administrador)
 Route::middleware(['auth', 'verified'])->group(function () {
+    
+    // ========== DASHBOARD Y PERFIL ==========
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // RUTA DE SOPORTE AGREGADA AQUÍ
-    Route::get('/support', [SupportController::class, 'index'])->name('support');
-    Route::get('/support/download', [SupportController::class, 'generatePdf'])->name('support.pdf');
-
-    // AÑADE ESTA NUEVA RUTA PARA DESARROLLADORES
-Route::get('/developers', function () {
-    return view('developers.developers');
-})->name('developers');
-
+    
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
+    
+    // ========== SOPORTE Y AYUDA ==========
+    Route::get('/support', [SupportController::class, 'index'])->name('support');
+    Route::get('/support/download', [SupportController::class, 'generatePdf'])->name('support.pdf');
+    Route::view('/developers', 'developers.developers')->name('developers');
+    
+    // ========== ESTADÍSTICAS FORESTALES ==========
     Route::get('/forest-stats', [ForestController::class, 'showStats'])->name('forest.stats');
     Route::get('/radd-alerts', [ForestController::class, 'showRADDAlerts']);
-
-   // RUTAS DE productorES 
-    Route::resource('providers', ProviderController::class)->names([
-        'index' => 'providers.index',
-        'create' => 'providers.create', 
-        'edit' => 'providers.edit',
-        'update' => 'providers.update',
-    ]);
-
-    // Rutas adicionales para funcionalidades extra de productores
-    Route::prefix('providers')->group(function () {
-        Route::post('{provider}/toggle-status', [ProviderController::class, 'toggleStatus'])
-            ->name('providers.toggle-status');
-        Route::post('{provider}/restore', [ProviderController::class, 'restore'])
-            ->name('providers.restore');
-        Route::delete('{provider}/force-delete', [ProviderController::class, 'forceDelete'])
-            ->name('providers.force-delete');
-    });
-
-
-    // RUTAS DE PRODUCTORES 
-    // IMPORTANTE: Definir rutas personalizadas ANTES del resource
-    Route::prefix('producers')->group(function () {
-        // RUTAS PERSONALIZADAS - DEBEN IR ANTES DEL RESOURCE
-        Route::get('/deleted', [ProducerController::class, 'deleted'])
-            ->name('producers.deleted');
-        
-        Route::get('/{producer}/details', [ProducerController::class, 'details'])
-            ->name('producers.details');
-        
-        Route::post('{producer}/toggle-status', [ProducerController::class, 'toggleStatus'])
-            ->name('producers.toggle-status');
-        Route::post('{id}/restore', [ProducerController::class, 'restore'])
-            ->name('producers.restore');
-        Route::delete('{id}/force-delete', [ProducerController::class, 'forceDelete'])
-            ->name('producers.force-delete');
-    });
-
-    // RUTA RESOURCE - DESPUÉS de las rutas personalizadas
-    Route::resource('producers', ProducerController::class)->except(['destroy'])->names([
-        'index' => 'producers.index',
-        'create' => 'producers.create', 
-        'edit' => 'producers.edit',
-        'update' => 'producers.update',
-    ]);
-
-    // Ruta destroy separada (opcional, si quieres mantenerla específica)
-    Route::delete('producers/{producer}', [ProducerController::class, 'destroy'])
-        ->name('producers.destroy');
     
-
-    // Rutas para gestión de áreas
-    Route::resource('areas', AreaController::class)->except(['show']);
-
-    // Rutas adicionales
-    Route::prefix('areas')->group(function () {
-        Route::get('/{area}/toggle-status', [AreaController::class, 'toggleStatus'])
-            ->name('areas.toggle-status');
+    /*
+    |--------------------------------------------------------------------------
+    | MÓDULO: Productores (Producers)
+    |--------------------------------------------------------------------------
+    */
+    
+    // Rutas personalizadas (ANTES del resource)
+    Route::prefix('producers')->name('producers.')->group(function () {
+        Route::get('/deleted', [ProducerController::class, 'deleted'])->name('deleted');
+        Route::get('/generate-pdf', [ProducerController::class, 'generatePdf'])->name('generate.pdf');
         
-        Route::get('/search/{search}', [AreaController::class, 'search'])
-            ->name('areas.search');
-        
-        Route::get('/{area}', [AreaController::class, 'show'])
-            ->name('areas.show');
+        // Rutas con parámetro {producer}
+        Route::get('/{producer}/details', [ProducerController::class, 'details'])->name('details');
+        Route::post('/{producer}/toggle-status', [ProducerController::class, 'toggleStatus'])
+            ->name('toggle-status');
+        Route::post('/{producer}/restore', [ProducerController::class, 'restore'])->name('restore');
+        Route::delete('/{producer}/force-delete', [ProducerController::class, 'forceDelete'])
+            ->name('force-delete');
     });
-
-
-    // ========== RUTAS PARA POLÍGONOS - VERSIÓN CORRECTA SIN DUPLICADOS ==========
-
-        // PRIMERO las rutas personalizadas (específicas)
-        Route::get('/polygons/map', [PolygonController::class, 'map'])->name('polygons.map');
-        Route::get('/polygons/geojson', [PolygonController::class, 'geojson'])->name('polygons.geojson');
-        Route::post('/polygons/find-parish', [PolygonController::class, 'findParishApi'])->name('polygons.find-parish-api');
-        Route::get('/polygons/{polygon}/details', [PolygonController::class, 'details'])
-            ->name('polygons.details')
-            ->middleware('auth');
-
-        // AÑADE ESTA NUEVA RUTA PARA POLÍGONOS ELIMINADOS
-        Route::get('/polygons/deleted', [PolygonController::class, 'deleted'])
-            ->name('polygons.deleted');
-
-        // RUTAS DE ESTADO Y RESTAURACIÓN
-        Route::post('/polygons/{polygon}/toggle-status', [PolygonController::class, 'toggleStatus'])->name('polygons.toggle-status');
-        Route::post('/polygons/{id}/restore', [PolygonController::class, 'restore'])->name('polygons.restore');
-
-        // RUTA RESOURCE - SIN definir manualmente edit y update
-        Route::resource('polygons', PolygonController::class);
-
-        // ========== FIN RUTAS POLÍGONOS ==========
-
-       // Grupo de rutas para deforestación - CORREGIDO
+    
+    Route::resource('producers', ProducerController::class);
+    
+    /*
+    |--------------------------------------------------------------------------
+    | MÓDULO: Polígonos
+    |--------------------------------------------------------------------------
+    */
+    
+    // Rutas personalizadas (ANTES del resource)
+    Route::prefix('polygons')->name('polygons.')->group(function () {
+        // Vistas especiales
+        Route::get('/map', [PolygonController::class, 'map'])->name('map');
+        Route::get('/geojson', [PolygonController::class, 'geojson'])->name('geojson');
+        Route::get('/deleted', [PolygonController::class, 'deleted'])->name('deleted');
+        
+        // API endpoints
+        Route::post('/find-parish', [PolygonController::class, 'findParishApi'])
+            ->name('find-parish-api');
+        
+        // Acciones sobre polígonos específicos
+        Route::get('/{polygon}/details', [PolygonController::class, 'details'])->name('details');
+        Route::post('/{polygon}/toggle-status', [PolygonController::class, 'toggleStatus'])
+            ->name('toggle-status');
+        Route::post('/{polygon}/restore', [PolygonController::class, 'restore'])->name('restore');
+        Route::delete('/{polygon}/force-delete', [PolygonController::class, 'forceDelete'])
+            ->name('force-delete');
+    });
+    
+    Route::resource('polygons', PolygonController::class);
+    
+    /*
+    |--------------------------------------------------------------------------
+    | MÓDULO: Deforestación
+    |--------------------------------------------------------------------------
+    */
+    
     Route::prefix('deforestation')->name('deforestation.')->group(function () {
+        // Formulario y procesamiento
+        Route::get('/create', [DeforestationController::class, 'create'])->name('create');
+        Route::post('/analyze', [DeforestationController::class, 'analyze'])->name('analyze');
+        Route::post('/polygon', [DeforestationController::class, 'polygon'])->name('polygon');
         
-        // Mostrar formulario de análisis - RUTA CORREGIDA
-        Route::get('/create', [DeforestationController::class, 'create'])
-            ->name('create');
-        
-        // Procesar análisis 
-        Route::post('/analyze', [DeforestationController::class, 'analyze'])
-            ->name('analyze');
-
-        Route::post('/polygon', [DeforestationController::class, 'polygon'])
-            ->name('polygon');
-        
-        // Mostrar resultados para múltiples polígonos
+        // Resultados
         Route::get('/multiple-results', [DeforestationController::class, 'multipleResults'])
             ->name('multiple-results');
+        Route::get('/results/{polygon}', [DeforestationController::class, 'results'])->name('results');
         
-        // Mostrar resultados para un solo polígono
-        Route::get('/results/{polygon}', [DeforestationController::class, 'results'])
-            ->name('results');
+        // Exportación y reportes
+        Route::get('/export/{polygon}', [DeforestationController::class, 'export'])->name('export');
+        Route::post('/generar-report', [DeforestationController::class, 'report'])->name('report');
         
-        // Exportar datos
-        Route::get('/export/{polygon}', [DeforestationController::class, 'export'])
-            ->name('export');
-        
-        // Generar reporte PDF
-        Route::post('/generar-report', [DeforestationController::class, 'report'])
-            ->name('report');
-        
-        // API para obtener datos del análisis (para gráficos)
+        // API para gráficos
         Route::get('/api/analysis-data/{polygon}', [DeforestationController::class, 'getAnalysisData'])
             ->name('api.analysis-data');
     });
-
-
-});
-// Rutas exclusivas para ADMINISTRADORES
-// Rutas del panel de administración (solo para administradores)
-Route::middleware(['auth', 'verified', 'is.admin'])->prefix('admin')->name('admin.')->group(function () {
-    // Usuarios: Rutas de recurso y adicionales
-    Route::resource('users', UserController::class)->except(['show'])->names([
-        'index' => 'users.index',
-        'create' => 'users.create',
-        'store' => 'users.store',
-        'edit' => 'users.edit',
-        'update' => 'users.update',
-        'destroy' => 'users.destroy',
-    ]);
-
-    //MOVER AQUÍ las rutas personalizadas de usuarios
-    Route::get('users/disabled', [UserController::class, 'listDisabledUsers'])->name('users.disabled');
-    Route::patch('users/{user}/update-role', [UserController::class, 'updateUserRole'])->name('users.update-role');
-    Route::post('users/{user}/enable', [UserController::class, 'enableUser'])->name('users.enable');
-    
-    //MOVER también la ruta de auditoría aquí
-    Route::get('/audit', [AuditLogController::class, 'showAuditLog'])->name('audit');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Rutas de Administración (Solo Administradores)
+|--------------------------------------------------------------------------
+*/
 
+Route::middleware(['auth', 'verified', 'is.admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        
+        // Rutas personalizadas de usuarios (ANTES del resource)
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/disabled', [UserController::class, 'listDisabledUsers'])->name('disabled');
+            Route::patch('/{user}/update-role', [UserController::class, 'updateUserRole'])
+                ->name('update-role');
+            Route::post('/{user}/enable', [UserController::class, 'enableUser'])->name('enable');
+        });
+        
+        Route::resource('users', UserController::class)->except(['show']);
+        
+        // Auditoría
+        Route::get('/audit', [AuditLogController::class, 'showAuditLog'])->name('audit');
+    });
 
-// Esta línea es la que importa las rutas de autenticación
+/*
+|--------------------------------------------------------------------------
+| Rutas de Autenticación (Laravel Breeze/Jetstream)
+|--------------------------------------------------------------------------
+*/
+
 require __DIR__.'/auth.php';

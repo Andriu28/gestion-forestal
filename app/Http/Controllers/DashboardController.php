@@ -33,8 +33,8 @@ class DashboardController extends Controller
         
         // 1.3 Usuarios por estado (habilitados vs deshabilitados)
         $trashedUsers = User::onlyTrashed()->count();
-        $enabledUsers = $totalUsers - $trashedUsers; // Usuarios habilitados
-        $activeUsers = $enabledUsers; // Para compatibilidad con la vista
+        $enabledUsers = $totalUsers - $trashedUsers;
+        $activeUsers = $enabledUsers;
         
         // 2. Actividades
         $totalActivities = Activity::count();
@@ -44,7 +44,7 @@ class DashboardController extends Controller
         $activitiesThisMonth = Activity::whereMonth('created_at', now()->month)
                                        ->whereYear('created_at', now()->year)->count();
         
-        // 3. Productores (NUEVA MÉTRICA)
+        // 3. Productores
         $totalProducers = Producer::count();
         $activeProducers = Producer::where('is_active', true)->count();
         $newProducersToday = Producer::whereDate('created_at', today())->count();
@@ -58,7 +58,6 @@ class DashboardController extends Controller
             ->pluck('count', 'role');
         
         // 5. Actividades por Tipo
-        // 5. Actividades por Tipo - ACTUALIZADO PARA INCLUIR SESIONES
         $activityTypesRaw = Activity::select(
                 DB::raw("CASE 
                     WHEN event IS NOT NULL AND event IN ('created', 'updated', 'deleted', 'restored') THEN event
@@ -72,7 +71,6 @@ class DashboardController extends Controller
             ->get()
             ->pluck('count', 'activity_type');
 
-        // Organizar en el orden deseado
         $activityTypes = collect([
             'created' => $activityTypesRaw['created'] ?? 0,
             'updated' => $activityTypesRaw['updated'] ?? 0,
@@ -135,7 +133,6 @@ class DashboardController extends Controller
             ->get();
         
         // 11. Actividades recientes (para tabla)
-        // 11. Actividades recientes (para tabla) - SIN FILTROS
         $recentActivities = Activity::with(['causer', 'subject'])
             ->latest()
             ->take(10)
@@ -152,7 +149,6 @@ class DashboardController extends Controller
             ? round((($activitiesThisWeek - $lastWeekActivities) / $lastWeekActivities) * 100, 1)
             : ($activitiesThisWeek > 0 ? 100 : 0);
         
-        // Porcentaje de crecimiento de productores
         $producerGrowthPercentage = $lastWeekProducers > 0 
             ? round((($newProducersThisWeek - $lastWeekProducers) / $lastWeekProducers) * 100, 1)
             : ($newProducersThisWeek > 0 ? 100 : 0);
@@ -166,17 +162,20 @@ class DashboardController extends Controller
             ? round(($roleDistribution['basico'] / $totalUsers) * 100, 1)
             : 0;
         
+        $tecnicoPercentage = isset($roleDistribution['tecnico']) && $totalUsers > 0
+            ? round(($roleDistribution['tecnico'] / $totalUsers) * 100, 1)
+            : 0;
+        
         // Porcentaje de productores activos
         $activeProducersPercentage = $totalProducers > 0
             ? round(($activeProducers / $totalProducers) * 100, 1)
             : 0;
         
-        // Calcular tasa de actividad (actividades por usuario)
+        // Calcular tasa de actividad
         $completionRate = $totalUsers > 0 
             ? min(round(($activitiesThisMonth / ($totalUsers * 5)) * 100, 1), 100)
             : 0;
         
-        // Tasa de actividad diaria promedio
         $daysInMonth = now()->daysInMonth;
         $dailyActivityRate = $totalUsers > 0 && $daysInMonth > 0
             ? round(($activitiesThisMonth / ($totalUsers * $daysInMonth)) * 100, 1)
@@ -205,9 +204,66 @@ class DashboardController extends Controller
             ];
         }
         
-        // Si no hay datos para los gráficos, crea datos de ejemplo para demostración
         $hasHourlyData = $hourlyActivity->sum('count') > 0;
         $hasTopUsersData = $topActiveUsers->count() > 0;
+        
+        // ===== DATOS PARA TÉCNICOS =====
+        $myActivitiesCount = 0;
+        $usersManagedCount = 0;
+        $myWeeklyActivities = 0;
+        $myRecentActivities = collect([]);
+        $topActiveTecnicos = collect([]);
+        $recentTecnicoActivities = collect([]);
+        $techActivitiesCount = 0;
+        
+        if (auth()->check() && auth()->user()->role === 'tecnico') {
+            $userId = auth()->id();
+            
+            $myActivitiesCount = Activity::where('causer_id', $userId)->count();
+            
+            $usersManagedCount = Activity::where('causer_id', $userId)
+                ->where('subject_type', 'App\Models\User')
+                ->distinct('subject_id')
+                ->count('subject_id');
+            
+            $myWeeklyActivities = Activity::where('causer_id', $userId)
+                ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
+                ->count();
+            
+            $myRecentActivities = Activity::where('causer_id', $userId)
+                ->with(['subject'])
+                ->latest()
+                ->take(10)
+                ->get();
+        }
+        
+        if (auth()->check() && auth()->user()->role === 'administrador') {
+            $techActivitiesCount = Activity::whereHas('causer', function($query) {
+                $query->where('role', 'tecnico');
+            })->where('created_at', '>=', now()->subDays(7))->count();
+            
+            $topActiveTecnicos = Activity::select(
+                    'causer_id',
+                    DB::raw('COUNT(*) as activity_count'),
+                    DB::raw('MAX(users.name) as user_name')
+                )
+                ->where('activity_log.created_at', '>=', now()->subDays(7))
+                ->whereNotNull('causer_id')
+                ->join('users', 'activity_log.causer_id', '=', 'users.id')
+                ->where('users.role', 'tecnico')
+                ->groupBy('causer_id')
+                ->orderByDesc('activity_count')
+                ->limit(5)
+                ->get();
+            
+            $recentTecnicoActivities = Activity::with(['causer', 'subject'])
+                ->whereHas('causer', function($query) {
+                    $query->where('role', 'tecnico');
+                })
+                ->latest()
+                ->take(10)
+                ->get();
+        }
         
         return view('dashboard', compact(
             // Métricas principales
@@ -216,14 +272,14 @@ class DashboardController extends Controller
             'totalProducers',
             'activeProducers',
             
-            // NUEVAS: Métricas de usuarios activos (sesión)
+            // Métricas de usuarios activos
             'activeUsersCount',
             'activeUsersPercentage',
             
             // Métricas de estado de usuarios
             'enabledUsers',
             'trashedUsers',
-            'activeUsers', // Para compatibilidad
+            'activeUsers',
             
             // Métricas diarias
             'newUsersToday',
@@ -250,6 +306,7 @@ class DashboardController extends Controller
             'activeProducersPercentage',
             'adminPercentage',
             'basicPercentage',
+            'tecnicoPercentage',
             'completionRate',
             'dailyActivityRate',
             
@@ -259,7 +316,7 @@ class DashboardController extends Controller
             'monthlyActivity',
             'topActiveUsers',
             
-            // Flags para mostrar/ocultar secciones
+            // Flags
             'hasHourlyData',
             'hasTopUsersData',
             
@@ -269,7 +326,18 @@ class DashboardController extends Controller
             'lastWeekProducers',
             
             // Actividades recientes
-            'recentActivities'
+            'recentActivities',
+            
+            // Datos para técnicos
+            'myActivitiesCount',
+            'usersManagedCount',
+            'myWeeklyActivities',
+            'myRecentActivities',
+            
+            // Datos de técnicos para admin
+            'topActiveTecnicos',
+            'techActivitiesCount',
+            'recentTecnicoActivities'
         ));
     }
     
@@ -287,10 +355,8 @@ class DashboardController extends Controller
      */
     private function getActiveUsersCount()
     {
-        // Usuarios con actividad en los últimos 15 minutos
         $activeThreshold = now()->subMinutes(15);
         
-        // Opción 1: Si usas sesiones de base de datos (recomendado)
         if (config('session.driver') === 'database') {
             return DB::table('sessions')
                 ->where('last_activity', '>=', $activeThreshold->timestamp)
@@ -299,7 +365,6 @@ class DashboardController extends Controller
                 ->count('user_id');
         }
         
-        // Opción 2: Si tienes campo 'last_seen_at' o 'last_login_at' en users
         if (Schema::hasColumn('users', 'last_seen_at')) {
             return User::where('last_seen_at', '>=', $activeThreshold)->count();
         }
@@ -308,8 +373,6 @@ class DashboardController extends Controller
             return User::where('last_login_at', '>=', $activeThreshold)->count();
         }
         
-        // Opción 3: Usar actividad reciente (últimas 2 horas)
-        // Para equipos pequeños de 4 personas
         return User::whereHas('activities', function($query) use ($activeThreshold) {
                 $query->where('created_at', '>=', $activeThreshold);
             })
@@ -319,7 +382,7 @@ class DashboardController extends Controller
     }
     
     /**
-     * Método alternativo más seguro para obtener usuarios activos
+     * Método alternativo para obtener usuarios activos
      */
     private function getTopActiveUsersAlternative()
     {
@@ -337,7 +400,7 @@ class DashboardController extends Controller
     }
     
     /**
-     * Método más simple sin JOIN
+     * Método simple sin JOIN
      */
     private function getTopActiveUsersSimple()
     {

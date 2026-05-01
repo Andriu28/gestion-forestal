@@ -187,7 +187,7 @@
     <!-- Segunda Fila: Gráficos y Distribuciones -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         
-        <!-- Distribución de Roles -->
+        <!-- Distribución de Roles (MODIFICADA para incluir Técnicos) -->
         <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Distribución de Roles</h3>
@@ -203,6 +203,17 @@
                     </div>
                     <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div class="bg-blue-600 h-2 rounded-full" style="width: {{ $adminPercentage }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- TÉCNICOS (NUEVO) -->
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Técnicos</span>
+                        <span class="text-sm font-bold text-indigo-600">{{ $roleDistribution['tecnico'] ?? 0 }} ({{ $tecnicoPercentage ?? 0 }}%)</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ $tecnicoPercentage ?? 0 }}%"></div>
                     </div>
                 </div>
                 
@@ -223,7 +234,8 @@
                         <div class="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                             <p class="text-sm text-gray-500">Habilitados</p>
                             <p class="text-xl font-bold text-blue-600">{{ $totalUsers }}</p>
-                        </div>                        <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        </div>
+                        <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                             <p class="text-sm text-gray-500">Deshabilitados</p>
                             <p class="text-xl font-bold text-red-600">{{ $trashedUsers }}</p>
                         </div>
@@ -288,6 +300,130 @@
                     No hay datos de actividad disponibles
                 </div>
                 @endif
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- NUEVA SECCIÓN: Actividad de Técnicos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        
+        <!-- Top Técnicos Más Activos (NUEVO) -->
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <span class="inline-block w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
+                    Técnicos Más Activos (7 días)
+                </h3>
+                <span class="text-sm text-gray-500">última semana</span>
+            </div>
+            
+            <div class="space-y-4">
+                @forelse($topActiveTecnicos ?? [] as $index => $tecnico)
+                <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold mr-3">
+                            {{ $index + 1 }}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">{{ $tecnico->user_name ?? 'Técnico #' . $tecnico->causer_id }}</p>
+                            <p class="text-sm text-gray-500">{{ $tecnico->activity_count }} actividades</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-bold text-indigo-600">
+                            {{ round(($tecnico->activity_count / max($tecnicosTotalActivities ?? 1, 1)) * 100, 1) }}%
+                        </div>
+                        <div class="text-xs text-gray-500">del total técnicos</div>
+                    </div>
+                </div>
+                @empty
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <p>No hay datos de técnicos activos</p>
+                    <p class="text-sm mt-1">Los técnicos aparecerán aquí cuando realicen actividades</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+        
+        <!-- Acciones Recientes de Técnicos (NUEVO) -->
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <span class="inline-block w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
+                    Últimas Actividades de Técnicos
+                </h3>
+                <a href="{{ route('admin.audit', ['role' => 'tecnico']) }}" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    Ver todas →
+                </a>
+            </div>
+            
+            <div class="space-y-3 max-h-80 overflow-y-auto">
+                @forelse($recentTecnicoActivities ?? [] as $activity)
+                <div class="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center mb-1">
+                                <div class="w-6 h-6 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mr-2">
+                                    <span class="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                                        {{ substr($activity->causer?->name ?? 'T', 0, 1) }}
+                                    </span>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                    {{ $activity->causer?->name ?? 'Técnico' }}
+                                </span>
+                                <span class="mx-2 text-gray-400">•</span>
+                                <span class="text-xs text-gray-500">{{ $activity->created_at->diffForHumans() }}</span>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 ml-8">
+                                @php
+                                    $actionText = '';
+                                    if (str_contains($activity->description, 'creó')) {
+                                        $actionText = 'creó';
+                                    } elseif (str_contains($activity->description, 'actualizó')) {
+                                        $actionText = 'actualizó';
+                                    } elseif (str_contains($activity->description, 'eliminó')) {
+                                        $actionText = 'eliminó';
+                                    } elseif (str_contains($activity->description, 'restauró')) {
+                                        $actionText = 'restauró';
+                                    } else {
+                                        $actionText = 'realizó acción en';
+                                    }
+                                @endphp
+                                {{ $actionText }}
+                                <span class="font-medium">{{ class_basename($activity->subject_type ?? 'sistema') }}</span>
+                                @if($activity->subject_id)
+                                    <span class="text-gray-400">#{{ $activity->subject_id }}</span>
+                                @endif
+                            </p>
+                        </div>
+                        @php
+                            $eventType = $activity->event ?? 'other';
+                            $badgeClass = match($eventType) {
+                                'created' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+                                'updated' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                                'deleted' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+                                default => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                            };
+                        @endphp
+                        <span class="text-xs px-2 py-1 rounded-full {{ $badgeClass }} ml-2">
+                            {{ ucfirst($eventType) }}
+                        </span>
+                    </div>
+                </div>
+                @empty
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    <p>No hay actividades recientes de técnicos</p>
+                    <p class="text-sm mt-1">Las acciones de técnicos aparecerán aquí</p>
+                </div>
+                @endforelse
             </div>
         </div>
         
@@ -495,9 +631,183 @@
         </div>
     </div>
     
+    @elseif(auth()->check() && auth()->user()->role === 'tecnico')
+    
+    <!-- VISTA PARA USUARIOS TÉCNICOS (NUEVA) -->
+    <div class="mx-auto">
+        <!-- Header para Técnicos -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                        Panel Técnico
+                    </h1>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Bienvenido, {{ Auth::user()->name }} • 
+                        {{ now()->translatedFormat('l, d \\d\\e F \\d\\e Y') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjetas de Métricas para Técnicos -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            
+            <!-- Mis Actividades Recientes -->
+            <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Mis Actividades</p>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                            {{ $myActivitiesCount ?? 0 }}
+                        </h3>
+                    </div>
+                    <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500">Total de acciones realizadas</p>
+            </div>
+
+            <!-- Usuarios Gestionados -->
+            <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuarios Gestionados</p>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                            {{ $usersManagedCount ?? 0 }}
+                        </h3>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500">Usuarios que has gestionado</p>
+            </div>
+
+            <!-- Actividades Pendientes -->
+            <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Actividad Semanal</p>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                            {{ $myWeeklyActivities ?? 0 }}
+                        </h3>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500">Actividades esta semana</p>
+            </div>
+        </div>
+
+        <!-- Acciones Rápidas para Técnicos -->
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Acciones Rápidas</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="{{ route('admin.users.index') }}" class="group flex items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
+                    <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mr-3 group-hover:scale-110 transition-transform">
+                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">Gestionar Usuarios</p>
+                        <p class="text-xs text-gray-500">Ver y editar usuarios</p>
+                    </div>
+                </a>
+                
+                <a href="{{ route('admin.audit') }}" class="group flex items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
+                    <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mr-3 group-hover:scale-110 transition-transform">
+                        <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">Ver Bitácora</p>
+                        <p class="text-xs text-gray-500">Registro de actividades</p>
+                    </div>
+                </a>
+                
+                <a href="{{ route('profile.edit') }}" class="group flex items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
+                    <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mr-3 group-hover:scale-110 transition-transform">
+                        <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">Mi Perfil</p>
+                        <p class="text-xs text-gray-500">Configurar mi cuenta</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Mis Actividades Recientes (Tabla para Técnicos) -->
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Mis Actividades Recientes</h3>
+                <span class="text-sm text-gray-500">Últimas {{ $myRecentActivities->count() ?? 0 }} acciones</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left border-b border-gray-200 dark:border-gray-700">
+                            <th class="pb-3 text-sm font-semibold text-gray-900 dark:text-gray-300">Acción</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-900 dark:text-gray-300">Modelo/Descripción</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-900 dark:text-gray-300 text-right">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($myRecentActivities ?? [] as $activity)
+                        <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td class="py-3">
+                                @php
+                                    $activityType = $activity->event ?? 'other';
+                                    $badgeColor = match($activityType) {
+                                        'created' => 'bg-green-100 text-green-700',
+                                        'updated' => 'bg-blue-100 text-blue-700',
+                                        'deleted' => 'bg-red-100 text-red-700',
+                                        'restored' => 'bg-yellow-100 text-yellow-700',
+                                        default => 'bg-gray-100 text-gray-700'
+                                    };
+                                @endphp
+                                <span class="text-xs px-2 py-1 rounded-full {{ $badgeColor }}">
+                                    {{ ucfirst($activityType) }}
+                                </span>
+                            </td>
+                            <td class="py-3 text-sm text-gray-600 dark:text-gray-400">
+                                {{ Str::limit($activity->description ?? 'Sin descripción', 60) }}
+                            </td>
+                            <td class="py-3 text-sm text-gray-500 text-right">
+                                {{ $activity->created_at->format('d/m/Y H:i') }}
+                             </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="3" class="py-8 text-center text-gray-500 dark:text-gray-400">
+                                No tienes actividades registradas aún
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
     @else
-    <!-- Vista para usuarios no administradores -->
-    <div class=" mx-auto">
+    <!-- Vista para usuarios básicos (sin cambios) -->
+    <div class="mx-auto">
         <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-8 text-center">
             <div class="w-20 h-20 mx-auto mb-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                 <svg class="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -532,17 +842,16 @@
 <!-- Script para animar los círculos de progreso (como en la versión anterior) -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si estamos en la vista de administrador
+    @if(auth()->check() && auth()->user()->role === 'administrador')
     // Configuración de las métricas
     const metrics = {
-        // NUEVO: Porcentaje de usuarios activos
-
         activeUsersPercentage: {{ $activeUsersPercentage }},
         activityGrowth: {{ $activityGrowthPercentage }},
         todayActivity: {{ $activitiesToday }},
-        completionRate: {{ $completionRate }},
+        completionRate: {{ $completionRate ?? 0 }},
         activeProducersPercentage: {{ $activeProducersPercentage }}, 
 
-        // Calcular porcentaje para actividad de hoy (vs promedio diario del mes)
         todayPercentage: function() {
             const avgDailyActivity = {{ $activitiesThisMonth }} > 0 ? 
                 {{ $activitiesThisMonth }} / {{ now()->daysInMonth }} : 1;
@@ -552,10 +861,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Configuración de las animaciones
     const progressCircles = [
-         {
-            id: 'user-activity-circle',  // ¡ESTE ES EL QUE FALTA!
+        {
+            id: 'user-activity-circle',
             percentage: Math.min(metrics.activeUsersPercentage, 100),
             duration: 1000,
             colorClass: 'green'
@@ -579,22 +887,20 @@ document.addEventListener('DOMContentLoaded', function() {
             colorClass: 'yellow'
         },
         {
-            id: 'producer-growth-circle', // Agregar este objeto
+            id: 'producer-growth-circle',
             percentage: Math.min(metrics.activeProducersPercentage, 100),
             duration: 1200,
             colorClass: 'teal'
         }
     ];
 
-    // Función para animar el círculo de progreso (como en la versión anterior)
     const animateProgressCircle = (circleId, percentage, duration = 1000) => {
         const circle = document.getElementById(circleId);
         if (!circle) return;
         
-        const circumference = 235; // 2 * π * r (35 * 2 * 3.14 ≈ 220)
+        const circumference = 235;
         const offset = circumference - (percentage / 100) * circumference;
         
-        // Animar con requestAnimationFrame para suavidad
         let start = null;
         const startOffset = 235;
         const endOffset = offset;
@@ -602,137 +908,51 @@ document.addEventListener('DOMContentLoaded', function() {
         const animate = (timestamp) => {
             if (!start) start = timestamp;
             const progress = Math.min((timestamp - start) / duration, 1);
-            
-            // Easing function para animación suave
             const easeOut = 1 - Math.pow(1 - progress, 3);
             const currentOffset = startOffset + (endOffset - startOffset) * easeOut;
-            
             circle.style.strokeDashoffset = currentOffset;
-            
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            }
+            if (progress < 1) requestAnimationFrame(animate);
         };
-        
         requestAnimationFrame(animate);
     };
 
-    // Función para actualizar colores de círculos negativos
-    const updateCircleColors = (circleId, isPositive, originalColor) => {
-        const circleElement = document.getElementById(circleId);
-        const textElement = document.getElementById(circleId.replace('-circle', '-percentage'));
-        
-        if (!isPositive) {
-            if (circleElement) {
-                // Remover clases de color original
-                circleElement.classList.remove(
-                    'stroke-blue-600', 'stroke-green-600', 
-                    'dark:stroke-blue-400', 'dark:stroke-green-400'
-                );
-                // Agregar color rojo
-                circleElement.classList.add('stroke-red-600', 'dark:stroke-red-400');
-            }
-            
-            if (textElement) {
-                textElement.classList.remove(
-                    'text-blue-600', 'text-green-600',
-                    'dark:text-blue-400', 'dark:text-green-400'
-                );
-                textElement.classList.add('text-red-600', 'dark:text-red-400');
-            }
-        }
-    };
-
-    // Animar todos los círculos con retraso escalonado
     progressCircles.forEach((circle, index) => {
         setTimeout(() => {
             animateProgressCircle(circle.id, circle.percentage, circle.duration);
-            
-            // Actualizar colores según si es positivo o negativo (solo para growth circles)
-            if (circle.id === 'user-growth-circle' || circle.id === 'activity-growth-circle') {
-                const isPositive = circle.id === 'user-growth-circle' ? 
-                    metrics.userGrowth >= 0 : metrics.activityGrowth >= 0;
-                
-                updateCircleColors(circle.id, isPositive, circle.colorClass);
-            }
-        }, index * 200); // Retraso escalonado de 200ms entre cada círculo
+        }, index * 200);
     });
-
-    // También exponer funciones para actualizar desde otros scripts
-    window.updateDashboardStats = function(newMetrics) {
-        if (newMetrics.userGrowth !== undefined) {
-            metrics.userGrowth = newMetrics.userGrowth;
-            animateProgressCircle('user-growth-circle', Math.min(Math.abs(newMetrics.userGrowth), 100));
-            document.getElementById('user-growth-percentage').textContent = 
-                (newMetrics.userGrowth >= 0 ? '+' : '') + newMetrics.userGrowth + '%';
-            
-            // Actualizar color si es negativo
-            updateCircleColors('user-growth-circle', newMetrics.userGrowth >= 0, 'blue');
-        }
-        // ... puedes agregar más actualizaciones aquí para otras métricas
-    };
+    @endif
 });
 </script>
 
 <style>
-    /* Estilos para los círculos de progreso */
-.progresss svg circle {
-    transition: stroke-dashoffset 0.5s ease;
-}
-
-/* Animación al cargar */
-@keyframes dash {
-    from {
-        stroke-dashoffset: 220;
+    .progresss svg circle {
+        transition: stroke-dashoffset 0.5s ease;
     }
-    to {
-        stroke-dashoffset: var(--dash-offset);
+
+    @keyframes dash {
+        from { stroke-dashoffset: 220; }
+        to { stroke-dashoffset: var(--dash-offset); }
     }
-}
 
-/* Colores para diferentes estados */
-.positive {
-    color: #10b981; /* green-500 */
-}
+    .positive { color: #10b981; }
+    .negative { color: #ef4444; }
+    .neutral { color: #6b7280; }
 
-.negative {
-    color: #ef4444; /* red-500 */
-}
-
-.neutral {
-    color: #6b7280; /* gray-500 */
-}
-
-/* Animación para los círculos de progreso */
-@keyframes progressAnimation {
-    0% {
-        stroke-dashoffset: 220;
+    @keyframes countUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
-    100% {
-        stroke-dashoffset: calc(220 - (220 * var(--progress-percent) / 100));
+
+    .text-2xl.font-bold {
+        animation: countUp 0.5s ease-out;
     }
-}
 
-/* Animación para los porcentajes */
-@keyframes countUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+    .progresss circle {
+        transition: stroke-dashoffset 1.5s ease-out;
+    }
 
-.text-2xl.font-bold {
-    animation: countUp 0.5s ease-out;
-}
-
-/* Estilos para los círculos de progreso */
-.progresss circle {
-    transition: stroke-dashoffset 1.5s ease-out;
-}
-
-/* Ajustes específicos para modo oscuro */
-.dark .progresss circle:first-child {
-    stroke: rgba(75, 85, 99, 0.5);
-}
-
-
+    .dark .progresss circle:first-child {
+        stroke: rgba(75, 85, 99, 0.5);
+    }
 </style>
-
