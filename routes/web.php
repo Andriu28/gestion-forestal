@@ -14,65 +14,6 @@ use App\Http\Controllers\ForestController;
 use App\Http\Controllers\SupportController;
 
 
-//  RUTA TEMPORAL PARA EJECUTAR SEEDERS - ELIMINAR DESPUÉS
-//CODIGO PARA EJECUTAR LOS SEEDER EN LA BASE DE DATOS
-Route::get('/run-seeders', function() {
-    try {
-        // Eliminar todos los usuarios existentes antes de sembrar
-        \App\Models\User::truncate();
-        
-        \Artisan::call('db:seed', ['--force' => true]);
-        $userCount = \App\Models\User::count();
-        return " Seeders ejecutados exitosamente. Usuarios en la base de datos: $userCount";
-    } catch (\Exception $e) {
-        return " Error: " . $e->getMessage();
-    }
-});
-
-// RUTA TEMPORAL PARA EJECUTAR SEEDERS DE PRODUCTORES - ELIMINAR DESPUÉS
-Route::get('/run-producers', function() {
-    try {
-        // Opcional: Limpiar la tabla antes de sembrar
-        \App\Models\Producer::truncate();
-        
-        \Artisan::call('db:seed', [
-            '--class' => 'ProducersSeeder',
-            '--force' => true
-        ]);
-        
-        $producerCount = \App\Models\Producer::count();
-        return "Seeder ProducersSeeder ejecutado exitosamente. Productores en la base de datos: $producerCount";
-    } catch (\Exception $e) {
-        return "Error: " . $e->getMessage();
-    }
-});
-
-// ===== NUEVA RUTA PARA EJECUTAR EL POLYGONS SEEDER =====
-Route::get('/run-polygons', function() {
-    try {
-        // Opcional: Limpiar la tabla antes de sembrar (descomenta si quieres borrar todo)
-        \App\Models\Polygon::truncate();
-        
-        \Artisan::call('db:seed', [
-            '--class' => 'PolygonsSeeder',
-            '--force' => true
-        ]);
-        
-        $polygonCount = \App\Models\Polygon::count();
-        $output = \Artisan::output();
-        
-        return "Seeder PolygonsSeeder ejecutado exitosamente. Polígonos en la base de datos: $polygonCount";
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
-        ], 500);
-    }
-});
-
-
 // RUTA PARA VERIFICAR CONFIGURACIÓN DE CORREO
 Route::get('/check-mail-config', function() {
     return [
