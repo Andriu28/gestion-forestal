@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\ProducerController;
 use App\Http\Controllers\PolygonController;
@@ -29,6 +30,65 @@ use App\Http\Controllers\SupportController;
 |--------------------------------------------------------------------------
 */
 
+//  RUTA TEMPORAL PARA EJECUTAR SEEDERS - ELIMINAR DESPUÉS
+//CODIGO PARA EJECUTAR LOS SEEDER EN LA BASE DE DATOS
+Route::get('/run-seeders', function() {
+    try {
+        // Eliminar todos los usuarios existentes antes de sembrar
+        \App\Models\User::truncate();
+        
+        \Artisan::call('db:seed', ['--force' => true]);
+        $userCount = \App\Models\User::count();
+        return " Seeders ejecutados exitosamente. Usuarios en la base de datos: $userCount";
+    } catch (\Exception $e) {
+        return " Error: " . $e->getMessage();
+    }
+});
+
+// RUTA TEMPORAL PARA EJECUTAR SEEDERS DE PRODUCTORES - ELIMINAR DESPUÉS
+Route::get('/run-producers', function() {
+    try {
+        // Opcional: Limpiar la tabla antes de sembrar
+        \App\Models\Producer::truncate();
+        
+        \Artisan::call('db:seed', [
+            '--class' => 'ProducersSeeder',
+            '--force' => true
+        ]);
+        
+        $producerCount = \App\Models\Producer::count();
+        return "Seeder ProducersSeeder ejecutado exitosamente. Productores en la base de datos: $producerCount";
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+});
+
+// ===== NUEVA RUTA PARA EJECUTAR EL POLYGONS SEEDER =====
+Route::get('/run-polygons', function() {
+    try {
+        // Opcional: Limpiar la tabla antes de sembrar (descomenta si quieres borrar todo)
+        \App\Models\Polygon::truncate();
+        
+        \Artisan::call('db:seed', [
+            '--class' => 'PolygonsSeeder',
+            '--force' => true
+        ]);
+        
+        $polygonCount = \App\Models\Polygon::count();
+        $output = \Artisan::output();
+        
+        return "Seeder PolygonsSeeder ejecutado exitosamente. Polígonos en la base de datos: $polygonCount";
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
+
+
 Route::get('/', function () {
     return view('auth.login');
 });
@@ -52,6 +112,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/support', [SupportController::class, 'index'])->name('support');
     Route::get('/support/download', [SupportController::class, 'generatePdf'])->name('support.pdf');
     Route::view('/developers', 'developers.developers')->name('developers');
+
+    // ========== MÓDULO DE RESPALDOS ==========
+    Route::prefix('backups')->name('backups.')->group(function () {
+        Route::get('/', [BackupController::class, 'index'])->name('index');
+        Route::post('/create', [BackupController::class, 'create'])->name('create');
+        Route::get('/download/{filename}', [BackupController::class, 'download'])->name('download');
+        Route::delete('/{filename}', [BackupController::class, 'destroy'])->name('destroy');
+        Route::post('/restore', [BackupController::class, 'restore'])->name('restore');
+        Route::post('/import', [BackupController::class, 'import'])->name('import');
+    });
     
     // ========== ESTADÍSTICAS FORESTALES ==========
     Route::get('/forest-stats', [ForestController::class, 'showStats'])->name('forest.stats');
