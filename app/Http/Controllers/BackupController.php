@@ -40,6 +40,9 @@ class BackupController extends Controller implements HasMiddleware
     /**
      * Crea un nuevo backup de la base de datos
      */
+    /**
+     * Crea un nuevo backup de la base de datos
+     */
     public function create(Request $request)
     {
         try {
@@ -66,16 +69,33 @@ class BackupController extends Controller implements HasMiddleware
                 File::makeDirectory(storage_path('app/backups'), 0755, true);
             }
             
-            // Comando para pg_dump
-            $command = sprintf(
-                'PGPASSWORD=%s pg_dump -h %s -p %s -U %s -d %s -F c -b -v -f %s',
-                escapeshellarg($password),
-                escapeshellarg($host),
-                escapeshellarg($port),
-                escapeshellarg($username),
-                escapeshellarg($database),
-                escapeshellarg($path)
-            );
+            // Configurar variables de entorno para PostgreSQL
+            $env = [];
+            
+            // Detectar sistema operativo
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                // Windows: usar comandos SET
+                $command = sprintf(
+                    'set PGPASSWORD=%s && pg_dump -h %s -p %s -U %s -d %s -F c -b -v -f %s',
+                    escapeshellarg($password),
+                    escapeshellarg($host),
+                    escapeshellarg($port),
+                    escapeshellarg($username),
+                    escapeshellarg($database),
+                    escapeshellarg($path)
+                );
+            } else {
+                // Linux/Mac: usar PGPASSWORD como prefijo
+                $command = sprintf(
+                    'PGPASSWORD=%s pg_dump -h %s -p %s -U %s -d %s -F c -b -v -f %s',
+                    escapeshellarg($password),
+                    escapeshellarg($host),
+                    escapeshellarg($port),
+                    escapeshellarg($username),
+                    escapeshellarg($database),
+                    escapeshellarg($path)
+                );
+            }
             
             // Ejecutar el comando
             $process = Process::fromShellCommandline($command);
@@ -132,38 +152,6 @@ class BackupController extends Controller implements HasMiddleware
     /**
      * Elimina un archivo de backup
      */
-    public function destroy($filename)
-    {
-        try {
-            $path = storage_path('app/backups/' . $filename);
-            
-            if (!File::exists($path)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El archivo de backup no existe.'
-                ], 404);
-            }
-            
-            File::delete($path);
-            
-            // Registrar actividad
-            activity()
-                ->causedBy(auth()->user())
-                ->log("Eliminó el backup: {$filename}");
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Backup eliminado exitosamente'
-            ]);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar el backup: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
     /**
      * Restaura la base de datos desde un backup
      */
@@ -203,19 +191,33 @@ class BackupController extends Controller implements HasMiddleware
             $host = config('database.connections.pgsql.host');
             $port = config('database.connections.pgsql.port');
             
-            // Comando para pg_restore
-            $command = sprintf(
-                'PGPASSWORD=%s pg_restore -h %s -p %s -U %s -d %s -c -v %s',
-                escapeshellarg($password),
-                escapeshellarg($host),
-                escapeshellarg($port),
-                escapeshellarg($username),
-                escapeshellarg($database),
-                escapeshellarg($path)
-            );
+            // Detectar sistema operativo
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                // Windows
+                $command = sprintf(
+                    'set PGPASSWORD=%s && pg_restore -h %s -p %s -U %s -d %s -c -v %s',
+                    escapeshellarg($password),
+                    escapeshellarg($host),
+                    escapeshellarg($port),
+                    escapeshellarg($username),
+                    escapeshellarg($database),
+                    escapeshellarg($path)
+                );
+            } else {
+                // Linux/Mac
+                $command = sprintf(
+                    'PGPASSWORD=%s pg_restore -h %s -p %s -U %s -d %s -c -v %s',
+                    escapeshellarg($password),
+                    escapeshellarg($host),
+                    escapeshellarg($port),
+                    escapeshellarg($username),
+                    escapeshellarg($database),
+                    escapeshellarg($path)
+                );
+            }
             
             $process = Process::fromShellCommandline($command);
-            $process->setTimeout(600); // 10 minutos máximo
+            $process->setTimeout(600);
             $process->run();
             
             if (!$process->isSuccessful()) {
@@ -247,7 +249,7 @@ class BackupController extends Controller implements HasMiddleware
     {
         try {
             $request->validate([
-                'sql_file' => 'required|file|mimes:sql,txt|max:102400', // 100MB máximo
+                'sql_file' => 'required|file|mimes:sql,txt|max:102400',
             ]);
             
             $file = $request->file('sql_file');
@@ -267,16 +269,28 @@ class BackupController extends Controller implements HasMiddleware
             $host = config('database.connections.pgsql.host');
             $port = config('database.connections.pgsql.port');
             
-            // Comando para psql (importar SQL plano)
-            $command = sprintf(
-                'PGPASSWORD=%s psql -h %s -p %s -U %s -d %s -f %s',
-                escapeshellarg($password),
-                escapeshellarg($host),
-                escapeshellarg($port),
-                escapeshellarg($username),
-                escapeshellarg($database),
-                escapeshellarg($path)
-            );
+            // Detectar sistema operativo
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                $command = sprintf(
+                    'set PGPASSWORD=%s && psql -h %s -p %s -U %s -d %s -f %s',
+                    escapeshellarg($password),
+                    escapeshellarg($host),
+                    escapeshellarg($port),
+                    escapeshellarg($username),
+                    escapeshellarg($database),
+                    escapeshellarg($path)
+                );
+            } else {
+                $command = sprintf(
+                    'PGPASSWORD=%s psql -h %s -p %s -U %s -d %s -f %s',
+                    escapeshellarg($password),
+                    escapeshellarg($host),
+                    escapeshellarg($port),
+                    escapeshellarg($username),
+                    escapeshellarg($database),
+                    escapeshellarg($path)
+                );
+            }
             
             $process = Process::fromShellCommandline($command);
             $process->setTimeout(600);
@@ -344,15 +358,28 @@ class BackupController extends Controller implements HasMiddleware
         
         $path = storage_path('app/backups/' . $filename);
         
-        $command = sprintf(
-            'PGPASSWORD=%s pg_dump -h %s -p %s -U %s -d %s -F c -b -v -f %s',
-            escapeshellarg($password),
-            escapeshellarg($host),
-            escapeshellarg($port),
-            escapeshellarg($username),
-            escapeshellarg($database),
-            escapeshellarg($path)
-        );
+        // Detectar sistema operativo
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $command = sprintf(
+                'set PGPASSWORD=%s && pg_dump -h %s -p %s -U %s -d %s -F c -b -v -f %s',
+                escapeshellarg($password),
+                escapeshellarg($host),
+                escapeshellarg($port),
+                escapeshellarg($username),
+                escapeshellarg($database),
+                escapeshellarg($path)
+            );
+        } else {
+            $command = sprintf(
+                'PGPASSWORD=%s pg_dump -h %s -p %s -U %s -d %s -F c -b -v -f %s',
+                escapeshellarg($password),
+                escapeshellarg($host),
+                escapeshellarg($port),
+                escapeshellarg($username),
+                escapeshellarg($database),
+                escapeshellarg($path)
+            );
+        }
         
         $process = Process::fromShellCommandline($command);
         $process->setTimeout(300);
