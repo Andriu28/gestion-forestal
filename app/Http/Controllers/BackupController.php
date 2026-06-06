@@ -139,6 +139,9 @@ class BackupController extends Controller implements HasMiddleware
     /**
      * Encuentra la ruta del ejecutable de PostgreSQL
      */
+    /**
+     * Encuentra la ruta del ejecutable de PostgreSQL
+     */
     private function findPostgresqlExecutable($executable)
     {
         // Primero, verificar si hay una ruta personalizada en .env
@@ -146,13 +149,15 @@ class BackupController extends Controller implements HasMiddleware
         if ($customPath && File::exists($customPath . '\\' . $executable . '.exe')) {
             return $customPath . '\\' . $executable . '.exe';
         }
+        
         // Ampliar la lista de posibles rutas
         $possiblePaths = [
             // XAMPP con PostgreSQL
             'C:\\xampp\\pgsql\\bin\\' . $executable . '.exe',
             'C:\\xampp\\postgresql\\bin\\' . $executable . '.exe',
             
-            // PostgreSQL estándar
+            // PostgreSQL estándar - Incluyendo versión 18
+            'C:\\Program Files\\PostgreSQL\\18\\bin\\' . $executable . '.exe',  // <-- AGREGADA VERSIÓN 18
             'C:\\Program Files\\PostgreSQL\\17\\bin\\' . $executable . '.exe',
             'C:\\Program Files\\PostgreSQL\\16\\bin\\' . $executable . '.exe',
             'C:\\Program Files\\PostgreSQL\\15\\bin\\' . $executable . '.exe',
@@ -163,6 +168,7 @@ class BackupController extends Controller implements HasMiddleware
             'C:\\Program Files\\PostgreSQL\\10\\bin\\' . $executable . '.exe',
             
             // Program Files (x86)
+            'C:\\Program Files (x86)\\PostgreSQL\\18\\bin\\' . $executable . '.exe',  // <-- AGREGADA VERSIÓN 18
             'C:\\Program Files (x86)\\PostgreSQL\\17\\bin\\' . $executable . '.exe',
             'C:\\Program Files (x86)\\PostgreSQL\\16\\bin\\' . $executable . '.exe',
             'C:\\Program Files (x86)\\PostgreSQL\\15\\bin\\' . $executable . '.exe',
@@ -225,7 +231,7 @@ class BackupController extends Controller implements HasMiddleware
         throw new \Exception(
             "No se pudo encontrar {$executable}.exe. " .
             "Por favor, asegúrate de que PostgreSQL esté instalado y configura la ruta en el archivo .env " .
-            "agregando: PG_PATH=C:\\ruta\\a\\postgresql\\bin"
+            "agregando: PG_PATH=C:\\Program Files\\PostgreSQL\\18\\bin"
         );
     }
 
