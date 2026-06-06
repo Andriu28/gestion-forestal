@@ -40,9 +40,6 @@ class BackupController extends Controller implements HasMiddleware
     /**
      * Crea un nuevo backup de la base de datos
      */
-    /**
-     * Crea un nuevo backup de la base de datos
-     */
     public function create(Request $request)
     {
         try {
@@ -69,26 +66,28 @@ class BackupController extends Controller implements HasMiddleware
                 File::makeDirectory(storage_path('app/backups'), 0755, true);
             }
             
-            // Configurar variables de entorno para PostgreSQL
-            $env = [];
+            // Encontrar la ruta de pg_dump
+            $pgDumpPath = $this->findPostgresqlExecutable('pg_dump');
             
             // Detectar sistema operativo
             if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                // Windows: usar comandos SET
+                // Windows: usar comandos SET con la ruta completa
                 $command = sprintf(
-                    'set PGPASSWORD=%s && pg_dump -h %s -p %s -U %s -d %s -F c -b -v -f %s',
+                    'set PGPASSWORD=%s && "%s" -h %s -p %s -U %s -d %s -F c -b -v -f "%s"',
                     escapeshellarg($password),
+                    $pgDumpPath,
                     escapeshellarg($host),
                     escapeshellarg($port),
                     escapeshellarg($username),
                     escapeshellarg($database),
-                    escapeshellarg($path)
+                    $path
                 );
             } else {
                 // Linux/Mac: usar PGPASSWORD como prefijo
                 $command = sprintf(
-                    'PGPASSWORD=%s pg_dump -h %s -p %s -U %s -d %s -F c -b -v -f %s',
+                    'PGPASSWORD=%s %s -h %s -p %s -U %s -d %s -F c -b -v -f %s',
                     escapeshellarg($password),
+                    $pgDumpPath,
                     escapeshellarg($host),
                     escapeshellarg($port),
                     escapeshellarg($username),
@@ -127,6 +126,71 @@ class BackupController extends Controller implements HasMiddleware
     }
 
     /**
+     * Encuentra la ruta del ejecutable de PostgreSQL
+     */
+    private function findPostgresqlExecutable($executable)
+    {
+        // Lista de posibles rutas donde se instala PostgreSQL en Windows
+        $possiblePaths = [
+            // PostgreSQL 16, 15, 14, etc.
+            'C:\\Program Files\\PostgreSQL\\16\\bin\\' . $executable . '.exe',
+            'C:\\Program Files\\PostgreSQL\\15\\bin\\' . $executable . '.exe',
+            'C:\\Program Files\\PostgreSQL\\14\\bin\\' . $executable . '.exe',
+            'C:\\Program Files\\PostgreSQL\\13\\bin\\' . $executable . '.exe',
+            'C:\\Program Files\\PostgreSQL\\12\\bin\\' . $executable . '.exe',
+            'C:\\Program Files\\PostgreSQL\\11\\bin\\' . $executable . '.exe',
+            'C:\\Program Files\\PostgreSQL\\10\\bin\\' . $executable . '.exe',
+            // PostgreSQL en Program Files (x86)
+            'C:\\Program Files (x86)\\PostgreSQL\\16\\bin\\' . $executable . '.exe',
+            'C:\\Program Files (x86)\\PostgreSQL\\15\\bin\\' . $executable . '.exe',
+            'C:\\Program Files (x86)\\PostgreSQL\\14\\bin\\' . $executable . '.exe',
+            'C:\\Program Files (x86)\\PostgreSQL\\13\\bin\\' . $executable . '.exe',
+            'C:\\Program Files (x86)\\PostgreSQL\\12\\bin\\' . $executable . '.exe',
+            // Instalación portable o personalizada
+            'C:\\pgsql\\bin\\' . $executable . '.exe',
+            'C:\\PostgreSQL\\bin\\' . $executable . '.exe',
+        ];
+        
+        // Verificar si el ejecutable existe en alguna de las rutas
+        foreach ($possiblePaths as $path) {
+            if (File::exists($path)) {
+                return $path;
+            }
+        }
+        
+        // Intentar encontrar usando where (Windows) o which (Linux/Mac)
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            // En Windows, intentar con where
+            $process = Process::fromShellCommandline('where ' . $executable);
+            $process->run();
+            if ($process->isSuccessful()) {
+                $path = trim($process->getOutput());
+                if (!empty($path)) {
+                    return $path;
+                }
+            }
+        } else {
+            // En Linux/Mac, intentar con which
+            $process = Process::fromShellCommandline('which ' . $executable);
+            $process->run();
+            if ($process->isSuccessful()) {
+                $path = trim($process->getOutput());
+                if (!empty($path)) {
+                    return $path;
+                }
+            }
+        }
+        
+        // Si no se encuentra, devolver solo el nombre del ejecutable
+        // (asumiendo que está en el PATH)
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            return $executable . '.exe';
+        }
+        
+        return $executable;
+    }
+
+    /**
      * Descarga un archivo de backup
      */
     public function download($filename)
@@ -149,10 +213,7 @@ class BackupController extends Controller implements HasMiddleware
         return response()->download($path);
     }
 
-    /**
-     * Elimina un archivo de backup
-     */
-    /**
+   /**
      * Restaura la base de datos desde un backup
      */
     public function restore(Request $request)
@@ -191,23 +252,28 @@ class BackupController extends Controller implements HasMiddleware
             $host = config('database.connections.pgsql.host');
             $port = config('database.connections.pgsql.port');
             
+            // Encontrar la ruta de pg_restore
+            $pgRestorePath = $this->findPostgresqlExecutable('pg_restore');
+            
             // Detectar sistema operativo
             if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
                 // Windows
                 $command = sprintf(
-                    'set PGPASSWORD=%s && pg_restore -h %s -p %s -U %s -d %s -c -v %s',
+                    'set PGPASSWORD=%s && "%s" -h %s -p %s -U %s -d %s -c -v "%s"',
                     escapeshellarg($password),
+                    $pgRestorePath,
                     escapeshellarg($host),
                     escapeshellarg($port),
                     escapeshellarg($username),
                     escapeshellarg($database),
-                    escapeshellarg($path)
+                    $path
                 );
             } else {
                 // Linux/Mac
                 $command = sprintf(
-                    'PGPASSWORD=%s pg_restore -h %s -p %s -U %s -d %s -c -v %s',
+                    'PGPASSWORD=%s %s -h %s -p %s -U %s -d %s -c -v %s',
                     escapeshellarg($password),
+                    $pgRestorePath,
                     escapeshellarg($host),
                     escapeshellarg($port),
                     escapeshellarg($username),
@@ -475,21 +541,26 @@ class BackupController extends Controller implements HasMiddleware
         
         $path = storage_path('app/backups/' . $filename);
         
+        // Encontrar la ruta de pg_dump
+        $pgDumpPath = $this->findPostgresqlExecutable('pg_dump');
+        
         // Detectar sistema operativo
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             $command = sprintf(
-                'set PGPASSWORD=%s && pg_dump -h %s -p %s -U %s -d %s -F c -b -v -f %s',
+                'set PGPASSWORD=%s && "%s" -h %s -p %s -U %s -d %s -F c -b -v -f "%s"',
                 escapeshellarg($password),
+                $pgDumpPath,
                 escapeshellarg($host),
                 escapeshellarg($port),
                 escapeshellarg($username),
                 escapeshellarg($database),
-                escapeshellarg($path)
+                $path
             );
         } else {
             $command = sprintf(
-                'PGPASSWORD=%s pg_dump -h %s -p %s -U %s -d %s -F c -b -v -f %s',
+                'PGPASSWORD=%s %s -h %s -p %s -U %s -d %s -F c -b -v -f %s',
                 escapeshellarg($password),
+                $pgDumpPath,
                 escapeshellarg($host),
                 escapeshellarg($port),
                 escapeshellarg($username),
