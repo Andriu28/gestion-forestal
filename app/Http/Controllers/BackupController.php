@@ -242,22 +242,58 @@ class BackupController extends Controller implements HasMiddleware
         }
     }
 
-    /**
+        /**
      * Importa un archivo SQL externo
      */
     public function import(Request $request)
     {
         try {
             $request->validate([
-                'sql_file' => 'required|file|mimes:sql,txt|max:102400',
+                'sql_file' => 'required|file|max:102400', // Quitamos mimes:sql,txt
             ]);
             
             $file = $request->file('sql_file');
+            
+            // Validar extensión manualmente
+            $extension = strtolower($file->getClientOriginalExtension());
+            if (!in_array($extension, ['sql', 'txt', 'psql', 'dump', 'backup'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El archivo debe tener extensión .sql, .txt, .psql, .dump o .backup'
+                ], 400);
+            }
+            
+            // Validar que el archivo no esté vacío
+            if ($file->getSize() == 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El archivo está vacío'
+                ], 400);
+            }
+            
             $filename = 'import_' . now()->format('Y-m-d_H-i-s') . '.sql';
             
+            // Crear directorio temp si no existe
+            if (!File::exists(storage_path('app/temp'))) {
+                File::makeDirectory(storage_path('app/temp'), 0755, true);
+            }
+            
             // Guardar el archivo temporalmente
-            $file->storeAs('temp', $filename);
             $path = storage_path('app/temp/' . $filename);
+            File::put($path, file_get_contents($file->getRealPath()));
+            
+            // Verificar que el archivo tenga contenido
+            $content = File::get($path);
+            if (empty(trim($content))) {
+                File::delete($path);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El archivo está vacío'
+                ], 400);
+            }
+            
+            // Detectar si es un dump custom (formato binario) o SQL plano
+            $isCustomFormat = $this->isCustomFormatDump($path);
             
             // Crear backup de seguridad antes de importar
             $safetyBackup = 'pre_import_' . now()->format('Y-m-d_H-i-s') . '.sql';
@@ -269,27 +305,53 @@ class BackupController extends Controller implements HasMiddleware
             $host = config('database.connections.pgsql.host');
             $port = config('database.connections.pgsql.port');
             
-            // Detectar sistema operativo
-            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                $command = sprintf(
-                    'set PGPASSWORD=%s && psql -h %s -p %s -U %s -d %s -f %s',
-                    escapeshellarg($password),
-                    escapeshellarg($host),
-                    escapeshellarg($port),
-                    escapeshellarg($username),
-                    escapeshellarg($database),
-                    escapeshellarg($path)
-                );
+            // Usar pg_restore para formato custom, psql para SQL plano
+            if ($isCustomFormat) {
+                // Usar pg_restore para formato custom
+                if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                    $command = sprintf(
+                        'set PGPASSWORD=%s && pg_restore -h %s -p %s -U %s -d %s -c -v %s',
+                        escapeshellarg($password),
+                        escapeshellarg($host),
+                        escapeshellarg($port),
+                        escapeshellarg($username),
+                        escapeshellarg($database),
+                        escapeshellarg($path)
+                    );
+                } else {
+                    $command = sprintf(
+                        'PGPASSWORD=%s pg_restore -h %s -p %s -U %s -d %s -c -v %s',
+                        escapeshellarg($password),
+                        escapeshellarg($host),
+                        escapeshellarg($port),
+                        escapeshellarg($username),
+                        escapeshellarg($database),
+                        escapeshellarg($path)
+                    );
+                }
             } else {
-                $command = sprintf(
-                    'PGPASSWORD=%s psql -h %s -p %s -U %s -d %s -f %s',
-                    escapeshellarg($password),
-                    escapeshellarg($host),
-                    escapeshellarg($port),
-                    escapeshellarg($username),
-                    escapeshellarg($database),
-                    escapeshellarg($path)
-                );
+                // Usar psql para SQL plano
+                if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                    $command = sprintf(
+                        'set PGPASSWORD=%s && psql -h %s -p %s -U %s -d %s -f %s',
+                        escapeshellarg($password),
+                        escapeshellarg($host),
+                        escapeshellarg($port),
+                        escapeshellarg($username),
+                        escapeshellarg($database),
+                        escapeshellarg($path)
+                    );
+                } else {
+                    $command = sprintf(
+                        'PGPASSWORD=%s psql -h %s -p %s -U %s -d %s -f %s',
+                        escapeshellarg($password),
+                        escapeshellarg($host),
+                        escapeshellarg($port),
+                        escapeshellarg($username),
+                        escapeshellarg($database),
+                        escapeshellarg($path)
+                    );
+                }
             }
             
             $process = Process::fromShellCommandline($command);
@@ -297,6 +359,9 @@ class BackupController extends Controller implements HasMiddleware
             $process->run();
             
             if (!$process->isSuccessful()) {
+                // Limpiar archivo temporal
+                File::delete($path);
+                
                 throw new ProcessFailedException($process);
             }
             
@@ -306,18 +371,70 @@ class BackupController extends Controller implements HasMiddleware
             // Registrar actividad
             activity()
                 ->causedBy(auth()->user())
-                ->log("Importó un archivo SQL externo: {$file->getClientOriginalName()}");
+                ->log("Importó un archivo externo: {$file->getClientOriginalName()}");
             
             return response()->json([
                 'success' => true,
-                'message' => 'Archivo SQL importado exitosamente'
+                'message' => 'Archivo importado exitosamente'
             ]);
             
+        } catch (ProcessFailedException $e) {
+            // Limpiar archivo temporal si existe
+            if (isset($path) && File::exists($path)) {
+                File::delete($path);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al ejecutar el comando: ' . $e->getMessage()
+            ], 500);
         } catch (\Exception $e) {
+            // Limpiar archivo temporal si existe
+            if (isset($path) && File::exists($path)) {
+                File::delete($path);
+            }
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al importar: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Detecta si un archivo es un dump en formato custom de PostgreSQL
+     */
+    private function isCustomFormatDump($filePath)
+    {
+        try {
+            // Abrir el archivo y leer los primeros bytes
+            $handle = fopen($filePath, 'rb');
+            $header = fread($handle, 5);
+            fclose($handle);
+            
+            // Los archivos custom de pg_dump comienzan con "PGDMP"
+            if (substr($header, 0, 5) === 'PGDMP') {
+                return true;
+            }
+            
+            // También verificar si el archivo contiene texto SQL común
+            $content = file_get_contents($filePath, false, null, 0, 4096);
+            if (strpos($content, 'CREATE TABLE') !== false || 
+                strpos($content, 'INSERT INTO') !== false ||
+                strpos($content, 'COPY') !== false) {
+                return false; // Es SQL plano
+            }
+            
+            // Por defecto, si tiene extensión .dump o .backup, asumir custom
+            $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+            if (in_array($extension, ['dump', 'backup'])) {
+                return true;
+            }
+            
+            return false;
+        } catch (\Exception $e) {
+            // En caso de error, asumir SQL plano
+            return false;
         }
     }
 
