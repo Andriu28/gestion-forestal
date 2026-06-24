@@ -893,56 +893,72 @@ class PolygonController extends Controller
     /**
  * Get polygon details for modal view.
  */
-    public function details(Polygon $polygon): JsonResponse
-    {
-        try {
-            $polygon->load(['producer', 'parish.municipality.state']);
-            
-            return response()->json([
-                'success' => true,
-                'polygon' => [
-                    'id' => $polygon->id,
-                    'name' => $polygon->name,
-                    'description' => $polygon->description,
-                    'area_ha' => $polygon->area_ha,
-                    'area_formatted' => $polygon->area_formatted,
-                    'is_active' => $polygon->is_active,
-                    'centroid_lat' => $polygon->centroid_lat,
-                    'centroid_lng' => $polygon->centroid_lng,
-                    'detected_parish' => $polygon->detected_parish,
-                    'detected_municipality' => $polygon->detected_municipality,
-                    'detected_state' => $polygon->detected_state,
-                    'created_at' => $polygon->created_at,
-                    'updated_at' => $polygon->updated_at,
-                    'producer' => $polygon->producer ? [
-                        'id' => $polygon->producer->id,
-                        'name' => $polygon->producer->name . ' ' . $polygon->producer->lastname,
-                        'email' => $polygon->producer->email,
-                        'phone' => $polygon->producer->phone
-                    ] : null,
-                    'parish' => $polygon->parish ? [
-                        'id' => $polygon->parish->id,
-                        'name' => $polygon->parish->name,
-                        'municipality' => $polygon->parish->municipality ? [
-                            'name' => $polygon->parish->municipality->name,
-                            'state' => $polygon->parish->municipality->state ? [
-                                'name' => $polygon->parish->municipality->state->name
-                            ] : null
+    // app/Http/Controllers/PolygonController.php
+
+/**
+ * Get polygon details for modal view.
+ * PERMITE VER POLÍGONOS ELIMINADOS (soft delete)
+ */
+public function details($id): JsonResponse
+{
+    try {
+        // 🔑 CLAVE: Usar withTrashed() para incluir eliminados
+        $polygon = Polygon::withTrashed()
+            ->with(['producer', 'parish.municipality.state'])
+            ->findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'polygon' => [
+                'id' => $polygon->id,
+                'name' => $polygon->name,
+                'description' => $polygon->description,
+                'area_ha' => $polygon->area_ha,
+                'area_formatted' => $polygon->area_formatted,
+                'is_active' => $polygon->is_active,
+                'centroid_lat' => $polygon->centroid_lat,
+                'centroid_lng' => $polygon->centroid_lng,
+                'detected_parish' => $polygon->detected_parish,
+                'detected_municipality' => $polygon->detected_municipality,
+                'detected_state' => $polygon->detected_state,
+                'deleted_at' => $polygon->deleted_at, // ← Esto mostrará la fecha de eliminación
+                'created_at' => $polygon->created_at,
+                'updated_at' => $polygon->updated_at,
+                'producer' => $polygon->producer ? [
+                    'id' => $polygon->producer->id,
+                    'name' => $polygon->producer->name . ' ' . $polygon->producer->lastname,
+                ] : null,
+                'parish' => $polygon->parish ? [
+                    'id' => $polygon->parish->id,
+                    'name' => $polygon->parish->name,
+                    'municipality' => $polygon->parish->municipality ? [
+                        'id' => $polygon->parish->municipality->id,
+                        'name' => $polygon->parish->municipality->name,
+                        'state' => $polygon->parish->municipality->state ? [
+                            'id' => $polygon->parish->municipality->state->id,
+                            'name' => $polygon->parish->municipality->state->name
                         ] : null
                     ] : null
-                ]
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('Error fetching polygon details:', [
-                'polygon_id' => $polygon->id,
-                'error' => $e->getMessage()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al cargar los detalles del polígono'
-            ], 500);
-        }
+                ] : null
+            ]
+        ]);
+        
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        \Log::warning('Polygon not found:', ['id' => $id]);
+        return response()->json([
+            'success' => false,
+            'message' => 'El polígono no existe o fue eliminado permanentemente'
+        ], 404);
+    } catch (\Exception $e) {
+        \Log::error('Error fetching polygon details:', [
+            'polygon_id' => $id,
+            'error' => $e->getMessage()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al cargar los detalles del polígono: ' . $e->getMessage()
+        ], 500);
     }
+}
 }
