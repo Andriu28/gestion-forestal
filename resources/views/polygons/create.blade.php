@@ -190,7 +190,7 @@
                                         <!-- Botones de acción -->
                                         <div class="flex items-center justify-end space-x-4 pt-6">
                                             <x-go-back-button />
-                                            <x-primary-button type="submit" id="submit-btn" class="bg-green-600 hover:bg-green-700">
+                                            <x-primary-button type="submit" id="submit-btn">
                                                 Crear Polígono
                                             </x-primary-button>
                                         </div>
