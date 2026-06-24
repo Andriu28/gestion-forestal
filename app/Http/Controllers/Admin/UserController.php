@@ -21,17 +21,14 @@ class UserController extends Controller
         $role = $request->get('role', 'all');
         $status = $request->get('status', 'active');
         
-        // 1. Obtener el ID del usuario autenticado
-        $currentUserId = Auth::id();
-        
-        // 2. Iniciar query excluyendo el usuario actual
-        $query = User::where('id', '!=', $currentUserId);
+        // Iniciar query excluyendo al usuario autenticado
+        $query = User::where('id', '!=', auth()->id());
         
         // Aplicar filtro de búsqueda
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                ->orWhere('email', 'like', "%{$search}%");
             });
         }
         
@@ -48,20 +45,8 @@ class UserController extends Controller
         }
         // 'all' no necesita filtro especial
         
-        // 3. Paginar resultados
-        $otherUsersPaginator = $query->paginate(15);
-        
-        // 4. Obtener el objeto del usuario actual
-        $currentUser = User::find($currentUserId);
-        
-        // 5. Insertar el usuario actual al comienzo de la colección de la página actual
-        // Solo lo hacemos si estamos en la primera página para evitar duplicados en otras páginas.
-        if ($otherUsersPaginator->currentPage() === 1 && $currentUser) {
-            $otherUsersPaginator->getCollection()->prepend($currentUser);
-        }
-        
-        // 6. La variable $users ahora contiene el paginador con el usuario actual primero (en la pág. 1)
-        $users = $otherUsersPaginator;
+        // Paginar resultados (sin insertar al usuario actual)
+        $users = $query->paginate(15);
         
         return view('admin.users.index', compact('users', 'search', 'role', 'status'));
     }
@@ -82,7 +67,7 @@ class UserController extends Controller
     public function updateUserRole(Request $request, $userId)
     {
         $request->validate([
-            'role' => ['required', 'string', 'in:basico,administrador'],
+            'role' => ['required', 'string', 'in:basico,administrador,tecnico'],
         ]);
 
         try {

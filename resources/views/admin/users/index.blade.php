@@ -31,6 +31,7 @@
                         <select name="role" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
                             <option value="all" {{ ($role ?? '') == 'all' ? 'selected' : '' }}>Todos los roles</option>
                             <option value="administrador" {{ ($role ?? '') == 'administrador' ? 'selected' : '' }}>Administradores</option>
+                            <option value="tecnico" {{ ($role ?? '') == 'tecnico' ? 'selected' : '' }}>Técnicos</option>
                             <option value="basico" {{ ($role ?? '') == 'basico' ? 'selected' : '' }}>Básicos</option>
                         </select>
                         
@@ -48,7 +49,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-stone-100/90 dark:bg-custom-gray">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">#</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">N°</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Usuario</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Email</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Rol</th>
@@ -98,6 +99,7 @@
                                                         )"
                                                         class="block w-full rounded-md bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:focus:ring-indigo-600 text-sm">
                                                     <option value="basico" @if ($user->role === 'basico') selected @endif>Básico</option>
+                                                    <option value="tecnico" @if ($user->role === 'tecnico') selected @endif>Técnico</option>
                                                     <option value="administrador" @if ($user->role === 'administrador') selected @endif>Administrador</option>
                                                 </select>
                                             </form>
