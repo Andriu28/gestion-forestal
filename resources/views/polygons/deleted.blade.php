@@ -333,4 +333,276 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive) {
         toggleButton.setAttribute('onclick', newOnclick);
     }
 }
+
+// Función para mostrar detalles del polígono en modal
+async function showPolygonDetails(polygonId) {
+    try {
+        // Mostrar loader en el modal
+        const modalContent = document.getElementById('polygon-details-content');
+        modalContent.innerHTML = `
+            <div class="flex justify-center items-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        `;
+        
+        // Abrir el modal - FORMA CORRECTA PARA LIVEWIRE/ALPINE
+        const event = new CustomEvent('open-modal', { 
+            detail: 'view-polygon-details' 
+        });
+        window.dispatchEvent(event);
+        
+        // Obtener datos del polígono
+        const response = await fetch(`/polygons/${polygonId}/details`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+        
+        if (!response.ok) throw new Error('Error al cargar datos');
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Formatear y mostrar los datos
+            modalContent.innerHTML = formatPolygonDetails(data.polygon);
+        } else {
+            throw new Error(data.message);
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar detalles:', error);
+        modalContent.innerHTML = `
+            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-red-600 dark:text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-red-700 dark:text-red-300">Error al cargar los detalles del polígono</span>
+                </div>
+                <p class="text-sm text-red-600 dark:text-red-400 mt-2">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Función para formatear los detalles del polígono
+function formatPolygonDetails(polygon) {
+    const formatDate = (dateString) => {
+        if (!dateString) return 'No disponible';
+        const date = new Date(dateString);
+        
+        // Formato: DD/MM/YYYY HH:mm
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+    };
+
+    // Determinar color del estado
+    let statusColor, statusBg;
+    if (polygon.is_active) {
+        statusColor = 'text-green-800 dark:text-green-300';
+        statusBg = 'bg-green-100 dark:bg-green-900/30';
+    } else {
+        statusColor = 'text-yellow-800 dark:text-yellow-300';
+        statusBg = 'bg-yellow-100 dark:bg-yellow-900/30';
+    }
+
+    return `
+        <div class="space-y-6">
+            <!-- Tarjeta de información principal -->
+            <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">${polygon.name || 'Sin nombre'}</h3>
+                        <div class="flex items-center space-x-3">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColor} ${statusBg} border border-green-200 dark:border-green-800">
+                                <span class="w-2 h-2 rounded-full ${polygon.is_active ? 'bg-green-500' : 'bg-yellow-500'} mr-2"></span>
+                                ${polygon.is_active ? 'Activo' : 'Inactivo'}
+                            </span>
+                            ${polygon.producer ? `
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                Con productor
+                            </span>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold text-gray-900 dark:text-white">${polygon.area_formatted || (polygon.area_ha ? polygon.area_ha + ' Ha' : 'N/D')}</div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Área total</p>
+                    </div>
+                </div>
+
+                <!-- Grid de información -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-6">
+                    <!-- Información del productor -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center mb-2">
+                            <div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg mr-3">
+                                <svg class="w-7 h-7 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-700 dark:text-gray-300">Productor</h4>
+                                <p class="text-gray-900 dark:text-white text-lg font-medium mt-1">
+                                    ${polygon.producer ? polygon.producer.name : 'No asignado'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ubicación -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center mb-2">
+                            <div class="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg mr-3">
+                                <svg class="w-7 h-7 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-700 dark:text-gray-300">Ubicación</h4>
+                                <p class="text-gray-900 dark:text-white text-lg font-medium mt-1">
+                                    ${polygon.parish ? polygon.parish.name : 'No especificada'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coordenadas -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center mb-2">
+                            <div class="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg mr-3">
+                                <svg class="w-7 h-7 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-700 dark:text-gray-300">Coordenadas</h4>
+                                <p class="text-gray-900 dark:text-white text-sm font-medium mt-1">
+                                    ${polygon.centroid_lat && polygon.centroid_lng ? 
+                                        `Lat:&nbsp;${parseFloat(polygon.centroid_lat).toFixed(5)} Lon:&nbsp;${parseFloat(polygon.centroid_lng).toFixed(5)}` : 
+                                        'No disponibles'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Descripción -->
+            ${polygon.description ? `
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+                <div class="flex items-center mb-4">
+                    <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mr-3">
+                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Descripción</h3>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                        <p class="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">${polygon.description}</p>
+                    </div>
+                    ${polygon.parish ? `
+                    <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">  
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
+                            </svg>
+                            <span class="text-blue-700 dark:text-blue-300">Parroquia:&nbsp;</span>
+                        </div>
+                        <span class="font-medium text-blue-900 dark:text-blue-200"> ${polygon.parish.name}</span>
+                    </div>
+                    ` : ''}
+                    ${polygon.parish && polygon.parish.municipality ? `
+                    <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            <span class="text-blue-700 dark:text-blue-300">Municipio:&nbsp;</span>
+                        </div>
+                        <span class="font-medium text-blue-900 dark:text-blue-200">${polygon.parish.municipality.name}</span>
+                    </div>
+                    ` : ''}
+                    ${polygon.parish && polygon.parish.municipality && polygon.parish.municipality.state ? `
+                    <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                            </svg>
+                            <span class="text-blue-700 dark:text-blue-300">Estado:&nbsp;</span>
+                        </div>
+                        <span class="font-medium text-blue-900 dark:text-blue-200">${polygon.parish.municipality.state.name}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Información adicional -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Información del Sistema</h3>
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <span class="text-gray-700 dark:text-gray-300">Creado</span>
+                            </div>
+                            <span class="font-medium text-gray-900 dark:text-white">${formatDate(polygon.created_at)}</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span class="text-gray-700 dark:text-gray-300">Actualizado</span>
+                            </div>
+                            <span class="font-medium text-gray-900 dark:text-white">${formatDate(polygon.updated_at)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+                <div class="flex flex-wrap gap-3 justify-between items-center">
+                    <div class="space-x-2">
+                        ${polygon.producer ? `
+                        <a href="/producers/${polygon.producer.id}" 
+                           class="inline-flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all hover:shadow-lg hover:-translate-y-0.5">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            Ver productor
+                        </a>
+                        ` : ''}
+                    </div>
+                    <button x-on:click="$dispatch('close')" 
+                            class="inline-flex items-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
 </script>
