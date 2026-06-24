@@ -67,15 +67,23 @@ class BackupController extends Controller implements HasMiddleware
             }
             
             // Encontrar la ruta de pg_dump
-            $pgDumpPath = $this->findPostgresqlExecutable('pg_dump');
+            try {
+                $pgDumpPath = $this->findPostgresqlExecutable('pg_dump');
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() . '. También puedes agregar PG_PATH=C:\\xampp\\pgsql\\bin en tu archivo .env'
+                ], 500);
+            }
             
             // Detectar sistema operativo
             if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                // Windows: usar comandos SET con la ruta completa
+                // En Windows, asegurarse de que la ruta no tenga espacios sin comillas
+                $escapedPath = '"' . $pgDumpPath . '"';
                 $command = sprintf(
-                    'set PGPASSWORD=%s && "%s" -h %s -p %s -U %s -d %s -F c -b -v -f "%s"',
+                    'set PGPASSWORD=%s && %s -h %s -p %s -U %s -d %s -F c -b -v -f "%s"',
                     escapeshellarg($password),
-                    $pgDumpPath,
+                    $escapedPath,
                     escapeshellarg($host),
                     escapeshellarg($port),
                     escapeshellarg($username),
@@ -83,7 +91,7 @@ class BackupController extends Controller implements HasMiddleware
                     $path
                 );
             } else {
-                // Linux/Mac: usar PGPASSWORD como prefijo
+                // Linux/Mac
                 $command = sprintf(
                     'PGPASSWORD=%s %s -h %s -p %s -U %s -d %s -F c -b -v -f %s',
                     escapeshellarg($password),
@@ -98,11 +106,14 @@ class BackupController extends Controller implements HasMiddleware
             
             // Ejecutar el comando
             $process = Process::fromShellCommandline($command);
-            $process->setTimeout(300); // 5 minutos máximo
+            $process->setTimeout(300);
             $process->run();
             
             if (!$process->isSuccessful()) {
-                throw new ProcessFailedException($process);
+                $error = $process->getErrorOutput();
+                $output = $process->getOutput();
+                
+                throw new \Exception("Error en pg_dump: " . ($error ?: $output));
             }
             
             // Registrar actividad
@@ -128,11 +139,26 @@ class BackupController extends Controller implements HasMiddleware
     /**
      * Encuentra la ruta del ejecutable de PostgreSQL
      */
+    /**
+     * Encuentra la ruta del ejecutable de PostgreSQL
+     */
     private function findPostgresqlExecutable($executable)
     {
-        // Lista de posibles rutas donde se instala PostgreSQL en Windows
+        // Primero, verificar si hay una ruta personalizada en .env
+        $customPath = env('PG_PATH');
+        if ($customPath && File::exists($customPath . '\\' . $executable . '.exe')) {
+            return $customPath . '\\' . $executable . '.exe';
+        }
+        
+        // Ampliar la lista de posibles rutas
         $possiblePaths = [
-            // PostgreSQL 16, 15, 14, etc.
+            // XAMPP con PostgreSQL
+            'C:\\xampp\\pgsql\\bin\\' . $executable . '.exe',
+            'C:\\xampp\\postgresql\\bin\\' . $executable . '.exe',
+            
+            // PostgreSQL estándar - Incluyendo versión 18
+            'C:\\Program Files\\PostgreSQL\\18\\bin\\' . $executable . '.exe',  // <-- AGREGADA VERSIÓN 18
+            'C:\\Program Files\\PostgreSQL\\17\\bin\\' . $executable . '.exe',
             'C:\\Program Files\\PostgreSQL\\16\\bin\\' . $executable . '.exe',
             'C:\\Program Files\\PostgreSQL\\15\\bin\\' . $executable . '.exe',
             'C:\\Program Files\\PostgreSQL\\14\\bin\\' . $executable . '.exe',
@@ -140,16 +166,27 @@ class BackupController extends Controller implements HasMiddleware
             'C:\\Program Files\\PostgreSQL\\12\\bin\\' . $executable . '.exe',
             'C:\\Program Files\\PostgreSQL\\11\\bin\\' . $executable . '.exe',
             'C:\\Program Files\\PostgreSQL\\10\\bin\\' . $executable . '.exe',
-            // PostgreSQL en Program Files (x86)
+            
+            // Program Files (x86)
+            'C:\\Program Files (x86)\\PostgreSQL\\18\\bin\\' . $executable . '.exe',  // <-- AGREGADA VERSIÓN 18
+            'C:\\Program Files (x86)\\PostgreSQL\\17\\bin\\' . $executable . '.exe',
             'C:\\Program Files (x86)\\PostgreSQL\\16\\bin\\' . $executable . '.exe',
             'C:\\Program Files (x86)\\PostgreSQL\\15\\bin\\' . $executable . '.exe',
             'C:\\Program Files (x86)\\PostgreSQL\\14\\bin\\' . $executable . '.exe',
             'C:\\Program Files (x86)\\PostgreSQL\\13\\bin\\' . $executable . '.exe',
             'C:\\Program Files (x86)\\PostgreSQL\\12\\bin\\' . $executable . '.exe',
-            // Instalación portable o personalizada
+            
+            // Instalaciones personalizadas comunes
             'C:\\pgsql\\bin\\' . $executable . '.exe',
             'C:\\PostgreSQL\\bin\\' . $executable . '.exe',
+            'D:\\PostgreSQL\\bin\\' . $executable . '.exe',
+            
+            // Usar la variable de entorno PGPATH si existe
+            getenv('PGPATH') ? getenv('PGPATH') . '\\' . $executable . '.exe' : null,
         ];
+        
+        // Filtrar rutas nulas
+        $possiblePaths = array_filter($possiblePaths);
         
         // Verificar si el ejecutable existe en alguna de las rutas
         foreach ($possiblePaths as $path) {
@@ -158,19 +195,28 @@ class BackupController extends Controller implements HasMiddleware
             }
         }
         
-        // Intentar encontrar usando where (Windows) o which (Linux/Mac)
+        // Intentar encontrar usando comandos del sistema
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            // En Windows, intentar con where
-            $process = Process::fromShellCommandline('where ' . $executable);
-            $process->run();
-            if ($process->isSuccessful()) {
-                $path = trim($process->getOutput());
-                if (!empty($path)) {
-                    return $path;
+            // Intentar con 'where' en Windows
+            $commands = [
+                'where ' . $executable,
+                'where /R "C:\\Program Files\\PostgreSQL" ' . $executable . '.exe',
+                'where /R "C:\\Program Files (x86)\\PostgreSQL" ' . $executable . '.exe',
+                'where /R "C:\\xampp" ' . $executable . '.exe',
+            ];
+            
+            foreach ($commands as $cmd) {
+                $process = Process::fromShellCommandline($cmd);
+                $process->run();
+                if ($process->isSuccessful()) {
+                    $paths = explode("\n", trim($process->getOutput()));
+                    if (!empty($paths[0])) {
+                        return trim($paths[0]);
+                    }
                 }
             }
         } else {
-            // En Linux/Mac, intentar con which
+            // En Linux/Mac, usar 'which'
             $process = Process::fromShellCommandline('which ' . $executable);
             $process->run();
             if ($process->isSuccessful()) {
@@ -181,13 +227,12 @@ class BackupController extends Controller implements HasMiddleware
             }
         }
         
-        // Si no se encuentra, devolver solo el nombre del ejecutable
-        // (asumiendo que está en el PATH)
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            return $executable . '.exe';
-        }
-        
-        return $executable;
+        // Si no se encuentra, lanzar una excepción con información útil
+        throw new \Exception(
+            "No se pudo encontrar {$executable}.exe. " .
+            "Por favor, asegúrate de que PostgreSQL esté instalado y configura la ruta en el archivo .env " .
+            "agregando: PG_PATH=C:\\Program Files\\PostgreSQL\\18\\bin"
+        );
     }
 
     /**

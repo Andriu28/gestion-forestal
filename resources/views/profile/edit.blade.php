@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="">
-        <div class="max-w-7xl mx-auto  space-y-6">
+        <div class="mx-auto  space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <!-- Tarjeta Información del Perfil -->
                 <div class="p-4 sm:p-8 bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-soft p-4 md:p-6 lg:p-8 ">
