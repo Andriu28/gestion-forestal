@@ -12,7 +12,7 @@
         </div>
 
         <div class="mt-4">
-            <x-input-label for="lastname" :value="__('Apellido')" />
+            <x-input-label for="lastname" :value="__('Apellido *')" />
             <x-text-input id="lastname" class="block mt-1 w-full" type="text" 
                 wire:model.live.debounce.250ms="lastname"
                 oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
@@ -20,16 +20,16 @@
         </div>
 
         <div class="mt-4">
-            <x-input-label for="description" :value="__('Descripción')" />
+            <x-input-label for="description" :value="__('Descripción *')" />
             <textarea id="description" wire:model.live="description" rows="3" 
-                class="block mt-1 w-full rounded-md border-gray-300 dark:bg-custom-gray dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" 
+                class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70"
                 placeholder="Descripción del productor..."
                 oninput="if(this.value.length === 1) this.value = this.value.toUpperCase();"></textarea>
             <x-input-error :messages="$errors->first('description')" class="mt-2" />
         </div>
 
         <div class="mt-4 flex items-center">
-            <input type="checkbox" id="is_active" wire:model="is_active" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+            <input type="checkbox" id="is_active" wire:model="is_active" class="border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
             <label for="is_active" class="ml-2 block text-sm text-gray-900 dark:text-gray-100">Productor activo</label>
         </div>
 
