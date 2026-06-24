@@ -2,7 +2,7 @@
     @if(auth()->check() && auth()->user()->role === 'administrador')
     
     <!-- Header del Dashboard -->
-    <div class="mb-8">
+    <div class="mb-4">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Panel de Inicio</h1>
         <p class="text-gray-600 dark:text-gray-400">
             {{ now()->translatedFormat('l, d \\d\\e F \\d\\e Y') }}
@@ -10,7 +10,7 @@
     </div>
     
     <!-- Grid de Métricas Principales CON CÍRCULOS DE PROGRESO ANIMADOS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         
         <!-- Tarjeta MODIFICADA: Usuarios Activos -->
         <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-1 hover:transition-all hover:duration-300">
@@ -98,6 +98,7 @@
                 </div>
             </div>
         </div>
+
         <!-- Tarjeta: Productores Activos CON CÍRCULO ANIMADO -->
         <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-1 hover:transition-all hover:duration-300">
             <div class="flex items-center justify-between mb-4">
@@ -143,7 +144,7 @@
         <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-1 hover:transition-all hover:duration-300">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Actividad Hoy</p>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Actividades de Hoy</p>
                     <h3 id="today-activity-count" class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $activitiesToday }}</h3>
                 </div>
                 <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
@@ -155,7 +156,7 @@
             
             <div class="flex items-center justify-between">
                 <div class="info">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Nuevos usuarios hoy</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Movimientos de hoy</p>
                 </div>
                 
                 <!-- Círculo de progreso ANIMADO -->
@@ -180,12 +181,11 @@
             </div>
         </div>
         
-       
-        
+      
     </div>
     
     <!-- Segunda Fila: Gráficos y Distribuciones -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         
         <!-- Distribución de Roles (MODIFICADA para incluir Técnicos) -->
         <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
@@ -303,10 +303,6 @@
             </div>
         </div>
         
-    </div>
-    
-    <!-- NUEVA SECCIÓN: Actividad de Técnicos -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         
         <!-- Top Técnicos Más Activos (NUEVO) -->
         <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
@@ -349,8 +345,13 @@
                 @endforelse
             </div>
         </div>
-        
-        <!-- Acciones Recientes de Técnicos (NUEVO) -->
+
+    </div>
+    
+    <!-- Tercera Fila: Usuarios Activos y Actividad Reciente -->
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+
+      <!-- Acciones Recientes de Técnicos (NUEVO) -->
         <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -426,11 +427,6 @@
                 @endforelse
             </div>
         </div>
-        
-    </div>
-    
-    <!-- Tercera Fila: Usuarios Activos y Actividad Reciente -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         
         <!-- Top Usuarios Más Activos -->
         <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6">
@@ -636,7 +632,7 @@
     <!-- VISTA PARA USUARIOS TÉCNICOS (NUEVA) -->
     <div class="mx-auto">
         <!-- Header para Técnicos -->
-        <div class="mb-8">
+        <div class="mb-4">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -651,7 +647,7 @@
         </div>
 
         <!-- Tarjetas de Métricas para Técnicos -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
             
             <!-- Mis Actividades Recientes -->
             <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow-lg p-6 hover:shadow-xl">
@@ -709,7 +705,7 @@
         </div>
 
         <!-- Acciones Rápidas para Técnicos -->
-        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6 mb-8">
+        <div class="bg-stone-100/90 dark:bg-custom-gray rounded-xl shadow-lg p-6 mb-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Acciones Rápidas</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <a href="{{ route('admin.users.index') }}" class="group flex items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
