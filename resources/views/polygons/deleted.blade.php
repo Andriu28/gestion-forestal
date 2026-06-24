@@ -195,7 +195,6 @@ async function handleDeletePolygon(polygonId, polygonName) {
         const data = await makePolygonRequest(`/polygons/${polygonId}`, 'DELETE');
         
         if (data.success) {
-            // Eliminar la fila de la tabla inmediatamente
             const row = document.getElementById(`polygon-row-${polygonId}`);
             if (row) {
                 row.remove();
@@ -203,7 +202,6 @@ async function handleDeletePolygon(polygonId, polygonName) {
             
             showCustomAlert('success', 'Éxito', 'Polígono eliminado exitosamente.');
             
-            // Si no quedan polígonos, mostrar mensaje
             const tableBody = document.querySelector('table tbody');
             if (tableBody && tableBody.children.length === 0) {
                 tableBody.innerHTML = `
@@ -234,7 +232,6 @@ async function handleRestorePolygon(polygonId, polygonName) {
         const data = await makePolygonRequest(`/polygons/${polygonId}/restore`, 'POST');
         
         if (data.success) {
-            // Eliminar la fila de la tabla inmediatamente
             const row = document.getElementById(`polygon-row-${polygonId}`);
             if (row) {
                 row.remove();
@@ -242,7 +239,6 @@ async function handleRestorePolygon(polygonId, polygonName) {
             
             showCustomAlert('success', 'Éxito', 'Polígono restaurado exitosamente.');
             
-            // Si no quedan polígonos, mostrar mensaje
             const tableBody = document.querySelector('table tbody');
             if (tableBody && tableBody.children.length === 0) {
                 tableBody.innerHTML = `
@@ -252,7 +248,6 @@ async function handleRestorePolygon(polygonId, polygonName) {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p class="text-gray-600 dark:text-gray-400">No hay polígonos eliminados.</p>
-                            
                         </td>
                     </tr>
                 `;
@@ -289,11 +284,9 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive) {
     const row = document.getElementById(`polygon-row-${polygonId}`);
     if (!row) return;
     
-    // Encontrar la celda de estado (5ta columna)
     const statusCell = row.querySelector('td:nth-child(5)');
     const toggleButton = row.querySelector('button[onclick*="handleTogglePolygonStatus"]');
     
-    // Actualizar badge de estado
     if (statusCell) {
         if (isActive) {
             statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">Activo</span>';
@@ -302,14 +295,12 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive) {
         }
     }
     
-    // Actualizar botón de toggle
     if (toggleButton) {
         let newSvg;
         let newTitle;
         let newOnclick;
         
         if (isActive) {
-            // Icono para desactivar
             newSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
                 <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
                 <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
@@ -318,7 +309,6 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive) {
             newTitle = 'Desactivar';
             newOnclick = `handleTogglePolygonStatus(${polygonId}, '${polygonName.replace(/'/g, "\\'")}', true)`;
         } else {
-            // Icono para activar
             newSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
                 <circle cx="12" cy="12" r="10" class="fill-green-100"/>
                 <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
@@ -327,32 +317,47 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive) {
             newOnclick = `handleTogglePolygonStatus(${polygonId}, '${polygonName.replace(/'/g, "\\'")}', false)`;
         }
         
-        // Reemplazar el contenido del botón
         toggleButton.innerHTML = newSvg;
         toggleButton.setAttribute('title', newTitle);
         toggleButton.setAttribute('onclick', newOnclick);
     }
 }
 
-// Función para mostrar detalles del polígono en modal
+// ============================================================
+// FUNCIONES PRINCIPALES - COPIADAS DE index.blade.php
+// ============================================================
+
+// Función para mostrar detalles del polígono en modal - VERSIÓN CON DEPURACIÓN
 async function showPolygonDetails(polygonId) {
     try {
+        console.log('🔍 ===== INICIO showPolygonDetails (deleted.blade.php) =====');
+        console.log('📌 ID del polígono:', polygonId);
+        
         // Mostrar loader en el modal
         const modalContent = document.getElementById('polygon-details-content');
+        if (!modalContent) {
+            console.error('❌ ERROR: No se encontró el elemento polygon-details-content');
+            return;
+        }
+        
         modalContent.innerHTML = `
             <div class="flex justify-center items-center py-8">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
         `;
         
-        // Abrir el modal - FORMA CORRECTA PARA LIVEWIRE/ALPINE
+        // Abrir el modal
         const event = new CustomEvent('open-modal', { 
             detail: 'view-polygon-details' 
         });
         window.dispatchEvent(event);
+        console.log('✅ Modal abierto');
         
         // Obtener datos del polígono
-        const response = await fetch(`/polygons/${polygonId}/details`, {
+        const url = `/polygons/${polygonId}/details`;
+        console.log('🌐 Haciendo fetch a:', url);
+        
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -361,47 +366,120 @@ async function showPolygonDetails(polygonId) {
             }
         });
         
-        if (!response.ok) throw new Error('Error al cargar datos');
+        console.log('📥 Status de respuesta:', response.status, response.statusText);
         
-        const data = await response.json();
-        
-        if (data.success) {
-            // Formatear y mostrar los datos
-            modalContent.innerHTML = formatPolygonDetails(data.polygon);
-        } else {
-            throw new Error(data.message);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error en respuesta:', errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
+        const data = await response.json();
+        console.log('📦 Datos recibidos completos:', data);
+        console.log('📦 Polygon recibido:', data.polygon);
+        
+        // Depurar propiedades importantes
+        if (data.polygon) {
+            console.log('🔎 Propiedades del polygon:');
+            console.log('  - id:', data.polygon.id);
+            console.log('  - name:', data.polygon.name);
+            console.log('  - is_active:', data.polygon.is_active);
+            console.log('  - parish:', data.polygon.parish);
+            console.log('  - parish_id:', data.polygon.parish_id);
+            console.log('  - producer:', data.polygon.producer);
+            console.log('  - detected_parish:', data.polygon.detected_parish);
+            console.log('  - detected_municipality:', data.polygon.detected_municipality);
+            console.log('  - detected_state:', data.polygon.detected_state);
+            console.log('  - area_ha:', data.polygon.area_ha);
+            console.log('  - area_formatted:', data.polygon.area_formatted);
+            console.log('  - created_at:', data.polygon.created_at);
+            console.log('  - updated_at:', data.polygon.updated_at);
+            console.log('  - deleted_at:', data.polygon.deleted_at);
+            
+            // Verificar estructura anidada
+            if (data.polygon.parish) {
+                console.log('  📍 parish existe:');
+                console.log('    - id:', data.polygon.parish.id);
+                console.log('    - name:', data.polygon.parish.name);
+                console.log('    - municipality:', data.polygon.parish.municipality);
+                
+                if (data.polygon.parish.municipality) {
+                    console.log('      - municipality.name:', data.polygon.parish.municipality.name);
+                    console.log('      - municipality.state:', data.polygon.parish.municipality.state);
+                    
+                    if (data.polygon.parish.municipality.state) {
+                        console.log('        - state.name:', data.polygon.parish.municipality.state.name);
+                    } else {
+                        console.warn('⚠️ state es null');
+                    }
+                } else {
+                    console.warn('⚠️ municipality es null');
+                }
+            } else {
+                console.warn('⚠️ parish es null');
+            }
+            
+            // Verificar location_data
+            console.log('  - location_data:', data.polygon.location_data);
+        }
+        
+        if (data.success) {
+            console.log('✅ Éxito en la respuesta, formateando detalles...');
+            modalContent.innerHTML = formatPolygonDetails(data.polygon);
+            console.log('✅ Detalles renderizados correctamente');
+        } else {
+            console.error('❌ Respuesta indicó error:', data.message);
+            throw new Error(data.message || 'Error loading details');
+        }
+        
+        console.log('🔚 ===== FIN showPolygonDetails =====');
+        
     } catch (error) {
-        console.error('Error al cargar detalles:', error);
-        modalContent.innerHTML = `
-            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <div class="flex items-center">
-                    <svg class="w-6 h-6 text-red-600 dark:text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <span class="text-red-700 dark:text-red-300">Error al cargar los detalles del polígono</span>
+        console.error('❌❌❌ ERROR CRÍTICO en showPolygonDetails:', error);
+        console.error('Stack trace:', error.stack);
+        
+        const modalContent = document.getElementById('polygon-details-content');
+        if (modalContent) {
+            modalContent.innerHTML = `
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <svg class="w-6 h-6 text-red-600 dark:text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="text-red-700 dark:text-red-300 font-semibold">Error al cargar los detalles del polígono</span>
+                    </div>
+                    <p class="text-sm text-red-600 dark:text-red-400 mt-2">${error.message}</p>
+                    <button onclick="showPolygonDetails(${polygonId})" 
+                            class="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                        Reintentar
+                    </button>
+                    <button x-on:click="$dispatch('close')" 
+                            class="mt-3 ml-2 px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors">
+                        Cerrar
+                    </button>
                 </div>
-                <p class="text-sm text-red-600 dark:text-red-400 mt-2">${error.message}</p>
-            </div>
-        `;
+            `;
+        }
     }
 }
 
-// Función para formatear los detalles del polígono
+// Función para formatear los detalles del polígono - CON MANEJO DE NULL
 function formatPolygonDetails(polygon) {
+    console.log('🎨 Formateando polygon:', polygon);
+    
     const formatDate = (dateString) => {
         if (!dateString) return 'No disponible';
-        const date = new Date(dateString);
-        
-        // Formato: DD/MM/YYYY HH:mm
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        
-        return `${day}/${month}/${year} ${hours}:${minutes}`;
+        try {
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+        } catch (e) {
+            return dateString || 'No disponible';
+        }
     };
 
     // Determinar color del estado
@@ -413,6 +491,49 @@ function formatPolygonDetails(polygon) {
         statusColor = 'text-yellow-800 dark:text-yellow-300';
         statusBg = 'bg-yellow-100 dark:bg-yellow-900/30';
     }
+
+    // Obtener ubicación de manera SEGURA
+    const getLocationInfo = () => {
+        // Caso 1: Tiene parroquia asignada
+        if (polygon.parish) {
+            const parishName = polygon.parish.name || 'Sin nombre';
+            const municipalityName = polygon.parish.municipality?.name || 'Sin asignar';
+            const stateName = polygon.parish.municipality?.state?.name || 'Sin asignar';
+            return {
+                type: 'assigned',
+                parish: parishName,
+                municipality: municipalityName,
+                state: stateName,
+                full: `${parishName}, ${municipalityName}, ${stateName}`
+            };
+        }
+        
+        // Caso 2: Tiene datos detectados
+        if (polygon.detected_parish || polygon.detected_municipality || polygon.detected_state) {
+            const parish = polygon.detected_parish || 'No detectada';
+            const municipality = polygon.detected_municipality || 'No detectado';
+            const state = polygon.detected_state || 'No detectado';
+            return {
+                type: 'detected',
+                parish: parish,
+                municipality: municipality,
+                state: state,
+                full: `${parish}, ${municipality}, ${state}`
+            };
+        }
+        
+        // Caso 3: Sin ubicación
+        return {
+            type: 'none',
+            parish: 'Sin asignar',
+            municipality: 'Sin asignar',
+            state: 'Sin asignar',
+            full: 'Sin ubicación registrada'
+        };
+    };
+
+    const location = getLocationInfo();
+    console.log('📍 Ubicación procesada:', location);
 
     return `
         <div class="space-y-6">
@@ -432,6 +553,21 @@ function formatPolygonDetails(polygon) {
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                 </svg>
                                 Con productor
+                            </span>
+                            ` : `
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                Sin productor
+                            </span>
+                            `}
+                            ${polygon.deleted_at ? `
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                Eliminado
                             </span>
                             ` : ''}
                         </div>
@@ -461,7 +597,7 @@ function formatPolygonDetails(polygon) {
                         </div>
                     </div>
 
-                    <!-- Ubicación -->
+                    <!-- Ubicación - SOLO PARROQUIA -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
                         <div class="flex items-center mb-2">
                             <div class="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg mr-3">
@@ -515,6 +651,8 @@ function formatPolygonDetails(polygon) {
                     <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
                         <p class="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">${polygon.description}</p>
                     </div>
+                    
+                    <!-- Mostrar ubicación DENTRO de la descripción con verificaciones seguras -->
                     ${polygon.parish ? `
                     <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <div class="flex items-center">
@@ -523,9 +661,10 @@ function formatPolygonDetails(polygon) {
                             </svg>
                             <span class="text-blue-700 dark:text-blue-300">Parroquia:&nbsp;</span>
                         </div>
-                        <span class="font-medium text-blue-900 dark:text-blue-200"> ${polygon.parish.name}</span>
+                        <span class="font-medium text-blue-900 dark:text-blue-200">${polygon.parish.name}</span>
                     </div>
                     ` : ''}
+
                     ${polygon.parish && polygon.parish.municipality ? `
                     <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <div class="flex items-center">
@@ -537,6 +676,7 @@ function formatPolygonDetails(polygon) {
                         <span class="font-medium text-blue-900 dark:text-blue-200">${polygon.parish.municipality.name}</span>
                     </div>
                     ` : ''}
+
                     ${polygon.parish && polygon.parish.municipality && polygon.parish.municipality.state ? `
                     <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <div class="flex items-center">
@@ -546,6 +686,23 @@ function formatPolygonDetails(polygon) {
                             <span class="text-blue-700 dark:text-blue-300">Estado:&nbsp;</span>
                         </div>
                         <span class="font-medium text-blue-900 dark:text-blue-200">${polygon.parish.municipality.state.name}</span>
+                    </div>
+                    ` : ''}
+
+                    <!-- Mostrar datos detectados si existen y no hay parroquia asignada -->
+                    ${!polygon.parish && (polygon.detected_parish || polygon.detected_municipality || polygon.detected_state) ? `
+                    <div class="flex items-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-yellow-500 dark:text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <span class="text-yellow-700 dark:text-yellow-300">Ubicación detectada:&nbsp;</span>
+                        </div>
+                        <span class="font-medium text-yellow-900 dark:text-yellow-200">
+                            ${polygon.detected_parish || ''}${polygon.detected_parish && polygon.detected_municipality ? ', ' : ''}
+                            ${polygon.detected_municipality || ''}${polygon.detected_municipality && polygon.detected_state ? ', ' : ''}
+                            ${polygon.detected_state || ''}
+                        </span>
                     </div>
                     ` : ''}
                 </div>
@@ -575,6 +732,17 @@ function formatPolygonDetails(polygon) {
                             </div>
                             <span class="font-medium text-gray-900 dark:text-white">${formatDate(polygon.updated_at)}</span>
                         </div>
+                        ${polygon.deleted_at ? `
+                        <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-red-500 dark:text-red-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                <span class="text-red-700 dark:text-red-300">Eliminado</span>
+                            </div>
+                            <span class="font-medium text-red-800 dark:text-red-200">${formatDate(polygon.deleted_at)}</span>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
