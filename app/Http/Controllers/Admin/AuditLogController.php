@@ -20,16 +20,14 @@ class AuditLogController extends Controller
         // Aplicar búsqueda si existe
         if ($search) {
             $query->where(function($q) use ($search) {
-                // Buscar en descripción
                 $q->where('description', 'like', "%{$search}%")
-                  // Buscar por nombre de usuario causante
-                  ->orWhereHas('causer', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%")
+                ->orWhereHas('causer', function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('role', 'like', "%{$search}%"); // Buscar por rol
-                  })
-                  // Buscar actividades de sesión
-                  ->orWhere('description', 'like', '%sesión%');
+                        ->orWhere('role', 'like', "%{$search}%");
+                })
+                // Buscar en properties (PostgreSQL: convertir a texto y buscar)
+                ->orWhereRaw('properties::text LIKE ?', ["%{$search}%"]);
             });
         }
         
@@ -40,7 +38,7 @@ class AuditLogController extends Controller
         if ($search) {
             $activities->appends(['search' => $search]);
         }
-        
+        /* dd($activities); */
         return view('admin.audit_log', compact('activities', 'search'));
     }
 }

@@ -168,20 +168,47 @@
                                             <div class="text-xs text-gray-500 dark:text-gray-500">{{ $activity->created_at->format('H:i:s') }}</div>
                                         </td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2">
-                                            @if($activity->properties && $activity->properties->has('old_role') && $activity->properties->has('new_role'))
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                                    Rol: {{ $activity->properties['old_role'] }} -> {{ $activity->properties['new_role'] }}
-                                                </span>
-                                            @elseif($activity->properties && $activity->properties->has('updated_fields'))
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                                    {{ count($activity->properties['updated_fields']) }} campo(s) actualizado(s)
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                                    Sin detalles
-                                                </span>
-                                            @endif
-                                        </td>
+    {{-- 1. Cambio de rol manual (legacy) --}}
+    @if($activity->properties && $activity->properties->has('old_role') && $activity->properties->has('new_role'))
+        <div class="flex items-center gap-1">
+            <span class="font-small text-gray-700 dark:text-gray-300">Rol:</span>
+            <span class="text-red-500 line-through">{{ $activity->properties['old_role'] ?? 'N/A' }}</span>
+            <span class="text-gray-400 dark:text-gray-500">→</span>
+            <span class="text-green-600 dark:text-green-400">{{ $activity->properties['new_role'] ?? 'N/A' }}</span>
+        </div>
+
+    {{-- 2. Cambios automáticos (estructura real: attributes + old) --}}
+    @elseif($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old'))
+        <div class="text-xs space-y-1 max-w-xs">
+            @foreach($activity->properties['attributes'] as $attribute => $newValue)
+                @php
+                    $oldValue = $activity->properties['old'][$attribute] ?? null;
+                @endphp
+                <div class="flex items-center gap-1">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ ucfirst(str_replace('_', ' ', $attribute)) }}:</span>
+                    <span class="text-red-500 line-through">{{ $oldValue ?? 'N/A' }}</span>
+                    <span class="text-gray-400 dark:text-gray-500">→</span>
+                    <span class="text-green-600 dark:text-green-400">{{ $newValue ?? 'N/A' }}</span>
+                </div>
+            @endforeach
+        </div>
+
+    {{-- 3. Actualización de campos (legacy) – ahora con el mismo estilo de badge pero con los colores --}}
+    @elseif($activity->properties && $activity->properties->has('updated_fields'))
+        <div class="flex items-center gap-1">
+            <span class="font-medium text-gray-700 dark:text-gray-300">Campos actualizados:</span>
+            <span class="text-red-500 line-through">{{ count($activity->properties['updated_fields']) }}</span>
+            <span class="text-gray-400 dark:text-gray-500">→</span>
+            <span class="text-green-600 dark:text-green-400">{{ count($activity->properties['updated_fields']) }}</span>
+        </div>
+
+    {{-- 4. Sin detalles --}}
+    @else
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+            Sin detalles
+        </span>
+    @endif
+</td>
                                     </tr>
                                 @endforeach
                             </tbody>
