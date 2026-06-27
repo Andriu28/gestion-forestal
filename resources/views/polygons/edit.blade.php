@@ -310,7 +310,7 @@
                                         <a href="{{ route('polygons.index') }}" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md">
                                             Cancelar
                                         </a>
-                                        <x-primary-button type="submit" id="submit-btn" class="bg-green-600 hover:bg-green-700">
+                                        <x-primary-button type="submit" id="submit-btn">
                                             Actualizar Polígono
                                         </x-primary-button>
                                     </div>
