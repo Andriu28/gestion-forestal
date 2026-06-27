@@ -3,18 +3,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Spatie\Activitylog\Traits\LogsActivity; // Añadir
-use Spatie\Activitylog\LogOptions; // Añadir
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Polygon extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity; // Añadir LogsActivity
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'name',
@@ -25,77 +25,74 @@ class Polygon extends Model
         'is_active',
         'centroid_lat',
         'centroid_lng',
-        'location_data'
+        'location_data',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
-        'area_ha' => 'decimal:2',
+        'is_active'     => 'boolean',
+        'area_ha'       => 'decimal:2',
         'location_data' => 'array',
-        'centroid_lat' => 'double',
-        'centroid_lng' => 'double',
+        'centroid_lat'  => 'double',
+        'centroid_lng'  => 'double',
     ];
 
-    // Añadir configuración del log
-    // En Polygon.php - actualiza el método getActivitylogOptions()
-    // En Polygon.php
-    // En Polygon.php
+    // =========================================================================
+    // Actividad (Spatie)
+    // =========================================================================
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logOnly(['name', 'description', 'producer_id', 'parish_id', 'area_ha', 'is_active'])
             ->logOnlyDirty()
-            ->setDescriptionForEvent(function(string $eventName) {
-                $polygonName = $this->name ?: 'Polígono #' . $this->id;
-                
-                switch($eventName) {
-                    case 'created':
-                        return "Polígono '{$polygonName}' fue creado";
-                        
-                    case 'updated':
-                        // Detectar qué campo cambió específicamente
-                        $changes = $this->getChanges();
-                        unset($changes['updated_at']); // Quitar updated_at del log
-                        
-                        if (count($changes) === 1 && isset($changes['is_active'])) {
-                            $newStatus = $changes['is_active'] ? 'activado' : 'desactivado';
-                            return "Polígono '{$polygonName}' fue {$newStatus}";
-                        }
-                        
-                        // Para múltiples cambios o cambios no específicos
-                        $changedFields = array_keys($changes);
-                        if (count($changedFields) === 1) {
-                            $field = $changedFields[0];
-                            $fieldNames = [
-                                'name' => 'nombre',
-                                'description' => 'descripción',
-                                'producer_id' => 'productor',
-                                'parish_id' => 'parroquia',
-                                'area_ha' => 'área',
-                                'is_active' => 'estado'
-                            ];
-                            
-                            $fieldName = $fieldNames[$field] ?? $field;
-                            return "Polígono '{$polygonName}' - {$fieldName} actualizado";
-                        }
-                        
-                        return "Polígono '{$polygonName}' fue actualizado";
-                        
-                    case 'deleted':
-                        return "Polígono '{$polygonName}' fue eliminado";
-                        
-                    case 'restored':
-                        return "Polígono '{$polygonName}' fue restaurado";
-                        
-                    default:
-                        return "Polígono '{$polygonName}' - {$eventName}";
-                }
-            })
             ->dontSubmitEmptyLogs()
-            ->logExcept(['detected_parish', 'detected_municipality', 'detected_state', 'centroid_lat', 'centroid_lng', 'location_data']);
+            ->logExcept(['centroid_lat', 'centroid_lng', 'location_data'])
+            ->setDescriptionForEvent(fn (string $event) => $this->buildActivityDescription($event));
     }
 
+    private function buildActivityDescription(string $event): string
+    {
+        $label = $this->name ?: "Polígono #{$this->id}";
+
+        return match ($event) {
+            'created'  => "Polígono '{$label}' fue creado",
+            'deleted'  => "Polígono '{$label}' fue eliminado",
+            'restored' => "Polígono '{$label}' fue restaurado",
+            'updated'  => $this->buildUpdateDescription($label),
+            default    => "Polígono '{$label}' - {$event}",
+        };
+    }
+
+    private function buildUpdateDescription(string $label): string
+    {
+        $changes = collect($this->getChanges())->except('updated_at');
+
+        if ($changes->count() === 1 && $changes->has('is_active')) {
+            $verb = $changes->get('is_active') ? 'activado' : 'desactivado';
+            return "Polígono '{$label}' fue {$verb}";
+        }
+
+        if ($changes->count() === 1) {
+            $fieldNames = [
+                'name'        => 'nombre',
+                'description' => 'descripción',
+                'producer_id' => 'productor',
+                'parish_id'   => 'parroquia',
+                'area_ha'     => 'área',
+                'is_active'   => 'estado',
+            ];
+            $field      = $changes->keys()->first();
+            $fieldLabel = $fieldNames[$field] ?? $field;
+            return "Polígono '{$label}' - {$fieldLabel} actualizado";
+        }
+
+        return "Polígono '{$label}' fue actualizado";
+    }
+
+    // =========================================================================
     // Relaciones
+    // =========================================================================
+
     public function producer()
     {
         return $this->belongsTo(Producer::class);
@@ -106,15 +103,24 @@ class Polygon extends Model
         return $this->belongsTo(Parish::class);
     }
 
+    public function deforestationAnalyses()
+    {
+        return $this->hasMany(Deforestation::class, 'polygon_id');
+    }
+
+    /** Alias de deforestationAnalyses para compatibilidad. */
+    public function analyses()
+    {
+        return $this->hasMany(Deforestation::class, 'polygon_id');
+    }
+
+    // =========================================================================
     // Scopes
+    // =========================================================================
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
-    }
-
-    public function scopeWithoutProducer(Builder $query): Builder
-    {
-        return $query->whereNull('producer_id');
     }
 
     public function scopeWithProducer(Builder $query): Builder
@@ -122,31 +128,47 @@ class Polygon extends Model
         return $query->whereNotNull('producer_id');
     }
 
-    public function scopeSearch(Builder $query, string $search): Builder
+    public function scopeWithoutProducer(Builder $query): Builder
     {
-        return $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('location_data', 'like', "%{$search}%")  // Buscar en el JSON
-                    ->orWhereHas('producer', function($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('lastname', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('parish', function($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                        ->orWhereHas('municipality', function($q2) use ($search) {
-                            $q2->where('name', 'like', "%{$search}%")
-                                ->orWhereHas('state', function($q3) use ($search) {
-                                    $q3->where('name', 'like', "%{$search}%");
-                                });
-                        });
-                    });
+        return $query->whereNull('producer_id');
     }
 
-    // Accesores útiles
+    /**
+     * Búsqueda por nombre, descripción, productor o jerarquía geográfica.
+     * Envuelto en un grupo para que los OR no contaminen condiciones externas.
+     */
+    public function scopeSearch(Builder $query, string $search): Builder
+    {
+        return $query->where(function (Builder $q) use ($search) {
+            $like = "%{$search}%";
+
+            $q->where('name', 'like', $like)
+              ->orWhere('description', 'like', $like)
+              ->orWhereHas('producer', fn (Builder $pq) =>
+                  $pq->where('name', 'like', $like)
+                     ->orWhere('lastname', 'like', $like)
+              )
+              ->orWhereHas('parish', fn (Builder $rq) =>
+                  $rq->where('name', 'like', $like)
+                     ->orWhereHas('municipality', fn (Builder $mq) =>
+                         $mq->where('name', 'like', $like)
+                            ->orWhereHas('state', fn (Builder $sq) =>
+                                $sq->where('name', 'like', $like)
+                            )
+                     )
+              );
+        });
+    }
+
+    // =========================================================================
+    // Accessors
+    // =========================================================================
 
     public function getProducerNameAttribute(): string
     {
-        return $this->producer ? $this->producer->name : 'Sin productor';
+        return $this->producer
+            ? "{$this->producer->name} {$this->producer->lastname}"
+            : 'Sin productor';
     }
 
     public function getTypeAttribute(): string
@@ -156,7 +178,9 @@ class Polygon extends Model
 
     public function getAreaFormattedAttribute(): string
     {
-        return $this->area_ha ? number_format($this->area_ha, 2) . ' Ha' : 'N/A';
+        return $this->area_ha
+            ? number_format((float) $this->area_ha, 2) . ' Ha'
+            : 'N/A';
     }
 
     public function getStatusBadgeAttribute(): string
@@ -165,109 +189,249 @@ class Polygon extends Model
             return '<span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">Eliminado</span>';
         }
 
-        $isActive = $this->is_active;
-        $bgColor = $isActive ? 'bg-green-600' : 'bg-yellow-500';
-        $text = $isActive ? 'Activo' : 'Inactivo';
-        
-        return "<span class=\"inline-block px-3 py-1 text-xs font-semibold {$bgColor} text-white rounded-full\">{$text}</span>";
+        [$bg, $text] = $this->is_active
+            ? ['bg-green-600', 'Activo']
+            : ['bg-yellow-500', 'Inactivo'];
+
+        return "<span class=\"inline-block px-3 py-1 text-xs font-semibold {$bg} text-white rounded-full\">{$text}</span>";
     }
 
     public function getFullLocationAttribute(): string
     {
         if ($this->parish) {
             $this->loadMissing('parish.municipality.state');
-            return "{$this->parish->name}, {$this->parish->municipality->name}, {$this->parish->municipality->state->name}";
+            $p = $this->parish;
+            return "{$p->name}, {$p->municipality->name}, {$p->municipality->state->name}";
         }
 
         return 'Ubicación no asignada';
     }
 
+    // ---- Campos detectados (leídos desde location_data) ---------------------
+
+    public function getDetectedParishAttribute(): ?string
+    {
+        return $this->getFromLocationData('detected_parish');
+    }
+
+    public function getDetectedMunicipalityAttribute(): ?string
+    {
+        return $this->getFromLocationData('detected_municipality');
+    }
+
+    public function getDetectedStateAttribute(): ?string
+    {
+        return $this->getFromLocationData('detected_state');
+    }
+
+    // =========================================================================
+    // Persistencia con geometría PostGIS (lógica que pertenece al modelo)
+    // =========================================================================
+
     /**
-     * Obtener geometría (GeoJSON) desde la base de datos si se necesita.
+     * Crea el registro incluyendo la geometría PostGIS.
+     * Usa SQL solo para el INSERT con ST_GeomFromGeoJSON; después carga el
+     * modelo con Eloquent para que Spatie registre el evento 'created'.
+     *
+     * @param  array  $data         Campos fillable del polígono.
+     * @param  string $geoJsonGeometry  GeoJSON de la geometría (ya normalizado).
+     * @return static
+     * @throws \RuntimeException
+     */
+    public static function createWithGeometry(array $data, string $geoJsonGeometry): static
+    {
+        $now = now();
+
+        $row = DB::selectOne(
+            "INSERT INTO polygons
+                (name, description, producer_id, parish_id, area_ha, is_active,
+                 centroid_lat, centroid_lng, location_data,
+                 geometry, created_at, updated_at)
+             VALUES
+                (?, ?, ?, ?, ?, ?,
+                 ?, ?, ?,
+                 ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?)
+             RETURNING id",
+            [
+                $data['name'],
+                $data['description'] ?? null,
+                $data['producer_id'] ?? null,
+                $data['parish_id'] ?? null,
+                $data['area_ha'] ?? null,
+                $data['is_active'] ?? true,
+                $data['centroid_lat'] ?? null,
+                $data['centroid_lng'] ?? null,
+                isset($data['location_data']) ? json_encode($data['location_data'], JSON_UNESCAPED_UNICODE) : null,
+                $geoJsonGeometry,
+                $now,
+                $now,
+            ]
+        );
+
+        if (! isset($row->id)) {
+            throw new \RuntimeException('No se pudo insertar el polígono (RETURNING id vacío).');
+        }
+
+        // Cargar el modelo con Eloquent para que los observers (Spatie) funcionen
+        $polygon = static::with('parish.municipality.state')->findOrFail($row->id);
+
+        // Disparar el evento 'created' manualmente para que Spatie lo registre
+        $polygon->fireModelEvent('created', false);
+
+        return $polygon;
+    }
+
+    /**
+     * Actualiza los campos del polígono incluyendo la geometría PostGIS.
+     * Separa el UPDATE de geometría (SQL crudo, necesario para PostGIS)
+     * del UPDATE de campos normales (Eloquent, necesario para Spatie).
+     *
+     * @param  array  $data             Campos fillable a actualizar.
+     * @param  string $geoJsonGeometry  GeoJSON de la geometría (ya normalizado).
+     * @return bool
+     */
+    public function updateWithGeometry(array $data, string $geoJsonGeometry): bool
+    {
+        // 1. Actualizar solo la geometría con SQL (PostGIS no lo soporta Eloquent)
+        DB::statement(
+            'UPDATE polygons SET geometry = ST_SetSRID(ST_GeomFromGeoJSON(?), 4326) WHERE id = ?',
+            [$geoJsonGeometry, $this->id]
+        );
+
+        // 2. Actualizar el resto con Eloquent → dispara el evento 'updated' → Spatie lo captura
+        return $this->fill($data)->save();
+    }
+
+    /**
+     * Recalcula área (ha) y centroide desde PostGIS y los persiste.
+     * Usa DB::table para no volver a disparar eventos de Eloquent.
+     */
+    public function recalculateGeometryStats(): bool
+    {
+        try {
+            $row = DB::selectOne(
+                "SELECT
+                     ST_Area(geometry::geography) / 10000  AS area_ha,
+                     ST_AsGeoJSON(ST_Centroid(geometry))   AS centroid_geojson
+                 FROM polygons
+                 WHERE id = ?",
+                [$this->id]
+            );
+
+            if (! $row) {
+                return false;
+            }
+
+            $centroid = $row->centroid_geojson
+                ? json_decode($row->centroid_geojson, true)
+                : null;
+
+            DB::table('polygons')->where('id', $this->id)->update([
+                'area_ha'      => isset($row->area_ha) ? round((float) $row->area_ha, 2) : null,
+                'centroid_lat' => $centroid['coordinates'][1] ?? null,
+                'centroid_lng' => $centroid['coordinates'][0] ?? null,
+                'updated_at'   => now(),
+            ]);
+
+            $this->refresh();
+            return true;
+
+        } catch (\Throwable $e) {
+            Log::error('Error al recalcular stats del polígono', [
+                'polygon_id' => $this->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Obtiene la geometría como array GeoJSON consultando PostGIS.
+     * Útil para pre-cargar el mapa en la vista de edición.
      */
     public function getGeometryGeoJson(): ?array
     {
         try {
-            $res = DB::selectOne("SELECT ST_AsGeoJSON(geometry) AS geojson FROM polygons WHERE id = ?", [$this->id]);
-            if ($res && $res->geojson) {
-                return json_decode($res->geojson, true);
-            }
-        } catch (\Exception $e) {
-            Log::error('Error al leer geometría', ['polygon_id' => $this->id, 'error' => $e->getMessage()]);
+            $row = DB::selectOne(
+                'SELECT ST_AsGeoJSON(geometry) AS geojson FROM polygons WHERE id = ?',
+                [$this->id]
+            );
+
+            return ($row && $row->geojson)
+                ? json_decode($row->geojson, true)
+                : null;
+
+        } catch (\Throwable $e) {
+            Log::error('Error al leer geometría del polígono', [
+                'polygon_id' => $this->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return null;
         }
-        return null;
-    }
-
-    public function deforestationAnalyses()
-    {
-        return $this->hasMany(Deforestation::class, 'polygon_id');
-    }
-
-    // También deberías tener una relación alias para mantener compatibilidad
-    public function analyses()
-    {
-        return $this->hasMany(Deforestation::class, 'polygon_id');
-    }
-
-    // En Polygon.php - agregar estos métodos al final de la clase
-
-    /**
-     * Accesor para obtener la parroquia detectada desde location_data
-     */
-    public function getDetectedParishAttribute(): ?string
-    {
-        $locationData = $this->location_data;
-        if (is_array($locationData) && isset($locationData['detected_parish'])) {
-            return $locationData['detected_parish'];
-        }
-        
-        if (is_string($locationData)) {
-            $decoded = json_decode($locationData, true);
-            if ($decoded && isset($decoded['detected_parish'])) {
-                return $decoded['detected_parish'];
-            }
-        }
-        
-        return null;
     }
 
     /**
-     * Accesor para obtener el municipio detectado desde location_data
+     * Construye el array location_data enriquecido con los campos detectados
+     * y una auditoría del momento de creación.
      */
-    public function getDetectedMunicipalityAttribute(): ?string
+    public function buildLocationDataForCreate(array $rawLocationData, array $detected, ?int $parishId): array
     {
-        $locationData = $this->location_data;
-        if (is_array($locationData) && isset($locationData['detected_municipality'])) {
-            return $locationData['detected_municipality'];
-        }
-        
-        if (is_string($locationData)) {
-            $decoded = json_decode($locationData, true);
-            if ($decoded && isset($decoded['detected_municipality'])) {
-                return $decoded['detected_municipality'];
-            }
-        }
-        
-        return null;
+        return array_merge($rawLocationData, [
+            'detected_parish'       => $detected['parish'] ?? null,
+            'detected_municipality' => $detected['municipality'] ?? null,
+            'detected_state'        => $detected['state'] ?? null,
+            'created_info'          => [
+                'assigned_parish_id' => $parishId,
+                'created_at'         => now()->toISOString(),
+            ],
+        ]);
     }
 
     /**
-     * Accesor para obtener el estado detectado desde location_data
+     * Fusiona los datos de detección entrantes con el location_data actual
+     * del polígono, agregando una auditoría del update.
      */
-    public function getDetectedStateAttribute(): ?string
+    public function mergeLocationDataForUpdate(array $newRaw, array $detected, ?int $userId): array
     {
-        $locationData = $this->location_data;
-        if (is_array($locationData) && isset($locationData['detected_state'])) {
-            return $locationData['detected_state'];
+        $base = is_array($this->location_data) ? $this->location_data : [];
+
+        // Sobreescribir con datos nuevos si vienen del request
+        if (! empty($newRaw)) {
+            $base = array_merge($base, $newRaw);
         }
-        
-        if (is_string($locationData)) {
-            $decoded = json_decode($locationData, true);
-            if ($decoded && isset($decoded['detected_state'])) {
-                return $decoded['detected_state'];
-            }
+
+        $base['detected_parish']       = $detected['parish'] ?? null;
+        $base['detected_municipality'] = $detected['municipality'] ?? null;
+        $base['detected_state']        = $detected['state'] ?? null;
+
+        if (! empty($detected['parish'])) {
+            $base['detected_info'] = [
+                'detected_parish'       => $detected['parish'],
+                'detected_municipality' => $detected['municipality'] ?? null,
+                'detected_state'        => $detected['state'] ?? null,
+                'updated_at'            => now()->toISOString(),
+                'updated_by'            => $userId,
+            ];
         }
-        
-        return null;
+
+        return $base;
+    }
+
+    // =========================================================================
+    // Helpers privados
+    // =========================================================================
+
+    /**
+     * Lee un campo desde el JSON location_data (soporta array o string).
+     */
+    private function getFromLocationData(string $key): ?string
+    {
+        $data = $this->location_data;
+
+        if (is_string($data)) {
+            $data = json_decode($data, true) ?? [];
+        }
+
+        return is_array($data) ? ($data[$key] ?? null) : null;
     }
 }
