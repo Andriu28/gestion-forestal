@@ -166,49 +166,127 @@
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                             <div>{{ $activity->created_at->format('d/m/Y') }}</div>
                                             <div class="text-xs text-gray-500 dark:text-gray-500">{{ $activity->created_at->format('H:i:s') }}</div>
-                                        </td>
+                                        </td> 
+                                        <!-- Nueva columna para detalles para la vista del historial -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2">
-    {{-- 1. Cambio de rol manual (legacy) --}}
-    @if($activity->properties && $activity->properties->has('old_role') && $activity->properties->has('new_role'))
-        <div class="flex items-center gap-1">
-            <span class="font-small text-gray-700 dark:text-gray-300">Rol:</span>
-            <span class="text-red-500 line-through">{{ $activity->properties['old_role'] ?? 'N/A' }}</span>
-            <span class="text-gray-400 dark:text-gray-500">→</span>
-            <span class="text-green-600 dark:text-green-400">{{ $activity->properties['new_role'] ?? 'N/A' }}</span>
-        </div>
+                                            {{-- 1. Cambio de rol manual (legacy) --}}
+                                            @if($activity->properties && $activity->properties->has('old_role') && $activity->properties->has('new_role'))
+                                                <div class="flex items-center gap-1 text-xs">
+                                                    <span class="font-medium text-gray-700 dark:text-gray-300">Rol:</span>
+                                                    <span class="text-red-500 line-through">{{ $activity->properties['old_role'] ?? 'N/A' }}</span>
+                                                    <span class="text-gray-400 dark:text-gray-500">→</span>
+                                                    <span class="text-green-600 dark:text-green-400 font-medium">{{ $activity->properties['new_role'] ?? 'N/A' }}</span>
+                                                </div>
 
-    {{-- 2. Cambios automáticos (estructura real: attributes + old) --}}
-    @elseif($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old'))
-        <div class="text-xs space-y-1 max-w-xs">
-            @foreach($activity->properties['attributes'] as $attribute => $newValue)
-                @php
-                    $oldValue = $activity->properties['old'][$attribute] ?? null;
-                @endphp
-                <div class="flex items-center gap-1">
-                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ ucfirst(str_replace('_', ' ', $attribute)) }}:</span>
-                    <span class="text-red-500 line-through">{{ $oldValue ?? 'N/A' }}</span>
-                    <span class="text-gray-400 dark:text-gray-500">→</span>
-                    <span class="text-green-600 dark:text-green-400">{{ $newValue ?? 'N/A' }}</span>
-                </div>
-            @endforeach
-        </div>
+                                            {{-- 2. Cambios automáticos (estructura real: attributes + old) --}}
+                                            @elseif($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old'))
+                                                @php
+                                                    // 🔥 Lista de campos que NO quieres mostrar
+                                                    $excludedFields = ['description', 'updated_at', 'created_at'];
+                                                    
+                                                    // Función para formatear valores booleanos
+                                                    $formatValue = function($value) {
+                                                        if (is_null($value)) return 'N/A';
+                                                        if (is_bool($value) || $value === '0' || $value === '1' || $value === 0 || $value === 1) {
+                                                            return $value ? 'Activo' : 'Inactivo';
+                                                        }
+                                                        return $value;
+                                                    };
+                                                    
+                                                    // Función para traducir nombres de campos
+                                                    $translateField = function($field) {
+                                                        $translations = [
+                                                            'is_active' => 'Estado',
+                                                            'name' => 'Nombre',
+                                                            'email' => 'Correo',
+                                                            'role' => 'Rol',
+                                                            'password' => 'Contraseña',
+                                                            'created_at' => 'Creado',
+                                                            'updated_at' => 'Actualizado',
+                                                            'deleted_at' => 'Eliminado',
+                                                            'email_verified_at' => 'Verificado',
+                                                            'polygon_id' => 'ID Polígono',
+                                                            'producer_id' => 'ID Productor',
+                                                            'geometry' => 'Geometría',
+                                                            'area' => 'Área',
+                                                            'description' => 'Descripción',
+                                                            'rut' => 'RUT',
+                                                            'phone' => 'Teléfono',
+                                                            'address' => 'Dirección'
+                                                        ];
+                                                        return $translations[$field] ?? ucfirst(str_replace('_', ' ', $field));
+                                                    };
+                                                    
+                                                    // 🔥 FILTRAR: Solo mostrar campos que cambiaron Y no están excluidos
+                                                    $changes = collect($activity->properties['attributes'])
+                                                        ->filter(function($newValue, $attribute) use ($activity, $excludedFields) {
+                                                            // 1. Excluir campos de la lista negra
+                                                            if (in_array($attribute, $excludedFields)) {
+                                                                return false;
+                                                            }
+                                                            
+                                                            // 2. Verificar que realmente haya cambiado
+                                                            $oldValue = $activity->properties['old'][$attribute] ?? null;
+                                                            return $newValue != $oldValue;
+                                                        })
+                                                        ->take(3); // Limitar a 3 cambios
+                                                @endphp
+                                                
+                                                @if($changes->count() > 0)
+                                                    <div class="text-xs space-y-1 max-w-xs">
+                                                        @foreach($changes as $attribute => $newValue)
+                                                            @php
+                                                                $oldValue = $activity->properties['old'][$attribute] ?? null;
+                                                                $label = $translateField($attribute);
+                                                                $formattedOld = $formatValue($oldValue);
+                                                                $formattedNew = $formatValue($newValue);
+                                                            @endphp
+                                                            <div class="flex items-center gap-1">
+                                                                <span class="font-medium text-gray-700 dark:text-gray-300 min-w-[50px]">{{ $label }}:</span>
+                                                                @if($formattedOld !== 'N/A')
+                                                                    <span class="text-red-500 line-through truncate max-w-[60px]">{{ $formattedOld }}</span>
+                                                                    <span class="text-gray-400 dark:text-gray-500">→</span>
+                                                                @else
+                                                                    <span class="text-gray-400 dark:text-gray-500 text-[10px]">[Nuevo]</span>
+                                                                    <span class="text-gray-400 dark:text-gray-500">→</span>
+                                                                @endif
+                                                                <span class="text-green-600 dark:text-green-400 font-medium truncate max-w-[60px]">{{ $formattedNew }}</span>
+                                                            </div>
+                                                        @endforeach
+                                                        
+                                                        @if(count($activity->properties['attributes']) - count($excludedFields) > 3)
+                                                            <div class="text-gray-500 text-[10px]">
+                                                                +{{ count($activity->properties['attributes']) - count($excludedFields) - 3 }} campo(s) más
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    {{-- Mostrar "Sin detalles" cuando no hay cambios relevantes --}}
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                        Sin detalles
+                                                    </span>
+                                                @endif
 
-    {{-- 3. Actualización de campos (legacy) – ahora con el mismo estilo de badge pero con los colores --}}
-    @elseif($activity->properties && $activity->properties->has('updated_fields'))
-        <div class="flex items-center gap-1">
-            <span class="font-medium text-gray-700 dark:text-gray-300">Campos actualizados:</span>
-            <span class="text-red-500 line-through">{{ count($activity->properties['updated_fields']) }}</span>
-            <span class="text-gray-400 dark:text-gray-500">→</span>
-            <span class="text-green-600 dark:text-green-400">{{ count($activity->properties['updated_fields']) }}</span>
-        </div>
+                                            {{-- 3. Actualización de campos (legacy) --}}
+                                            @elseif($activity->properties && $activity->properties->has('updated_fields'))
+                                                @php
+                                                    $fields = $activity->properties['updated_fields'];
+                                                    $count = is_array($fields) ? count($fields) : $fields;
+                                                @endphp
+                                                <div class="flex items-center gap-1 text-xs">
+                                                    <span class="font-medium text-gray-700 dark:text-gray-300">Campos:</span>
+                                                    <span class="text-blue-600 dark:text-blue-400 font-medium">{{ $count }}</span>
+                                                    <span class="text-gray-400 dark:text-gray-500">actualizado(s)</span>
+                                                </div>
 
-    {{-- 4. Sin detalles --}}
-    @else
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-            Sin detalles
-        </span>
-    @endif
-</td>
+                                            {{-- 4. Sin detalles --}}
+                                            @else
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                    Sin detalles
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <!-- Fin de la nueva columna para detalles -->
                                     </tr>
                                 @endforeach
                             </tbody>

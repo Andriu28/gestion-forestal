@@ -79,7 +79,7 @@ class UserController extends Controller
             $user->update(['role' => $request->role]);
 
             // Registrar la actividad de manera personalizada
-            activity()
+           /*ctivity()
                 ->performedOn($user)
                 ->causedBy(auth()->user())
                 ->withProperties([
@@ -87,7 +87,7 @@ class UserController extends Controller
                     'new_role' => $request->role,
                     'updated_fields' => ['role']
                 ])
-                ->log("Usuario '{$user->name}' fue actualizado su rol");
+                ->log("Usuario '{$user->name}' fue actualizado su rol");*/
 
             // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {

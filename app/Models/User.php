@@ -55,7 +55,8 @@ class User extends Authenticatable implements MustVerifyEmail{
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email', 'role', 'password'])
+            //esta parte el rol para que no se registre en el log de actividad, ya que se registraba duplicado ( 'role', )
+            ->logOnly(['name', 'email','role', 'password'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(function(string $eventName) {
                 $userName = $this->name ?: 'Usuario #' . $this->id;
