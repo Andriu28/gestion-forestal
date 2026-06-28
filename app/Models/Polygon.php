@@ -9,12 +9,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Events\Created;
+use App\Traits\LogsActivityWithDescriptions;
 
 class Polygon extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, SoftDeletes, LogsActivityWithDescriptions;
 
     protected $fillable = [
         'name',
@@ -40,53 +40,31 @@ class Polygon extends Model
     // Actividad (Spatie)
     // =========================================================================
 
-    public function getActivitylogOptions(): LogOptions
+    protected function getActivitylogAttributes(): array
     {
-        return LogOptions::defaults()
-            ->logOnly(['name', 'description', 'producer_id', 'parish_id', 'area_ha', 'is_active'])
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
-            ->logExcept(['centroid_lat', 'centroid_lng', 'location_data'])
-            ->setDescriptionForEvent(fn (string $event) => $this->buildActivityDescription($event));
+        return ['name', 'description', 'producer_id', 'parish_id', 'area_ha', 'is_active'];
     }
 
-    private function buildActivityDescription(string $event): string
+    protected function getActivityDescriptions(): array
     {
-        $label = $this->name ?: "Polígono #{$this->id}";
-
-        return match ($event) {
-            'created'  => "Polígono '{$label}' fue creado",
-            'deleted'  => "Polígono '{$label}' fue eliminado",
-            'restored' => "Polígono '{$label}' fue restaurado",
-            'updated'  => $this->buildUpdateDescription($label),
-            default    => "Polígono '{$label}' - {$event}",
-        };
+        return [
+            'name'        => 'Nombre',
+            'description' => 'Descripción',
+            'producer_id' => 'Productor',
+            'parish_id'   => 'Parroquia',
+            'area_ha'     => 'Área (ha)',
+            'is_active'   => 'Estado',
+        ];
     }
 
-    private function buildUpdateDescription(string $label): string
+    protected function getActivityPriority(): array
     {
-        $changes = collect($this->getChanges())->except('updated_at');
+        return ['name', 'is_active', 'area_ha', 'producer_id', 'parish_id', 'description'];
+    }
 
-        if ($changes->count() === 1 && $changes->has('is_active')) {
-            $verb = $changes->get('is_active') ? 'activado' : 'desactivado';
-            return "Polígono '{$label}' fue {$verb}";
-        }
-
-        if ($changes->count() === 1) {
-            $fieldNames = [
-                'name'        => 'nombre',
-                'description' => 'descripción',
-                'producer_id' => 'productor',
-                'parish_id'   => 'parroquia',
-                'area_ha'     => 'área',
-                'is_active'   => 'estado',
-            ];
-            $field      = $changes->keys()->first();
-            $fieldLabel = $fieldNames[$field] ?? $field;
-            return "Polígono '{$label}' - {$fieldLabel} actualizado";
-        }
-
-        return "Polígono '{$label}' fue actualizado";
+    protected function getActivityLabel(): ?string
+    {
+        return $this->name;
     }
 
     // =========================================================================
@@ -245,13 +223,13 @@ class Polygon extends Model
         $row = DB::selectOne(
             "INSERT INTO polygons
                 (name, description, producer_id, parish_id, area_ha, is_active,
-                 centroid_lat, centroid_lng, location_data,
-                 geometry, created_at, updated_at)
-             VALUES
+                centroid_lat, centroid_lng, location_data,
+                geometry, created_at, updated_at)
+            VALUES
                 (?, ?, ?, ?, ?, ?,
-                 ?, ?, ?,
-                 ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?)
-             RETURNING id",
+                ?, ?, ?,
+                ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?)
+            RETURNING id",
             [
                 $data['name'],
                 $data['description'] ?? null,
@@ -272,11 +250,24 @@ class Polygon extends Model
             throw new \RuntimeException('No se pudo insertar el polígono (RETURNING id vacío).');
         }
 
-        // Cargar el modelo con Eloquent para que los observers (Spatie) funcionen
         $polygon = static::with('parish.municipality.state')->findOrFail($row->id);
 
-        // Disparar el evento 'created' manualmente para que Spatie lo registre
-        $polygon->fireModelEvent('created', false);
+        // ===== CREACIÓN MANUAL DEL LOG =====
+        activity()
+            ->performedOn($polygon)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'attributes' => [
+                    'name'        => $polygon->name,
+                    'description' => $polygon->description,
+                    'producer_id' => $polygon->producer_id,
+                    'parish_id'   => $polygon->parish_id,
+                    'is_active'   => $polygon->is_active,
+                ],
+                'old' => null, // No hay valores antiguos en creación
+            ])
+            ->event('created')
+            ->log( $polygon->getActivityLabel() . ' fue creado' );
 
         return $polygon;
     }
