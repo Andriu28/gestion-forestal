@@ -50,6 +50,7 @@ class PolygonController extends Controller
         };
 
         $polygons = $query->latest()->paginate(10);
+        /* dd($polygons->toArray()); */
 
         return view('polygons.index', compact('polygons', 'search', 'status', 'type'));
     }

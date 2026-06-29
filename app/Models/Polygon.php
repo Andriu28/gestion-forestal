@@ -30,7 +30,7 @@ class Polygon extends Model
 
     protected $casts = [
         'is_active'     => 'boolean',
-        'area_ha'       => 'decimal:2',
+        'area_ha'       => 'decimal:4',
         'location_data' => 'array',
         'centroid_lat'  => 'double',
         'centroid_lng'  => 'double',
@@ -157,7 +157,7 @@ class Polygon extends Model
     public function getAreaFormattedAttribute(): string
     {
         return $this->area_ha
-            ? number_format((float) $this->area_ha, 2) . ' Ha'
+            ? number_format((float) $this->area_ha, 4) . ' Ha'
             : 'N/A';
     }
 
@@ -318,7 +318,7 @@ class Polygon extends Model
                 : null;
 
             DB::table('polygons')->where('id', $this->id)->update([
-                'area_ha'      => isset($row->area_ha) ? round((float) $row->area_ha, 2) : null,
+                'area_ha'      => isset($row->area_ha) ? (float) $row->area_ha : null,
                 'centroid_lat' => $centroid['coordinates'][1] ?? null,
                 'centroid_lng' => $centroid['coordinates'][0] ?? null,
                 'updated_at'   => now(),

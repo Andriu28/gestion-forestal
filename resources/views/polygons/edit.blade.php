@@ -1504,12 +1504,12 @@ class PolygonEditor {
         const summaryArea = document.getElementById('summary-area');
         
         if (summaryPerimeter) {
-            summaryPerimeter.textContent = perimeter.toFixed(2);
+            summaryPerimeter.textContent = perimeter.toFixed(4);
         }
         
         if (summaryArea && this.currentFeature) {
             const area = this.currentFeature.get('area') || 0;
-            summaryArea.textContent = area.toFixed(2);
+            summaryArea.textContent = area.toFixed(4);
         }
     }
 
