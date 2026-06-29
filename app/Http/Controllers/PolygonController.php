@@ -409,7 +409,7 @@ class PolygonController extends Controller
     private function validationRules(bool $isUpdate = false): array
     {
         return [
-            'name'                  => 'required|string|max:255',
+            'name'                  => 'required|string|max:40',
             'description'           => 'nullable|string',
             'geometry'              => 'required|string',
             'producer_id'           => 'nullable|exists:producers,id',

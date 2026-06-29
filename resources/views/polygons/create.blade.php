@@ -106,9 +106,29 @@
                                     <div class="space-y-6">
                                         <div>
                                             <x-input-label for="name" :value="__('Nombre del Polígono *')" />
-                                            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
-                                                :value="old('name')" required placeholder="Ej: Finca La Esperanza" />
+                                            <x-text-input 
+                                                id="name" 
+                                                name="name" 
+                                                type="text" 
+                                                class="mt-1 block w-full" 
+                                                :value="old('name')" 
+                                                required 
+                                                placeholder="Ej: Finca La Esperanza"
+                                                maxlength="40"
+                                                minlength="4"
+                                                oninput="
+                                                    // Limpiar caracteres no permitidos
+                                                    this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9 ]/g, '');
+                                                    // Actualizar contador
+                                                    updateNameCounter(this);
+                                                " 
+                                            />
+                                            <div class="mt-1 flex justify-between text-xs">
+                                                <span class="text-gray-500 dark:text-gray-400">Mínimo 4 caracteres</span>
+                                                <span id="name-counter" class="text-gray-500 dark:text-gray-400">0/40</span>
+                                            </div>
                                             <x-input-error class="mt-2" :messages="$errors->get('name')" />
+                                            <div id="name-error" class="mt-2 text-sm text-red-600 dark:text-red-400 hidden"></div>
                                         </div>
 
                                         <div>
@@ -1254,6 +1274,104 @@ class PolygonMap {
 }
 
 // =============================================
+// VALIDACIÓN DEL CAMPO NOMBRE
+// =============================================
+
+function updateNameCounter(input) {
+    const counter = document.getElementById('name-counter');
+    if (!counter) return;
+    
+    const length = input.value.length;
+    const maxLength = parseInt(input.getAttribute('maxlength')) || 40;
+    counter.textContent = `${length}/${maxLength}`;
+    
+    // Cambiar color según el estado
+    counter.classList.remove('text-gray-500', 'dark:text-gray-400', 'text-yellow-600', 'dark:text-yellow-400', 'text-red-600', 'dark:text-red-400');
+    
+    if (length === 0) {
+        counter.classList.add('text-gray-500', 'dark:text-gray-400');
+    } else if (length < 4) {
+        counter.classList.add('text-yellow-600', 'dark:text-yellow-400');
+    } else if (length > maxLength) {
+        counter.classList.add('text-red-600', 'dark:text-red-400');
+    } else {
+        counter.classList.add('text-green-600', 'dark:text-green-400');
+    }
+}
+
+function validatePolygonName() {
+    const nameInput = document.getElementById('name');
+    const errorDiv = document.getElementById('name-error');
+    
+    if (!nameInput) return true;
+    
+    const name = nameInput.value.trim();
+    
+    // Limpiar error previo
+    if (errorDiv) {
+        errorDiv.classList.add('hidden');
+        errorDiv.textContent = '';
+    }
+    nameInput.classList.remove('border-red-500', 'dark:border-red-500');
+    
+    // Validaciones
+    if (name.length === 0) {
+        showError('name', 'El nombre del polígono es obligatorio.');
+        return false;
+    }
+    
+    if (name.length < 4) {
+        showError('name', 'El nombre debe tener al menos 4 caracteres.');
+        return false;
+    }
+    
+    if (name.length > 40) {
+        showError('name', 'El nombre no puede tener más de 40 caracteres.');
+        return false;
+    }
+    
+    // Validar que no tenga caracteres especiales no permitidos
+    const invalidChars = /[^A-Za-záéíóúÁÉÍÓÚüÜñÑ0-9 ]/g;
+    if (invalidChars.test(name)) {
+        showError('name', 'Solo se permiten letras, números y espacios.');
+        return false;
+    }
+    
+    return true;
+}
+
+function showError(fieldId, message) {
+    const input = document.getElementById(fieldId);
+    const errorDiv = document.getElementById(`${fieldId}-error`);
+    
+    if (input) {
+        input.classList.add('border-red-500', 'dark:border-red-500');
+        // Animación shake
+        input.classList.add('shake-animation');
+        setTimeout(() => input.classList.remove('shake-animation'), 500);
+    }
+    
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.classList.remove('hidden');
+    }
+}
+
+function clearError(fieldId) {
+    const input = document.getElementById(fieldId);
+    const errorDiv = document.getElementById(`${fieldId}-error`);
+    
+    if (input) {
+        input.classList.remove('border-red-500', 'dark:border-red-500');
+    }
+    
+    if (errorDiv) {
+        errorDiv.classList.add('hidden');
+        errorDiv.textContent = '';
+    }
+}
+
+// =============================================
 // CÓDIGO PARA EL MODAL Y CONTROLES
 // =============================================
 
@@ -1425,15 +1543,12 @@ function validatePolygonForm() {
         return false;
     }
     
-    const nameInput = document.getElementById('name');
-    if (!nameInput || !nameInput.value.trim()) {
-        showAlert('El nombre del polígono es requerido', 'warning');
+    // ✅ VALIDAR NOMBRE (NUEVO)
+    if (!validatePolygonName()) {
+        const nameInput = document.getElementById('name');
         if (nameInput) {
             nameInput.focus();
-            nameInput.classList.add('border-red-500');
-            setTimeout(() => {
-                nameInput.classList.remove('border-red-500');
-            }, 2000);
+            nameInput.select();
         }
         return false;
     }
@@ -1797,6 +1912,26 @@ function setupEventListeners() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeCoordinateModal();
+        }
+    });
+
+    // Validación en tiempo real del nombre
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.getElementById('name');
+        if (nameInput) {
+            nameInput.addEventListener('input', function() {
+                updateNameCounter(this);
+                // Limpiar error mientras el usuario escribe
+                const errorDiv = document.getElementById('name-error');
+                if (errorDiv) {
+                    errorDiv.classList.add('hidden');
+                }
+                this.classList.remove('border-red-500', 'dark:border-red-500');
+            });
+            
+            nameInput.addEventListener('blur', function() {
+                validatePolygonName();
+            });
         }
     });
 }
@@ -2198,5 +2333,35 @@ textarea:focus, select:focus, input[type="text"]:focus, input[type="number"]:foc
 /* Animación suave para el redimensionamiento del mapa */
 #map .ol-viewport {
     transition: transform 0.3s ease-out;
+}
+
+/* Contador de caracteres */
+#name-counter {
+    transition: color 0.3s ease;
+    font-weight: 500;
+    min-width: 40px;
+    text-align: right;
+}
+
+#name-counter.text-green-600 {
+    color: #16a34a;
+}
+
+#name-counter.text-yellow-600 {
+    color: #ca8a04;
+}
+
+#name-counter.text-red-600 {
+    color: #dc2626;
+}
+
+/* Estilos para el campo inválido */
+.border-red-500 {
+    border-color: #ef4444 !important;
+}
+
+.border-red-500:focus {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
 }
 </style>
