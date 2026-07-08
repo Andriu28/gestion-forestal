@@ -35,7 +35,7 @@
             <!-- Contenido del card -->
             <div class="px-3 sm:px-4 md:px-5 sm:pb-4">
                 <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                    {{ __('¿Olvidaste tu contraseña? No hay problema. Solo dinos tu dirección de correo electrónico y te enviaremos un enlace para restablecerla, el cual te permitirá elegir una nueva.') }}
+                    {{ __('¿No recuerdas tu contraseña? Tranquilo, solo escribe tu correo y recibirás un enlace para crear una nueva contraseña en unos segundos.') }}
                 </div>
 
                 
