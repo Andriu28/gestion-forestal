@@ -8,6 +8,7 @@
    "require": {
         "php": "^8.2",
         "ext-bcmath": "*",
+        "ext-zip": "*",
         "barryvdh/laravel-dompdf": "^3.1",
         "guzzlehttp/guzzle": "^7.9",
         "laravel-lang/common": "^6.7",
@@ -74,16 +75,13 @@
             "dont-discover": []
         }
     },
-   "config": {
+    "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
-        },
-        "platform": {
-            "ext-zip": "1.22.0"
         }
     },
     "minimum-stability": "stable",
