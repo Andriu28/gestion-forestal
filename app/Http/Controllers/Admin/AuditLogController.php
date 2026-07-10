@@ -24,14 +24,22 @@ class AuditLogController extends Controller
 
         // Búsqueda por texto
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('description', 'like', "%{$search}%")
-                    ->orWhereHas('causer', function($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%")
-                            ->orWhere('role', 'like', "%{$search}%");
-                    })
-                    ->orWhereRaw('properties::text LIKE ?', ["%{$search}%"]);
+            $search = trim($search); // limpiamos espacios
+            $normalizedSearch = '%' . $search . '%';
+
+            $query->where(function($q) use ($search, $normalizedSearch) {
+                // Buscar en descripción (con unaccent + lower)
+                $q->whereRaw("unaccent(LOWER(description)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
+
+                // Buscar en propiedades (convertido a texto)
+                $q->orWhereRaw("unaccent(LOWER(properties::text)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
+
+                // Buscar en el causer (relación con User)
+                $q->orWhereHas('causer', function($q2) use ($normalizedSearch) {
+                    $q2->whereRaw("unaccent(LOWER(name)) ILIKE unaccent(LOWER(?))", [$normalizedSearch])
+                        ->orWhereRaw("unaccent(LOWER(email)) ILIKE unaccent(LOWER(?))", [$normalizedSearch])
+                        ->orWhereRaw("unaccent(LOWER(role)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
+                });
             });
         }
 
@@ -122,14 +130,22 @@ class AuditLogController extends Controller
 
         // Búsqueda por texto
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('description', 'like', "%{$search}%")
-                    ->orWhereHas('causer', function($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%")
-                            ->orWhere('role', 'like', "%{$search}%");
-                    })
-                    ->orWhereRaw('properties::text LIKE ?', ["%{$search}%"]);
+            $search = trim($search); // limpiamos espacios
+            $normalizedSearch = '%' . $search . '%';
+
+            $query->where(function($q) use ($search, $normalizedSearch) {
+                // Buscar en descripción (con unaccent + lower)
+                $q->whereRaw("unaccent(LOWER(description)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
+
+                // Buscar en propiedades (convertido a texto)
+                $q->orWhereRaw("unaccent(LOWER(properties::text)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
+
+                // Buscar en el causer (relación con User)
+                $q->orWhereHas('causer', function($q2) use ($normalizedSearch) {
+                    $q2->whereRaw("unaccent(LOWER(name)) ILIKE unaccent(LOWER(?))", [$normalizedSearch])
+                        ->orWhereRaw("unaccent(LOWER(email)) ILIKE unaccent(LOWER(?))", [$normalizedSearch])
+                        ->orWhereRaw("unaccent(LOWER(role)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
+                });
             });
         }
 
@@ -208,5 +224,13 @@ class AuditLogController extends Controller
         $pdf->setPaper('A4', 'landscape');
 
         return $pdf->download('auditoria_' . now()->format('Y-m-d_H-i') . '.pdf');
+    }
+
+    /**
+     * Normaliza un texto para búsqueda (minúsculas + sin acentos)
+     */
+    private function normalizedLike($column, $search)
+    {
+        return "unaccent(LOWER({$column})) ILIKE unaccent(LOWER('%{$search}%'))";
     }
 }
