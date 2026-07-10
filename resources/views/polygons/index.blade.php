@@ -83,7 +83,7 @@
                                     
                                     @foreach($polygons as $polygon)
                                         <tr id="polygon-row-{{ $polygon->id }}" class="hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
-                                            <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20  px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $polygon->name }}</td>
+                                            <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20  px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400"> {{ Str::limit($polygon->name, 30) }}</td>
                                             <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20  px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                                 {{ $polygon->producer_name }}
                                             </td>
