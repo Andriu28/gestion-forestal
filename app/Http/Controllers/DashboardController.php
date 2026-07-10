@@ -123,14 +123,21 @@ class DashboardController extends Controller
             ->where('activity_log.created_at', '>=', $now->copy()->subDays(7))
             ->whereNotNull('causer_id')
             ->leftJoin('users', 'activity_log.causer_id', '=', 'users.id')
-            ->where('users.role', '!=', 'tecnico') // ← filtro adicional
+            ->where('users.role', '!=', 'tecnico')                              // ← ya existía
+            ->where('activity_log.description', 'not like', '%iniciado sesión%') // ← NUEVO
+            ->where('activity_log.description', 'not like', '%cerrado sesión%') // ← NUEVO
             ->groupBy('causer_id')
             ->orderByDesc('activity_count')
             ->limit(5)
             ->get();
 
         // ----- Actividades recientes -----------------------------------------
-        $recentActivities = Activity::with(['causer', 'subject'])->latest()->take(10)->get();
+        $recentActivities = Activity::with(['causer', 'subject'])
+            ->where('description', 'not like', '%iniciado sesión%')
+            ->where('description', 'not like', '%cerrado sesión%')
+            ->latest()
+            ->take(10)
+            ->get();
 
         return view('dashboard', compact(
             // Usuarios

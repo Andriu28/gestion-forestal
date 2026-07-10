@@ -149,7 +149,7 @@
     {{-- Top usuarios activos --}}
     <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow p-5">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Más activos (7 días)</h3>
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Desempeño del trabajador</h3>
             <span class="text-xs text-gray-400">por acciones</span>
         </div>
         <div class="space-y-3">
