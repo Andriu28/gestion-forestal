@@ -179,7 +179,7 @@
                         'polygons.edit'    => 'Editar Polígono',
                         'polygons.map'     => 'Mapa de Polígonos',
                         'polygons.show'    => 'Ver Polígono',
-                        'polygons.deleted' => 'Eliminados',
+                        'polygons.deleted' => 'Deshabilitados',
                         'polygons.details' => 'Detalles'
                     ]
                 ],
