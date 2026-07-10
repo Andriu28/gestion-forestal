@@ -115,7 +115,6 @@
         <div class="space-y-4">
             @foreach([
                 ['label' => 'Administradores', 'color' => 'bg-blue-500',   'text' => 'text-blue-600',   'pct' => $adminPercentage,   'count' => $roleDistribution['administrador'] ?? 0],
-                ['label' => 'Técnicos',         'color' => 'bg-indigo-500', 'text' => 'text-indigo-600', 'pct' => $tecnicoPercentage, 'count' => $roleDistribution['tecnico'] ?? 0],
                 ['label' => 'Básicos',           'color' => 'bg-teal-400',  'text' => 'text-teal-600',   'pct' => $basicPercentage,   'count' => $roleDistribution['basico'] ?? 0],
             ] as $role)
             <div>

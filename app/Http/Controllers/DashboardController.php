@@ -30,15 +30,28 @@ class DashboardController extends Controller
     {
         $now = Carbon::now();
 
-        // ----- Usuarios -------------------------------------------------------
-        $totalUsers       = User::count();
-        $enabledUsers     = $totalUsers;
-        $trashedUsers     = User::onlyTrashed()->count();
-        $activeUsersCount = $this->getActiveUsersCount();
-        $newUsersToday    = User::whereDate('created_at', today())->count();
+        // ---- Filtro base para excluir técnicos en todas las consultas de usuarios ----
+        $userQuery = User::where('role', '!=', 'tecnico');
 
-        $thisWeekUsers = User::whereBetween('created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()])->count();
-        $lastWeekUsers = User::whereBetween('created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()])->count();
+        // ----- Usuarios (sin técnicos) ----------------------------------------------
+        $totalUsers       = (clone $userQuery)->count();
+        $enabledUsers     = $totalUsers; // si no hay deshabilitados, es igual
+        $trashedUsers     = (clone $userQuery)->onlyTrashed()->count();
+        $activeUsersCount = $this->getActiveUsersCount(); // esta función también debe filtrar
+        $newUsersToday    = (clone $userQuery)->whereDate('created_at', today())->count();
+
+        $thisWeekUsers = (clone $userQuery)
+            ->whereBetween('created_at', [
+                $now->copy()->startOfWeek(),
+                $now->copy()->endOfWeek()
+            ])->count();
+
+        $lastWeekUsers = (clone $userQuery)
+            ->whereBetween('created_at', [
+                $now->copy()->subWeek()->startOfWeek(),
+                $now->copy()->subWeek()->endOfWeek()
+            ])->count();
+
         $userGrowthPercentage = $this->growthRate($thisWeekUsers, $lastWeekUsers);
 
         // ----- Productores ----------------------------------------------------
@@ -63,15 +76,22 @@ class DashboardController extends Controller
         $lastWeekActivities = Activity::whereBetween('created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()])->count();
         $activityGrowthPercentage = $this->growthRate($activitiesThisWeek, $lastWeekActivities);
 
-        // ----- Distribución de roles ------------------------------------------
-        $roleDistribution = User::select('role', DB::raw('count(*) as count'))
+        // ----- Distribución de roles (excluyendo técnicos) -----------------------
+        $roleDistribution = User::where('role', '!=', 'tecnico')
+            ->select('role', DB::raw('count(*) as count'))
             ->groupBy('role')
             ->get()
             ->pluck('count', 'role');
 
-        $adminPercentage   = $totalUsers > 0 ? round((($roleDistribution['administrador'] ?? 0) / $totalUsers) * 100, 1) : 0;
-        $tecnicoPercentage = $totalUsers > 0 ? round((($roleDistribution['tecnico'] ?? 0) / $totalUsers) * 100, 1) : 0;
-        $basicPercentage   = $totalUsers > 0 ? round((($roleDistribution['basico'] ?? 0) / $totalUsers) * 100, 1) : 0;
+        // Si queremos mostrar todos los roles, pero solo los que no son técnicos
+        // Calculamos porcentajes sobre el total sin técnicos
+        $adminPercentage = $totalUsers > 0
+            ? round((($roleDistribution['administrador'] ?? 0) / $totalUsers) * 100, 1)
+            : 0;
+        $basicPercentage = $totalUsers > 0
+            ? round((($roleDistribution['basico'] ?? 0) / $totalUsers) * 100, 1)
+            : 0;
+        // Nota: ya no mostramos porcentaje de técnicos
 
         // ----- Actividad mensual (últimos 6 meses) — para gráfico ------------
         $monthlyActivity = Activity::select(
@@ -94,7 +114,7 @@ class DashboardController extends Controller
             ->get()
             ->map(fn ($r) => ['month' => Carbon::parse($r->month)->translatedFormat('M Y'), 'count' => $r->count]);
 
-        // ----- Top usuarios activos (últimos 7 días) -------------------------
+        // ----- Top usuarios activos (últimos 7 días), excluyendo técnicos --------
         $topActiveUsers = Activity::select(
                 'causer_id',
                 DB::raw('COUNT(*) as activity_count'),
@@ -103,6 +123,7 @@ class DashboardController extends Controller
             ->where('activity_log.created_at', '>=', $now->copy()->subDays(7))
             ->whereNotNull('causer_id')
             ->leftJoin('users', 'activity_log.causer_id', '=', 'users.id')
+            ->where('users.role', '!=', 'tecnico') // ← filtro adicional
             ->groupBy('causer_id')
             ->orderByDesc('activity_count')
             ->limit(5)
@@ -122,7 +143,7 @@ class DashboardController extends Controller
             // Actividades
             'activitiesToday', 'activitiesThisWeek', 'activitiesThisMonth', 'activityGrowthPercentage',
             // Roles
-            'roleDistribution', 'adminPercentage', 'tecnicoPercentage', 'basicPercentage',
+            'roleDistribution', 'adminPercentage', 'basicPercentage',
             // Gráficos
             'monthlyActivity', 'polygonsByMonth',
             // Rankings y recientes
@@ -150,15 +171,22 @@ class DashboardController extends Controller
             return DB::table('sessions')
                 ->where('last_activity', '>=', $threshold->timestamp)
                 ->whereNotNull('user_id')
+                ->whereIn('user_id', function ($query) {
+                    $query->select('id')->from('users')->where('role', '!=', 'tecnico');
+                })
                 ->distinct('user_id')
                 ->count('user_id');
         }
 
         if (Schema::hasColumn('users', 'last_seen_at')) {
-            return User::where('last_seen_at', '>=', $threshold)->count();
+            return User::where('role', '!=', 'tecnico')
+                ->where('last_seen_at', '>=', $threshold)
+                ->count();
         }
 
-        return User::where('updated_at', '>=', $threshold)->count();
+        return User::where('role', '!=', 'tecnico')
+            ->where('updated_at', '>=', $threshold)
+            ->count();
     }
 
     public function showAuditLog()
