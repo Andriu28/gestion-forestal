@@ -227,6 +227,7 @@ Route::middleware(['auth', 'verified', 'is.admin'])
         
         // Auditoría
         Route::get('/audit', [AuditLogController::class, 'showAuditLog'])->name('audit');
+        Route::get('/audit/pdf', [AuditLogController::class, 'generatePdf'])->name('audit.pdf');
     });
 
 /*

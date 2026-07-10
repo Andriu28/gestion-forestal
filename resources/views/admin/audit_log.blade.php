@@ -1,3 +1,10 @@
+@php
+$roleTranslations = [
+    'administrador' => 'Administrador',
+    'tecnico'       => 'Técnico',
+    'basico'        => 'Básico',
+];
+@endphp
 <x-app-layout>
     <div class="mx-auto">
         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
@@ -5,16 +12,109 @@
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
                     {{ __('Registro de Actividades') }}
                 </h2>
+
+                <div class="flex justify-between items-center mb-4">
+                    <div class="space-x-4">
+                        
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        
+                         <!-- Botón para generar PDF -->
+                        <a href="{{ route('admin.audit.pdf', request()->query()) }}" 
+                            class="px-4 py-2 bg-red-600/90 text-white rounded-md hover:bg-red-600 flex items-center space-x-2"
+                            title="Generar PDF">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            <span>{{ __('PDF') }}</span>
+                        </a>
+
+                    </div>
+                </div>
                 
                 <!-- Filtros -->
                 <form method="GET" action="{{ route('admin.audit') }}" class="mb-6">
-                    <div class="flex flex-wrap gap-4">
-                        <input type="text" name="search" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                               placeholder="Buscar por usuario o actividad..." value="{{ $search ?? '' }}">
-                        <button type="submit" class="px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white rounded-lg transition-all">Filtrar</button>
-                        @if(request('search'))
-                            <a href="{{ route('admin.audit') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</a>
-                        @endif
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Búsqueda por texto -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar</label>
+                            <input type="text" name="search" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                placeholder="Usuario o actividad..." value="{{ $search ?? '' }}">
+                        </div>
+
+                        <!-- Rango de fechas -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha desde</label>
+                            <input type="date" name="date_from" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                value="{{ $dateFrom ?? '' }}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha hasta</label>
+                            <input type="date" name="date_to" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                value="{{ $dateTo ?? '' }}">
+                        </div>
+
+                        <!-- Rol del usuario -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Rol</label>
+                            <select name="role" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                <option value="all" {{ ($role ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
+                                <option value="administrador" {{ ($role ?? '') == 'administrador' ? 'selected' : '' }}>Administrador</option>
+                                <option value="tecnico" {{ ($role ?? '') == 'tecnico' ? 'selected' : '' }}>Técnico</option>
+                                <option value="basico" {{ ($role ?? '') == 'basico' ? 'selected' : '' }}>Básico</option>
+                                <option value="system" {{ ($role ?? '') == 'system' ? 'selected' : '' }}>Sistema</option>
+                            </select>
+                        </div>
+
+                        <!-- Usuario específico -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Usuario</label>
+                            <select name="user_id" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                <option value="all" {{ ($userId ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}" {{ ($userId ?? '') == $user->id ? 'selected' : '' }}>
+                                        {{ $user->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Tipo de evento -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Evento</label>
+                            <select name="event_type" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                <option value="all" {{ ($eventType ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
+                                <option value="created" {{ ($eventType ?? '') == 'created' ? 'selected' : '' }}>Creado</option>
+                                <option value="updated" {{ ($eventType ?? '') == 'updated' ? 'selected' : '' }}>Actualizado</option>
+                                <option value="deleted" {{ ($eventType ?? '') == 'deleted' ? 'selected' : '' }}>Eliminado</option>
+                                <option value="restored" {{ ($eventType ?? '') == 'restored' ? 'selected' : '' }}>Restaurado</option>
+                                <option value="login" {{ ($eventType ?? '') == 'login' ? 'selected' : '' }}>Inicio de sesión</option>
+                                <option value="logout" {{ ($eventType ?? '') == 'logout' ? 'selected' : '' }}>Cierre de sesión</option>
+                                <option value="role_change" {{ ($eventType ?? '') == 'role_change' ? 'selected' : '' }}>Cambio de rol</option>
+                            </select>
+                        </div>
+
+                        <!-- Modelo afectado -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Modelo</label>
+                            <select name="subject_type" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                <option value="all" {{ ($subjectType ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
+                                <option value="User" {{ ($subjectType ?? '') == 'User' ? 'selected' : '' }}>Usuario</option>
+                                <option value="Polygon" {{ ($subjectType ?? '') == 'Polygon' ? 'selected' : '' }}>Polígono</option>
+                                <option value="Producer" {{ ($subjectType ?? '') == 'Producer' ? 'selected' : '' }}>Productor</option>
+                            </select>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="flex items-end space-x-2">
+                            <button type="submit" class="px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white rounded-lg transition-all">Filtrar</button>
+                            @if(request()->anyFilled(['search', 'date_from', 'date_to', 'role', 'user_id', 'event_type', 'subject_type']))
+                                <a href="{{ route('admin.audit') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Limpiar</a>
+                            @endif
+                        </div>
                     </div>
                 </form>
 
