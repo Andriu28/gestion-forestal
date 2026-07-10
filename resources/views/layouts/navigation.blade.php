@@ -152,75 +152,102 @@
         @php
             $routeHierarchy = [
                 'dashboard' => [
-                    'title' => 'Inicio',
+                    'title' => 'Panel de Control',
+                    'route' => 'dashboard',
                     'sections' => [
                         'dashboard' => 'Resumen'
                     ]
                 ],
                 'admin.users.*' => [
                     'title' => 'Usuarios',
+                    'route' => 'admin.users.index',
                     'sections' => [
-                        'admin.users.index' => 'Lista de habilitados',
-                        'admin.users.disabled' => 'Lista de deshabilitados',
-                        'admin.users.create' => 'Crear',
-                        'admin.users.edit' => 'Editar usuario',
-                        'admin.users.show' => 'Ver usuario'
+                        'admin.users.index'   => 'Lista de habilitados',
+                        'admin.users.disabled'=> 'Lista de Deshabilitados',
+                        'admin.users.create'  => 'Crear',
+                        'admin.users.edit'    => 'Editar Usuario',
+                        // 'show' no existe en resource (except) pero lo dejamos por si acaso
+                        'admin.users.show'    => 'Ver usuario'
                     ]
                 ],
                 'polygons*' => [
                     'title' => 'Polígonos',
+                    'route' => 'polygons.index',
                     'sections' => [
-                        'polygons.index' => 'Resumen',
-                        'polygons.create' => 'Crear',
-                        'polygons.edit' => 'Editar polígono',
-                        'polygons.map' => 'Mapa de polígonos',
-                        'polygons.show' => 'Ver polígono'
+                        'polygons.index'   => 'Resumen',
+                        'polygons.create'  => 'Crear',
+                        'polygons.edit'    => 'Editar Polígono',
+                        'polygons.map'     => 'Mapa de Polígonos',
+                        'polygons.show'    => 'Ver Polígono',
+                        'polygons.deleted' => 'Eliminados',
+                        'polygons.details' => 'Detalles'
                     ]
                 ],
                 'producers*' => [
                     'title' => 'Productores',
+                    'route' => 'producers.index',
                     'sections' => [
-                        'producers.index' => 'Resumen',
-                        'producers.create' => 'Crear',
-                        'producers.edit' => 'Editar',
-                        'producers.show' => 'Ver productor'
+                        'producers.index'   => 'Resumen',
+                        'producers.create'  => 'Crear',
+                        'producers.edit'    => 'Editar',
+                        'producers.show'    => 'Ver productor',
+                        'producers.deleted' => 'Deshabilitados',
+                        'producers.details' => 'Detalles'
                     ]
                 ],
                 'deforestation*' => [
-                    'title' => 'Deforestación',
+                    'title' => 'Analisis',
+                    'route' => 'deforestation.create',  // punto de entrada del módulo
                     'sections' => [
-                        'deforestation.create' => 'Análisis',
-                        'deforestation.analyze' => 'Resultados'
+                        'deforestation.create'         => 'Análisis',
+                        'deforestation.analyze'        => 'Resultados',
+                        'deforestation.results'        => 'Resultados',
+                        'deforestation.multiple-results'=> 'Resultados',
+                        'deforestation.export'         => 'Exportar',
+                        'deforestation.report'         => 'Generar Reporte'
                     ]
                 ],
                 'admin.audit' => [
                     'title' => 'Historial',
+                    'route' => 'admin.audit',
                     'sections' => [
-                        'admin.audit' => 'Registros de auditoría'
+                        'admin.audit' => 'Registros de Auditoría'
                     ]
                 ],
                 'profile.*' => [
                     'title' => 'Perfil de Usuario',
+                    'route' => 'profile.edit',
                     'sections' => [
-                        'profile' => 'Editar perfil'
+                        'profile.edit' => 'Editar Perfil'
                     ]
                 ],
                 'support' => [
-                    'title' => 'Manual de usuario',
+                    'title' => 'Manual de Usuario',
+                    'route' => 'support',
                     'sections' => [
                         'support' => 'Resumen'
                     ]
+                ],
+                // Opcional: añade 'developers' si quieres breadcrumb para esa página
+                'developers' => [
+                    'title' => 'Desarrolladores',
+                    'route' => 'developers',
+                    'sections' => [
+                        'developers' => 'Equipo'
+                    ]
                 ]
             ];
-            
+
             $currentRoute = Route::currentRouteName();
             $currentTitle = 'Página Principal';
             $currentSection = 'Resumen';
-            
+            $currentGroupRoute = '#';
+
             foreach ($routeHierarchy as $routePattern => $routeData) {
                 if (request()->routeIs($routePattern)) {
                     $currentTitle = $routeData['title'];
-                    
+                    $currentGroupRoute = $routeData['route'];
+
                     // Buscar la sección específica
                     foreach ($routeData['sections'] as $sectionRoute => $sectionName) {
                         if (request()->routeIs($sectionRoute)) {
@@ -228,8 +255,8 @@
                             break;
                         }
                     }
-                    
-                    // Si no encontramos una sección específica, usar la primera
+
+                    // Si no se encontró, usar la primera sección del grupo
                     if ($currentSection === 'Resumen' && !empty($routeData['sections'])) {
                         $currentSection = reset($routeData['sections']);
                     }
@@ -247,15 +274,26 @@
                         </svg>
                     </button>
                     <nav class="hidden sm:flex items-center space-x-2 md:space-x-3 text-sm">
-                        <div class="text-gray-800 dark:text-custom-gold-medium hover:text-gray-950 px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700/50">
-                            {{ $currentTitle }}
-                        </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon w-3 h-3 md:w-4 md:h-4 text-gray-400 lucide-chevron-right">
-                            <path d="m9 18 6-6-6-6"/>
-                        </svg>
-                        <span class="text-gray-900 px-2 md:px-3 py-1 md:py-2 bg-stone-200 dark:bg-stone-400 rounded-lg font-medium">
-                            {{ $currentSection }}
-                        </span>
+                        @if ($currentRoute === $currentGroupRoute)
+                            <!-- Estamos en la página principal del grupo: solo mostramos el título (sin enlace) -->
+                            <span class="text-gray-900 px-2 md:px-3 py-1 md:py-2 bg-stone-200 dark:bg-stone-400 rounded-lg font-medium">
+                                {{ $currentTitle }}
+                            </span>
+                        @else
+                            <!-- Primer nivel: enlace a la ruta principal del módulo -->
+                            <a href="{{ route($currentGroupRoute) }}" 
+                            class="text-gray-800 dark:text-custom-gold-medium hover:text-gray-950 px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700/50 transition">
+                                {{ $currentTitle }}
+                            </a>
+                            <!-- Separador -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 md:w-4 md:h-4 text-gray-400">
+                                <path d="m9 18 6-6-6-6"/>
+                            </svg>
+                            <!-- Segundo nivel (página actual, sin enlace) -->
+                            <span class="text-gray-900 px-2 md:px-3 py-1 md:py-2 bg-stone-200 dark:bg-stone-400 rounded-lg font-medium">
+                                {{ $currentSection }}
+                            </span>
+                        @endif
                     </nav>
                 </div>
                 <div class="flex items-center space-x-2 md:space-x-4">
