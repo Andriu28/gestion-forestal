@@ -97,7 +97,7 @@
                                                 @if($polygon->trashed())
                                                     <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">Eliminado</span>
                                                 @else
-                                                    <span class="inline-block px-3 py-1 text-xs font-semibold {{ $polygon->is_active ? 'bg-green-600 text-white' : 'bg-yellow-500 text-white' }} rounded-full">
+                                                    <span class="inline-block px-3 py-1 text-xs font-semibold {{ $polygon->is_active ? 'bg-green-600/60 text-white' : 'bg-yellow-500/60 text-white' }} rounded-full">
                                                         {{ $polygon->is_active ? 'Activo' : 'Inactivo' }}
                                                     </span>
                                                 @endif
@@ -107,7 +107,7 @@
                                                 <div class="flex items-center gap-2">
                                                     @if(!$polygon->trashed())
                                                         <button type="button" 
-                                                                class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                                class="inline-flex items-center text-gray-400 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Ver detalles"
                                                                 onclick="showPolygonDetails({{ $polygon->id }})">
                                                             <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
@@ -117,28 +117,29 @@
                                                         </button>
 
                                                         <form id="analyze-form-{{ $polygon->id }}" action="{{ route('deforestation.polygon') }}" method="POST" style="display: none;">
-                                                                @csrf
-                                                                <input type="hidden" name="id" value="{{ $polygon->id }}">
-                                                                <input type="hidden" name="name" value="{{ $polygon->name }}">
-                                                                <input type="hidden" name="geometry" value="{{ $polygon->geometry }}">
-                                                                <input type="hidden" name="area_ha" value="{{ $polygon->area_ha }}">
-                                                                <input type="hidden" name="description" value="{{ $polygon->description }}">
-                                                                <input type="hidden" name="start_year" id="start-{{ $polygon->id }}">
-                                                                <input type="hidden" name="end_year" id="end-{{ $polygon->id }}">
-                                                                <input type="hidden" name="save_analysis" id="save-{{ $polygon->id }}"> </form>
+                                                            @csrf
+                                                            <input type="hidden" name="id" value="{{ $polygon->id }}">
+                                                            <input type="hidden" name="name" value="{{ $polygon->name }}">
+                                                            <input type="hidden" name="geometry" value="{{ $polygon->geometry }}">
+                                                            <input type="hidden" name="area_ha" value="{{ $polygon->area_ha }}">
+                                                            <input type="hidden" name="description" value="{{ $polygon->description }}">
+                                                            <input type="hidden" name="start_year" id="start-{{ $polygon->id }}">
+                                                            <input type="hidden" name="end_year" id="end-{{ $polygon->id }}">
+                                                            <input type="hidden" name="save_analysis" id="save-{{ $polygon->id }}">
+                                                        </form>
 
-                                                            <button type="button" 
-                                                                    onclick="confirmAnalysis({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')"
-                                                                    class="inline-flex items-center text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
-                                                                    title="Analizar Deforestación">
-                                                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
-                                                                    <path d="M3 3v18h18"/>
-                                                                    <path d="m19 9-5 5-4-4-3 3"/>
-                                                                </svg>
-                                                            </button>   
+                                                        <button type="button" 
+                                                                onclick="confirmAnalysis({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')"
+                                                                class="inline-flex items-center text-gray-400 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
+                                                                title="Analizar Deforestación">
+                                                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                                <path d="M3 3v18h18"/>
+                                                                <path d="m19 9-5 5-4-4-3 3"/>
+                                                            </svg>
+                                                        </button>   
 
                                                         <a href="{{ route('polygons.edit', $polygon) }}" 
-                                                        class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
+                                                        class="inline-flex items-center text-gray-400 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                                         title="Editar">
                                                             <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                 <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
@@ -150,15 +151,15 @@
                                                                 title="{{ $polygon->is_active ? 'Desactivar' : 'Activar' }}"
                                                                 onclick="handleTogglePolygonStatus({{ $polygon->id }}, '{{ addslashes($polygon->name) }}', {{ $polygon->is_active ? 'true' : 'false' }})">
                                                             @if($polygon->is_active)
-                                                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
-                                                                    <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
-                                                                    <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
-                                                                    <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
+                                                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 w-7 h-7">
+                                                                    <circle cx="12" cy="12" r="10" class="fill-gray-100 dark:fill-gray-700"/>
+                                                                    <line x1="15" y1="9" x2="9" y2="15" class="stroke-gray-400 dark:stroke-gray-400"/>
+                                                                    <line x1="9" y1="9" x2="15" y2="15" class="stroke-gray-400 dark:stroke-gray-400"/>
                                                                 </svg>
                                                             @else
-                                                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
-                                                                    <circle cx="12" cy="12" r="10" class="fill-green-100"/>
-                                                                    <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
+                                                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 w-7 h-7">
+                                                                    <circle cx="12" cy="12" r="10" class="fill-gray-100 dark:fill-gray-700"/>
+                                                                    <path d="m8 12 2.5 2.5L16 9" class="stroke-gray-400 dark:stroke-gray-400"/>
                                                                 </svg>
                                                             @endif
                                                         </button>
@@ -168,7 +169,7 @@
                                                                 class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Eliminar"
                                                                 onclick="handleDeletePolygon({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                 <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                                                             </svg>
                                                         </button>
@@ -181,6 +182,7 @@
                                                                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
                                                             </svg>
                                                         </button>
+
                                                     @endif
                                                 </div>
                                             </td>
