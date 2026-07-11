@@ -92,6 +92,11 @@ class Polygon extends Model
         return $this->hasMany(Deforestation::class, 'polygon_id');
     }
 
+    public function deforestations()
+    {
+        return $this->hasMany(Deforestation::class, 'polygon_id');
+    }
+
     // =========================================================================
     // Scopes
     // =========================================================================

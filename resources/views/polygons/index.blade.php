@@ -69,54 +69,145 @@
 
                     <!-- Filtros -->
                     <form method="GET" action="{{ route('polygons.index') }}" class="mb-6">
-                        <div class="flex flex-wrap gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <!-- Búsqueda por texto -->
-                            <input type="text" name="search" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                placeholder="Buscar por nombre, descripción o productor..." value="{{ $search ?? '' }}">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar</label>
+                                <input type="text" name="search" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70" 
+                                    placeholder="Nombre, descripción o productor..." value="{{ $search ?? '' }}">
+                            </div>
 
-                            <!-- Fecha desde -->
-                            <input type="date" name="date_from" 
-                                class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                value="{{ $dateFrom ?? '' }}" max="{{ now()->toDateString() }}">
+                            <!-- Fechas -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha desde</label>
+                                <input type="date" name="date_from" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70" 
+                                    value="{{ $dateFrom ?? '' }}" max="{{ now()->toDateString() }}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha hasta</label>
+                                <input type="date" name="date_to" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70" 
+                                    value="{{ $dateTo ?? '' }}" max="{{ now()->toDateString() }}">
+                            </div>
 
-                            <!-- Fecha hasta -->
-                            <input type="date" name="date_to" 
-                                class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                value="{{ $dateTo ?? '' }}" max="{{ now()->toDateString() }}">
+                            <!-- Estado y tipo (existentes) -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
+                                <select name="status" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70">
+                                    <option value="all" {{ ($status ?? '') == 'all' ? 'selected' : '' }}>Todos los estados</option>
+                                    <option value="active" {{ ($status ?? '') == 'active' ? 'selected' : '' }}>Activos</option>
+                                    <option value="inactive" {{ ($status ?? '') == 'inactive' ? 'selected' : '' }}>Inactivos</option>
+                                    <option value="deleted" {{ ($status ?? '') == 'deleted' ? 'selected' : '' }}>Eliminados</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
+                                <select name="type" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70">
+                                    <option value="all" {{ ($type ?? '') == 'all' ? 'selected' : '' }}>Todos</option>
+                                    <option value="with_producer" {{ ($type ?? '') == 'with_producer' ? 'selected' : '' }}>Con productor</option>
+                                    <option value="without_producer" {{ ($type ?? '') == 'without_producer' ? 'selected' : '' }}>Sin productor</option>
+                                </select>
+                            </div>
 
-                            <!-- Selects existentes: status, type -->
-                            <select name="status" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                <option value="all" {{ ($status ?? '') == 'all' ? 'selected' : '' }}>Todos los estados</option>
-                                <option value="active" {{ ($status ?? '') == 'active' ? 'selected' : '' }}>Activos</option>
-                                <option value="inactive" {{ ($status ?? '') == 'inactive' ? 'selected' : '' }}>Inactivos</option>
-                                <option value="deleted" {{ ($status ?? '') == 'deleted' ? 'selected' : '' }}>Eliminados</option>
-                            </select>
+                            <!-- Ubicación geográfica -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
+                                <select name="state_id" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70">
+                                    <option value="">Todos los estados</option>
+                                    @foreach($states as $state)
+                                        <option value="{{ $state->id }}" {{ ($stateId ?? '') == $state->id ? 'selected' : '' }}>{{ $state->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Municipio</label>
+                                <select name="municipality_id" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70">
+                                    <option value="">Todos los municipios</option>
+                                    @foreach($municipalities as $municipality)
+                                        <option value="{{ $municipality->id }}" {{ ($municipalityId ?? '') == $municipality->id ? 'selected' : '' }}>{{ $municipality->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Parroquia</label>
+                                <select name="parish_id" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70">
+                                    <option value="">Todas las parroquias</option>
+                                    @foreach($parishes as $parish)
+                                        <option value="{{ $parish->id }}" {{ ($parishId ?? '') == $parish->id ? 'selected' : '' }}>{{ $parish->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                            <select name="type" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                <option value="all" {{ ($type ?? '') == 'all' ? 'selected' : '' }}>Todos los tipos</option>
-                                <option value="with_producer" {{ ($type ?? '') == 'with_producer' ? 'selected' : '' }}>Con productor</option>
-                                <option value="without_producer" {{ ($type ?? '') == 'without_producer' ? 'selected' : '' }}>Sin productor</option>
-                            </select>
+                            <!-- Área -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Área mín (Ha)</label>
+                                <input type="number" name="area_min" step="0.0001" min="0" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70" 
+                                    value="{{ $areaMin ?? '' }}" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Área máx (Ha)</label>
+                                <input type="number" name="area_max" step="0.0001" min="0" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70" 
+                                    value="{{ $areaMax ?? '' }}" placeholder="999999">
+                            </div>
 
-                            <!-- Botón Filtrar -->
-                            <button type="submit" class="px-4 py-2 bg-gray-600/90 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center space-x-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel-icon lucide-funnel w-5 h-5">
-                                    <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
-                                </svg>
-                            </button>
+                            <!-- Productor -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Productor</label>
+                                <select name="producer_id" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70">
+                                    <option value="">Todos los productores</option>
+                                    @foreach($producers as $producer)
+                                        <option value="{{ $producer->id }}" {{ ($producerId ?? '') == $producer->id ? 'selected' : '' }}>
+                                            {{ $producer->name }} {{ $producer->lastname }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                            <!-- Limpiar filtros -->
-                            @if(request()->anyFilled(['search', 'date_from', 'date_to']) || (request('status') != 'all' && request()->has('status')) || (request('type') != 'all' && request()->has('type')))
-                                <a href="{{ route('polygons.index') }}" class="px-4 py-2 bg-gray-400/90 hover:bg-gray-300 text-white rounded-lg transition-all flex items-center space-x-2"> 
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brush-cleaning-icon lucide-brush-cleaning w-5 h-5">
-                                        <path d="m16 22-1-4"/><path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"/><path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z"/><path d="m8 22 1-4"/>
-                                    </svg>
-                                </a>
-                            @endif
+                            <!-- Deforestación -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Deforestación</label>
+                                <select name="has_deforestation" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70">
+                                    <option value="">Todos</option>
+                                    <option value="yes" {{ ($hasDeforestation ?? '') == 'yes' ? 'selected' : '' }}>Con registros</option>
+                                    <option value="no" {{ ($hasDeforestation ?? '') == 'no' ? 'selected' : '' }}>Sin registros</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Año de deforestación</label>
+                                <select name="deforestation_year" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70">
+                                    <option value="">Todos los años</option>
+                                    @foreach($years as $year)
+                                        <option value="{{ $year }}" {{ ($deforestationYear ?? '') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Pérdida -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Pérdida mín (%)</label>
+                                <input type="number" name="loss_min" step="0.01" min="0" max="100" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70" 
+                                    value="{{ $lossMin ?? '' }}" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Pérdida máx (%)</label>
+                                <input type="number" name="loss_max" step="0.01" min="0" max="100" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70" 
+                                    value="{{ $lossMax ?? '' }}" placeholder="100">
+                            </div>
+
+                            <!-- Botones de acción -->
+                            <div class="flex items-end space-x-2 col-span-full">
+                                <button type="submit" class="px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white rounded-lg transition-all">Filtrar</button>
+                                @if(request()->anyFilled(['search', 'date_from', 'date_to', 'status', 'type', 'parish_id', 'municipality_id', 'state_id', 'area_min', 'area_max', 'producer_id', 'has_deforestation', 'deforestation_year', 'loss_min', 'loss_max']) || (request('status') != 'all' && request()->has('status')) || (request('type') != 'all' && request()->has('type')))
+                                    <a href="{{ route('polygons.index') }}" class="px-4 py-2 bg-gray-400/90 hover:bg-gray-300 text-white rounded-lg transition-all flex items-center space-x-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                            <path d="m16 22-1-4"/><path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"/><path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z"/><path d="m8 22 1-4"/>
+                                        </svg>
+                                    </a>
+                                @endif
+                            </div>
                         </div>
                     </form>
 
-                    <!-- Mostrar errores de validación (si los hay) -->
+                    <!-- Mostrar errores de validación -->
                     @if ($errors->any())
                         <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
                             <ul class="list-disc list-inside">
@@ -1055,6 +1146,30 @@ document.addEventListener('DOMContentLoaded', function() {
     @endif
 });
 
+    // validacion de fechas 
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateFrom = document.querySelector('input[name="date_from"]');
+        const dateTo = document.querySelector('input[name="date_to"]');
 
+        function updateMinDate() {
+            if (dateFrom.value) {
+                dateTo.setAttribute('min', dateFrom.value);
+            } else {
+                dateTo.removeAttribute('min');
+            }
+        }
+
+        dateFrom.addEventListener('change', updateMinDate);
+        dateTo.addEventListener('change', function() {
+            if (dateFrom.value && dateTo.value < dateFrom.value) {
+                alert('La fecha "Hasta" no puede ser anterior a la fecha "Desde".');
+                dateTo.value = '';
+            }
+        });
+
+        // Inicializar
+        updateMinDate();
+    });
+    
 </script>
 

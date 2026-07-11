@@ -29,32 +29,55 @@ class PolygonController extends Controller
 
     public function index(Request $request): View
     {
+        // Obtener todos los filtros
         $search = $request->get('search');
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
         $status = $request->get('status', 'all');
-        $type   = $request->get('type', 'all');
+        $type = $request->get('type', 'all');
 
-        // Validar rango de fechas (trait)
+        // Nuevos filtros
+        $parishId = $request->get('parish_id');
+        $municipalityId = $request->get('municipality_id');
+        $stateId = $request->get('state_id');
+        $areaMin = $request->get('area_min');
+        $areaMax = $request->get('area_max');
+        $producerId = $request->get('producer_id');
+        $hasDeforestation = $request->get('has_deforestation'); // 'yes', 'no', 'all'
+        $deforestationYear = $request->get('deforestation_year');
+        $lossMin = $request->get('loss_min');
+        $lossMax = $request->get('loss_max');
+
+        // Validaciones
         $validationError = $this->validateDateRange($dateFrom, $dateTo);
         if ($validationError) {
             return $validationError;
         }
 
+        // Validar rango de área
+        if ($areaMin !== null && $areaMax !== null && $areaMax < $areaMin) {
+            return redirect()->back()->withErrors(['area_max' => 'El área máxima no puede ser menor que el área mínima.'])->withInput();
+        }
+
+        // Validar rango de pérdida
+        if ($lossMin !== null && $lossMax !== null && $lossMax < $lossMin) {
+            return redirect()->back()->withErrors(['loss_max' => 'La pérdida máxima no puede ser menor que la pérdida mínima.'])->withInput();
+        }
+
         $query = Polygon::with(['producer', 'parish.municipality.state']);
 
-        // Filtros de fecha (trait)
+        // Filtros de fecha
         $query = $this->applyDateFilters($query, $dateFrom, $dateTo, 'created_at');
 
-        
+        // Búsqueda flexible
         $query = $this->applySearchFilter(
             $query,
             $search,
-            ['name', 'description'],                      // columnas de polygons
-            ['producer' => ['name', 'lastname']]          // columnas de producers (sin email, sin rut)
+            ['name', 'description'],
+            ['producer' => ['name', 'lastname']]
         );
 
-        // Filtros específicos de polígonos
+        // Filtros específicos de estado y tipo
         match ($status) {
             'active'   => $query->where('is_active', true),
             'inactive' => $query->where('is_active', false),
@@ -68,17 +91,100 @@ class PolygonController extends Controller
             default            => null,
         };
 
+        // ----- NUEVOS FILTROS -----
+
+        // 1. Parroquia
+        if ($parishId) {
+            $query->where('parish_id', $parishId);
+        }
+
+        // 2. Municipio (a través de parish)
+        if ($municipalityId) {
+            $query->whereHas('parish', fn($q) => $q->where('municipality_id', $municipalityId));
+        }
+
+        // 3. Estado (a través de parish.municipality)
+        if ($stateId) {
+            $query->whereHas('parish.municipality', fn($q) => $q->where('state_id', $stateId));
+        }
+
+        // 4. Área mín/máx
+        if ($areaMin !== null) {
+            $query->where('area_ha', '>=', $areaMin);
+        }
+        if ($areaMax !== null) {
+            $query->where('area_ha', '<=', $areaMax);
+        }
+
+        // 5. Productor específico
+        if ($producerId) {
+            $query->where('producer_id', $producerId);
+        }
+
+        // 6. Deforestación (con o sin)
+        if ($hasDeforestation === 'yes') {
+            $query->whereHas('deforestations');
+        } elseif ($hasDeforestation === 'no') {
+            $query->whereDoesntHave('deforestations');
+        }
+
+        // 7. Rango de años (polígonos que tienen deforestación en ese año)
+        if ($deforestationYear) {
+            $query->whereHas('deforestations', fn($q) => $q->where('year', $deforestationYear));
+        }
+
+        // 8. Pérdida mín/máx (usando subconsulta para obtener el último registro o el máximo)
+        // Opción: pérdida máxima en cualquier registro
+        if ($lossMin !== null || $lossMax !== null) {
+            $query->whereHas('deforestations', function ($q) use ($lossMin, $lossMax) {
+                if ($lossMin !== null) {
+                    $q->where('percentage_loss', '>=', $lossMin);
+                }
+                if ($lossMax !== null) {
+                    $q->where('percentage_loss', '<=', $lossMax);
+                }
+            });
+        }
+
+        // Paginar
         $polygons = $query->latest()->paginate(10);
 
+        // Mantener filtros en la paginación
         $polygons->appends([
             'search' => $search,
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
             'status' => $status,
             'type' => $type,
+            'parish_id' => $parishId,
+            'municipality_id' => $municipalityId,
+            'state_id' => $stateId,
+            'area_min' => $areaMin,
+            'area_max' => $areaMax,
+            'producer_id' => $producerId,
+            'has_deforestation' => $hasDeforestation,
+            'deforestation_year' => $deforestationYear,
+            'loss_min' => $lossMin,
+            'loss_max' => $lossMax,
         ]);
 
-        return view('polygons.index', compact('polygons', 'search', 'dateFrom', 'dateTo', 'status', 'type'));
+        // Obtener listas para los selects (parroquias, municipios, estados, productores, años)
+        $parishes = Parish::orderBy('name')->get(['id', 'name']);
+        $municipalities = Municipality::orderBy('name')->get(['id', 'name']);
+        $states = State::orderBy('name')->get(['id', 'name']);
+        $producers = Producer::orderBy('name')->get(['id', 'name', 'lastname']);
+        $years = range(2020, now()->year); // rango de años para deforestación
+
+        return view('polygons.index', compact(
+            'polygons',
+            'search', 'dateFrom', 'dateTo', 'status', 'type',
+            'parishId', 'municipalityId', 'stateId',
+            'areaMin', 'areaMax',
+            'producerId',
+            'hasDeforestation', 'deforestationYear',
+            'lossMin', 'lossMax',
+            'parishes', 'municipalities', 'states', 'producers', 'years'
+        ));
     }
 
     public function deleted(Request $request): View
