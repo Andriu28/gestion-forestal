@@ -7,11 +7,15 @@ use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\Filterable;
 
 class AuditLogController extends Controller
 {
+    use Filterable;
+
     public function showAuditLog(Request $request)
     {
+        // Obtener parámetros
         $search = $request->get('search');
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
@@ -20,52 +24,36 @@ class AuditLogController extends Controller
         $eventType = $request->get('event_type');
         $subjectType = $request->get('subject_type');
 
-         // Validar rango de fechas
+        // Validar rango de fechas (trait)
         $validationError = $this->validateDateRange($dateFrom, $dateTo);
         if ($validationError) {
             return $validationError;
         }
 
+        // Consulta base
         $query = Activity::with(['causer', 'subject'])->latest();
 
-        // Búsqueda por texto
-        if ($search) {
-            $search = trim($search); // limpiamos espacios
-            $normalizedSearch = '%' . $search . '%';
+        // Aplicar filtros de fecha (trait)
+        $query = $this->applyDateFilters($query, $dateFrom, $dateTo);
 
-            $query->where(function($q) use ($search, $normalizedSearch) {
-                // Buscar en descripción (con unaccent + lower)
-                $q->whereRaw("unaccent(LOWER(description)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
+        // Aplicar búsqueda flexible (trait)
+        $query = $this->applySearchFilter(
+            $query,
+            $search,
+            ['description', 'properties'], // columnas de la tabla activities
+            ['causer' => ['name', 'email', 'role']] // relación y sus columnas
+        );
 
-                // Buscar en propiedades (convertido a texto)
-                $q->orWhereRaw("unaccent(LOWER(properties::text)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
-
-                // Buscar en el causer (relación con User)
-                $q->orWhereHas('causer', function($q2) use ($normalizedSearch) {
-                    $q2->whereRaw("unaccent(LOWER(name)) ILIKE unaccent(LOWER(?))", [$normalizedSearch])
-                        ->orWhereRaw("unaccent(LOWER(email)) ILIKE unaccent(LOWER(?))", [$normalizedSearch])
-                        ->orWhereRaw("unaccent(LOWER(role)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
-                });
-            });
-        }
-
-        // Filtro por rango de fechas
-        if ($dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        }
-        if ($dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        }
-
+        // --- Filtros específicos de auditoría ---
         // Filtro por rol del causer
         if ($role && $role !== 'all') {
-            $query->whereHas('causer', function($q) use ($role) {
-                if ($role === 'system') {
-                    $q->whereNull('id'); // Causer es null (sistema)
-                } else {
+            if ($role === 'system') {
+                $query->whereNull('causer_id');
+            } else {
+                $query->whereHas('causer', function ($q) use ($role) {
                     $q->where('role', $role);
-                }
-            });
+                });
+            }
         }
 
         // Filtro por usuario específico
@@ -73,7 +61,7 @@ class AuditLogController extends Controller
             $query->where('causer_id', $userId);
         }
 
-        // Filtro por tipo de evento (basado en description)
+        // Filtro por tipo de evento
         if ($eventType && $eventType !== 'all') {
             $eventMap = [
                 'created' => '%created%',
@@ -116,14 +104,17 @@ class AuditLogController extends Controller
         ]);
 
         // Obtener lista de usuarios para el select
-        $users = \App\Models\User::orderBy('name')->get(['id', 'name']);
+        $users = User::orderBy('name')->get(['id', 'name']);
 
-        return view('admin.audit_log', compact('activities', 'search', 'dateFrom', 'dateTo', 'role', 'userId', 'eventType', 'subjectType', 'users'));
+        return view('admin.audit_log', compact(
+            'activities', 'search', 'dateFrom', 'dateTo',
+            'role', 'userId', 'eventType', 'subjectType', 'users'
+        ));
     }
 
     public function generatePdf(Request $request)
     {
-        // Obtener todos los filtros
+        // Obtener parámetros
         $search = $request->get('search');
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
@@ -132,7 +123,7 @@ class AuditLogController extends Controller
         $eventType = $request->get('event_type');
         $subjectType = $request->get('subject_type');
 
-         // Validar rango de fechas
+        // Validar rango de fechas (trait)
         $validationError = $this->validateDateRange($dateFrom, $dateTo);
         if ($validationError) {
             return $validationError;
@@ -140,53 +131,32 @@ class AuditLogController extends Controller
 
         $query = Activity::with(['causer', 'subject'])->latest();
 
-        // Búsqueda por texto
-        if ($search) {
-            $search = trim($search); // limpiamos espacios
-            $normalizedSearch = '%' . $search . '%';
+        // Aplicar filtros de fecha (trait)
+        $query = $this->applyDateFilters($query, $dateFrom, $dateTo);
 
-            $query->where(function($q) use ($search, $normalizedSearch) {
-                // Buscar en descripción (con unaccent + lower)
-                $q->whereRaw("unaccent(LOWER(description)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
+        // Aplicar búsqueda flexible (trait)
+        $query = $this->applySearchFilter(
+            $query,
+            $search,
+            ['description', 'properties'],
+            ['causer' => ['name', 'email', 'role']]
+        );
 
-                // Buscar en propiedades (convertido a texto)
-                $q->orWhereRaw("unaccent(LOWER(properties::text)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
-
-                // Buscar en el causer (relación con User)
-                $q->orWhereHas('causer', function($q2) use ($normalizedSearch) {
-                    $q2->whereRaw("unaccent(LOWER(name)) ILIKE unaccent(LOWER(?))", [$normalizedSearch])
-                        ->orWhereRaw("unaccent(LOWER(email)) ILIKE unaccent(LOWER(?))", [$normalizedSearch])
-                        ->orWhereRaw("unaccent(LOWER(role)) ILIKE unaccent(LOWER(?))", [$normalizedSearch]);
-                });
-            });
-        }
-
-        // Filtro por rango de fechas
-        if ($dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        }
-        if ($dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        }
-
-        // Filtro por rol del causer
+        // --- Filtros específicos (igual que en showAuditLog) ---
         if ($role && $role !== 'all') {
             if ($role === 'system') {
-                // Actividades realizadas por el sistema (sin usuario)
                 $query->whereNull('causer_id');
             } else {
-                $query->whereHas('causer', function($q) use ($role) {
+                $query->whereHas('causer', function ($q) use ($role) {
                     $q->where('role', $role);
                 });
             }
         }
 
-        // Filtro por usuario específico
         if ($userId && $userId !== 'all') {
             $query->where('causer_id', $userId);
         }
 
-        // Filtro por tipo de evento (basado en description)
         if ($eventType && $eventType !== 'all') {
             $eventMap = [
                 'created' => '%created%',
@@ -202,7 +172,6 @@ class AuditLogController extends Controller
             }
         }
 
-        // Filtro por modelo afectado
         if ($subjectType && $subjectType !== 'all') {
             $modelMap = [
                 'User' => 'App\Models\User',
@@ -214,7 +183,7 @@ class AuditLogController extends Controller
             }
         }
 
-        $activities = $query->get(); // Todos los registros (sin paginar)
+        $activities = $query->get();
 
         $filters = [
             'search' => $search,
@@ -236,45 +205,5 @@ class AuditLogController extends Controller
         $pdf->setPaper('A4', 'landscape');
 
         return $pdf->download('auditoria_' . now()->format('Y-m-d_H-i') . '.pdf');
-    }
-
-    /**
-     * Normaliza un texto para búsqueda (minúsculas + sin acentos)
-     */
-    private function normalizedLike($column, $search)
-    {
-        return "unaccent(LOWER({$column})) ILIKE unaccent(LOWER('%{$search}%'))";
-    }
-
-    /**
-     * Valida el rango de fechas y retorna un redirect con error si falla.
-     *
-     * @param string|null $dateFrom
-     * @param string|null $dateTo
-     * @return \Illuminate\Http\RedirectResponse|null
-     */
-    private function validateDateRange($dateFrom, $dateTo)
-    {
-        if ($dateFrom && $dateTo) {
-            if ($dateTo < $dateFrom) {
-                return redirect()->back()->withErrors([
-                    'date_to' => 'La fecha "Hasta" no puede ser anterior a la fecha "Desde".'
-                ]);
-            }
-        }
-
-        if ($dateFrom && $dateFrom > now()->toDateString()) {
-            return redirect()->back()->withErrors([
-                'date_from' => 'La fecha "Desde" no puede ser futura.'
-            ]);
-        }
-
-        if ($dateTo && $dateTo > now()->toDateString()) {
-            return redirect()->back()->withErrors([
-                'date_to' => 'La fecha "Hasta" no puede ser futura.'
-            ]);
-        }
-
-        return null; // Sin errores
     }
 }
