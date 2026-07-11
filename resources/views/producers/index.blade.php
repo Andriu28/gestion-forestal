@@ -39,7 +39,7 @@
                             <!-- Contenedor del ícono - se contrae en hover -->
                             <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-red-700/60 group-hover:text-white dark:text-red-500/60 transition-colors duration-300">
-                                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>
                                 </svg>
                             </span>
                             
@@ -88,14 +88,14 @@
                         </select>
 
                          <button type="submit" class="px-4 py-2 bg-gray-600/90 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center space-x-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel-icon lucide-funnel w-5 h-5">
+                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel-icon lucide-funnel w-5 h-5">
                                 <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
                             </svg>
                         </button>
                    
                         @if(request('search') || (request('status') != 'all' && request()->has('status')))
                             <a href="{{ route('producers.index') }}"class="px-4 py-2 bg-gray-400/90 hover:bg-gray-300 text-white rounded-lg transition-all flex items-center space-x-2"> 
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brush-cleaning-icon lucide-brush-cleaning w-5 h-5">
+                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brush-cleaning-icon lucide-brush-cleaning w-5 h-5">
                                     <path d="m16 22-1-4"/><path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"/><path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z"/><path d="m8 22 1-4"/>
                                 </svg>
                             </a>
@@ -124,7 +124,8 @@
                                             {{ Str::limit($producer->description, 50) ?? 'Sin descripción' }}
                                         </td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap">
-                                            <span class="inline-block px-3 py-1 text-xs font-semibold {{ $producer->is_active ? 'bg-green-600 text-white' : 'bg-yellow-500 text-white' }} rounded-full">
+                                            {{-- ESTILO DE ESTADO IGUAL QUE POLÍGONOS --}}
+                                            <span class="inline-block px-3 py-1 text-xs font-semibold {{ $producer->is_active ? 'bg-green-500/70 dark:bg-green-400/50 text-white' : 'bg-yellow-400/60 dark:bg-yellow-400/70 text-white' }} rounded-full">
                                                 {{ $producer->is_active ? 'Activo' : 'Inactivo' }}
                                             </span>
                                         </td>
@@ -132,48 +133,48 @@
                                             <div class="flex items-center gap-2">
                                                 <!-- Botón Ver Detalles -->
                                                 <button type="button" 
-                                                        class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                        class="inline-flex items-center text-blue-700/50 hover:text-blue-600 dark:text-blue-400/60 dark:hover:text-blue-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                         title="Ver detalles"
                                                         onclick="showProducerDetails({{ $producer->id }})">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                         <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
                                                         <circle cx="12" cy="12" r="3"/>
                                                     </svg>
                                                 </button>
 
-                                                <!-- Botón Editar -->
+                                                <!-- Botón Editar - IGUAL QUE POLÍGONOS -->
                                                 <a href="{{ route('producers.edit', $producer) }}" 
-                                                class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
+                                                class="inline-flex items-center text-indigo-800/50 hover:text-indigo-600 dark:text-indigo-400/60 dark:hover:text-indigo-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110"
                                                 title="Editar">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-7 h-7 lucide-pencil-line">
+                                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-7 h-7 lucide-pencil-line">
                                                         <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
                                                     </svg>
                                                 </a>
                                         
-                                                <!-- Botón Cambiar Estado (activo/inactivo) - AJAX -->
-                                                <form action="{{ route('producers.toggle-status', $producer) }}" method="POST" class="inline toggle-status-form">
-                                                    @csrf
-                                                    <button type="button" class="inline-flex items-center transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
-                                                            title="{{ $producer->is_active ? 'Desactivar' : 'Activar' }}"
-                                                            onclick="handleToggleStatus({{ $producer->id }}, '{{ $producer->name }}', {{ $producer->is_active ? 'true' : 'false' }})">
-                                                        @if($producer->is_active)
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
-                                                                <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
-                                                                <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
-                                                                <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
-                                                            </svg>
-                                                        @else
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
-                                                                <circle cx="12" cy="12" r="10" class="fill-green-100"/>
-                                                                <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
-                                                            </svg>
-                                                        @endif
-                                                    </button>
-                                                </form>
-
-                                                <!-- Botón Deshabilitar (soft delete) - AJAX -->
+                                                <!-- Botón Cambiar Estado - IGUAL QUE POLÍGONOS -->
                                                 <button type="button" 
-                                                        class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                        class="inline-flex items-center transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
+                                                        title="{{ $producer->is_active ? 'Desactivar' : 'Activar' }}"
+                                                        onclick="handleToggleStatus({{ $producer->id }}, '{{ addslashes($producer->name) }}', {{ $producer->is_active ? 'true' : 'false' }})">
+                                                    @if($producer->is_active)
+                                                        {{-- ICONO DE DESACTIVAR - IGUAL QUE POLÍGONOS --}}
+                                                        <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-700/40 hover:text-yellow-500/80 dark:text-yellow-400/60 dark:hover:text-yellow-300 w-7 h-7">
+                                                            <circle cx="12" cy="12" r="10" class="fill-none"/>
+                                                            <line x1="15" y1="9" x2="9" y2="15"/>
+                                                            <line x1="9" y1="9" x2="15" y2="15"/>
+                                                        </svg>
+                                                    @else
+                                                        {{-- ICONO DE ACTIVAR - IGUAL QUE POLÍGONOS --}}
+                                                        <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-700/40 hover:text-green-500/80 dark:text-green-400/60 dark:hover:text-green-300 w-7 h-7">
+                                                            <circle cx="12" cy="12" r="10" class="fill-none"/>
+                                                            <path d="m8 12 2.5 2.5L16 9"/>
+                                                        </svg>
+                                                    @endif
+                                                </button>
+
+                                                <!-- Botón Deshabilitar - CON COLORES IGUAL QUE EL BOTÓN ELIMINAR DE POLÍGONOS -->
+                                                <button type="button" 
+                                                        class="inline-flex items-center text-red-700/30 hover:text-red-600 dark:text-red-500/60 dark:hover:text-red-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                         title="Deshabilitar"
                                                         onclick="handleDisableProducer({{ $producer->id }}, '{{ addslashes($producer->name) }}')">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-x-icon w-7 h-7 lucide-user-x">
@@ -192,7 +193,7 @@
                     </div>
                 @else
                     <div class="text-center py-8">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2002/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <p class="text-gray-600 dark:text-gray-400">No se encontraron productores.</p>
@@ -210,7 +211,7 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
                         <div class="bg-gray-100/20 dark:bg-custom-gray p-2 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2002/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                         </div>
@@ -295,7 +296,7 @@ async function handleToggleStatus(producerId, producerName, isCurrentlyActive) {
     }
 }
 
-// Función para actualizar la UI del estado
+// Función para actualizar la UI del estado - ACTUALIZADA CON ESTILOS DE POLÍGONOS
 function updateProducerStatusUI(producerId, producerName, isActive) {
     const row = document.getElementById(`producer-row-${producerId}`);
     if (!row) return;
@@ -303,46 +304,46 @@ function updateProducerStatusUI(producerId, producerName, isActive) {
     // Encontrar la celda de estado (4ta columna)
     const statusCell = row.querySelector('td:nth-child(4)');
     const toggleButton = row.querySelector('button[onclick*="handleToggleStatus"]');
-    const buttonForm = row.querySelector('.toggle-status-form button');
     
-    // Actualizar badge de estado
+    // Actualizar badge de estado - ESTILO IGUAL QUE POLÍGONOS
     if (statusCell) {
         if (isActive) {
-            statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">Activo</span>';
+            statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-green-500/70 dark:bg-green-400/50 text-white rounded-full">Activo</span>';
         } else {
-            statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-full">Inactivo</span>';
+            statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-yellow-400/60 dark:bg-yellow-400/70 text-white rounded-full">Inactivo</span>';
         }
     }
     
-    // Actualizar botón de toggle
-    if (toggleButton && buttonForm) {
+    // Actualizar botón de toggle - ESTILO IGUAL QUE POLÍGONOS
+    if (toggleButton) {
+        const escapedName = producerName.replace(/'/g, "\\'");
+        
         if (isActive) {
             // Cambiar a icono de desactivar
-            buttonForm.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
-                    <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
-                    <line x1="15" y1="9" x2="9" y2="15" class="stroke-yellow-600"/>
-                    <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
+            toggleButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-700/40 hover:text-yellow-500/80 dark:text-yellow-400/60 dark:hover:text-yellow-300 w-7 h-7">
+                    <circle cx="12" cy="12" r="10" class="fill-none"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
                 </svg>
             `;
             toggleButton.setAttribute('title', 'Desactivar');
-            toggleButton.setAttribute('onclick', `handleToggleStatus(${producerId}, '${producerName.replace(/'/g, "\\'")}', true)`);
+            toggleButton.setAttribute('onclick', `handleToggleStatus(${producerId}, '${escapedName}', true)`);
         } else {
             // Cambiar a icono de activar
-            buttonForm.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
-                    <circle cx="12" cy="12" r="10" class="fill-green-100"/>
-                    <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
+            toggleButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-700/40 hover:text-green-500/80 dark:text-green-400/60 dark:hover:text-green-300 w-7 h-7">
+                    <circle cx="12" cy="12" r="10" class="fill-none"/>
+                    <path d="m8 12 2.5 2.5L16 9"/>
                 </svg>
             `;
             toggleButton.setAttribute('title', 'Activar');
-            toggleButton.setAttribute('onclick', `handleToggleStatus(${producerId}, '${producerName.replace(/'/g, "\\'")}', false)`);
+            toggleButton.setAttribute('onclick', `handleToggleStatus(${producerId}, '${escapedName}', false)`);
         }
     }
 }
 
-// Función para deshabilitar productor (redirigir a vista de eliminados)
-// Función para deshabilitar productor (AJAX) - ACTUALIZADA
+// Función para deshabilitar productor (AJAX) - CON ESTILOS DE POLÍGONOS
 async function handleDisableProducer(producerId, producerName) {
     const result = await showCustomConfirmation(
         false,
@@ -368,11 +369,10 @@ async function handleDisableProducer(producerId, producerName) {
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="5" class="text-center py-8">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2002/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p class="text-gray-600 dark:text-gray-400">No se encontraron productores.</p>
-                            
                         </td>
                     </tr>
                 `;
