@@ -221,6 +221,8 @@ Route::middleware(['auth', 'verified', 'is.admin'])
             Route::patch('/{user}/update-role', [UserController::class, 'updateUserRole'])
                 ->name('update-role');
             Route::post('/{user}/enable', [UserController::class, 'enableUser'])->name('enable');
+            Route::post('{user}/reset-password', [UserController::class, 'resetPassword'])
+                ->name('users.reset-password');
         });
         
         Route::resource('users', UserController::class)->except(['show']);

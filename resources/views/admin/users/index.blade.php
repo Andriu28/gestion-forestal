@@ -156,6 +156,17 @@
                                                         <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
                                                     </svg>
                                                 </a>
+
+                                                <!-- Botón Restablecer Contraseña -->
+                                                <button onclick="handleResetPassword({{ $user->id }}, '{{ $user->name }}')" 
+                                                        class="inline-flex items-center text-yellow-600 hover:text-yellow-900 dark:text-yellow-500 dark:hover:text-yellow-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
+                                                        title="Restablecer contraseña">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                                                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                                                        <path d="M21 3v4h-4"/>
+                                                        <path d="M12 8v5l3 3"/>
+                                                    </svg>
+                                                </button>
                                                 
                                                 @if (Auth::id() !== $user->id && !$user->trashed())
                                                     <button onclick="handleUserDisable({{ $user->id }}, '{{ $user->name }}')" 
@@ -202,6 +213,42 @@
         </div>
     </div>
 </x-app-layout>
+
+<script>
+    // Función para restablecer contraseña
+    async function handleResetPassword(userId, userName) {
+        const result = await showCustomConfirmation(
+            true, // es una acción de advertencia (estilo warning)
+            `¿Estás seguro de que deseas restablecer la contraseña de <b>${userName}</b>?<br><br>
+            <small>Se generará una nueva contraseña aleatoria y se enviará al correo del usuario.</small>`
+        );
+        
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`/admin/users/${userId}/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showCustomAlert('success', 'Éxito', data.message);
+                } else {
+                    showCustomAlert('error', 'Error', data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showCustomAlert('error', 'Error', 'Ocurrió un error al restablecer la contraseña.');
+            }
+        }
+    }
+</script>
 
 @push('styles')
 <style>

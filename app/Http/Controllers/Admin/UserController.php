@@ -8,6 +8,9 @@ use App\Models\User;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewUserPasswordMail;
 
 class UserController extends Controller
 {
@@ -199,5 +202,49 @@ class UserController extends Controller
         $users = $query->paginate(15);
         
         return view('admin.users.disabled', compact('users', 'search', 'role'));
+    }
+
+    public function resetPassword(User $user)
+    {
+        try {
+            // Generar contraseña segura
+            $plainPassword = Str::password(
+                length: 12,
+                letters: true,
+                numbers: true,
+                symbols: true,
+                spaces: false
+            );
+
+            // Actualizar la contraseña del usuario
+            $user->update([
+                'password' => Hash::make($plainPassword)
+            ]);
+
+            // Enviar correo con la nueva contraseña
+            Mail::to($user->email)->send(new NewUserPasswordMail($user->name, $plainPassword));
+
+            // Registrar actividad
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($user)
+                ->log('Contraseña restablecida para el usuario');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Contraseña restablecida exitosamente. Se ha enviado un correo al usuario.'
+            ]);
+
+        } catch (\Throwable $e) {
+            \Log::error('Error al restablecer contraseña', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al restablecer la contraseña: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
