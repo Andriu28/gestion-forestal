@@ -38,7 +38,11 @@ class FormUser extends Component
                     ->uncompromised(),
                     
             ],
-            'password_confirmation' => ''
+            'password_confirmation' => '',
+            'role' => [ 
+                'required',
+                Rule::in(['basico', 'administrador'])
+            ]
         ];
 
         // Solo agregar 'confirmed' cuando ambas contraseñas tienen valor
@@ -55,52 +59,57 @@ class FormUser extends Component
             'name' => 'nombre',
             'email' => 'correo electrónico',
             'password' => 'contraseña',
+            'role' => 'rol',
         ];
     }
 
     protected function messages()
-{
-    return [
-        // Mensajes para el campo 'name'
-        'name.required' => 'El nombre es obligatorio.',
-        'name.regex' => 'El nombre solo puede contener letras, espacios y apóstrofes.',
-        'name.min' => 'El nombre debe tener al menos 3 caracteres.',
+    {
+        return [
+            // Mensajes para el campo 'name'
+            'name.required' => 'El nombre es obligatorio.',
+            'name.regex' => 'El nombre solo puede contener letras, espacios y apóstrofes.',
+            'name.min' => 'El nombre debe tener al menos 3 caracteres.',
 
-        // Mensajes para el campo 'email'
-        'email.required' => 'El correo electrónico es obligatorio.',
-        'email.email' => 'El formato del correo electrónico no es válido.',
-        'email.unique' => 'Este correo electrónico ya está registrado.',
+            // Mensajes para el campo 'email'
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'El formato del correo electrónico no es válido.',
+            'email.unique' => 'Este correo electrónico ya está registrado.',
+            
+            // Mensajes para el campo 'password'
+            'password.required' => 'La contraseña es obligatoria.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.mixed' => 'La contraseña debe contener letras mayúsculas y minúsculas.',
+            'password.numbers' => 'La contraseña debe contener al menos un número.',
+            'password.symbols' => 'La contraseña debe contener al menos un símbolo.',
+            'password.uncompromised' => 'Esta contraseña ha sido expuesta en una filtración de datos. Por favor, elige una diferente.',
+            'password.confirmed' => 'La confirmación de la contraseña no coincide.',
+
+            // Mensajes para el campo 'password_confirmation'
+            'password_confirmation.required' => 'La confirmación de la contraseña es obligatoria.',
+
+            // Mensaje para 'role' ← NUEVO
+            'role.required' => 'Debes seleccionar un rol.',
+            'role.in' => 'El rol seleccionado no es válido.',
+        ];
+    }
+    
+    public function updated($propertyName)
+    {
+        // Valida todos los campos, excepto los de contraseña, uno por uno.
+        if (!in_array($propertyName, ['password', 'password_confirmation'])) {
+            $this->validateOnly($propertyName);
+        }
         
-        // Mensajes para el campo 'password'
-        'password.required' => 'La contraseña es obligatoria.',
-        'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
-        'password.mixed' => 'La contraseña debe contener letras mayúsculas y minúsculas.',
-        'password.numbers' => 'La contraseña debe contener al menos un número.',
-        'password.symbols' => 'La contraseña debe contener al menos un símbolo.',
-        'password.uncompromised' => 'Esta contraseña ha sido expuesta en una filtración de datos. Por favor, elige una diferente.',
-        'password.confirmed' => 'La confirmación de la contraseña no coincide.',
-
-        // Mensajes para el campo 'password_confirmation'
-        'password_confirmation.required' => 'La confirmación de la contraseña es obligatoria.'
-    ];
-}
-    
-public function updated($propertyName)
-{
-    // Valida todos los campos, excepto los de contraseña, uno por uno.
-    if (!in_array($propertyName, ['password', 'password_confirmation'])) {
-        $this->validateOnly($propertyName);
+        // Si se actualiza cualquiera de los campos de contraseña,
+        // valida ambos para que la regla 'confirmed' funcione correctamente.
+        if (in_array($propertyName, ['password', 'password_confirmation'])) {
+            $this->validate([
+                'password' => $this->rules()['password'],
+                'password_confirmation' => $this->rules()['password_confirmation']
+            ], $this->messages(), $this->validationAttributes());
+        }
     }
-    
-    // Si se actualiza cualquiera de los campos de contraseña,
-    // valida ambos para que la regla 'confirmed' funcione correctamente.
-    if (in_array($propertyName, ['password', 'password_confirmation'])) {
-        $this->validate([
-            'password' => $this->rules()['password'],
-            'password_confirmation' => $this->rules()['password_confirmation']
-        ], $this->messages(), $this->validationAttributes());
-    }
-}
 
     public function store()
     {
@@ -110,7 +119,7 @@ public function updated($propertyName)
             'name' => $validatedData['name'],
             'email' => $validatedData['email'],
             'password' => Hash::make($validatedData['password']),
-            'role' => 'basico',
+            'role' => $validatedData['role'],
         ]);
 
         activity()

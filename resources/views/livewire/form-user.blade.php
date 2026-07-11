@@ -17,6 +17,21 @@
             <x-input-error :messages="$errors->first('email')" class="mt-2" />
         </div>
 
+        <div class="mt-4">
+            <x-input-label for="role" :value="__('Rol')" />
+            <x-select-input
+                name="role"
+                id="role"
+                wire:model.live="role"
+                :options="[
+                    'basico' => 'Básico',
+                    'administrador' => 'Administrador'
+                ]"
+                placeholder="Selecciona un rol"
+            />
+            <x-input-error :messages="$errors->first('role')" class="mt-2" />
+        </div>
+
         <!-- Campo de Contraseña con botón de visibilidad -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Contraseña')" />

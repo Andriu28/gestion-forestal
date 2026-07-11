@@ -118,23 +118,17 @@
                                         
                                         <!-- Rol -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-4 whitespace-nowrap">
-                                            <form action="{{ route('admin.users.update-role', $user) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <select name="role" 
-                                                        data-original-role="{{ $user->role }}"
-                                                        onchange="handleRoleChange(
-                                                            this, 
-                                                            {{ $user->id }}, 
-                                                            '{{ $user->name }}', 
-                                                            {{ Auth::id() === $user->id ? 'true' : 'false' }}
-                                                        )"
-                                                        class="block w-full rounded-md bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:focus:ring-indigo-600 text-sm">
-                                                    <option value="basico" @if ($user->role === 'basico') selected @endif>Básico</option>
-                                                    <option value="tecnico" @if ($user->role === 'tecnico') selected @endif>Técnico</option>
-                                                    <option value="administrador" @if ($user->role === 'administrador') selected @endif>Administrador</option>
-                                                </select>
-                                            </form>
+                                            @php
+                                                $roleColors = [
+                                                    'administrador' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                                                    'tecnico'       => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                                                    'basico'        => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                                                ];
+                                                $colorClass = $roleColors[$user->role] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                                            @endphp
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $colorClass }}">
+                                                {{ ucfirst($user->role) }}
+                                            </span>
                                         </td>
                                         
                                         <!-- Estado -->
