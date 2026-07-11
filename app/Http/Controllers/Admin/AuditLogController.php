@@ -20,6 +20,12 @@ class AuditLogController extends Controller
         $eventType = $request->get('event_type');
         $subjectType = $request->get('subject_type');
 
+         // Validar rango de fechas
+        $validationError = $this->validateDateRange($dateFrom, $dateTo);
+        if ($validationError) {
+            return $validationError;
+        }
+
         $query = Activity::with(['causer', 'subject'])->latest();
 
         // Búsqueda por texto
@@ -125,6 +131,12 @@ class AuditLogController extends Controller
         $userId = $request->get('user_id');
         $eventType = $request->get('event_type');
         $subjectType = $request->get('subject_type');
+
+         // Validar rango de fechas
+        $validationError = $this->validateDateRange($dateFrom, $dateTo);
+        if ($validationError) {
+            return $validationError;
+        }
 
         $query = Activity::with(['causer', 'subject'])->latest();
 
@@ -232,5 +244,37 @@ class AuditLogController extends Controller
     private function normalizedLike($column, $search)
     {
         return "unaccent(LOWER({$column})) ILIKE unaccent(LOWER('%{$search}%'))";
+    }
+
+    /**
+     * Valida el rango de fechas y retorna un redirect con error si falla.
+     *
+     * @param string|null $dateFrom
+     * @param string|null $dateTo
+     * @return \Illuminate\Http\RedirectResponse|null
+     */
+    private function validateDateRange($dateFrom, $dateTo)
+    {
+        if ($dateFrom && $dateTo) {
+            if ($dateTo < $dateFrom) {
+                return redirect()->back()->withErrors([
+                    'date_to' => 'La fecha "Hasta" no puede ser anterior a la fecha "Desde".'
+                ]);
+            }
+        }
+
+        if ($dateFrom && $dateFrom > now()->toDateString()) {
+            return redirect()->back()->withErrors([
+                'date_from' => 'La fecha "Desde" no puede ser futura.'
+            ]);
+        }
+
+        if ($dateTo && $dateTo > now()->toDateString()) {
+            return redirect()->back()->withErrors([
+                'date_to' => 'La fecha "Hasta" no puede ser futura.'
+            ]);
+        }
+
+        return null; // Sin errores
     }
 }

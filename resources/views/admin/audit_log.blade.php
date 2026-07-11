@@ -34,7 +34,15 @@ $roleTranslations = [
 
                     </div>
                 </div>
-                
+                @if ($errors->any())
+                    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                        <ul class="list-disc list-inside">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 <!-- Filtros -->
                 <form method="GET" action="{{ route('admin.audit') }}" class="mb-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -48,13 +56,17 @@ $roleTranslations = [
                         <!-- Rango de fechas -->
                         <div>
                             <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha desde</label>
-                            <input type="date" name="date_from" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                value="{{ $dateFrom ?? '' }}">
+                            <input type="date" name="date_from" 
+                                class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                value="{{ $dateFrom ?? '' }}"
+                                max="{{ now()->toDateString() }}">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha hasta</label>
-                            <input type="date" name="date_to" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                value="{{ $dateTo ?? '' }}">
+                            <input type="date" name="date_to" 
+                                class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                value="{{ $dateTo ?? '' }}"
+                                max="{{ now()->toDateString() }}">
                         </div>
 
                         <!-- Rol del usuario -->
@@ -327,7 +339,7 @@ $roleTranslations = [
                                                         return $translations[$field] ?? ucfirst(str_replace('_', ' ', $field));
                                                     };
                                                     
-                                                    // 🔥 FILTRAR: Solo mostrar campos que cambiaron Y no están excluidos
+                                                    // FILTRAR: Solo mostrar campos que cambiaron Y no están excluidos
                                                     $changes = collect($activity->properties['attributes'])
                                                         ->filter(function($newValue, $attribute) use ($activity, $excludedFields) {
                                                             // 1. Excluir campos de la lista negra
@@ -417,6 +429,32 @@ $roleTranslations = [
         </div>
     </div>
 
+    <script>
+            document.addEventListener('DOMContentLoaded', function() {
+            const dateFrom = document.querySelector('input[name="date_from"]');
+            const dateTo = document.querySelector('input[name="date_to"]');
+
+            function updateMinDate() {
+                if (dateFrom.value) {
+                    dateTo.setAttribute('min', dateFrom.value);
+                } else {
+                    dateTo.removeAttribute('min');
+                }
+            }
+
+            dateFrom.addEventListener('change', updateMinDate);
+            dateTo.addEventListener('change', function() {
+                if (dateFrom.value && dateTo.value < dateFrom.value) {
+                    alert('La fecha "Hasta" no puede ser anterior a la fecha "Desde".');
+                    dateTo.value = '';
+                }
+            });
+
+            // Inicializar
+            updateMinDate();
+        });
+    </script>
+    
     @push('styles')
     <style>
         /* Estilos para la paginación igual que en productores */
