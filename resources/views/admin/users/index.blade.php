@@ -1,3 +1,14 @@
+@if(session('swal'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            showCustomAlert(
+                '{{ session('swal.icon') }}',
+                '{{ session('swal.title') }}',
+                '{{ session('swal.text') }}'
+            );
+        });
+    </script>
+@endif
 <x-app-layout>
     <div class="mx-auto">
         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
@@ -248,6 +259,8 @@
             }
         }
     }
+
+    
 </script>
 
 @push('styles')
