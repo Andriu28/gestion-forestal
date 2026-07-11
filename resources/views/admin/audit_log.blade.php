@@ -72,9 +72,7 @@ $roleTranslations = [
                             <select name="role" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
                                 <option value="all" {{ ($role ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
                                 <option value="administrador" {{ ($role ?? '') == 'administrador' ? 'selected' : '' }}>Administrador</option>
-                                <option value="tecnico" {{ ($role ?? '') == 'tecnico' ? 'selected' : '' }}>Técnico</option>
                                 <option value="basico" {{ ($role ?? '') == 'basico' ? 'selected' : '' }}>Básico</option>
-                                <option value="system" {{ ($role ?? '') == 'system' ? 'selected' : '' }}>Sistema</option>
                             </select>
                         </div>
 
@@ -262,7 +260,7 @@ $roleTranslations = [
                                                 
                                                 <div>
                                                     <div class="text-sm text-gray-900 dark:text-gray-400">
-                                                        {{ $translated }}
+                                                        {{ Str::limit($translated, 30) }}
                                                     </div>
                                                     @if($activity->subject_type)
                                                         <div class="text-xs text-gray-500 dark:text-gray-500">
@@ -279,7 +277,7 @@ $roleTranslations = [
                                                     @endif
                                                 </div>
                                             </div>
-                                        </td>
+                                        </td> 
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                             <div>{{ $activity->created_at->format('d/m/Y') }}</div>
                                             <div class="text-xs text-gray-500 dark:text-gray-500">{{ $activity->created_at->format('H:i:s') }}</div>

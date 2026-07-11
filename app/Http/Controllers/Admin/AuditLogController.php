@@ -44,6 +44,13 @@ class AuditLogController extends Controller
             ['causer' => ['name', 'email', 'role']] // relación y sus columnas
         );
 
+        $query->where(function ($q) {
+            $q->whereNull('causer_id')
+            ->orWhereHas('causer', function ($sub) {
+                $sub->where('role', '!=', 'tecnico');
+            });
+        });
+
         // --- Filtros específicos de auditoría ---
         // Filtro por rol del causer
         if ($role && $role !== 'all') {
@@ -141,6 +148,13 @@ class AuditLogController extends Controller
             ['description', 'properties'],
             ['causer' => ['name', 'email', 'role']]
         );
+
+        $query->where(function ($q) {
+            $q->whereNull('causer_id')
+            ->orWhereHas('causer', function ($sub) {
+                $sub->where('role', '!=', 'tecnico');
+            });
+        });
 
         // --- Filtros específicos (igual que en showAuditLog) ---
         if ($role && $role !== 'all') {
