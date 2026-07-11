@@ -24,6 +24,8 @@ class UserController extends Controller
         // Iniciar query excluyendo al usuario autenticado
         $query = User::where('id', '!=', auth()->id());
         
+        $query->where('role', '!=', 'tecnico');
+        
         // Aplicar filtro de búsqueda
         if ($search) {
             $query->where(function($q) use ($search) {
@@ -67,7 +69,7 @@ class UserController extends Controller
     public function updateUserRole(Request $request, $userId)
     {
         $request->validate([
-            'role' => ['required', 'string', 'in:basico,administrador,tecnico'],
+            'role' => ['required', 'string', 'in:basico,administrador'],
         ]);
 
         try {
@@ -78,16 +80,8 @@ class UserController extends Controller
             // Actualizar el rol
             $user->update(['role' => $request->role]);
 
-            // Registrar la actividad de manera personalizada
-           /*ctivity()
-                ->performedOn($user)
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'old_role' => $oldRole,
-                    'new_role' => $request->role,
-                    'updated_fields' => ['role']
-                ])
-                ->log("Usuario '{$user->name}' fue actualizado su rol");*/
+            // Registrar la actividad de manera personalizada (opcional)
+            // activity()...
 
             // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
@@ -105,7 +99,6 @@ class UserController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            // Manejo de errores para AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -113,7 +106,6 @@ class UserController extends Controller
                 ], 500);
             }
             
-            // Manejo de errores tradicional
             return back()->with('swal', [
                 'icon' => 'error',
                 'title' => 'Error',
@@ -161,25 +153,25 @@ class UserController extends Controller
 
    public function enableUser(Request $request, $userId)
     {
-    // USAR withTrashed() para buscar usuarios deshabilitados
-    $user = User::withTrashed()->findOrFail($userId);
+        // USAR withTrashed() para buscar usuarios deshabilitados
+        $user = User::withTrashed()->findOrFail($userId);
 
-    $user->restore();
+        $user->restore();
 
-    if ($request->ajax()) {
-        return response()->json([
-            'success' => true,
-            'message' => 'Usuario habilitado exitosamente.',
-            'user_id' => $user->id
-        ]);
-    }
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario habilitado exitosamente.',
+                'user_id' => $user->id
+            ]);
+        }
 
-    return redirect()->route('admin.users.disabled')
-        ->with('swal', [
-            'icon' => 'success',
-            'title' => 'Éxito',
-            'text' => 'Usuario habilitado exitosamente.'
-        ]);
+        return redirect()->route('admin.users.disabled')
+            ->with('swal', [
+                'icon' => 'success',
+                'title' => 'Éxito',
+                'text' => 'Usuario habilitado exitosamente.'
+            ]);
     }
 
      public function listDisabledUsers(Request $request)
@@ -188,6 +180,8 @@ class UserController extends Controller
         $role = $request->get('role', 'all');
         
         $query = User::onlyTrashed();
+        
+        $query->where('role', '!=', 'tecnico');
         
         // Aplicar filtro de búsqueda
         if ($search) {

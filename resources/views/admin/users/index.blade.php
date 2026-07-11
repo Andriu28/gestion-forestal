@@ -56,7 +56,6 @@
                         <select name="role" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
                             <option value="all" {{ ($role ?? '') == 'all' ? 'selected' : '' }}>Todos los roles</option>
                             <option value="administrador" {{ ($role ?? '') == 'administrador' ? 'selected' : '' }}>Administradores</option>
-                            <option value="tecnico" {{ ($role ?? '') == 'tecnico' ? 'selected' : '' }}>Técnicos</option>
                             <option value="basico" {{ ($role ?? '') == 'basico' ? 'selected' : '' }}>Básicos</option>
                         </select>
                         
