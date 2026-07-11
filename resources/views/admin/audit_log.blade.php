@@ -1,7 +1,6 @@
 @php
 $roleTranslations = [
     'administrador' => 'Administrador',
-    'tecnico'       => 'Técnico',
     'basico'        => 'Básico',
 ];
 @endphp
@@ -19,7 +18,7 @@ $roleTranslations = [
                     </div>
                     
                     <div class="flex space-x-4">
-                          <!-- Botón para ver el mapa de polígonos -->
+                         
                            <a href="{{ route('admin.audit.pdf', request()->query()) }}" 
                             title="Descargar PDF" 
                             class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-red-600/80 dark:hover:bg-red-500/70 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">

@@ -196,7 +196,11 @@
 
                             <!-- Botones de acción -->
                             <div class="flex items-end space-x-2 col-span-full">
-                                <button type="submit" class="px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white rounded-lg transition-all">Filtrar</button>
+                                <button type="submit" class="px-4 py-2 bg-gray-600/90 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center space-x-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel-icon lucide-funnel w-5 h-5">
+                                        <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
+                                    </svg>
+                                </button>
                                 @if(request()->anyFilled(['search', 'date_from', 'date_to', 'status', 'type', 'parish_id', 'municipality_id', 'state_id', 'area_min', 'area_max', 'producer_id', 'has_deforestation', 'deforestation_year', 'loss_min', 'loss_max']) || (request('status') != 'all' && request()->has('status')) || (request('type') != 'all' && request()->has('type')))
                                     <a href="{{ route('polygons.index') }}" class="px-4 py-2 bg-gray-400/90 hover:bg-gray-300 text-white rounded-lg transition-all flex items-center space-x-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
