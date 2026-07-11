@@ -15,9 +15,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use App\Traits\Filterable;
 
 class PolygonController extends Controller
 {
+    use Filterable;
+
     public function __construct(private readonly LocationService $locationService) {}
 
     // =========================================================================
@@ -27,15 +30,31 @@ class PolygonController extends Controller
     public function index(Request $request): View
     {
         $search = $request->get('search');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
         $status = $request->get('status', 'all');
         $type   = $request->get('type', 'all');
 
-        $query = Polygon::with(['producer', 'parish.municipality.state']);
-
-        if ($search) {
-            $query->search($search);
+        // Validar rango de fechas (trait)
+        $validationError = $this->validateDateRange($dateFrom, $dateTo);
+        if ($validationError) {
+            return $validationError;
         }
 
+        $query = Polygon::with(['producer', 'parish.municipality.state']);
+
+        // Filtros de fecha (trait)
+        $query = $this->applyDateFilters($query, $dateFrom, $dateTo, 'created_at');
+
+        
+        $query = $this->applySearchFilter(
+            $query,
+            $search,
+            ['name', 'description'],                      // columnas de polygons
+            ['producer' => ['name', 'lastname']]          // columnas de producers (sin email, sin rut)
+        );
+
+        // Filtros específicos de polígonos
         match ($status) {
             'active'   => $query->where('is_active', true),
             'inactive' => $query->where('is_active', false),
@@ -50,9 +69,16 @@ class PolygonController extends Controller
         };
 
         $polygons = $query->latest()->paginate(10);
-        /* dd($polygons->toArray()); */
 
-        return view('polygons.index', compact('polygons', 'search', 'status', 'type'));
+        $polygons->appends([
+            'search' => $search,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'status' => $status,
+            'type' => $type,
+        ]);
+
+        return view('polygons.index', compact('polygons', 'search', 'dateFrom', 'dateTo', 'status', 'type'));
     }
 
     public function deleted(Request $request): View

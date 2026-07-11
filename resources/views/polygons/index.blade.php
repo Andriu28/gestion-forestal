@@ -44,30 +44,43 @@
                     <!-- Filtros -->
                     <form method="GET" action="{{ route('polygons.index') }}" class="mb-6">
                         <div class="flex flex-wrap gap-4">
-                            <!-- focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 -->
+                            <!-- Búsqueda por texto -->
                             <input type="text" name="search" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                   placeholder="Buscar por nombre, descripción o productor..." value="{{ $search ?? '' }}">
-                            
+                                placeholder="Buscar por nombre, descripción o productor..." value="{{ $search ?? '' }}">
+
+                            <!-- Fecha desde -->
+                            <input type="date" name="date_from" 
+                                class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                value="{{ $dateFrom ?? '' }}" max="{{ now()->toDateString() }}">
+
+                            <!-- Fecha hasta -->
+                            <input type="date" name="date_to" 
+                                class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                value="{{ $dateTo ?? '' }}" max="{{ now()->toDateString() }}">
+
+                            <!-- Selects existentes: status, type -->
                             <select name="status" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
                                 <option value="all" {{ ($status ?? '') == 'all' ? 'selected' : '' }}>Todos los estados</option>
                                 <option value="active" {{ ($status ?? '') == 'active' ? 'selected' : '' }}>Activos</option>
                                 <option value="inactive" {{ ($status ?? '') == 'inactive' ? 'selected' : '' }}>Inactivos</option>
                                 <option value="deleted" {{ ($status ?? '') == 'deleted' ? 'selected' : '' }}>Eliminados</option>
                             </select>
-                            
+
                             <select name="type" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
                                 <option value="all" {{ ($type ?? '') == 'all' ? 'selected' : '' }}>Todos los tipos</option>
                                 <option value="with_producer" {{ ($type ?? '') == 'with_producer' ? 'selected' : '' }}>Con productor</option>
                                 <option value="without_producer" {{ ($type ?? '') == 'without_producer' ? 'selected' : '' }}>Sin productor</option>
                             </select>
-                            
+
+                            <!-- Botón Filtrar -->
                             <button type="submit" class="px-4 py-2 bg-gray-600/90 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center space-x-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel-icon lucide-funnel w-5 h-5">
                                     <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
                                 </svg>
                             </button>
 
-                            @if(request('search') || (request('status') != 'all' && request()->has('status')) || (request('type') != 'all' && request()->has('type')))
+                            <!-- Limpiar filtros -->
+                            @if(request()->anyFilled(['search', 'date_from', 'date_to']) || (request('status') != 'all' && request()->has('status')) || (request('type') != 'all' && request()->has('type')))
                                 <a href="{{ route('polygons.index') }}" class="px-4 py-2 bg-gray-400/90 hover:bg-gray-300 text-white rounded-lg transition-all flex items-center space-x-2"> 
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brush-cleaning-icon lucide-brush-cleaning w-5 h-5">
                                         <path d="m16 22-1-4"/><path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"/><path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z"/><path d="m8 22 1-4"/>
@@ -76,6 +89,17 @@
                             @endif
                         </div>
                     </form>
+
+                    <!-- Mostrar errores de validación (si los hay) -->
+                    @if ($errors->any())
+                        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                            <ul class="list-disc list-inside">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
                     @if($polygons->count() > 0)
                         <div class="overflow-x-auto">
