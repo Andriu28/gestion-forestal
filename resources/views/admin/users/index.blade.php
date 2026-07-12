@@ -51,7 +51,7 @@
                         </span>
                         
                         <!-- Texto - oculto en estado normal, visible en hover -->
-                        <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-20 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                        <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-28 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
                             Deshabilitados
                         </span>
                     </a>
