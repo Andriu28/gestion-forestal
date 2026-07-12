@@ -1,14 +1,4 @@
-@if(session('swal'))
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            showCustomAlert(
-                '{{ session('swal.icon') }}',
-                '{{ session('swal.title') }}',
-                '{{ session('swal.text') }}'
-            );
-        });
-    </script>
-@endif
+
 <x-app-layout>
     <div class="mx-auto">
         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
@@ -225,11 +215,12 @@
     </div>
 </x-app-layout>
 
+@push('scripts')
 <script>
     // Función para restablecer contraseña
     async function handleResetPassword(userId, userName) {
         const result = await showCustomConfirmation(
-            true, // es una acción de advertencia (estilo warning)
+            true,
             `¿Estás seguro de que deseas restablecer la contraseña de <b>${userName}</b>?<br><br>
             <small>Se generará una nueva contraseña aleatoria y se enviará al correo del usuario.</small>`
         );
@@ -259,9 +250,21 @@
             }
         }
     }
-
-    
 </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        @if(session('swal'))
+            showCustomAlert(
+                '{{ session('swal.icon') }}',
+                '{{ session('swal.title') }}',
+                '{{ session('swal.text') }}'
+            );
+            {{ session()->forget('swal') }}
+        @endif
+    });
+</script>
+@endpush
 
 @push('styles')
 <style>
