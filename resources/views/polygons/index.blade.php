@@ -14,11 +14,11 @@
                              <!-- Botón para crear nuevo polígono -->
                             <a href="{{ route('polygons.create') }}" 
                             title="Crear nuevo polígono" 
-                            class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-green-600/70 dark:hover:bg-green-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
+                            class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-green-600/70 dark:hover:bg-green-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
                             
                                 <!-- Contenedor del ícono - se contrae en hover -->
                                 <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-emerald-700/70 group-hover:text-white dark:text-emerald-500/70 transition-colors duration-300">
+                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-emerald-700/70 group-hover:text-white dark:text-emerald-500/70">
                                         <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
                                     </svg>
                                 </span>
@@ -32,11 +32,11 @@
                             <!-- Botón para ver el mapa de polígonos -->
                             <a href="{{ route('polygons.map') }}" 
                             title="Ver mapa de polígonos" 
-                            class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-blue-600/70 dark:hover:bg-blue-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
+                            class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-blue-600/70 dark:hover:bg-blue-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
                             
                                 <!-- Contenedor del ícono - se contrae en hover -->
                                 <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map w-6 h-6 text-blue-700/70 group-hover:text-white dark:text-blue-400/70 transition-colors duration-300">
+                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map w-6 h-6 text-blue-700/70 group-hover:text-white dark:text-blue-400/70">
                                         <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>
                                     </svg>
                                 </span>
@@ -50,11 +50,11 @@
                             <!-- Botón para ver eliminados -->
                             <a href="{{ route('polygons.deleted') }}" 
                             title="Ver polígonos eliminados" 
-                            class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-red-600/70 dark:hover:bg-red-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
+                            class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-red-600/70 dark:hover:bg-red-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
                                 
                                 <!-- Contenedor del ícono - se contrae en hover -->
                                 <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-red-700/60 group-hover:text-white dark:text-red-500/60 transition-colors duration-300">
+                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-red-700/60 group-hover:text-white dark:text-red-500/60">
                                         <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                                     </svg>
                                 </span>
@@ -69,8 +69,19 @@
                     </div>
 
                     <!-- Filtros -->
+                    @php
+                        $advancedFilterFields = [
+                            'date_from', 'date_to', 'parish_id', 'municipality_id', 'state_id',
+                            'area_min', 'area_max', 'producer_id', 'has_deforestation',
+                            'deforestation_year', 'loss_min', 'loss_max',
+                        ];
+                        $activeAdvancedFilters = collect($advancedFilterFields)->filter(fn($field) => request()->filled($field))->count();
+                        if (request()->filled('status') && request('status') !== 'all') $activeAdvancedFilters++;
+                        if (request()->filled('type') && request('type') !== 'all') $activeAdvancedFilters++;
+                        $hasAnyFilter = request()->anyFilled(['search', 'date_from', 'date_to', 'status', 'type', 'parish_id', 'municipality_id', 'state_id', 'area_min', 'area_max', 'producer_id', 'has_deforestation', 'deforestation_year', 'loss_min', 'loss_max']) || (request('status') != 'all' && request()->has('status')) || (request('type') != 'all' && request()->has('type'));
+                    @endphp
                     <form method="GET" action="{{ route('polygons.index') }}" class="mb-6">
-                        <div class="flex flex-wrap gap-4 items-end">
+                        <div class="flex flex-wrap gap-3 items-end">
                             <!-- Búsqueda por texto -->
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar</label>
@@ -78,132 +89,31 @@
                                     placeholder="Nombre, descripción o productor..." value="{{ $search ?? '' }}">
                             </div>
 
-                            <!-- Fechas -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha desde</label>
-                                <input type="date" name="date_from" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                    value="{{ $dateFrom ?? '' }}" max="{{ now()->toDateString() }}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha hasta</label>
-                                <input type="date" name="date_to" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                    value="{{ $dateTo ?? '' }}" max="{{ now()->toDateString() }}">
-                            </div>
-
-                            <!-- Estado y tipo -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
-                                <select name="status" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                    <option value="all" {{ ($status ?? '') == 'all' ? 'selected' : '' }}>Todos los estados</option>
-                                    <option value="active" {{ ($status ?? '') == 'active' ? 'selected' : '' }}>Activos</option>
-                                    <option value="inactive" {{ ($status ?? '') == 'inactive' ? 'selected' : '' }}>Inactivos</option>
-                                    <option value="deleted" {{ ($status ?? '') == 'deleted' ? 'selected' : '' }}>Eliminados</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
-                                <select name="type" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                    <option value="all" {{ ($type ?? '') == 'all' ? 'selected' : '' }}>Todos</option>
-                                    <option value="with_producer" {{ ($type ?? '') == 'with_producer' ? 'selected' : '' }}>Con productor</option>
-                                    <option value="without_producer" {{ ($type ?? '') == 'without_producer' ? 'selected' : '' }}>Sin productor</option>
-                                </select>
-                            </div>
-
-                            <!-- Ubicación geográfica -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Estado Región</label>
-                                <select name="state_id" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                    <option value="">Todos los estados</option>
-                                    @foreach($states as $state)
-                                        <option value="{{ $state->id }}" {{ ($stateId ?? '') == $state->id ? 'selected' : '' }}>{{ $state->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Municipio</label>
-                                <select name="municipality_id" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                    <option value="">Todos los municipios</option>
-                                    @foreach($municipalities as $municipality)
-                                        <option value="{{ $municipality->id }}" {{ ($municipalityId ?? '') == $municipality->id ? 'selected' : '' }}>{{ $municipality->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Parroquia</label>
-                                <select name="parish_id" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                    <option value="">Todas las parroquias</option>
-                                    @foreach($parishes as $parish)
-                                        <option value="{{ $parish->id }}" {{ ($parishId ?? '') == $parish->id ? 'selected' : '' }}>{{ $parish->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <!-- Área -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Área mín (Ha)</label>
-                                <input type="number" name="area_min" step="0.0001" min="0" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                    value="{{ $areaMin ?? '' }}" placeholder="0">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Área máx (Ha)</label>
-                                <input type="number" name="area_max" step="0.0001" min="0" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                    value="{{ $areaMax ?? '' }}" placeholder="999999">
-                            </div>
-
-                            <!-- Productor -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Productor</label>
-                                <select name="producer_id" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                    <option value="">Todos los productores</option>
-                                    @foreach($producers as $producer)
-                                        <option value="{{ $producer->id }}" {{ ($producerId ?? '') == $producer->id ? 'selected' : '' }}>
-                                            {{ $producer->name }} {{ $producer->lastname }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <!-- Deforestación -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Deforestación</label>
-                                <select name="has_deforestation" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                    <option value="">Todos</option>
-                                    <option value="yes" {{ ($hasDeforestation ?? '') == 'yes' ? 'selected' : '' }}>Con registros</option>
-                                    <option value="no" {{ ($hasDeforestation ?? '') == 'no' ? 'selected' : '' }}>Sin registros</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Año de deforestación</label>
-                                <select name="deforestation_year" class="form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                    <option value="">Todos los años</option>
-                                    @foreach($years as $year)
-                                        <option value="{{ $year }}" {{ ($deforestationYear ?? '') == $year ? 'selected' : '' }}>{{ $year }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <!-- Pérdida -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Pérdida mín (%)</label>
-                                <input type="number" name="loss_min" step="0.01" min="0" max="100" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                    value="{{ $lossMin ?? '' }}" placeholder="0">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Pérdida máx (%)</label>
-                                <input type="number" name="loss_max" step="0.01" min="0" max="100" class="form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                    value="{{ $lossMax ?? '' }}" placeholder="100">
-                            </div>
-
                             <!-- Botones de Acción Agrupados -->
                             <div class="flex space-x-2">
-                                <button type="submit" class="px-4 py-2 bg-gray-600/90 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center justify-center">
+                                <!-- Buscar -->
+                                <button type="submit" title="Buscar" class="px-4 py-2 bg-gray-600/90 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center justify-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                                        <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
+                                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
                                     </svg>
                                 </button>
 
-                                @if(request()->anyFilled(['search', 'date_from', 'date_to', 'status', 'type', 'parish_id', 'municipality_id', 'state_id', 'area_min', 'area_max', 'producer_id', 'has_deforestation', 'deforestation_year', 'loss_min', 'loss_max']) || (request('status') != 'all' && request()->has('status')) || (request('type') != 'all' && request()->has('type')))
-                                    <a href="{{ route('polygons.index') }}" class="px-4 py-2 bg-gray-400/90 hover:bg-gray-300 text-white rounded-lg transition-all flex items-center justify-center">
+                                <!-- Abrir modal de filtros avanzados -->
+                                <button type="button" title="Filtros avanzados"
+                                    onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'polygon-filters' }))"
+                                    class="relative px-4 py-2 bg-custom-gold-dark/90 hover:bg-custom-gold-dark text-white rounded-lg transition-all flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                        <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
+                                    </svg>
+                                    @if($activeAdvancedFilters > 0)
+                                        <span class="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-red-600 text-white rounded-full ring-2 ring-white dark:ring-custom-gray">
+                                            {{ $activeAdvancedFilters }}
+                                        </span>
+                                    @endif
+                                </button>
+
+                                @if($hasAnyFilter)
+                                    <a href="{{ route('polygons.index') }}" title="Limpiar filtros" class="px-4 py-2 bg-gray-400/90 hover:bg-gray-300 text-white rounded-lg transition-all flex items-center justify-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                                             <path d="m16 22-1-4"/><path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"/><path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z"/><path d="m8 22 1-4"/>
                                         </svg>
@@ -211,6 +121,181 @@
                                 @endif
                             </div>
                         </div>
+
+                        <!-- Modal de filtros avanzados -->
+                        <x-modal name="polygon-filters" maxWidth="2xl" :showClose="true">
+                            <div class="p-0 overflow-hidden">
+                                <!-- Encabezado del modal -->
+                                <div class="bg-[linear-gradient(135deg,_#3f2c1bdc_0%,_#30201b_100%)] px-6 py-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="bg-white/20 p-2 rounded-lg">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-white">
+                                                    <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h2 class="text-xl font-bold text-white">Filtros avanzados</h2>
+                                                <p class="text-blue-100 text-sm">Refina la búsqueda de polígonos</p>
+                                            </div>
+                                        </div>
+                                        <button type="button" x-on:click="$dispatch('close')" class="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Contenido del modal -->
+                                <div class="p-6 max-h-[70vh] overflow-y-auto">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <!-- Fechas -->
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha desde</label>
+                                            <input type="date" name="date_from" class="form-input w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                                value="{{ $dateFrom ?? '' }}" max="{{ now()->toDateString() }}">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha hasta</label>
+                                            <input type="date" name="date_to" class="form-input w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                                value="{{ $dateTo ?? '' }}" max="{{ now()->toDateString() }}">
+                                        </div>
+
+                                        <!-- Estado y tipo -->
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
+                                            <select name="status" class="form-select w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                                <option value="all" {{ ($status ?? '') == 'all' ? 'selected' : '' }}>Todos los estados</option>
+                                                <option value="active" {{ ($status ?? '') == 'active' ? 'selected' : '' }}>Activos</option>
+                                                <option value="inactive" {{ ($status ?? '') == 'inactive' ? 'selected' : '' }}>Inactivos</option>
+                                                <option value="deleted" {{ ($status ?? '') == 'deleted' ? 'selected' : '' }}>Eliminados</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
+                                            <select name="type" class="form-select w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                                <option value="all" {{ ($type ?? '') == 'all' ? 'selected' : '' }}>Todos</option>
+                                                <option value="with_producer" {{ ($type ?? '') == 'with_producer' ? 'selected' : '' }}>Con productor</option>
+                                                <option value="without_producer" {{ ($type ?? '') == 'without_producer' ? 'selected' : '' }}>Sin productor</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Ubicación geográfica -->
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Estado Región</label>
+                                            <select name="state_id" class="form-select w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                                <option value="">Todos los estados</option>
+                                                @foreach($states as $state)
+                                                    <option value="{{ $state->id }}" {{ ($stateId ?? '') == $state->id ? 'selected' : '' }}>{{ $state->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Municipio</label>
+                                            <select name="municipality_id" class="form-select w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                                <option value="">Todos los municipios</option>
+                                                @foreach($municipalities as $municipality)
+                                                    <option value="{{ $municipality->id }}" {{ ($municipalityId ?? '') == $municipality->id ? 'selected' : '' }}>{{ $municipality->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Parroquia</label>
+                                            <select name="parish_id" class="form-select w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                                <option value="">Todas las parroquias</option>
+                                                @foreach($parishes as $parish)
+                                                    <option value="{{ $parish->id }}" {{ ($parishId ?? '') == $parish->id ? 'selected' : '' }}>{{ $parish->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <!-- Área -->
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Área mín (Ha)</label>
+                                            <input type="number" name="area_min" step="0.0001" min="0" class="form-input w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                                value="{{ $areaMin ?? '' }}" placeholder="0">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Área máx (Ha)</label>
+                                            <input type="number" name="area_max" step="0.0001" min="0" class="form-input w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                                value="{{ $areaMax ?? '' }}" placeholder="999999">
+                                        </div>
+
+                                        <!-- Productor -->
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Productor</label>
+                                            <select name="producer_id" class="form-select w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                                <option value="">Todos los productores</option>
+                                                @foreach($producers as $producer)
+                                                    <option value="{{ $producer->id }}" {{ ($producerId ?? '') == $producer->id ? 'selected' : '' }}>
+                                                        {{ $producer->name }} {{ $producer->lastname }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <!-- Deforestación -->
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Deforestación</label>
+                                            <select name="has_deforestation" class="form-select w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                                <option value="">Todos</option>
+                                                <option value="yes" {{ ($hasDeforestation ?? '') == 'yes' ? 'selected' : '' }}>Con registros</option>
+                                                <option value="no" {{ ($hasDeforestation ?? '') == 'no' ? 'selected' : '' }}>Sin registros</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Año de deforestación</label>
+                                            <select name="deforestation_year" class="form-select w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                                <option value="">Todos los años</option>
+                                                @foreach($years as $year)
+                                                    <option value="{{ $year }}" {{ ($deforestationYear ?? '') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <!-- Pérdida -->
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Pérdida mín (%)</label>
+                                            <input type="number" name="loss_min" step="0.01" min="0" max="100" class="form-input w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                                value="{{ $lossMin ?? '' }}" placeholder="0">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Pérdida máx (%)</label>
+                                            <input type="number" name="loss_max" step="0.01" min="0" max="100" class="form-input w-full rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                                value="{{ $lossMax ?? '' }}" placeholder="100">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pie del modal -->
+                                <div class="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+                                    <div class="flex flex-wrap gap-3 justify-between items-center">
+                                        @if($hasAnyFilter)
+                                            <a href="{{ route('polygons.index') }}" class="inline-flex items-center px-4 py-2.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-lg transition-all">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2">
+                                                    <path d="m16 22-1-4"/><path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"/><path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z"/><path d="m8 22 1-4"/>
+                                                </svg>
+                                                Limpiar filtros
+                                            </a>
+                                        @else
+                                            <span></span>
+                                        @endif
+                                        <div class="flex space-x-2">
+                                            <button type="button" x-on:click="$dispatch('close')" class="inline-flex items-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                                Cancelar
+                                            </button>
+                                            <button type="submit" class="inline-flex items-center px-4 py-2.5 bg-custom-gold-dark hover:bg-custom-gold-medium text-white font-medium rounded-lg transition-all hover:shadow-lg hover:-translate-y-0.5">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2">
+                                                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                                                </svg>
+                                                Aplicar filtros
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </x-modal>
                     </form>
 
                     <!-- Mostrar errores de validación -->
@@ -307,7 +392,7 @@
                                                       <!-- Botón de DESACTIVAR (cuando está activo) -->
                                                         @if($polygon->is_active)
                                                             <button type="button" 
-                                                                    class="inline-flex items-center text-yellow-700/40 hover:text-yellow-500/80 dark:text-yellow-400/60 dark:hover:text-yellow-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                                    class="inline-flex items-center text-yellow-700/40 hover:text-yellow-500/80 dark:text-yellow-400/60 dark:hover:text-yellow-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                                     title="Desactivar"
                                                                     onclick="handleTogglePolygonStatus({{ $polygon->id }}, '{{ addslashes($polygon->name) }}', true)">
                                                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
@@ -319,7 +404,7 @@
                                                         @else
                                                             <!-- Botón de ACTIVAR (cuando está inactivo) -->
                                                             <button type="button" 
-                                                                    class="inline-flex items-center text-green-700/40 hover:text-green-500/80 dark:text-green-400/60 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                                    class="inline-flex items-center text-green-700/40 hover:text-green-500/80 dark:text-green-400/60 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                                     title="Activar"
                                                                     onclick="handleTogglePolygonStatus({{ $polygon->id }}, '{{ addslashes($polygon->name) }}', false)">
                                                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
@@ -1178,4 +1263,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
 </script>
-
