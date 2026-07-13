@@ -4,7 +4,7 @@
         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-4 md:mb-4">
-                    {{ __('Polígonos Deshabilitados') }}
+                    {{ __('Polígonos Eliminados') }}
                 </h2>
 
                 <div class="flex justify-end mb-6">
@@ -69,7 +69,7 @@
                                         </td>
                                         <td class="px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                             <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">
-                                                Deshabilitado
+                                                Eliminado
                                             </span>
                                             <div class="text-xs text-gray-500 dark:text-gray-500 mt-1">
                                                 {{ $polygon->deleted_at->format('d/m/Y H:i') }}
