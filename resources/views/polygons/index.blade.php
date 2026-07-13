@@ -79,7 +79,7 @@
                         if (request()->filled('status') && request('status') !== 'all') $activeAdvancedFilters++;
                         if (request()->filled('type') && request('type') !== 'all') $activeAdvancedFilters++;
                         $hasAnyFilter = request()->anyFilled(['search', 'date_from', 'date_to', 'status', 'type', 'parish_id', 'municipality_id', 'state_id', 'area_min', 'area_max', 'producer_id', 'has_deforestation', 'deforestation_year', 'loss_min', 'loss_max']) || (request('status') != 'all' && request()->has('status')) || (request('type') != 'all' && request()->has('type'));
-                        $hl = 'ring-2 ring-gray-500 !border-gray-500 !bg-gray-300/70 dark:!bg-gray-500/30 dark:!border-gray-400';
+                        $hl = 'ring-2 ring-gray-500 !border-gray-500 !bg-gray-300/70 dark:!bg-gray-400/50 dark:!border-gray-300';
                     @endphp
                     <form method="GET" action="{{ route('polygons.index') }}" class="mb-6">
                         <div class="flex flex-wrap gap-4">
@@ -112,7 +112,7 @@
                         <!-- Panel colapsable de filtros avanzados -->
                         <div id="advanced-filters-panel" class="grid transition-all duration-300 ease-in-out {{ $activeAdvancedFilters > 0 ? 'grid-rows-[1fr] opacity-100 mt-3' : 'grid-rows-[0fr] opacity-0' }}">
                             <div class="overflow-hidden">
-                                <div class="border border-gray-300/80 dark:border-gray-700 rounded-lg bg-gray-100/20 dark:bg-gray-800 shadow-sm">
+                                <div class="border border-gray-300/80 dark:border-gray-700 rounded-lg bg-gray-100/20 dark:bg-gray-700/10 shadow-sm">
                                     <!-- Encabezado del panel -->
                                     <div class="bg-gray-200 dark:bg-gray-700 px-4 py-2.5 rounded-t-lg">
                                         <div class="flex items-center justify-between">
@@ -122,7 +122,7 @@
                                                 </svg>
                                                 <h2 class="text-sm font-semibold text-black  dark:text-white">Filtros avanzados</h2>
                                             </div>
-                                            <button type="button" onclick="toggleAdvancedFilters(false)" class="text-black/80 dark:text-white hover:text-black dark:hover:text-white p-2.5 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                                            <button type="button" onclick="toggleAdvancedFilters(false)" class="text-black/80 dark:text-white hover:text-black dark:hover:text-white p-2.5 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                                 </svg>
@@ -252,7 +252,7 @@
                                     </div>
 
                                     <!-- Pie del panel -->
-                                    <div class="bg-gray-100/40 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 rounded-b-lg">
+                                    <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-3 rounded-b-lg">
                                         <div class="flex justify-end space-x-2">
 
                                             @if($hasAnyFilter)
@@ -392,7 +392,7 @@
                                                       <!-- Botón de DESACTIVAR (cuando está activo) -->
                                                         @if($polygon->is_active)
                                                             <button type="button" 
-                                                                    class="inline-flex items-center text-yellow-700/40 hover:text-yellow-500/80 dark:text-yellow-400/60 dark:hover:text-yellow-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
+                                                                    class="inline-flex items-center text-yellow-700/40 hover:text-yellow-500/80 dark:text-yellow-400/60 dark:hover:text-yellow-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                                     title="Desactivar"
                                                                     onclick="handleTogglePolygonStatus({{ $polygon->id }}, '{{ addslashes($polygon->name) }}', true)">
                                                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
@@ -404,7 +404,7 @@
                                                         @else
                                                             <!-- Botón de ACTIVAR (cuando está inactivo) -->
                                                             <button type="button" 
-                                                                    class="inline-flex items-center text-green-700/40 hover:text-green-500/80 dark:text-green-400/60 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
+                                                                    class="inline-flex items-center text-green-700/40 hover:text-green-500/80 dark:text-green-400/60 dark:hover:text-green-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                                     title="Activar"
                                                                     onclick="handleTogglePolygonStatus({{ $polygon->id }}, '{{ addslashes($polygon->name) }}', false)">
                                                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
