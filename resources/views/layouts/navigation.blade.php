@@ -100,7 +100,7 @@
                                 </a>
                             </div>
                         </li>
-                        <!-- <li>
+                        <li>
                             <div class="transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-2">
                                 <a href="#" class="nav-item transition-all duration-300 ease-in-out hover:font-bold hover:shadow-md group">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-clock-icon lucide-file-clock transition-all duration-500 group-hover:scale-[1.15] group-hover-ml-2">
@@ -109,7 +109,41 @@
                                     <span class="sidebar-text">Reportes.X</span>
                                 </a>
                             </div>
-                        </li> -->
+                        </li> 
+                        <!-- Menú Cosecha -->
+                        <li>
+                            <div class="transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-2">
+                                <a href="#" class="nav-item transition-all duration-300 ease-in-out hover:font-bold hover:shadow-md group">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat-icon lucide-wheat transition-all duration-500 group-hover:scale-[1.15] group-hover-ml-2">
+                                        <path d="M2 22 16 8"/>
+                                        <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                                        <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                                        <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                                        <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
+                                        <path d="M5 11v10"/>
+                                        <path d="M19 11v10"/>
+                                    </svg>
+                                    <span class="sidebar-text">Cosecha.X</span>
+                                </a>
+                            </div>
+                        </li>
+
+                        <!-- Menú Almacén -->
+                        <li>
+                            <div class="transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-2">
+                                <a href="#" class="nav-item transition-all duration-300 ease-in-out hover:font-bold hover:shadow-md group">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse-icon lucide-warehouse transition-all duration-500 group-hover:scale-[1.15] group-hover-ml-2">
+                                        <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
+                                        <path d="M6 18h12"/>
+                                        <path d="M6 14h12"/>
+                                        <path d="M10 10h4"/>
+                                        <path d="M10 22v-8"/>
+                                        <path d="M14 22v-8"/>
+                                    </svg>
+                                    <span class="sidebar-text">Almacén.X</span>
+                                </a>
+                            </div>
+                        </li>
                        
                         @endif
 
