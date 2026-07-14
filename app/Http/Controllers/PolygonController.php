@@ -73,8 +73,8 @@ class PolygonController extends Controller
         $query = $this->applySearchFilter(
             $query,
             $search,
-            ['name', 'description'],
-            ['producer' => ['name', 'lastname']]
+            ['name'],
+            []
         );
 
         // Filtros específicos de estado y tipo
@@ -174,7 +174,7 @@ class PolygonController extends Controller
         $states = State::orderBy('name')->get(['id', 'name']);
         $producers = Producer::orderBy('name')->get(['id', 'name', 'lastname']);
         $years = range(2020, now()->year); // rango de años para deforestación
-
+        
         return view('polygons.index', compact(
             'polygons',
             'search', 'dateFrom', 'dateTo', 'status', 'type',

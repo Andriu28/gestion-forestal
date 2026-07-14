@@ -31,7 +31,7 @@ class FormUser extends Component
             ],
             'role' => [
                 'required',
-                Rule::in(['basico', 'tecnico', 'administrador'])
+                Rule::in(['basico', 'administrador'])
             ]
         ];
     }
@@ -97,11 +97,6 @@ class FormUser extends Component
         ]);
 
         Mail::to($user->email)->send(new NewUserPasswordMail($user->name, $plainPassword));
-
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($user)
-            ->log('Usuario creado');
 
         $this->reset();
 

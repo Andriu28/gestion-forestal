@@ -80,7 +80,7 @@ trait LogsActivityWithDescriptions
     /**
      * Construye la descripción para actualizaciones (detecta cambios y prioridad).
      */
-    private function buildUpdateDescription(string $label): string
+    protected function buildUpdateDescription(string $label): string
     {
         // Obtener los cambios que ya se guardaron
         $changes = $this->getChanges();

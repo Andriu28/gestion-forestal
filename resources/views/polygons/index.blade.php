@@ -1214,11 +1214,6 @@ function formatPolygonDetails(polygon) {
                 <div class="flex flex-wrap gap-3 justify-between items-center">
                     <div class="space-x-2">
                         
-                        <!-- Botón para editar el polígono -->
-                        <a href="{{ route('polygons.edit', $polygon) }} 
-                        title="Editar polígono" 
-                        class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-indigo-600/70 dark:hover:bg-indigo-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
-                        
                             <!-- Contenedor del ícono - se contrae en hover -->
                             <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-indigo-600 dark:text-indigo-400 group-hover:text-white ">

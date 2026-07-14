@@ -6,9 +6,12 @@ use App\Models\Producer;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreProducerRequest;
 use App\Http\Requests\UpdateProducerRequest;
+use App\Traits\Filterable;
 
 class ProducerController extends Controller
 {
+    use Filterable;
+
     /**
      * Muestra la lista de productores con filtros.
      */
@@ -17,10 +20,15 @@ class ProducerController extends Controller
         $search = $request->input('search');
         $status = $request->input('status', 'all');  // Cambia 'all' por 'active'
 
-        $query = Producer::query()  // Esto ya excluye los eliminados por defecto
-            ->when($search, function ($query, $search) {
-                return $query->search($search);
-            });
+        $query = Producer::query();  // Esto ya excluye los eliminados por defecto
+
+        // busqueda flexible con el trait
+        $query = $this->applySearchFilter(
+            $query,
+            $search,
+            ['name', 'lastname', 'description'], // columnas de la tabla producers
+            [] // sin relaciones por ahora
+        );
 
         match ($status) {
             'active'   => $query->where('is_active', true),
@@ -371,11 +379,17 @@ class ProducerController extends Controller
         $search = $request->input('search');
         $status = $request->input('status', 'all');
 
-        $query = Producer::query()
-            ->when($search, function ($query, $search) {
-                return $query->search($search);
-            });
+        $query = Producer::query();
 
+        // Búsqueda flexible con el trait
+        $query = $this->applySearchFilter(
+            $query,
+            $search,
+            ['name', 'lastname', 'description'],
+            []
+        );
+
+        // Filtro de estado
         match ($status) {
             'active'   => $query->where('is_active', true),
             'inactive' => $query->where('is_active', false),
