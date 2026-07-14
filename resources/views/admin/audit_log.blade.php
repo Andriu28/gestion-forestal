@@ -54,94 +54,171 @@ $roleTranslations = [
                     </div>
                 @endif
                 <!-- Filtros -->
+                @php
+                    $advancedFilterFields = ['date_from', 'date_to', 'user_id', 'event_type', 'subject_type'];
+                    $activeAdvancedFilters = collect($advancedFilterFields)->filter(fn($field) => request()->filled($field) && request($field) !== 'all')->count();
+                    if (request()->filled('role') && request('role') !== 'all') $activeAdvancedFilters++;
+                    $hasAnyFilter = request()->filled('search') || $activeAdvancedFilters > 0;
+                    $hl = 'ring-2 ring-gray-500 !border-gray-500 !bg-gray-300/70 dark:!bg-gray-400/50 dark:!border-gray-300';
+                @endphp
                 <form method="GET" action="{{ route('admin.audit') }}" class="mb-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <!-- Búsqueda por texto -->
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar</label>
-                            <input type="text" name="search" class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                    <div class="flex flex-wrap gap-4">
+                        <input type="text" name="search" class="form-input w-56 sm:w-64 rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
                                 placeholder="Usuario o actividad..." value="{{ $search ?? '' }}">
-                        </div>
 
-                        <!-- Rango de fechas -->
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha desde</label>
-                            <input type="date" name="date_from" 
-                                class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                value="{{ $dateFrom ?? '' }}"
-                                max="{{ now()->toDateString() }}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha hasta</label>
-                            <input type="date" name="date_to" 
-                                class="w-full form-input rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                value="{{ $dateTo ?? '' }}"
-                                max="{{ now()->toDateString() }}">
-                        </div>
-
-                        <!-- Rol del usuario -->
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Rol</label>
-                            <select name="role" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                <option value="all" {{ ($role ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
-                                <option value="administrador" {{ ($role ?? '') == 'administrador' ? 'selected' : '' }}>Administrador</option>
-                                <option value="basico" {{ ($role ?? '') == 'basico' ? 'selected' : '' }}>Básico</option>
-                            </select>
-                        </div>
-
-                        <!-- Usuario específico -->
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Usuario</label>
-                            <select name="user_id" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                <option value="all" {{ ($userId ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}" {{ ($userId ?? '') == $user->id ? 'selected' : '' }}>
-                                        {{ $user->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Tipo de evento -->
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Evento</label>
-                            <select name="event_type" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                <option value="all" {{ ($eventType ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
-                                <option value="created" {{ ($eventType ?? '') == 'created' ? 'selected' : '' }}>Creado</option>
-                                <option value="updated" {{ ($eventType ?? '') == 'updated' ? 'selected' : '' }}>Actualizado</option>
-                                <option value="deleted" {{ ($eventType ?? '') == 'deleted' ? 'selected' : '' }}>Eliminado</option>
-                                <option value="restored" {{ ($eventType ?? '') == 'restored' ? 'selected' : '' }}>Restaurado</option>
-                                <option value="login" {{ ($eventType ?? '') == 'login' ? 'selected' : '' }}>Inicio de sesión</option>
-                                <option value="logout" {{ ($eventType ?? '') == 'logout' ? 'selected' : '' }}>Cierre de sesión</option>
-                                <option value="role_change" {{ ($eventType ?? '') == 'role_change' ? 'selected' : '' }}>Cambio de rol</option>
-                            </select>
-                        </div>
-
-                        <!-- Modelo afectado -->
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Modelo</label>
-                            <select name="subject_type" class="w-full form-select rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                                <option value="all" {{ ($subjectType ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
-                                <option value="User" {{ ($subjectType ?? '') == 'User' ? 'selected' : '' }}>Usuario</option>
-                                <option value="Polygon" {{ ($subjectType ?? '') == 'Polygon' ? 'selected' : '' }}>Polígono</option>
-                                <option value="Producer" {{ ($subjectType ?? '') == 'Producer' ? 'selected' : '' }}>Productor</option>
-                            </select>
-                        </div>
-
-                        <!-- Botones de acción -->
-                        <div class="flex items-end space-x-2">
-                            <button type="submit" class="px-4 py-2 bg-gray-600/90 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center space-x-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel-icon lucide-funnel w-5 h-5">
-                                    <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
-                                </svg>
-                            </button>
-                            @if(request()->anyFilled(['search', 'date_from', 'date_to', 'role', 'user_id', 'event_type', 'subject_type']))
-                                <a href="{{ route('admin.audit') }}" class="px-4 py-2 bg-gray-400/90 hover:bg-gray-300 text-white rounded-lg transition-all flex items-center space-x-2"> 
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brush-cleaning-icon lucide-brush-cleaning w-5 h-5">
-                                        <path d="m16 22-1-4"/><path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"/><path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z"/><path d="m8 22 1-4"/>
-                                    </svg>
-                                </a>
+                        <!-- Alternar panel de filtros avanzados -->
+                        <button type="button" title="Filtros avanzados"
+                            onclick="toggleAdvancedFilters()"
+                            class="relative px-4 py-2 bg-gray-600/90 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel-icon lucide-funnel w-5 h-5">
+                                <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
+                            </svg>
+                            @if($activeAdvancedFilters > 0)
+                                <span class="absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-red-500/90 text-white rounded-full ring-2 ring-white dark:ring-custom-gray">
+                                    {{ $activeAdvancedFilters }}
+                                </span>
                             @endif
+                        </button>
+
+                        @if($hasAnyFilter)
+                            <a href="{{ route('admin.audit') }}" class="px-4 py-2 bg-gray-400/90 hover:bg-gray-300 text-white rounded-lg transition-all flex items-center space-x-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brush-cleaning-icon lucide-brush-cleaning w-5 h-5">
+                                    <path d="m16 22-1-4"/><path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"/><path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z"/><path d="m8 22 1-4"/>
+                                </svg>
+                            </a>
+                        @endif
+                    </div>
+
+                    <!-- Panel colapsable de filtros avanzados -->
+                    <div id="advanced-filters-panel" class="grid transition-all duration-300 ease-in-out {{ $activeAdvancedFilters > 0 ? 'grid-rows-[1fr] opacity-100 mt-3' : 'grid-rows-[0fr] opacity-0' }}">
+                        <div class="overflow-hidden">
+                            <div class="border border-gray-300/80 dark:border-gray-700 rounded-lg bg-gray-100/20 dark:bg-gray-700/10 shadow-sm">
+                                <!-- Encabezado del panel -->
+                                <div class="bg-gray-200 dark:bg-gray-700 px-4 py-2.5 rounded-t-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-black  dark:text-white">
+                                                <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
+                                            </svg>
+                                            <h2 class="text-sm font-semibold text-black  dark:text-white">Filtros avanzados</h2>
+                                        </div>
+                                        <button type="button" onclick="toggleAdvancedFilters(false)" class="text-black/80 dark:text-white hover:text-black dark:hover:text-white p-2.5 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Contenido del panel -->
+                                <div class="p-4">
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                                        <!-- Fechas -->
+                                        <div>
+                                            <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-0.5">Fecha desde</label>
+                                            <input type="date" name="date_from" class="form-input w-full text-xs py-1.5 px-2 rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 {{ !empty($dateFrom) ? $hl : '' }}" 
+                                                value="{{ $dateFrom ?? '' }}" max="{{ now()->toDateString() }}">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-0.5">Fecha hasta</label>
+                                            <input type="date" name="date_to" class="form-input w-full text-xs py-1.5 px-2 rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 {{ !empty($dateTo) ? $hl : '' }}" 
+                                                value="{{ $dateTo ?? '' }}" max="{{ now()->toDateString() }}">
+                                        </div>
+
+                                        <!-- Rol del usuario -->
+                                        <div>
+                                            <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-0.5">Rol</label>
+                                            <select name="role" class="form-select w-full text-xs py-1.5 px-2 rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 {{ ($role ?? 'all') !== 'all' ? $hl : '' }}">
+                                                <option value="all" {{ ($role ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
+                                                <option value="administrador" {{ ($role ?? '') == 'administrador' ? 'selected' : '' }}>Administrador</option>
+                                                <option value="basico" {{ ($role ?? '') == 'basico' ? 'selected' : '' }}>Básico</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Usuario específico -->
+                                        <div>
+                                            <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-0.5">Usuario</label>
+                                            <select name="user_id" class="form-select w-full text-xs py-1.5 px-2 rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 {{ ($userId ?? 'all') !== 'all' ? $hl : '' }}">
+                                                <option value="all" {{ ($userId ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
+                                                @foreach($users as $user)
+                                                    <option value="{{ $user->id }}" {{ ($userId ?? '') == $user->id ? 'selected' : '' }}>
+                                                        {{ $user->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <!-- Tipo de evento -->
+                                        <div>
+                                            <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-0.5">Evento</label>
+                                            <select name="event_type" class="form-select w-full text-xs py-1.5 px-2 rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 {{ ($eventType ?? 'all') !== 'all' ? $hl : '' }}">
+                                                <option value="all" {{ ($eventType ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
+                                                <option value="created" {{ ($eventType ?? '') == 'created' ? 'selected' : '' }}>Creado</option>
+                                                <option value="updated" {{ ($eventType ?? '') == 'updated' ? 'selected' : '' }}>Actualizado</option>
+                                                <option value="deleted" {{ ($eventType ?? '') == 'deleted' ? 'selected' : '' }}>Eliminado</option>
+                                                <option value="restored" {{ ($eventType ?? '') == 'restored' ? 'selected' : '' }}>Restaurado</option>
+                                                <option value="login" {{ ($eventType ?? '') == 'login' ? 'selected' : '' }}>Inicio de sesión</option>
+                                                <option value="logout" {{ ($eventType ?? '') == 'logout' ? 'selected' : '' }}>Cierre de sesión</option>
+                                                <option value="role_change" {{ ($eventType ?? '') == 'role_change' ? 'selected' : '' }}>Cambio de rol</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Modelo afectado -->
+                                        <div>
+                                            <label class="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-0.5">Modelo</label>
+                                            <select name="subject_type" class="form-select w-full text-xs py-1.5 px-2 rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 {{ ($subjectType ?? 'all') !== 'all' ? $hl : '' }}">
+                                                <option value="all" {{ ($subjectType ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
+                                                <option value="User" {{ ($subjectType ?? '') == 'User' ? 'selected' : '' }}>Usuario</option>
+                                                <option value="Polygon" {{ ($subjectType ?? '') == 'Polygon' ? 'selected' : '' }}>Polígono</option>
+                                                <option value="Producer" {{ ($subjectType ?? '') == 'Producer' ? 'selected' : '' }}>Productor</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pie del panel -->
+                                <div class="border-t border-gray-200 dark:border-gray-700 px-4 py-3 rounded-b-lg">
+                                    <div class="flex justify-end space-x-2">
+
+                                        @if($hasAnyFilter)
+                                            <a href="{{ route('admin.audit') }}"
+                                            title="Limpiar filtros"
+                                            class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-gray-500/70 dark:hover:bg-gray-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
+
+                                                <!-- Contenedor del ícono - se contrae en hover -->
+                                                <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brush-cleaning-icon lucide-brush-cleaning w-6 h-6 text-gray-700/70 group-hover:text-white dark:text-gray-400/70">
+                                                        <path d="m16 22-1-4"/><path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"/><path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z"/><path d="m8 22 1-4"/>
+                                                    </svg>
+                                                </span>
+
+                                                <!-- Texto - oculto en estado normal, visible en hover -->
+                                                <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-24 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                                                    Limpiar filtros
+                                                </span>
+                                            </a>
+                                        @endif
+
+                                        <button type="submit"
+                                        title="filtros avanzados y búsqueda" 
+                                        class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-blue-800/70 dark:hover:bg-blue-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
+
+                                            <!-- Contenedor del ícono - se contrae en hover -->
+                                            <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-blue-700/70 group-hover:text-white dark:text-blue-500/70">
+                                                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                                                </svg>
+                                            </span>
+
+                                            <!-- Texto - oculto en estado normal, visible en hover -->
+                                            <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-24 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                                                Aplicar filtros
+                                            </span>
+                                        </button>
+
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -436,6 +513,21 @@ $roleTranslations = [
     </div>
 
     <script>
+        // Animación de apertura/cierre del panel de filtros avanzados (CSS Grid trick, sin medir alturas)
+        function toggleAdvancedFilters(forceOpen) {
+            const panel = document.getElementById('advanced-filters-panel');
+            if (!panel) return;
+            const isOpen = panel.classList.contains('grid-rows-[1fr]');
+            const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
+            if (shouldOpen) {
+                panel.classList.remove('grid-rows-[0fr]', 'opacity-0');
+                panel.classList.add('grid-rows-[1fr]', 'opacity-100', 'mt-3');
+            } else {
+                panel.classList.remove('grid-rows-[1fr]', 'opacity-100', 'mt-3');
+                panel.classList.add('grid-rows-[0fr]', 'opacity-0');
+            }
+        }
+
             document.addEventListener('DOMContentLoaded', function() {
             const dateFrom = document.querySelector('input[name="date_from"]');
             const dateTo = document.querySelector('input[name="date_to"]');
