@@ -1216,32 +1216,30 @@ function formatPolygonDetails(polygon) {
                 </div>
             </div>
 
-            <!-- Acciones -->
- 
-                <div class="flex flex-wrap gap-3 justify-between items-center">
-                    <div class="space-x-2">
-                        
-                            <!-- Contenedor del ícono - se contrae en hover -->
-                            <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
-                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-indigo-600 dark:text-indigo-400 group-hover:text-white ">
-                                    <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
-                                </svg>
-                            </span>
-                            
-                            <!-- Texto - oculto en estado normal, visible en hover -->
-                            <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-12 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
-                                Editar
-                            </span>
-                        </a>
-                    </div>
-                    <button x-on:click="$dispatch('close')" 
-                            class="inline-flex bg-red-600/70 dark:bg-red-700/60 hover:bg-red-700/85 dark:hover:bg-red-600/70 items-center px-4 py-2.5 border border-red-300 dark:border-red-700 text-white font-medium rounded-lg transition-colors">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                        Cerrar
-                    </button>
+             <div class="flex flex-wrap gap-3 justify-between items-center">
+                <div class="space-x-2">
+                    <!-- Botón para editar el polígono -->
+                    <a href="/polygons/${polygon.id}/edit" 
+                    title="Editar polígono" 
+                    class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-indigo-600/70 dark:hover:bg-indigo-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden inline-flex">
+                        <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-indigo-600 dark:text-indigo-400 group-hover:text-white">
+                                <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+                            </svg>
+                        </span>
+                        <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-12 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                            Editar
+                        </span>
+                    </a>
                 </div>
+                <button x-on:click="$dispatch('close')" 
+                        class="inline-flex bg-red-600/70 dark:bg-red-700/60 hover:bg-red-700/85 dark:hover:bg-red-600/70 items-center px-4 py-2.5 border border-red-300 dark:border-red-700 text-white font-medium rounded-lg transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Cerrar
+                </button>
+            </div>
 
         </div>
     `;

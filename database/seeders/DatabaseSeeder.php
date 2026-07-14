@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
    public function run(): void
     {
         User::create([
-            'name' => 'Root',
+            'name' => 'Mary Lopez',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('12345678'),
             'role' => 'administrador',
@@ -23,16 +23,32 @@ class DatabaseSeeder extends Seeder
         ]);
 
          User::create([
-            'name' => 'Dipert',
-            'email' => 'diper@gmail.com',
+            'name' => 'Diper Smith',
+            'email' => 'basico01@gmail.com',
             'password' => Hash::make('1234'), // Hash con mayúscula
-            'role' => 'tecnico',
+            'role' => 'basico',
             'email_verified_at' => now(), // ← AGREGAR ESTA LÍNEA
         ]);
 
         User::create([
-            'name' => 'Básico',
-            'email' => 'basico@gmail.com',
+            'name' => 'Luis Barrios',
+            'email' => 'basico02@gmail.com',
+            'password' => Hash::make('1234'), // Hash con mayúscula
+            'role' => 'basico',
+            'email_verified_at' => now(), // ← AGREGAR ESTA LÍNEA
+        ]);
+
+        User::create([
+            'name' => 'Jose Hernadez',
+            'email' => 'basico03@gmail.com',
+            'password' => Hash::make('1234'), // Hash con mayúscula
+            'role' => 'basico',
+            'email_verified_at' => now(), // ← AGREGAR ESTA LÍNEA
+        ]);
+
+        User::create([
+            'name' => 'Milagros Gonzales',
+            'email' => 'basico04@gmail.com',
             'password' => Hash::make('1234'), // Hash con mayúscula
             'role' => 'basico',
             'email_verified_at' => now(), // ← AGREGAR ESTA LÍNEA
