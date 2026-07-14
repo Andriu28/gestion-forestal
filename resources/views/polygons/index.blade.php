@@ -86,6 +86,13 @@
                             <input type="text" name="search" class="form-input w-56 sm:w-64 rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
                                 placeholder="Buscar por nombre, descripción o productor..." value="{{ $search ?? '' }}">
 
+                            <!-- Buscar -->
+                            <button type="submit" title="Buscar" class="px-4 py-2 bg-gray-600/90 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                                </svg>
+                            </button>
+
                             <!-- Alternar panel de filtros avanzados -->
                             <button type="button" title="Filtros avanzados"
                                 onclick="toggleAdvancedFilters()"
