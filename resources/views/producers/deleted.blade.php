@@ -1,4 +1,3 @@
-
 <x-app-layout>
      <div class="mx-auto">
         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
@@ -130,7 +129,7 @@
     <!-- Modal para ver detalles del productor (mismo que en index) -->
     <x-modal name="view-producer-details" maxWidth="2xl" :showClose="true">
         <div class="p-0 overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4">
+            <div class="bg-gradient-to-br from-[#884722e8] to-[#1d0e04da] dark:bg-gradient-to-br dark:from-[#2b231e8c] dark:to-[#99521f57] px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
                         <div class="bg-white/20 p-2 rounded-lg">
@@ -326,7 +325,7 @@ function formatProducerDetails(producer) {
     return `
         <div class="space-y-6">
             <!-- Información principal -->
-            <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <div class="bg-stone-100/90 dark:bg-[rgb(29,32,38,0.61)] rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -344,7 +343,7 @@ function formatProducerDetails(producer) {
                 <!-- Grid de información -->
                 <div class="grid grid-cols-1 gap-4 mt-6">
                     <!-- Información básica -->
-                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                    <div class="bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg p-4 border border-gray-100 dark:border-gray-700">
                         <div class="flex items-center mb-2">
                             <div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg mr-3">
                                 <svg class="w-7 h-7 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -373,7 +372,7 @@ function formatProducerDetails(producer) {
 
             ${producer.description ? `
             <!-- Descripción -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <div class="bg-stone-100/90 dark:bg-[rgb(29,32,38,0.61)] rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <div class="flex items-center mb-4">
                     <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mr-3">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,10 +388,10 @@ function formatProducerDetails(producer) {
             ` : ''}
 
             <!-- Fechas del sistema -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <div class="bg-stone-100/90 dark:bg-[rgb(29,32,38,0.61)] rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Información del Sistema</h3>
                 <div class="space-y-3">
-                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -402,7 +401,7 @@ function formatProducerDetails(producer) {
                         <span class="font-medium text-gray-900 dark:text-white">${formatDate(producer.created_at)}</span>
                     </div>
                     
-                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -412,7 +411,7 @@ function formatProducerDetails(producer) {
                         <span class="font-medium text-gray-900 dark:text-white">${formatDate(producer.updated_at)}</span>
                     </div>
                     
-                    <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 text-red-500 dark:text-red-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -423,6 +422,21 @@ function formatProducerDetails(producer) {
                     </div>
                 </div>
             </div>
+            <!-- Acciones -->
+           
+            <div class="flex flex-wrap gap-3 justify-between items-center">
+                <div class="space-x-2">
+                </div>
+                
+                <button x-on:click="$dispatch('close')" 
+                        class="inline-flex bg-red-600/70 dark:bg-red-700/60 hover:bg-red-700/85 dark:hover:bg-red-600/70 items-center px-4 py-2.5 border border-red-300 dark:border-red-700 text-white font-medium rounded-lg transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Cerrar
+                </button>
+            </div>
+            
         </div>
     `;
 }
