@@ -16,7 +16,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🌿 Cacao San José</h1>
+            <h1>Cacao San José</h1>
         </div>
         <div class="content">
             <h2>¡Hola, {{ $userName }}!</h2>

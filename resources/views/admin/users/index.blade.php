@@ -215,7 +215,7 @@
     </div>
 </x-app-layout>
 
-@push('scripts')
+
 <script>
     // Función para restablecer contraseña
     async function handleResetPassword(userId, userName) {
@@ -264,7 +264,7 @@
         @endif
     });
 </script>
-@endpush
+
 
 @push('styles')
 <style>
