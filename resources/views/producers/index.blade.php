@@ -207,10 +207,10 @@
     <x-modal name="view-producer-details" maxWidth="2xl" :showClose="true">
         <div class="p-0 overflow-hidden">
             <!-- Encabezado del modal -->
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4">
+            <div class="bg-gradient-to-br from-[#884722e8] to-[#1d0e04da] dark:bg-gradient-to-br dark:from-[#2b231e8c] dark:to-[#99521f57] px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
-                        <div class="bg-gray-100/20 dark:bg-custom-gray p-2 rounded-lg">
+                        <div class="bg-white/20 p-2 rounded-lg">
                             <svg xmlns="http://www.w3.org/2002/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
@@ -462,7 +462,7 @@ function formatProducerDetails(producer) {
     return `
         <div class="space-y-6">
             <!-- Tarjeta de información principal -->
-            <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <div class="bg-stone-100/90 dark:bg-[rgb(29,32,38,0.61)] rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -480,7 +480,7 @@ function formatProducerDetails(producer) {
                 <!-- Grid de información -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                     <!-- Información básica -->
-                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                    <div class="bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg p-4 border border-gray-100 dark:border-gray-700">
                         <div class="flex items-center mb-2">
                             <div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg mr-3">
                                 <svg class="w-7 h-7 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -504,7 +504,7 @@ function formatProducerDetails(producer) {
                     </div>
 
                     <!-- Estadísticas -->
-                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                    <div class="bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg p-4 border border-gray-100 dark:border-gray-700">
                         <div class="flex items-center mb-2">
                             <div class="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg mr-3">
                                 <svg class="w-7 h-7 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -525,7 +525,7 @@ function formatProducerDetails(producer) {
 
             <!-- Descripción -->
             ${producer.description ? `
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <div class="bg-stone-100/90 dark:bg-[rgb(29,32,38,0.61)] rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <div class="flex items-center mb-4">
                     <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mr-3">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -541,11 +541,11 @@ function formatProducerDetails(producer) {
             ` : ''}
 
             <!-- Información adicional -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <div class="bg-stone-100/90 dark:bg-[rgb(29,32,38,0.61)] rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Información del Sistema</h3>
                 
                 <div class="space-y-3">
-                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -555,7 +555,7 @@ function formatProducerDetails(producer) {
                         <span class="font-medium text-gray-900 dark:text-white">${formatDate(producer.created_at)}</span>
                     </div>
 
-                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -568,27 +568,37 @@ function formatProducerDetails(producer) {
             </div>
 
             <!-- Acciones -->
-            <div class="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
-                <div class="flex flex-wrap gap-3 justify-between items-center">
-                    <div class="space-x-2">
-                        <a href="/producers/${producer.id}/edit" 
-                           class="inline-flex items-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                            </svg>
-                            Editar
-                        </a>
-                    </div>
+            <div class="flex flex-wrap gap-3 justify-between items-center">
+                <div class="space-x-2">
+                    <!-- Botón para editar el productor -->
+                    <a href="/producers/${producer.id}/edit" 
+                    title="Editar productor" 
+                    class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-indigo-600/70 dark:hover:bg-indigo-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
                     
-                    <button x-on:click="$dispatch('close')" 
-                            class="inline-flex items-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                        Cerrar
-                    </button>
+                        <!-- Contenedor del ícono - se contrae en hover -->
+                        <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-indigo-600 dark:text-indigo-400 group-hover:text-white ">
+                                <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+                            </svg>
+                        </span>
+                        
+                        <!-- Texto - oculto en estado normal, visible en hover -->
+                        <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-12 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                            Editar
+                        </span>
+                    </a>
+
+
                 </div>
-            </div>
+                
+                <button x-on:click="$dispatch('close')" 
+                        class="inline-flex bg-red-600/70 dark:bg-red-700/60 hover:bg-red-700/85 dark:hover:bg-red-600/70 items-center px-4 py-2.5 border border-red-300 dark:border-red-700 text-white font-medium rounded-lg transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Cerrar
+                </button>
+            </div>  
         </div>
     `;
 }
