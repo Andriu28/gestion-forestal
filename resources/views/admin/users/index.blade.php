@@ -141,7 +141,7 @@
                                                     Deshabilitado
                                                 </span>
                                             @else
-                                                <span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">
+                                                <span class="inline-block px-3 py-1 text-xs font-semibold bg-green-500/70 dark:bg-green-400/50 text-white rounded-full">
                                                     Habilitado
                                                 </span>
                                             @endif
@@ -151,16 +151,17 @@
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center gap-2">
                                                 <a href="{{ route('admin.users.edit', $user) }}" 
-                                                   class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-500 dark:hover:text-indigo-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
+                                                   class="inline-flex items-center text-blue-700/50 hover:text-blue-600 dark:text-blue-400/60 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                                    title="Editar">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                         <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
                                                     </svg>
                                                 </a>
+                                                
 
                                                 <!-- Botón Restablecer Contraseña -->
                                                 <button onclick="handleResetPassword({{ $user->id }}, '{{ $user->name }}')" 
-                                                        class="inline-flex items-center text-yellow-600 hover:text-yellow-900 dark:text-yellow-500 dark:hover:text-yellow-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
+                                                        class="inline-flex items-center text-yellow-600/70 hover:text-yellow-700 dark:text-yellow-500 dark:hover:text-yellow-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                                         title="Restablecer contraseña">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                         <path d="M21 12a9 9 0 11-6.219-8.56"/>
@@ -171,7 +172,7 @@
                                                 
                                                 @if (Auth::id() !== $user->id && !$user->trashed())
                                                     <button onclick="handleUserDisable({{ $user->id }}, '{{ $user->name }}')" 
-                                                    class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
+                                                    class="inline-flex items-center text-red-700/30 hover:text-red-600 dark:text-red-500/60 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110"
                                                     title="Deshabilitar">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>

@@ -8,12 +8,23 @@
                 </h2>
 
                 <div class="flex justify-end mb-6">
+
+                    <!-- Botón para ver polígonos habilitados -->
                     <a href="{{ route('polygons.index') }}" 
-                       class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                        <span>{{ __('Habilitados') }}</span>
+                    title="Ver polígonos habilitados" 
+                    class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-lime-600/70 dark:hover:bg-lime-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
+                        
+                        <!-- Contenedor del ícono - se contrae en hover -->
+                        <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-lime-700/60 group-hover:text-white dark:text-lime-500/60">
+                                <rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h2"/><path d="M20 8v11a2 2 0 0 1-2 2h-2"/><path d="m9 15 3-3 3 3"/><path d="M12 12v9"/>
+                            </svg>
+                        </span>
+                        
+                        <!-- Texto - oculto en estado normal, visible en hover -->
+                        <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-[84px] group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                            Habilitados
+                        </span>
                     </a>
                 </div>
 
@@ -68,7 +79,7 @@
                                             {{ Str::limit($polygon->description, 50) ?? 'Sin descripción' }}
                                         </td>
                                         <td class="px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
-                                            <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">
+                                            <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600/60 dark:bg-red-500/40 text-white rounded-full">
                                                 Eliminado
                                             </span>
                                             <div class="text-xs text-gray-500 dark:text-gray-500 mt-1">
@@ -79,7 +90,7 @@
                                             <div class="flex items-center gap-2">
                                                 <!-- Botón Ver Detalles -->
                                                 <button type="button" 
-                                                        class="inline-flex items-center text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                        class="inline-flex items-center text-blue-700/50 hover:text-blue-600 dark:text-blue-400/60 dark:hover:text-blue-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                         title="Ver detalles"
                                                         onclick="showPolygonDetails({{ $polygon->id }})">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
@@ -90,11 +101,11 @@
 
                                                 <!-- Botón Restaurar -->
                                                 <button type="button" 
-                                                        class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
+                                                        class="inline-flex items-center text-lime-600/50 hover:text-lime-600 dark:text-lime-500/60 dark:hover:text-lime-300 transition-colors p-1 hover:bg-gray-500 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                                                         title="Restaurar"
                                                         onclick="handleRestorePolygon({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
-                                                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                                                        <rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h2"/><path d="M20 8v11a2 2 0 0 1-2 2h-2"/><path d="m9 15 3-3 3 3"/><path d="M12 12v9"/>
                                                     </svg>
                                                 </button>
                                             </div>

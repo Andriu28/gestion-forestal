@@ -351,7 +351,7 @@
                                                     @if(!$polygon->trashed())
                                                         
                                                         <button type="button" 
-                                                                class="inline-flex items-center text-blue-700/50 hover:text-blue-600 dark:text-blue-400/60 dark:hover:text-blue-300  p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl  hover:bg-opacity-10 hover:scale-110" 
+                                                                class="inline-flex items-center text-blue-700/50 hover:text-blue-600 dark:text-blue-400/60 dark:hover:text-blue-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl  hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Ver detalles"
                                                                 onclick="showPolygonDetails({{ $polygon->id }})">
                                                             <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">

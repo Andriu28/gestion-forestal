@@ -309,7 +309,7 @@ $roleTranslations = [
                                             {{-- 2. Cambios automáticos (estructura real: attributes + old) --}}
                                             @elseif($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old'))
                                                 @php
-                                                    // 🔥 Lista de campos que NO quieres mostrar
+                                                    // Lista de campos que NO quieres mostrar
                                                     $excludedFields = ['description', 'updated_at', 'created_at'];
                                                     
                                                     // Función para formatear valores booleanos
