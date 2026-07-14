@@ -7,11 +7,23 @@
                     <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
                        {{ __('Mapa de Polígonos') }} 
                     </h2>
-                    <a href="{{ route('polygons.index') }}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-                        </svg>
-                        <span>{{ __('Lista') }}</span>
+                    
+                    <!-- Botón para ver el mapa de polígonos -->
+                    <a href="{{ route('polygons.index') }}"
+                    title="Ver lista de polígonos" 
+                    class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-blue-600/70 dark:hover:bg-blue-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
+                    
+                        <!-- Contenedor del ícono - se contrae en hover -->
+                        <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map w-6 h-6 text-blue-700/70 group-hover:text-white dark:text-blue-400/70">
+                                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+                                </svg>
+                        </span>
+                        
+                        <!-- Texto - oculto en estado normal, visible en hover -->
+                        <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-10 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                            Lista
+                        </span>
                     </a>
                 </div>
 
@@ -63,14 +75,21 @@
                 </div>
 
                 <!-- Leyenda -->
-                <div class="mt-4 flex flex-wrap gap-4 items-center">
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-blue-500 border-2 border-blue-700 mr-2"></div>
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Polígonos con productor</span>
+                <div class="mt-4 flex flex-wrap gap-5 items-center">
+                    <div class="flex items-center gap-2">
+                        <svg viewBox="0 0 24 24" width="32" height="32" class="flex-shrink-0" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="url(#markerGradientAssigned)" stroke="#ffffff" stroke-width="1"/>
+                            <path d="M9.3 9.3l1.8 1.8 3.6-4" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Con productor asignado</span>
                     </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-green-500 border-2 border-green-700 mr-2"></div>
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Polígonos sin productor</span>
+                    <div class="flex items-center gap-2">
+                        <svg viewBox="0 0 24 24" width="32" height="32" class="flex-shrink-0" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="url(#markerGradientUnassigned)" stroke="#ffffff" stroke-width="1"/>
+                            <line x1="12" y1="6" x2="12" y2="9.8" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+                            <circle cx="12" cy="12" r="1" fill="#ffffff"/>
+                        </svg>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Sin productor asignado</span>
                     </div>
                 </div>
             </div>
@@ -82,6 +101,20 @@
         <div class="popup-content bg-gray-50 dark:bg-gray-800 rounded-lg shadow-lg"></div>
         <div class="popup-arrow" aria-hidden="true"></div>
     </div>
+
+    <!-- Degradados compartidos para los pines del mapa y la leyenda -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <linearGradient id="markerGradientAssigned" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#60a5fa"/>
+                <stop offset="100%" stop-color="#1d4ed8"/>
+            </linearGradient>
+            <linearGradient id="markerGradientUnassigned" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#34d399"/>
+                <stop offset="100%" stop-color="#047857"/>
+            </linearGradient>
+        </defs>
+    </svg>
 
     <!-- Incluir OpenLayers -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css">
@@ -240,160 +273,150 @@
             border-top: 1px solid rgba(255,255,255,0.04);
         }
 
-        /* ESTILOS PARA INDICADORES */
-        .owner-bubble-wrapper {
+        /* =============================================
+           MARCADORES DE MAPA — estilo profesional
+           (pin tipo Google Maps/Mapbox + tarjeta de info)
+           ============================================= */
+        .map-marker {
             display: flex;
-            align-items: center;
             flex-direction: column;
+            align-items: center;
             pointer-events: auto;
-            transform: translateY(-4px);
-            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+            cursor: pointer;
+            transform-origin: bottom center;
             opacity: 0;
-            animation: fadeInUp 0.3s ease-out forwards;
-            animation-delay: 0.5s;
+            animation: markerFadeIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation-delay: 0.35s;
         }
 
-        .owner-bubble {
-            background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
-            border-radius: 10px;
-            padding: 6px 10px;
-            border: 1px solid #e5e7eb;
-            display: inline-block;
-            max-width: 200px;
-            text-align: center;
+        /* Tarjeta flotante: nombre del polígono + estado del productor */
+        .map-marker__card {
             position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 128px;
+            max-width: 220px;
+            padding: 7px 12px 7px 13px;
+            margin-bottom: 5px;
+            background: #ffffff;
+            border-radius: 10px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.16), 0 1px 3px rgba(15, 23, 42, 0.08);
             z-index: 2;
-            transition: all 0.2s ease;
+            overflow: hidden;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
         }
 
-        .owner-bubble-wrapper:hover .owner-bubble {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-            border-color: #d1d5db;
+        /* Barra de color a la izquierda = indicador de estado, patrón típico de tarjetas de estatus */
+        .map-marker__card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
         }
 
-        .owner-bubble .owner-text {
-            color: #111827;
-            font-weight: 600;
-            font-size: 11px;
-            line-height: 1.2;
+        .map-marker--assigned .map-marker__card::before { background: linear-gradient(180deg, #60a5fa, #1d4ed8); }
+        .map-marker--unassigned .map-marker__card::before { background: linear-gradient(180deg, #34d399, #047857); }
+
+        .map-marker:hover .map-marker__card {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.22), 0 2px 4px rgba(15, 23, 42, 0.1);
+            border-color: rgba(15, 23, 42, 0.14);
+        }
+
+        .map-marker__card-title {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.25;
+            color: #0f172a;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            letter-spacing: 0.01em;
+            letter-spacing: -0.01em;
         }
 
-        .owner-pin {
-            width: 18px;
-            height: 18px;
-            background: #3b82f6;
-            transform: rotate(45deg);
-            margin-top: -9px;
-            border-radius: 2px;
-            border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-            position: relative;
-            z-index: 1;
+        .map-marker__status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 10.5px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .owner-pin::after {
-            content: '';
+        .map-marker__status svg {
+            flex: 0 0 auto;
+        }
+
+        .map-marker--assigned .map-marker__status { color: #1d4ed8; }
+        .map-marker--unassigned .map-marker__status { color: #047857; }
+
+        /* Pin SVG */
+        .map-marker__pin {
             display: block;
-            width: 6px;
-            height: 6px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            line-height: 0;
+            filter: drop-shadow(0 3px 5px rgba(15, 23, 42, 0.35));
+            transition: transform 0.15s ease;
         }
 
-        .owner-bubble-wrapper.no-producer .owner-bubble {
-            background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%);
-            border-color: #bbf7d0;
-        }
-        
-        .owner-bubble-wrapper.no-producer .owner-pin {
-            background: #10b981;
+        .map-marker:hover .map-marker__pin {
+            transform: scale(1.12);
         }
 
-        .owner-bubble-wrapper.with-producer .owner-bubble {
-            background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
-            border-color: #bfdbfe;
-        }
-        
-        .owner-bubble-wrapper.with-producer .owner-pin {
-            background: #3b82f6;
+        /* Modo oscuro (clase .dark del layout) */
+        .dark .map-marker__card {
+            background: #1e293b;
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
-        /* Modo oscuro */
-        @media (prefers-color-scheme: dark) {
-            .owner-bubble {
-                background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-                border: 1px solid #334155;
-                color: #f8fafc;
-            }
-
-            .owner-bubble .owner-text {
-                color: #f1f5f9;
-            }
-
-            .owner-bubble-wrapper.no-producer .owner-bubble {
-                background: linear-gradient(180deg, #064e3b 0%, #022c22 100%);
-                border-color: #065f46;
-            }
-            
-            .owner-bubble-wrapper.no-producer .owner-pin {
-                background: #10b981;
-                border-color: #1e293b;
-            }
-
-            .owner-bubble-wrapper.with-producer .owner-bubble {
-                background: linear-gradient(180deg, #464f69ff 0%, #323542ff 100%);
-                border-color: #888888ff;
-            }
-            
-            .owner-bubble-wrapper.with-producer .owner-pin {
-                background: #3b82f6;
-                border-color: #1e293b;
-            }
-
-            .owner-pin {
-                border-color: #1e293b;
-            }
+        .dark .map-marker:hover .map-marker__card {
+            border-color: rgba(255, 255, 255, 0.16);
         }
+
+        .dark .map-marker__card-title {
+            color: #f1f5f9;
+        }
+
+        .dark .map-marker--assigned .map-marker__status { color: #93c5fd; }
+        .dark .map-marker--unassigned .map-marker__status { color: #6ee7b7; }
 
         @media (max-width: 1024px) {
-            .owner-bubble .owner-text {
+            .map-marker__card {
+                max-width: 175px;
+                padding: 6px 10px 6px 12px;
+            }
+
+            .map-marker__card-title {
+                font-size: 11px;
+            }
+
+            .map-marker__status {
                 font-size: 10px;
-                padding: 6px 10px;
             }
-            
-            .owner-bubble {
-                max-width: 160px;
+
+            .map-marker__pin svg {
+                width: 50px;
+                height: 50px;
             }
         }
 
-        .ol-overlay-container .owner-bubble-wrapper {
-            transform: translate(0%, 24%) !important;
-        }
-
-        @keyframes fadeInUp {
+        @keyframes markerFadeIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(6px) scale(0.85);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
-        }
-
-        .owner-bubble-wrapper {
-            opacity: 0;
-            animation: fadeInUp 0.3s ease-out forwards;
-            animation-delay: 0.5s;
         }
     </style>
 
@@ -904,28 +927,65 @@
                 }
 
                 const producer = feature.get('producer') || '';
-                const name = feature.get('name') || '';
+                const name = feature.get('name') || 'Polígono sin nombre';
                 const type = feature.get('type') || 'with_producer';
-                let label = producer || name;
-                if (label.length > 22) label = label.slice(0, 20) + '...';
+                const isAssigned = type === 'with_producer';
 
-                const typeClass = type === 'with_producer' ? 'with-producer' : 'no-producer';
+                let title = name;
+                if (title.length > 26) title = title.slice(0, 24) + '…';
+
+                let statusText = isAssigned ? (producer || 'Con productor') : 'Sin productor';
+                if (statusText.length > 26) statusText = statusText.slice(0, 24) + '…';
+
+                const statusClass = isAssigned ? 'map-marker--assigned' : 'map-marker--unassigned';
+                const gradientId = isAssigned ? 'markerGradientAssigned' : 'markerGradientUnassigned';
+
+                // Icono grande dentro del pin (blanco) y mini icono dentro de la tarjeta (currentColor)
+                const pinIconSvg = isAssigned
+                    ? '<path d="M9.3 9.3l1.8 1.8 3.6-4" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+                    : '<line x1="12" y1="6" x2="12" y2="9.8" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="1" fill="#ffffff"/>';
+
+                const statusIconSvg = isAssigned
+                    ? '<svg viewBox="0 0 24 24" width="12" height="12"><path d="M9.3 9.3l1.8 1.8 3.6-4" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                    : '<svg viewBox="0 0 24 24" width="12" height="12"><line x1="12" y1="6" x2="12" y2="9.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg>';
 
                 const container = document.createElement('div');
-                container.className = `owner-bubble-wrapper ${typeClass}`;
+                container.className = `map-marker ${statusClass}`;
+                container.setAttribute('title', `${name} — ${isAssigned ? (producer || 'Con productor') : 'Sin productor'}`);
                 container.innerHTML = `
-                    <div class="owner-bubble">
-                        <div class="owner-text">${this.escapeHtml(label)}</div>
+                    <div class="map-marker__card">
+                        <div class="map-marker__card-title">${this.escapeHtml(title)}</div>
+                        <div class="map-marker__status">
+                            ${statusIconSvg}
+                            <span>${this.escapeHtml(statusText)}</span>
+                        </div>
                     </div>
-                    <div class="owner-pin" aria-hidden="true"></div>
+                    <div class="map-marker__pin">
+                        <svg viewBox="0 0 24 24" width="44" height="44" xmlns="http://www.w3.org/2000/svg class="w-6 h-6">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="url(#${gradientId})" stroke="#ffffff" stroke-width="1"/>
+                            ${pinIconSvg}
+                        </svg>
+                    </div>
                 `;
+
+                // Permite abrir la ficha del polígono también haciendo clic en el marcador
+                container.addEventListener('click', (evt) => {
+                    evt.stopPropagation();
+                    const popupElement = document.getElementById('popup');
+                    if (!popupElement || !this.popup) return;
+                    const contentEl = popupElement.querySelector('.popup-content');
+                    if (contentEl) {
+                        contentEl.innerHTML = this.buildPopupContent(feature.getProperties());
+                    }
+                    this.popup.setPosition(interiorPoint);
+                });
 
                 const overlay = new ol.Overlay({
                     element: container,
                     position: interiorPoint,
                     positioning: 'bottom-center',
                     stopEvent: false,
-                    offset: [0, -10]
+                    offset: [0, 3]
                 });
 
                 this.map.addOverlay(overlay);
