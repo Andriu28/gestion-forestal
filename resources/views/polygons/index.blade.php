@@ -462,7 +462,7 @@
 <x-modal name="view-polygon-details" maxWidth="2xl" :showClose="true">
     <div class="p-0 overflow-hidden">
         <!-- Encabezado del modal -->
-        <div class="bg-[linear-gradient(135deg,_#3f2c1bdc_0%,_#30201b_100%)]  px-6 py-4">
+        <div class="bg-gradient-to-br from-[#884722e8] to-[#1d0e04da] dark:bg-gradient-to-br dark:from-[#2b231e8c] dark:to-[#99521f57] px-6 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <div class="bg-white/20 p-2 rounded-lg">
@@ -500,6 +500,7 @@
         </div>
     </div>
 </x-modal>
+
 <div id="loader-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden">
     <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl transform transition-all duration-300">
         <div class="flex flex-col items-center">
@@ -1005,7 +1006,7 @@ function formatPolygonDetails(polygon) {
     return `
         <div class="space-y-6">
             <!-- Tarjeta de información principal -->
-            <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <div class="bg-stone-100/90 dark:bg-[rgb(29,32,38,0.61)] rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">${polygon.name || 'Sin nombre'}</h3>
@@ -1040,8 +1041,8 @@ function formatPolygonDetails(polygon) {
                 <!-- Grid de información -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-6">
                     <!-- Información del productor -->
-                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-                        <div class="flex items-center mb-2">
+                    <div class="bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg p-3 border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center">
                             <div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg mr-3">
                                 <svg class="w-7 h-7 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
@@ -1056,28 +1057,9 @@ function formatPolygonDetails(polygon) {
                         </div>
                     </div>
 
-                   
-                    <!-- Ubicación - CON MANEJO SEGURO DE NULL -->
-                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-                        <div class="flex items-center mb-2">
-                            <div class="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg mr-3">
-                                <svg class="w-7 h-7 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold text-gray-700 dark:text-gray-300">Ubicación</h4>
-                                <p class="text-gray-900 dark:text-white text-lg font-medium mt-1">
-                                    ${polygon.parish ? polygon.parish.name : 'No especificada'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Coordenadas -->
-                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-                        <div class="flex items-center mb-2">
+                     <!-- Coordenadas -->
+                    <div class="bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg p-3 border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center">
                             <div class="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg mr-3">
                                 <svg class="w-7 h-7 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
@@ -1093,12 +1075,32 @@ function formatPolygonDetails(polygon) {
                             </div>
                         </div>
                     </div>
+
+                    <!-- Ubicación - CON MANEJO SEGURO DE NULL -->
+                    <div class="bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg p-3 border border-gray-100 dark:border-gray-700 md:col-span-2">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg mr-3">
+                                <svg class="w-7 h-7 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-700 dark:text-gray-300">Ubicación</h4>
+                                <p class="text-gray-900 dark:text-white text-lg font-medium mt-1">
+                                    ${polygon.parish ? polygon.parish.name : 'No especificada'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                  
                 </div>
             </div>
 
             <!-- Descripción -->
             ${polygon.description ? `
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <div class="bg-stone-100/90 dark:bg-[rgb(29,32,38,0.61)] rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <div class="flex items-center mb-4">
                     <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg mr-3">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1108,7 +1110,7 @@ function formatPolygonDetails(polygon) {
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Descripción</h3>
                 </div>
                 <div class="space-y-3">
-                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-white dark:bg-[rgb(33,41,51,0.87)]  rounded-lg">
                         <p class="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">${polygon.description}</p>
                     </div>
                     
@@ -1170,11 +1172,11 @@ function formatPolygonDetails(polygon) {
             ` : ''}
 
             <!-- Información adicional -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <div class="bg-stone-100/90 dark:bg-[rgb(29,32,38,0.61)] rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Información del Sistema</h3>
                 <div class="grid grid-cols-1 gap-4">
                     <div class="space-y-3">
-                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                        <div class="flex items-center justify-between p-3 bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg">
                             <div class="flex items-center">
                                 <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -1183,7 +1185,7 @@ function formatPolygonDetails(polygon) {
                             </div>
                             <span class="font-medium text-gray-900 dark:text-white">${formatDate(polygon.created_at)}</span>
                         </div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                        <div class="flex items-center justify-between p-3 bg-white dark:bg-[rgb(33,41,51,0.87)] rounded-lg">
                             <div class="flex items-center">
                                 <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -1208,24 +1210,26 @@ function formatPolygonDetails(polygon) {
             </div>
 
             <!-- Acciones -->
-            <div class="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+ 
                 <div class="flex flex-wrap gap-3 justify-between items-center">
                     <div class="space-x-2">
-                        ${polygon.producer ? `
-                        <a href="/producers/${polygon.producer.id}" 
-                           class="inline-flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all hover:shadow-lg hover:-translate-y-0.5">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                            </svg>
-                            Ver productor
-                        </a>
-                        ` : ''}
-                        <a href="#" 
-                           class="inline-flex items-center px-4 py-2.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-lg transition-all">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                            </svg>
-                            Editar
+                        
+                        <!-- Botón para editar el polígono -->
+                        <a href="{{ route('polygons.edit', $polygon) }} 
+                        title="Editar polígono" 
+                        class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-indigo-600/70 dark:hover:bg-indigo-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
+                        
+                            <!-- Contenedor del ícono - se contrae en hover -->
+                            <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-indigo-600 dark:text-indigo-400 group-hover:text-white ">
+                                    <path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+                                </svg>
+                            </span>
+                            
+                            <!-- Texto - oculto en estado normal, visible en hover -->
+                            <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-12 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                                Editar
+                            </span>
                         </a>
                     </div>
                     <button x-on:click="$dispatch('close')" 
@@ -1236,7 +1240,7 @@ function formatPolygonDetails(polygon) {
                         Cerrar
                     </button>
                 </div>
-            </div>
+
         </div>
     `;
 }

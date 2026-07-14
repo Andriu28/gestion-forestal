@@ -207,7 +207,7 @@
     <x-modal name="view-producer-details" maxWidth="2xl" :showClose="true">
         <div class="p-0 overflow-hidden">
             <!-- Encabezado del modal -->
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4">
+            <div class="bg-gray-500 px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
                         <div class="bg-gray-100/20 dark:bg-custom-gray p-2 rounded-lg">
