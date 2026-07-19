@@ -77,7 +77,7 @@
                             </div>
                         </li>
 
-                        <!-- Menú Cosecha -->
+                        <!-- Menú Cosecha 
                         <li>
                             <div class="transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-2">
                                 <a href="#" class="nav-item transition-all duration-300 ease-in-out hover:font-bold hover:shadow-md group">
@@ -94,8 +94,9 @@
                                 </a>
                             </div>
                         </li>
-
-                        <!-- Menú Almacén -->
+                        -->
+                        
+                        <!-- Menú Almacén 
                         <li>
                             <div class="transition-all duration-300 hover:scale-[1.03] hover:-translate-y-0.5 mb-2">
                                 <a href="#" class="nav-item transition-all duration-300 ease-in-out hover:font-bold hover:shadow-md group">
@@ -111,7 +112,7 @@
                                 </a>
                             </div>
                         </li>
-
+                        -->
                         {{-- Este enlace solo se mostrará para los administradores --}}
                         @if (auth()->check() && auth()->user()->role === 'administrador')
                    
