@@ -23,13 +23,41 @@
                         Comparación de {{ count($multiResults) }} {{ count($multiResults) === 1 ? 'polígono analizado' : 'polígonos analizados' }}
                     </p>
                 </div>
-                <a href="{{ route('deforestation.create') }}"
-                   class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
-                    </svg>
-                    Nuevo Análisis
-                </a>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('deforestation.create') }}"
+                       class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
+                        </svg>
+                        Nuevo Análisis
+                    </a>
+                     <!-- Botón para crear nuevo análisis -->
+                            <a href="{{ route('deforestation.create') }}"
+                            title="Crear nuevo análisis" 
+                            class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-green-600/70 dark:hover:bg-green-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
+                            
+                                <!-- Contenedor del ícono - se contrae en hover -->
+                                <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-emerald-700/70 group-hover:text-white dark:text-emerald-500/70">
+                                        <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
+                                    </svg>
+                                </span>
+                                
+                                <!-- Texto - oculto en estado normal, visible en hover -->
+                                <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-10 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                                    Crear
+                                </span>
+                            </a>
+                    @if(count($multiResults) > 0)
+                        <button id="btn-download-pdf" type="button" onclick="downloadCurrentPDF()"
+                                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg shadow-sm hover:bg-red-700 transition-colors whitespace-nowrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M20 21H4"/>
+                            </svg>
+                            Descargar PDF
+                        </button>
+                    @endif
+                </div>
             </div>
 
             @if(count($multiResults) > 0)
@@ -185,11 +213,24 @@
             selectedIndex = index;
             highlightSelectedCard(index);
             renderDetailContent(data);
+            updateDownloadButton(data);
 
             // En pantallas angostas la lista queda arriba del detalle: llevamos la vista hacia el panel
             if (window.innerWidth < 1024) {
                 document.getElementById('detail-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+        }
+
+        function updateDownloadButton(data) {
+            const btn = document.getElementById('btn-download-pdf');
+            if (btn) {
+                btn.title = 'Descargar PDF de ' + data.polygon_name;
+            }
+        }
+
+        function downloadCurrentPDF() {
+            if (selectedIndex === null || !polygonsData[selectedIndex]) return;
+            generateSinglePDF(polygonsData[selectedIndex]);
         }
 
         function highlightSelectedCard(index) {
@@ -215,21 +256,9 @@
             const percentageLoss = totalArea > 0 ? (deforestedArea / totalArea) * 100 : 0;
 
             container.innerHTML = `
-                <div class="flex flex-col gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h3 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${data.polygon_name}</h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Período analizado: ${data.start_year} - ${data.end_year}</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <a href="{{ route('deforestation.create') }}" class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-                            Nuevo Análisis
-                        </a>
-                        <button onclick='generateSinglePDF(${JSON.stringify(data).replace(/'/g, "&#39;")})' class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg shadow-sm hover:bg-red-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M20 21H4"/></svg>
-                            Descargar PDF
-                        </button>
-                    </div>
+                <div class="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${data.polygon_name}</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Período analizado: ${data.start_year} - ${data.end_year}</p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
@@ -255,7 +284,7 @@
                 <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
                     <div>
                         <h3 class="mb-3 text-xl font-semibold text-gray-900 dark:text-gray-100">Área de Interés</h3>
-                        <div id="detail-map" style="height: 400px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+                        <div id="detail-map" style="height: 430px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
                     </div>
                     <div>
                         <h3 class="mb-3 text-xl font-semibold text-gray-900 dark:text-gray-100">Distribución del Área</h3>
@@ -267,7 +296,7 @@
 
                 <div class="mt-8">
                     <h3 class="mb-3 text-xl font-semibold text-gray-900 dark:text-gray-100">Evolución de la Deforestación (${data.start_year}-${data.end_year})</h3>
-                    <div class="p-4 bg-gray-100 rounded-lg shadow-inner dark:bg-gray-800/40" style="height: 400px;">
+                    <div class="p-4 bg-gray-100 rounded-lg shadow-inner dark:bg-gray-800/40" style="height: 430px;">
                         <canvas id="detail-evolution-chart"></canvas>
                     </div>
                 </div>
@@ -425,7 +454,7 @@
             form.appendChild(input);
             document.body.appendChild(form);
             form.submit();
-            document.body.removeChild(form);
+            document.body.removeChild(form);f400
         }
 
         // Buscador de la lista de polígonos
