@@ -24,37 +24,40 @@
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                    <!-- Botón para crear nuevo análisis -->
                     <a href="{{ route('deforestation.create') }}"
-                       class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
-                        </svg>
-                        Nuevo Análisis
+                    title="Crear nuevo análisis" 
+                    class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-green-600/70 dark:hover:bg-green-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
+                    
+                        <!-- Contenedor del ícono - se contrae en hover -->
+                        <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-emerald-700/70 group-hover:text-white dark:text-emerald-500/70">
+                                <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
+                            </svg>
+                        </span>
+                        
+                        <!-- Texto - oculto en estado normal, visible en hover -->
+                        <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-10 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                            Crear
+                        </span>
                     </a>
-                     <!-- Botón para crear nuevo análisis -->
-                            <a href="{{ route('deforestation.create') }}"
-                            title="Crear nuevo análisis" 
-                            class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-green-600/70 dark:hover:bg-green-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
-                            
-                                <!-- Contenedor del ícono - se contrae en hover -->
-                                <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-emerald-700/70 group-hover:text-white dark:text-emerald-500/70">
-                                        <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
-                                    </svg>
-                                </span>
-                                
-                                <!-- Texto - oculto en estado normal, visible en hover -->
-                                <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-10 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
-                                    Crear
-                                </span>
-                            </a>
+                    <!-- Botón para descargar PDF -->
                     @if(count($multiResults) > 0)
                         <button id="btn-download-pdf" type="button" onclick="downloadCurrentPDF()"
-                                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg shadow-sm hover:bg-red-700 transition-colors whitespace-nowrap">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M20 21H4"/>
-                            </svg>
-                            Descargar PDF
+                                title="Descargar PDF" 
+                                class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-red-600/80 dark:hover:bg-red-500/70 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
+                            
+                            <!-- Contenedor del ícono -->
+                            <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-red-700/70 group-hover:text-white dark:text-red-400/70">
+                                    <path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M20 21H4"/>
+                                </svg>
+                            </span>
+                            
+                            <!-- Texto - oculto en estado normal, visible en hover -->
+                            <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-8 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                                PDF
+                            </span>
                         </button>
                     @endif
                 </div>
@@ -124,7 +127,7 @@
                             </p>
                         </div>
 
-                        <div id="polygon-list" class="space-y-2 overflow-y-auto lg:max-h-[65vh] pr-1 -mr-1">
+                        <div id="polygon-list" class="space-y-2 overflow-y-auto lg:max-h-[75vh] pr-1 -mr-1">
                             @foreach($multiResults as $index => $polygonData)
                                 @php
                                     $totalArea = $polygonData['polygon_area_ha'] ?? 0;
