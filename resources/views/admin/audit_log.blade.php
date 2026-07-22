@@ -245,6 +245,7 @@ $roleTranslations = [
                             <tbody class="bg-stone-100/90 dark:bg-custom-gray divide-y divide-gray-200">
                                 @foreach($activities as $activity)
                                     <tr class="hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
+                                        <!-- Columna Usuario (sin cambios) -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 <div>
@@ -257,7 +258,8 @@ $roleTranslations = [
                                                 </div>
                                             </div>
                                         </td>
-                                        <!-- Nueva columna para el rol -->
+
+                                        <!-- Columna Rol (sin cambios) -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap">
                                             @if($activity->causer && $activity->causer->role)
                                                 @php
@@ -266,10 +268,8 @@ $roleTranslations = [
                                                         'basico' => 'bg-green-200 text-green-900 dark:bg-green-900 dark:text-green-200',
                                                         'default' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                                                     ];
-                                                    
                                                     $roleKey = strtolower($activity->causer->role);
                                                     $roleColor = $roleColors[$roleKey] ?? $roleColors['default'];
-                                                    
                                                     $roleName = $roleTranslations[$roleKey] ?? ucfirst($activity->causer->role);
                                                 @endphp
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $roleColor }}">
@@ -285,54 +285,55 @@ $roleTranslations = [
                                                 </span>
                                             @endif
                                         </td>
+
+                                        <!-- Columna Actividad (MEJORADA) -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2">
                                             <div class="flex items-center">
-                                                <!-- Icono según tipo de actividad -->
                                                 @php
-                                                    $icon = match(true) {
-                                                        str_contains($activity->description, 'created') => 'plus',
-                                                        str_contains($activity->description, 'updated') => 'edit',
-                                                        str_contains($activity->description, 'deleted') => 'trash',
-                                                        str_contains($activity->description, 'restored') => 'rotate-ccw',
-                                                        default => 'activity'
+                                                    // 1. Icono y color basados en $activity->event
+                                                    $icon = match($activity->event) {
+                                                        'created'  => 'plus',
+                                                        'updated'  => 'edit',
+                                                        'deleted'  => 'trash',
+                                                        'restored' => 'rotate-ccw',
+                                                        default    => 'activity'
                                                     };
-                                                    
-                                                    $color = match(true) {
-                                                        str_contains($activity->description, 'created') => 'text-green-500',
-                                                        str_contains($activity->description, 'updated') => 'text-blue-500',
-                                                        str_contains($activity->description, 'deleted') => 'text-red-500',
-                                                        str_contains($activity->description, 'restored') => 'text-yellow-500',
-                                                        default => 'text-gray-500'
+                                                    $color = match($activity->event) {
+                                                        'created'  => 'text-green-500',
+                                                        'updated'  => 'text-blue-500',
+                                                        'deleted'  => 'text-red-500',
+                                                        'restored' => 'text-yellow-500',
+                                                        default    => 'text-gray-500'
                                                     };
-                                                    
-                                                    // Traducción de la actividad
-                                                    $translations = [
-                                                        'El usuario ha sido updated' => 'Usuario actualizado',
-                                                        'El usuario ha sido restored' => 'Usuario restaurado',
-                                                        'El usuario ha sido created' => 'Usuario creado',
-                                                        'El usuario ha sido deleted' => 'Usuario eliminado',
-                                                        'Polygon created' => 'Polígono creado',
-                                                        'Polygon updated' => 'Polígono actualizado',
-                                                        'Polygon deleted' => 'Polígono eliminado',
-                                                        'Polygon restored' => 'Polígono restaurado',
-                                                        'Producer created' => 'Productor creado',
-                                                        'Producer updated' => 'Productor actualizado',
-                                                        'Producer deleted' => 'Productor eliminado',
-                                                        'Producer restored' => 'Productor restaurado',
+
+                                                    // 2. Traducción de la actividad basada en evento + modelo
+                                                    $eventTranslations = [
+                                                        'created'  => 'creado',
+                                                        'updated'  => 'actualizado',
+                                                        'deleted'  => 'eliminado',
+                                                        'restored' => 'restaurado',
                                                     ];
-                                                    
-                                                    $description = $activity->description;
-                                                    $translated = $translations[$description] ?? $description;
-                                                    
-                                                    if (str_contains($description, "fue actualizado su rol")) {
-                                                        $userName = '';
-                                                        if (preg_match("/Usuario '(.+?)' fue/", $description, $matches)) {
-                                                            $userName = $matches[1];
+                                                    $modelName = $activity->subject_type ? class_basename($activity->subject_type) : null;
+                                                    $modelTranslations = [
+                                                        'User'     => 'Usuario',
+                                                        'Polygon'  => 'Polígono',
+                                                        'Producer' => 'Productor',
+                                                    ];
+                                                    $modelTranslation = $modelTranslations[$modelName] ?? $modelName ?? '';
+
+                                                    // Caso especial: cambio de rol (detectado por la descripción)
+                                                    if (str_contains($activity->description, 'fue actualizado su rol')) {
+                                                        $translated = 'Rol actualizado';
+                                                    } else {
+                                                        // Construir la frase: "Modelo evento" (ej. "Polígono creado")
+                                                        $translated = trim($modelTranslation . ' ' . ($eventTranslations[$activity->event] ?? $activity->event));
+                                                        // Si no hay modelo, usar la descripción original
+                                                        if (empty($modelTranslation)) {
+                                                            $translated = $activity->description;
                                                         }
-                                                        $translated = "Rol actualizado";
                                                     }
                                                 @endphp
-                                                
+
                                                 <div class="flex-shrink-0 mr-3">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ $color }}">
                                                         @if($icon == 'plus')
@@ -354,58 +355,60 @@ $roleTranslations = [
                                                         @endif
                                                     </svg>
                                                 </div>
-                                                
+
                                                 <div>
                                                     <div class="text-sm text-gray-900 dark:text-gray-400">
                                                         {{ Str::limit($translated, 30) }}
                                                     </div>
                                                     @if($activity->subject_type)
                                                         <div class="text-xs text-gray-500 dark:text-gray-500">
-                                                            @php
-                                                                $modelName = class_basename($activity->subject_type);
-                                                                $modelTranslations = [
-                                                                    'User' => 'Usuario',
-                                                                    'Polygon' => 'Polígono',
-                                                                    'Producer' => 'Productor',
-                                                                ];
-                                                                echo $modelTranslations[$modelName] ?? $modelName;
-                                                            @endphp
+                                                            {{ $modelTranslation }}
                                                         </div>
                                                     @endif
                                                 </div>
                                             </div>
-                                        </td> 
+                                        </td>
+
+                                        <!-- Columna Fecha (sin cambios) -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                             <div>{{ $activity->created_at->format('d/m/Y') }}</div>
                                             <div class="text-xs text-gray-500 dark:text-gray-500">{{ $activity->created_at->format('H:i:s') }}</div>
-                                        </td> 
-                                        <!-- Nueva columna para detalles para la vista del historial -->
-                                        <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2">
-                                            {{-- 1. Cambio de rol manual (legacy) --}}
-                                            @if($activity->properties && $activity->properties->has('old_role') && $activity->properties->has('new_role'))
-                                                <div class="flex items-center gap-1 text-xs">
-                                                    <span class="font-medium text-gray-700 dark:text-gray-300">Rol:</span>
-                                                    <span class="text-red-500 line-through">{{ $activity->properties['old_role'] ?? 'N/A' }}</span>
-                                                    <span class="text-gray-400 dark:text-gray-500">→</span>
-                                                    <span class="text-green-600 dark:text-green-400 font-medium">{{ $activity->properties['new_role'] ?? 'N/A' }}</span>
-                                                </div>
+                                        </td>
 
-                                            {{-- 2. Cambios automáticos (estructura real: attributes + old) --}}
-                                            @elseif($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old'))
+                                        <!-- Columna Detalles (MEJORADA) -->
+                                        <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2">
+                                            {{-- Único caso: cambios automáticos (estructura estándar: attributes + old) --}}
+                                            @if($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old'))
                                                 @php
-                                                    // Lista de campos que NO quieres mostrar
+                                                    // Campos que no queremos mostrar
                                                     $excludedFields = ['description', 'updated_at', 'created_at'];
-                                                    
-                                                    // Función para formatear valores booleanos
-                                                    $formatValue = function($value) {
+
+                                                    // Orden preferente para los campos
+                                                    $preferredOrder = ['name', 'description', 'is_active', 'producer_id', 'parish_id', 'email', 'role', 'rut', 'phone', 'address', 'geometry', 'area'];
+
+                                                    // Función para formatear valores
+                                                    $formatValue = function($value, $attribute) use ($activity) {
                                                         if (is_null($value)) return 'N/A';
                                                         if (is_bool($value) || $value === '0' || $value === '1' || $value === 0 || $value === 1) {
                                                             return $value ? 'Activo' : 'Inactivo';
                                                         }
+                                                        // Intentar obtener nombre para producer_id y parish_id si la relación está cargada
+                                                        if ($attribute === 'producer_id' && $activity->subject && method_exists($activity->subject, 'producer')) {
+                                                            $producer = $activity->subject->producer;
+                                                            if ($producer && $producer->id == $value) {
+                                                                return $producer->name ?? $value;
+                                                            }
+                                                        }
+                                                        if ($attribute === 'parish_id' && $activity->subject && method_exists($activity->subject, 'parish')) {
+                                                            $parish = $activity->subject->parish;
+                                                            if ($parish && $parish->id == $value) {
+                                                                return $parish->name ?? $value;
+                                                            }
+                                                        }
                                                         return $value;
                                                     };
-                                                    
-                                                    // Función para traducir nombres de campos
+
+                                                    // Traducción de nombres de campo
                                                     $translateField = function($field) {
                                                         $translations = [
                                                             'is_active' => 'Estado',
@@ -418,7 +421,8 @@ $roleTranslations = [
                                                             'deleted_at' => 'Eliminado',
                                                             'email_verified_at' => 'Verificado',
                                                             'polygon_id' => 'ID Polígono',
-                                                            'producer_id' => 'ID Productor',
+                                                            'producer_id' => 'Productor',
+                                                            'parish_id' => 'Parroquia',
                                                             'geometry' => 'Geometría',
                                                             'area' => 'Área',
                                                             'description' => 'Descripción',
@@ -428,30 +432,31 @@ $roleTranslations = [
                                                         ];
                                                         return $translations[$field] ?? ucfirst(str_replace('_', ' ', $field));
                                                     };
-                                                    
-                                                    // FILTRAR: Solo mostrar campos que cambiaron Y no están excluidos
+
+                                                    // Obtener todos los cambios (sin límite), ordenados según preferencia
                                                     $changes = collect($activity->properties['attributes'])
                                                         ->filter(function($newValue, $attribute) use ($activity, $excludedFields) {
                                                             // 1. Excluir campos de la lista negra
-                                                            if (in_array($attribute, $excludedFields)) {
-                                                                return false;
-                                                            }
-                                                            
+                                                            if (in_array($attribute, $excludedFields)) return false;
                                                             // 2. Verificar que realmente haya cambiado
                                                             $oldValue = $activity->properties['old'][$attribute] ?? null;
                                                             return $newValue != $oldValue;
                                                         })
-                                                        ->take(3); // Limitar a 3 cambios
+                                                        ->sortBy(function($value, $key) use ($preferredOrder) {
+                                                            $pos = array_search($key, $preferredOrder);
+                                                            return $pos === false ? 999 : $pos;
+                                                        });
+                                                        // NOTA: Ya no se aplica ->take(3), se muestran todos
                                                 @endphp
-                                                
+
                                                 @if($changes->count() > 0)
                                                     <div class="text-xs space-y-1 max-w-xs">
                                                         @foreach($changes as $attribute => $newValue)
                                                             @php
                                                                 $oldValue = $activity->properties['old'][$attribute] ?? null;
                                                                 $label = $translateField($attribute);
-                                                                $formattedOld = $formatValue($oldValue);
-                                                                $formattedNew = $formatValue($newValue);
+                                                                $formattedOld = $formatValue($oldValue, $attribute);
+                                                                $formattedNew = $formatValue($newValue, $attribute);
                                                             @endphp
                                                             <div class="flex items-center gap-1">
                                                                 <span class="font-medium text-gray-700 dark:text-gray-300 min-w-[50px]">{{ $label }}:</span>
@@ -465,45 +470,27 @@ $roleTranslations = [
                                                                 <span class="text-green-600 dark:text-green-400 font-medium truncate max-w-[60px]">{{ $formattedNew }}</span>
                                                             </div>
                                                         @endforeach
-                                                        
-                                                        @if(count($activity->properties['attributes']) - count($excludedFields) > 3)
-                                                            <div class="text-gray-500 text-[10px]">
-                                                                +{{ count($activity->properties['attributes']) - count($excludedFields) - 3 }} campo(s) más
-                                                            </div>
-                                                        @endif
                                                     </div>
                                                 @else
-                                                    {{-- Mostrar "Sin detalles" cuando no hay cambios relevantes --}}
+                                                    {{-- Si no hay cambios relevantes (filtrados) --}}
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                                                         Sin detalles
                                                     </span>
                                                 @endif
 
-                                            {{-- 3. Actualización de campos (legacy) --}}
-                                            @elseif($activity->properties && $activity->properties->has('updated_fields'))
-                                                @php
-                                                    $fields = $activity->properties['updated_fields'];
-                                                    $count = is_array($fields) ? count($fields) : $fields;
-                                                @endphp
-                                                <div class="flex items-center gap-1 text-xs">
-                                                    <span class="font-medium text-gray-700 dark:text-gray-300">Campos:</span>
-                                                    <span class="text-blue-600 dark:text-blue-400 font-medium">{{ $count }}</span>
-                                                    <span class="text-gray-400 dark:text-gray-500">actualizado(s)</span>
-                                                </div>
-
-                                            {{-- 4. Sin detalles --}}
+                                            {{-- Fallback para cualquier otro formato (incluye old_role/new_role, updated_fields, etc.) --}}
                                             @else
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                                                     Sin detalles
                                                 </span>
                                             @endif
                                         </td>
-                                        <!-- Fin de la nueva columna para detalles -->
                                     </tr>
-                                @endforeach
-                            </tbody>
+                                    @endforeach
+                                </tbody>
                         </table>
                     </div>
+                    
                     <div class="mt-4">
                         {{ $activities->links() }}
                     </div>
