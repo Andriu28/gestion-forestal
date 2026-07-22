@@ -13,9 +13,8 @@ class AuditLogController extends Controller
 {
     use Filterable;
 
-    public function showAuditLog(Request $request)
+    private function buildAuditQuery(Request $request)
     {
-        // Obtener parámetros
         $search = $request->get('search');
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
@@ -24,124 +23,9 @@ class AuditLogController extends Controller
         $eventType = $request->get('event_type');
         $subjectType = $request->get('subject_type');
 
-        // Validar rango de fechas (trait)
-        $validationError = $this->validateDateRange($dateFrom, $dateTo);
-        if ($validationError) {
-            return $validationError;
-        }
-
-        // Consulta base
         $query = Activity::with(['causer', 'subject'])->latest();
 
-        // Aplicar filtros de fecha (trait)
         $query = $this->applyDateFilters($query, $dateFrom, $dateTo);
-
-        // Aplicar búsqueda flexible (trait)
-        $query = $this->applySearchFilter(
-            $query,
-            $search,
-            ['description', 'properties'], // columnas de la tabla activities
-            ['causer' => ['name', 'email', 'role']] // relación y sus columnas
-        );
-
-        $query->where(function ($q) {
-            $q->whereNull('causer_id')
-            ->orWhereHas('causer', function ($sub) {
-                $sub->where('role', '!=', 'tecnico');
-            });
-        });
-
-        // --- Filtros específicos de auditoría ---
-        // Filtro por rol del causer
-        if ($role && $role !== 'all') {
-            if ($role === 'system') {
-                $query->whereNull('causer_id');
-            } else {
-                $query->whereHas('causer', function ($q) use ($role) {
-                    $q->where('role', $role);
-                });
-            }
-        }
-
-        // Filtro por usuario específico
-        if ($userId && $userId !== 'all') {
-            $query->where('causer_id', $userId);
-        }
-
-        // Filtro por tipo de evento
-        if ($eventType && $eventType !== 'all') {
-            $eventMap = [
-                'created' => '%created%',
-                'updated' => '%updated%',
-                'deleted' => '%deleted%',
-                'restored' => '%restored%',
-                'login' => '%iniciado sesión%',
-                'logout' => '%cerrado sesión%',
-                'role_change' => '%fue actualizado su rol%',
-            ];
-            if (isset($eventMap[$eventType])) {
-                $query->where('description', 'like', $eventMap[$eventType]);
-            }
-        }
-
-        // Filtro por modelo afectado
-        if ($subjectType && $subjectType !== 'all') {
-            $modelMap = [
-                'User' => 'App\Models\User',
-                'Polygon' => 'App\Models\Polygon',
-                'Producer' => 'App\Models\Producer',
-            ];
-            if (isset($modelMap[$subjectType])) {
-                $query->where('subject_type', $modelMap[$subjectType]);
-            }
-        }
-
-        // Paginar resultados
-        $activities = $query->paginate(10);
-
-        // Mantener filtros en la paginación
-        $activities->appends([
-            'search' => $search,
-            'date_from' => $dateFrom,
-            'date_to' => $dateTo,
-            'role' => $role,
-            'user_id' => $userId,
-            'event_type' => $eventType,
-            'subject_type' => $subjectType,
-        ]);
-
-        // Obtener lista de usuarios para el select
-        $users = User::orderBy('name')->get(['id', 'name']);
-
-        return view('admin.audit_log', compact(
-            'activities', 'search', 'dateFrom', 'dateTo',
-            'role', 'userId', 'eventType', 'subjectType', 'users'
-        ));
-    }
-
-    public function generatePdf(Request $request)
-    {
-        // Obtener parámetros
-        $search = $request->get('search');
-        $dateFrom = $request->get('date_from');
-        $dateTo = $request->get('date_to');
-        $role = $request->get('role');
-        $userId = $request->get('user_id');
-        $eventType = $request->get('event_type');
-        $subjectType = $request->get('subject_type');
-
-        // Validar rango de fechas (trait)
-        $validationError = $this->validateDateRange($dateFrom, $dateTo);
-        if ($validationError) {
-            return $validationError;
-        }
-
-        $query = Activity::with(['causer', 'subject'])->latest();
-
-        // Aplicar filtros de fecha (trait)
-        $query = $this->applyDateFilters($query, $dateFrom, $dateTo);
-
-        // Aplicar búsqueda flexible (trait)
         $query = $this->applySearchFilter(
             $query,
             $search,
@@ -151,12 +35,11 @@ class AuditLogController extends Controller
 
         $query->where(function ($q) {
             $q->whereNull('causer_id')
-            ->orWhereHas('causer', function ($sub) {
-                $sub->where('role', '!=', 'tecnico');
-            });
+              ->orWhereHas('causer', function ($sub) {
+                  $sub->where('role', '!=', 'tecnico');
+              });
         });
 
-        // --- Filtros específicos (igual que en showAuditLog) ---
         if ($role && $role !== 'all') {
             if ($role === 'system') {
                 $query->whereNull('causer_id');
@@ -197,16 +80,83 @@ class AuditLogController extends Controller
             }
         }
 
+        return $query;
+    }
+
+    private function loadSubjectRelations($activities)
+    {
+        $activities->each(function ($activity) {
+            if ($activity->subject && $activity->subject_type === 'App\Models\Polygon') {
+                $activity->subject->loadMissing(['producer', 'parish']);
+            }
+            if ($activity->subject && $activity->subject_type === 'App\Models\Producer') {
+                $activity->subject->loadMissing(['parish']);
+            }
+        });
+        return $activities;
+    }
+
+    public function showAuditLog(Request $request)
+    {
+        $validationError = $this->validateDateRange(
+            $request->get('date_from'),
+            $request->get('date_to')
+        );
+        if ($validationError) {
+            return $validationError;
+        }
+
+        $query = $this->buildAuditQuery($request);
+        $activities = $query->paginate(10);
+        $this->loadSubjectRelations($activities);
+
+        $activities->appends([
+            'search' => $request->get('search'),
+            'date_from' => $request->get('date_from'),
+            'date_to' => $request->get('date_to'),
+            'role' => $request->get('role'),
+            'user_id' => $request->get('user_id'),
+            'event_type' => $request->get('event_type'),
+            'subject_type' => $request->get('subject_type'),
+        ]);
+
+        $users = User::orderBy('name')->get(['id', 'name']);
+
+        return view('admin.audit_log', [
+            'activities' => $activities,
+            'search' => $request->get('search'),
+            'dateFrom' => $request->get('date_from'),
+            'dateTo' => $request->get('date_to'),
+            'role' => $request->get('role'),
+            'userId' => $request->get('user_id'),
+            'eventType' => $request->get('event_type'),
+            'subjectType' => $request->get('subject_type'),
+            'users' => $users,
+        ]);
+    }
+
+    public function generatePdf(Request $request)
+    {
+        $validationError = $this->validateDateRange(
+            $request->get('date_from'),
+            $request->get('date_to')
+        );
+        if ($validationError) {
+            return $validationError;
+        }
+
+        $query = $this->buildAuditQuery($request);
         $activities = $query->get();
+        $this->loadSubjectRelations($activities);
 
         $filters = [
-            'search' => $search,
-            'date_from' => $dateFrom,
-            'date_to' => $dateTo,
-            'role' => $role,
-            'user_id' => $userId,
-            'event_type' => $eventType,
-            'subject_type' => $subjectType,
+            'search' => $request->get('search'),
+            'date_from' => $request->get('date_from'),
+            'date_to' => $request->get('date_to'),
+            'role' => $request->get('role'),
+            'user_id' => $request->get('user_id'),
+            'event_type' => $request->get('event_type'),
+            'subject_type' => $request->get('subject_type'),
             'total' => $activities->count(),
             'generated_at' => now()->format('d/m/Y H:i:s'),
         ];
@@ -217,7 +167,6 @@ class AuditLogController extends Controller
         ]);
 
         $pdf->setPaper('A4', 'landscape');
-
         return $pdf->download('auditoria_' . now()->format('Y-m-d_H-i') . '.pdf');
     }
 }
