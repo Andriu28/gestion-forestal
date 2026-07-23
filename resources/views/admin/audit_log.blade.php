@@ -381,7 +381,7 @@ $roleTranslations = [
                                             @if($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old'))
                                                 @php
                                                     // Campos que no queremos mostrar
-                                                    $excludedFields = ['description', 'updated_at', 'created_at'];
+                                                    $excludedFields = ['updated_at', 'created_at'];
 
                                                     // Orden preferente para los campos
                                                     $preferredOrder = ['name', 'description', 'is_active', 'producer_id', 'parish_id', 'email', 'role', 'rut', 'phone', 'address', 'geometry', 'area'];

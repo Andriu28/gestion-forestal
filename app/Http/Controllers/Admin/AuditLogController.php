@@ -89,9 +89,9 @@ class AuditLogController extends Controller
             if ($activity->subject && $activity->subject_type === 'App\Models\Polygon') {
                 $activity->subject->loadMissing(['producer', 'parish']);
             }
-            if ($activity->subject && $activity->subject_type === 'App\Models\Producer') {
+            /* if ($activity->subject && $activity->subject_type === 'App\Models\Producer') {
                 $activity->subject->loadMissing(['parish']);
-            }
+            } */
         });
         return $activities;
     }
