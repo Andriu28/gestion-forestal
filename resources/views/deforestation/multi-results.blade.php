@@ -153,7 +153,7 @@
                                         data-name="{{ Str::lower($polygonData['polygon_name']) }}"
                                         data-pct="{{ $percentage }}"
                                         data-area="{{ $totalArea }}"
-                                        class="sidebar-card w-full text-left p-3 bg-white dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
+                                        class="sidebar-card w-full text-left p-3 bg-white dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-400 dark:hover:border-blue-200 transition-colors">
                                     <div class="flex items-start justify-between gap-2">
                                         <div class="min-w-0">
                                             <p class="text-sm font-semibold text-gray-900 truncate dark:text-gray-100">
@@ -528,8 +528,8 @@
             color: #065f46;
         }
         .sidebar-card-active {
-            border-color: rgb(37, 99, 235) !important;
-            background-color: rgba(59, 130, 246, 0.06);
+            border-color: rgba(205, 207, 210, 0.37) !important;
+            background-color: rgba(220, 220, 220, 0.13);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
         .dark .sidebar-card-active {
