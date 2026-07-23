@@ -413,6 +413,7 @@ $roleTranslations = [
                                                         $translations = [
                                                             'is_active' => 'Estado',
                                                             'name' => 'Nombre',
+                                                            'lastname' => 'Apellido',
                                                             'email' => 'Correo',
                                                             'role' => 'Rol',
                                                             'password' => 'Contraseña',

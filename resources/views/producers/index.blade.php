@@ -248,6 +248,16 @@
 </x-app-layout>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        @if(session('swal'))
+            const swalData = @json(session('swal'));
+            if (window.showCustomAlert) {
+                window.showCustomAlert(swalData.icon, swalData.title, swalData.text);
+            } else {
+                alert(swalData.text);
+            }
+        @endif
+    });
 // JavaScript para manejar las acciones asíncronas
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
