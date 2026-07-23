@@ -7,10 +7,18 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreProducerRequest;
 use App\Http\Requests\UpdateProducerRequest;
 use App\Traits\Filterable;
+use App\Services\PdfService;
 
 class ProducerController extends Controller
 {
     use Filterable;
+
+    protected PdfService $pdfService;
+
+    public function __construct(PdfService $pdfService)
+    {
+        $this->pdfService = $pdfService;
+    }
 
     /**
      * Muestra la lista de productores con filtros.
@@ -398,11 +406,8 @@ class ProducerController extends Controller
             default    => $query,
         };
 
-        $producers = $query
-            ->orderBy('name')
-            ->get();
+        $producers = $query->orderBy('name')->get();
 
-        // Datos para el PDF
         $filters = [
             'search' => $search,
             'status' => $status,
@@ -410,14 +415,16 @@ class ProducerController extends Controller
             'generated_at' => now()->format('d/m/Y H:i:s'),
         ];
 
-        $pdf = \PDF::loadView('producers.pdf', [
-            'producers' => $producers,
-            'filters' => $filters,
-        ]);
-
-        $pdf->setPaper('A4', 'landscape');
-        
-        return $pdf->download('productores_' . now()->format('Y-m-d_H-i') . '.pdf');
+        return $this->pdfService->download(
+            'producers.pdf',
+            [
+                'producers' => $producers,
+                'filters' => $filters,
+            ],
+            'productores_' . now()->format('Y-m-d_H-i') . '.pdf',
+            'A4',
+            'landscape'
+        );
     }
 
 }

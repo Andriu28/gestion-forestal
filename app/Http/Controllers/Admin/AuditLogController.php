@@ -8,12 +8,21 @@ use Spatie\Activitylog\Models\Activity;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Traits\Filterable;
+use App\Services\PdfService;
 
 class AuditLogController extends Controller
 {
+    
     use Filterable;
 
-    private function buildAuditQuery(Request $request)
+    protected PdfService $pdfService;
+
+    public function __construct(PdfService $pdfService)
+    {
+        $this->pdfService = $pdfService;
+    }
+
+    private function buildAuditQuery(Request $request, $forPdf = false)
     {
         $search = $request->get('search');
         $dateFrom = $request->get('date_from');
@@ -137,6 +146,7 @@ class AuditLogController extends Controller
 
     public function generatePdf(Request $request)
     {
+        // Validar rango de fechas
         $validationError = $this->validateDateRange(
             $request->get('date_from'),
             $request->get('date_to')
@@ -145,10 +155,13 @@ class AuditLogController extends Controller
             return $validationError;
         }
 
-        $query = $this->buildAuditQuery($request);
-        $activities = $query->get();
-        $this->loadSubjectRelations($activities);
+        // Construir la consulta (sin cargar relaciones innecesarias para PDF)
+        $query = $this->buildAuditQuery($request, $forPdf = true);
 
+        // Limitar a 500 registros para evitar timeout
+        $activities = $query->limit(500)->get();
+
+        // Preparar datos para el PDF
         $filters = [
             'search' => $request->get('search'),
             'date_from' => $request->get('date_from'),
@@ -159,14 +172,20 @@ class AuditLogController extends Controller
             'subject_type' => $request->get('subject_type'),
             'total' => $activities->count(),
             'generated_at' => now()->format('d/m/Y H:i:s'),
+            'limited' => $activities->count() >= 500, // Indicar si hay más registros
         ];
 
-        $pdf = Pdf::loadView('admin.audit_pdf', [
-            'activities' => $activities,
-            'filters' => $filters,
-        ]);
-
-        $pdf->setPaper('A4', 'landscape');
-        return $pdf->download('auditoria_' . now()->format('Y-m-d_H-i') . '.pdf');
+        return $this->pdfService->download(
+            'admin.audit_pdf',
+            [
+                'activities' => $activities,
+                'filters' => $filters,
+            ],
+            'auditoria_' . now()->format('Y-m-d_H-i') . '.pdf',
+            'a4',
+            'landscape',
+            ['dpi' => 72], // Reducir calidad para mejor rendimiento
+            120 // Timeout de 2 minutos
+        );
     }
 }
