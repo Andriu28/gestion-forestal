@@ -69,38 +69,43 @@ class UserController extends Controller
         return view('admin.users.edit', compact('user'));
     }
     
-    public function updateUserRole(Request $request, $userId)
+    public function updateUserRole(Request $request, User $user)
     {
         $request->validate([
             'role' => ['required', 'string', 'in:basico,administrador'],
         ]);
 
         try {
-            // Buscar el usuario incluyendo deshabilitados
-            $user = User::withTrashed()->findOrFail($userId);
             $oldRole = $user->role;
-            
-            // Actualizar el rol
             $user->update(['role' => $request->role]);
 
-            // Registrar la actividad de manera personalizada (opcional)
-            // activity()...
+            // Registrar actividad
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($user)
+                ->withProperties([
+                    'old_role' => $oldRole,
+                    'new_role' => $request->role,
+                ])
+                ->event('role_change')
+                ->log("Rol de usuario '{$user->name}' actualizado de '{$oldRole}' a '{$request->role}'");
 
             // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Rol de usuario actualizado exitosamente.'
+                    'message' => "Rol actualizado de '{$oldRole}' a '{$request->role}'.",
+                    'new_role' => $request->role,
                 ]);
             }
 
-            // Respuesta tradicional para navegación normal
+            // Respuesta tradicional
             return back()->with('swal', [
                 'icon' => 'success',
                 'title' => 'Éxito',
-                'text' => 'Rol de usuario actualizado exitosamente.'
+                'text' => "Rol actualizado de '{$oldRole}' a '{$request->role}'."
             ]);
-            
+
         } catch (\Exception $e) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
@@ -108,7 +113,6 @@ class UserController extends Controller
                     'message' => 'Error al actualizar el rol: ' . $e->getMessage()
                 ], 500);
             }
-            
             return back()->with('swal', [
                 'icon' => 'error',
                 'title' => 'Error',

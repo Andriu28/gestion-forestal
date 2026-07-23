@@ -16,6 +16,7 @@ class EditUser extends Component
     // Propiedades para los campos del formulario
     public $name = '';
     public $email = '';
+    public $role = '';
     public $password = '';
     public $password_confirmation = '';
 
@@ -41,16 +42,10 @@ class EditUser extends Component
                 // La regla unique ahora ignora el email del usuario actual
                 Rule::unique('users')->ignore($this->user->id)->whereNull('deleted_at')
             ],
-            'password' => [
-                'nullable', // La contraseña es opcional al editar
-                Password::min(8)
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols()
-                    ->uncompromised(),
-                'confirmed'
-            ],
-            'password_confirmation' => 'nullable' // La confirmación es opcional
+            'role' => [
+                'required',
+                Rule::in(['basico', 'administrador']) // Solo roles permitidos
+            ]
         ];
     }
 
@@ -83,6 +78,7 @@ class EditUser extends Component
         // Actualizar el nombre y el correo electrónico
         $this->user->name = $validatedData['name'];
         $this->user->email = $validatedData['email'];
+        $this->user->role = $validatedData['role'];
     
         // Si el campo de contraseña no está vacío, actualizarla
         if (!empty($validatedData['password'])) {
