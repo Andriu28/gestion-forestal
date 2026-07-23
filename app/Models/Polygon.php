@@ -298,72 +298,57 @@ class Polygon extends Model
         return $this->fill($data)->save();
     }
 
-    /**
-     * Recalcula área (ha) y centroide desde PostGIS y los persiste.
-     * Usa DB::table para no volver a disparar eventos de Eloquent.
-     */
-    public function recalculateGeometryStats(): bool
+    public function recalculateGeometryStats(): void
     {
         try {
-            $row = DB::selectOne(
-                "SELECT
-                     ST_Area(geometry::geography) / 10000  AS area_ha,
-                     ST_AsGeoJSON(ST_Centroid(geometry))   AS centroid_geojson
-                 FROM polygons
-                 WHERE id = ?",
-                [$this->id]
-            );
+            $stats = DB::selectOne("
+                SELECT 
+                    ST_Area(ST_Transform(geometry, 4326)::geography) / 10000 AS area_ha,
+                    ST_X(ST_Centroid(geometry)) AS centroid_lng,
+                    ST_Y(ST_Centroid(geometry)) AS centroid_lat
+                FROM polygons
+                WHERE id = ?
+            ", [$this->id]);
 
-            if (! $row) {
-                return false;
+            if ($stats) {
+                $this->updateQuietly([
+                    'area_ha' => $stats->area_ha ?? 0,
+                    'centroid_lat' => $stats->centroid_lat ?? null,
+                    'centroid_lng' => $stats->centroid_lng ?? null,
+                ]);
             }
-
-            $centroid = $row->centroid_geojson
-                ? json_decode($row->centroid_geojson, true)
-                : null;
-
-            DB::table('polygons')->where('id', $this->id)->update([
-                'area_ha'      => isset($row->area_ha) ? (float) $row->area_ha : null,
-                'centroid_lat' => $centroid['coordinates'][1] ?? null,
-                'centroid_lng' => $centroid['coordinates'][0] ?? null,
-                'updated_at'   => now(),
-            ]);
-
-            $this->refresh();
-            return true;
-
         } catch (\Throwable $e) {
-            Log::error('Error al recalcular stats del polígono', [
+            Log::error('Error en recalculateGeometryStats', [
                 'polygon_id' => $this->id,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
-            return false;
+            throw $e; // relanzar para que la transacción haga rollback
         }
     }
 
     /**
-     * Obtiene la geometría como array GeoJSON consultando PostGIS.
-     * Útil para pre-cargar el mapa en la vista de edición.
+     * Obtiene el GeoJSON de la geometría almacenada en la base de datos.
+     * Devuelve un string normalizado (sin espacios extra) para comparar.
      */
-    public function getGeometryGeoJson(): ?array
+    public function getGeometryGeoJson(): string
     {
-        try {
-            $row = DB::selectOne(
-                'SELECT ST_AsGeoJSON(geometry) AS geojson FROM polygons WHERE id = ?',
-                [$this->id]
-            );
+        // Si tu columna se llama 'geometry' y es de tipo geometry/geography en PostGIS
+        // Puedes obtener el GeoJSON directamente desde la base de datos
+        $geojson = DB::table('polygons')
+            ->where('id', $this->id)
+            ->value(DB::raw('ST_AsGeoJSON(geometry)'));
+        
+        // Normalizar: eliminar espacios en blanco y saltos de línea
+        return $this->normalizeGeoJsonString($geojson ?: '{}');
+    }
 
-            return ($row && $row->geojson)
-                ? json_decode($row->geojson, true)
-                : null;
-
-        } catch (\Throwable $e) {
-            Log::error('Error al leer geometría del polígono', [
-                'polygon_id' => $this->id,
-                'error'      => $e->getMessage(),
-            ]);
-            return null;
-        }
+    /**
+     * Normaliza un string GeoJSON para comparación (elimina espacios, saltos, etc.)
+     */
+    public function normalizeGeoJsonString(string $geojson): string
+    {
+        // Eliminar espacios en blanco, saltos de línea y tabulaciones
+        return preg_replace('/\s+/', '', $geojson);
     }
 
     /**
@@ -430,4 +415,6 @@ class Polygon extends Model
 
         return is_array($data) ? ($data[$key] ?? null) : null;
     }
+
+    
 }

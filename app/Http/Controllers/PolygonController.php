@@ -293,51 +293,70 @@ class PolygonController extends Controller
 
         DB::beginTransaction();
         try {
+            Log::info('Iniciando update de polígono', ['id' => $polygon->id]);
+
             $parishId = $this->resolveParishId($validated, $polygon->parish_id);
-            $geoJson  = $this->normalizeGeoJson($validated['geometry']);
+            $geoJson = $this->normalizeGeoJson($validated['geometry']);
             $detected = $this->extractDetected($validated);
 
-            $rawLocation  = ! empty($validated['location_data'])
+            Log::info('GeoJson recibido', ['geoJson' => substr($geoJson, 0, 200)]);
+
+            $oldGeoJson = $polygon->getGeometryGeoJson();
+            Log::info('GeoJson actual', ['oldGeoJson' => substr($oldGeoJson, 0, 200)]);
+
+            $rawLocation = !empty($validated['location_data'])
                 ? (json_decode($validated['location_data'], true) ?? [])
                 : [];
 
-            // Fusionar location_data con detección (lógica en el modelo)
             $locationData = $polygon->mergeLocationDataForUpdate(
                 $rawLocation,
                 $detected,
                 auth()->id()
             );
 
-            // Delegar actualización con geometría al modelo
-            // fill() + save() dispara el evento 'updated' → Spatie lo captura
-            $polygon->updateWithGeometry(
+            Log::info('Preparando updateWithGeometry...');
+            $updated = $polygon->updateWithGeometry(
                 [
                     'name'          => $validated['name'],
                     'description'   => $validated['description'] ?? null,
                     'producer_id'   => $validated['producer_id'] ?? null,
                     'parish_id'     => $parishId,
-                    'area_ha'       => $validated['area_ha'] ?? null,
+                    //'area_ha'       => $validated['area_ha'] ?? null,
                     'is_active'     => $validated['is_active'] ?? true,
-                    'centroid_lat'  => $validated['centroid_lat'] ?? null,
-                    'centroid_lng'  => $validated['centroid_lng'] ?? null,
+                    //'centroid_lat'  => $validated['centroid_lat'] ?? null,
+                    //'centroid_lng'  => $validated['centroid_lng'] ?? null,
                     'location_data' => $locationData,
                 ],
                 $geoJson
             );
 
-            // Recalcular área y centroide desde PostGIS (lógica en el modelo)
-            $polygon->recalculateGeometryStats();
+            Log::info('updateWithGeometry resultó', ['result' => $updated]);
+
+            // Comparación normalizada
+            $normalizedOld = $polygon->normalizeGeoJsonString($oldGeoJson);
+            $normalizedNew = $polygon->normalizeGeoJsonString($geoJson);
+
+            if ($normalizedOld !== $normalizedNew) {
+                Log::info('La geometría cambió, recalculando stats...');
+                $polygon->recalculateGeometryStats();
+                Log::info('recalculateGeometryStats ejecutado');
+            } else {
+                Log::info('La geometría no cambió, no se recalcula');
+            }
 
             DB::commit();
-
-            Log::info('Polígono actualizado', ['id' => $polygon->id, 'parish_id' => $polygon->parish_id]);
+            Log::info('Transacción commit exitosa');
 
             return redirect()->route('polygons.index')
                 ->with('success', "Polígono '{$polygon->name}' actualizado exitosamente.");
 
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error al actualizar polígono', ['id' => $polygon->id, 'error' => $e->getMessage()]);
+            Log::error('Error al actualizar polígono', [
+                'id' => $polygon->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return back()->withInput()->with('error', 'Error al actualizar el polígono: ' . $e->getMessage());
         }
     }
