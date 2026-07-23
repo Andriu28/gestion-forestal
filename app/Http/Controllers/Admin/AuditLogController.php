@@ -9,6 +9,8 @@ use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Traits\Filterable;
 use App\Services\PdfService;
+use Symfony\Component\ErrorHandler\Error\FatalError;
+use Throwable;
 
 class AuditLogController extends Controller
 {
@@ -146,46 +148,63 @@ class AuditLogController extends Controller
 
     public function generatePdf(Request $request)
     {
-        // Validar rango de fechas
-        $validationError = $this->validateDateRange(
-            $request->get('date_from'),
-            $request->get('date_to')
-        );
-        if ($validationError) {
-            return $validationError;
+        try {
+            // Validación de fechas (igual que antes)
+            $validationError = $this->validateDateRange(
+                $request->get('date_from'),
+                $request->get('date_to')
+            );
+            if ($validationError) {
+                return $validationError;
+            }
+
+            // Construir la consulta (sin relaciones pesadas)
+            $query = $this->buildAuditQuery($request, $forPdf = true);
+
+            // Limitar a 500 registros (o menos si quieres)
+            $activities = $query->limit(500)->get();
+
+            // Preparar datos
+            $filters = [
+                'search' => $request->get('search'),
+                'date_from' => $request->get('date_from'),
+                'date_to' => $request->get('date_to'),
+                'role' => $request->get('role'),
+                'user_id' => $request->get('user_id'),
+                'event_type' => $request->get('event_type'),
+                'subject_type' => $request->get('subject_type'),
+                'total' => $activities->count(),
+                'generated_at' => now()->format('d/m/Y H:i:s'),
+                'limited' => $activities->count() >= 500,
+            ];
+
+            return $this->pdfService->download(
+                'admin.audit_pdf',
+                compact('activities', 'filters'),
+                'auditoria_' . now()->format('Y-m-d_H-i') . '.pdf',
+                'a4',
+                'landscape',
+                ['dpi' => 72],
+                180 // 3 minutos
+            );
+
+        } catch (FatalError $e) {
+            // Capturar específicamente errores fatales (incluye timeout)
+            if (str_contains($e->getMessage(), 'Maximum execution time')) {
+                return redirect()->back()
+                    ->with('error', 'El PDF es demasiado grande para generarse en este momento. Por favor, aplica filtros más restrictivos (fechas, usuario, etc.) e intenta de nuevo.');
+            }
+            throw $e; // Si es otro error fatal, lo relanzamos
+
+        } catch (Throwable $e) {
+            // Capturar cualquier otra excepción
+            Log::error('Error al generar PDF de auditoría', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Ocurrió un error al generar el PDF. Por favor, intenta de nuevo o contacta al administrador.');
         }
-
-        // Construir la consulta (sin cargar relaciones innecesarias para PDF)
-        $query = $this->buildAuditQuery($request, $forPdf = true);
-
-        // Limitar a 500 registros para evitar timeout
-        $activities = $query->limit(500)->get();
-
-        // Preparar datos para el PDF
-        $filters = [
-            'search' => $request->get('search'),
-            'date_from' => $request->get('date_from'),
-            'date_to' => $request->get('date_to'),
-            'role' => $request->get('role'),
-            'user_id' => $request->get('user_id'),
-            'event_type' => $request->get('event_type'),
-            'subject_type' => $request->get('subject_type'),
-            'total' => $activities->count(),
-            'generated_at' => now()->format('d/m/Y H:i:s'),
-            'limited' => $activities->count() >= 500, // Indicar si hay más registros
-        ];
-
-        return $this->pdfService->download(
-            'admin.audit_pdf',
-            [
-                'activities' => $activities,
-                'filters' => $filters,
-            ],
-            'auditoria_' . now()->format('Y-m-d_H-i') . '.pdf',
-            'a4',
-            'landscape',
-            ['dpi' => 72], // Reducir calidad para mejor rendimiento
-            120 // Timeout de 2 minutos
-        );
     }
 }
