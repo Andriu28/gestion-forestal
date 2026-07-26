@@ -28,6 +28,42 @@
             <x-input-error :messages="$errors->first('description')" class="mt-2" />
         </div>
 
+        <!-- ===== MAPA DE UBICACIÓN ===== -->
+        <div class="mt-6" wire:ignore>
+            <x-input-label :value="__('Ubicación')" />
+
+            <!-- Contenedor del mapa -->
+            <div id="map" style="height: 60vh; border: 1px solid #dededeff; border-radius: 0.5rem; margin-top: 0.5rem;"></div>
+
+            <!-- Coordenadas (solo lectura) -->
+            <div class="grid grid-cols-2 gap-4 mt-3">
+                <div>
+                    <x-input-label for="latitude" :value="__('Latitud')" />
+                    <x-text-input id="latitude" type="text" wire:model.live="latitude" class="block mt-1 w-full bg-gray-100 dark:bg-gray-700" readonly />
+                    <x-input-error :messages="$errors->first('latitude')" class="mt-1" />
+                </div>
+                <div>
+                    <x-input-label for="longitude" :value="__('Longitud')" />
+                    <x-text-input id="longitude" type="text" wire:model.live="longitude" class="block mt-1 w-full bg-gray-100 dark:bg-gray-700" readonly />
+                    <x-input-error :messages="$errors->first('longitude')" class="mt-1" />
+                </div>
+            </div>
+
+            <!-- Dirección -->
+            <div class="mt-3">
+                <x-input-label for="address" :value="__('Dirección')" />
+                <x-text-input id="address" type="text" wire:model.live="address" class="block mt-1 w-full" placeholder="Dirección obtenida automáticamente..." />
+                <x-input-error :messages="$errors->first('address')" class="mt-1" />
+            </div>
+
+            <!-- Botón para usar ubicación actual -->
+            <button type="button" id="locate-user"
+                class="mt-3 inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                Usar mi ubicación
+            </button>
+        </div>
+        <!-- ===== FIN MAPA ===== -->
+
         <div class="mt-4 flex items-center">
             <input type="checkbox" id="is_active" wire:model="is_active" class="border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
             <label for="is_active" class="ml-2 block text-sm text-gray-900 dark:text-gray-100">Productor activo</label>
@@ -40,7 +76,139 @@
             </x-primary-button>
         </div>
     </form>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css">
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ============================================
+            // 1. INICIALIZAR MAPA
+            // ============================================
+            const initialLon = -63.1729;
+            const initialLat = 10.5556;
+    
+            const map = new ol.Map({
+                target: 'map',
+                layers: [
+                    new ol.layer.Tile({
+                        source: new ol.source.OSM()
+                    })
+                ],
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([initialLon, initialLat]),
+                    zoom: 13
+                })
+            });
+    
+            // ============================================
+            // 2. CAPA DE MARCADOR
+            // ============================================
+            const markerLayer = new ol.layer.Vector({
+                source: new ol.source.Vector(),
+                style: new ol.style.Style({
+                    image: new ol.style.Circle({
+                        radius: 8,
+                        fill: new ol.style.Fill({ color: '#dc2626' }),
+                        stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 })
+                    })
+                })
+            });
+            map.addLayer(markerLayer);
+    
+            function placeMarker(coordinate) {
+                markerLayer.getSource().clear();
+                const feature = new ol.Feature({
+                    geometry: new ol.geom.Point(coordinate)
+                });
+                markerLayer.getSource().addFeature(feature);
+            }
+    
+            // ============================================
+            // 3. CLICK EN EL MAPA
+            // ============================================
+            map.on('click', function(evt) {
+                const coord = evt.coordinate;
+                const lonLat = ol.proj.toLonLat(coord);
+                const lat = lonLat[1];
+                const lng = lonLat[0];
+    
+                placeMarker(coord);
+    
+                @this.set('latitude', lat);
+                @this.set('longitude', lng);
+    
+                reverseGeocode(lat, lng);
+            });
+    
+            // ============================================
+            // 4. GEOCODIFICACIÓN INVERSA (Nominatim)
+            // ============================================
+            function reverseGeocode(lat, lng) {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+    
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.display_name) {
+                            @this.set('address', data.display_name);
+                        } else {
+                            @this.set('address', 'Dirección no encontrada');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error en geocodificación:', error);
+                        @this.set('address', 'Error al obtener dirección');
+                    });
+            }
+    
+            // ============================================
+            // 5. BOTÓN "USAR MI UBICACIÓN"
+            // ============================================
+            document.getElementById('locate-user')?.addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const coord = ol.proj.fromLonLat([lng, lat]);
+    
+                        placeMarker(coord);
+                        map.getView().setCenter(coord);
+                        map.getView().setZoom(15);
+    
+                        @this.set('latitude', lat);
+                        @this.set('longitude', lng);
+                        reverseGeocode(lat, lng);
+                    }, function(error) {
+                        alert('No se pudo obtener tu ubicación: ' + error.message);
+                    });
+                } else {
+                    alert('Tu navegador no soporta geolocalización.');
+                }
+            });
+    
+            // ============================================
+            // 6. CARGAR UBICACIÓN EXISTENTE (si edición)
+            // ============================================
+            const existingLat = @json($latitude ?? null);
+            const existingLng = @json($longitude ?? null);
+    
+            if (existingLat !== null && existingLng !== null) {
+                const coord = ol.proj.fromLonLat([parseFloat(existingLng), parseFloat(existingLat)]);
+                placeMarker(coord);
+                map.getView().setCenter(coord);
+                map.getView().setZoom(15);
+            } else {
+                // Opcional: colocar marcador en ubicación inicial por defecto
+                const defaultCoord = ol.proj.fromLonLat([initialLon, initialLat]);
+                placeMarker(defaultCoord);
+                // Si quieres obtener la dirección por defecto, descomenta:
+                // reverseGeocode(initialLat, initialLon);
+            }
+        });
+    </script>
 </div>
+
 
 <script>
 class FormValidator {

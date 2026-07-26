@@ -11,6 +11,9 @@ class CreateProducer extends Component
     public $lastname = '';
     public $description = '';
     public $is_active = true;
+    public $latitude = null;
+    public $longitude = null;
+    public $address = '';
 
     protected function rules()
     {
@@ -19,6 +22,9 @@ class CreateProducer extends Component
             'lastname' => ['required', 'string', 'max:255','min:3'],
             'description' => ['required', 'string'],
             'is_active' => ['boolean'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'address' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -28,7 +34,10 @@ class CreateProducer extends Component
             'name' => 'nombre',
             'lastname' => 'apellido',
             'description' => 'descripción',
-            'is_active' => 'productor activo'
+            'is_active' => 'productor activo',
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'address' => $this->address,
         ];
     }
 

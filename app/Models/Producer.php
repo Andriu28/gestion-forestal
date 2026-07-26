@@ -13,10 +13,8 @@ class Producer extends Model
     use HasFactory, SoftDeletes, LogsActivity; // Añadir LogsActivity aquí
 
     protected $fillable = [
-        'name',
-        'lastname',
-        'description',
-        'is_active'
+        'name', 'lastname', 'description', 'is_active',
+        'latitude', 'longitude', 'address',
     ];
 
     protected $casts = [
