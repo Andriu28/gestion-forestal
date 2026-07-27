@@ -2,541 +2,327 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Auditoría - {{ $filters['company_name'] }}</title>
+    <title>Auditoría</title>
     <style>
-        /* ========== ESTILO PROFESIONAL - TABLA TRADICIONAL ========== */
+        /* Márgenes de la hoja: arriba/abajo reservan espacio para el
+           encabezado y pie de página repetidos (ver el bloque de script
+           embebido al final del archivo). Los laterales son más angostos que en la
+           versión horizontal para aprovechar mejor el ancho, ya que en
+           vertical hay menos espacio para las 6 columnas de la tabla. */
         @page {
-            margin: 50px 30px;
-            size: A4 landscape;
+            margin: 88px 28px 65px 28px;
         }
-        
-        body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 10px;
-            color: #000000;
-            line-height: 1.3;
-            margin: 0;
-            padding: 0;
-        }
-        
-        /* ========== ENCABEZADO DEL REPORTE ========== */
-        .report-header {
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9.5px; color: #222; margin: 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #797979; padding: 4px 5px; text-align: left; vertical-align: top; }
+        th { background-color: #1f2937; color: #fff; font-weight: bold; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        /* ---------- Encabezado institucional (sólo primera página) ---------- */
+        .letterhead { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .letterhead td { border: none; padding: 0; vertical-align: middle; }
+        /* ==========================================================
+           TAMAÑO DEL LOGO — edita aquí.
+           Cambia el 46px de las 3 reglas de abajo (svg / img / fallback)
+           por el mismo valor en las tres para que el logo real y el
+           respaldo con iniciales midan igual. Si lo agrandas más allá
+           de ~60px, aumenta también el "width" de .logo-cell (justo
+           abajo) para que la columna del logo no lo recorte.
+           ========================================================== */
+        .letterhead .logo-cell { width: 60px; } /* ancho de la celda que contiene el logo */
+        .letterhead .logo-cell svg { width: 46px; height: 46px; } /* tamaño si el logo es SVG */
+        .letterhead .logo-cell img { width: 66px; height: 66px; } /* tamaño si el logo es PNG/JPG */
+        .letterhead .logo-fallback {
+            width: 56px; height: 56px; /* tamaño del monograma cuando no hay logo cargado */
+            background: #1f2937;
+            color: #fff;
+            font-size: 16px; /* si cambias el tamaño de arriba, ajusta este ~ a un tercio del alto */
+            font-weight: bold;
             text-align: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #000000;
+            line-height: 66px; /* debe ser igual al "height" de arriba para que las iniciales centren bien */
+            border-radius: 6px;
         }
-        
-        .report-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #000000;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .report-subtitle {
-            font-size: 11px;
-            color: #333333;
-            margin-bottom: 10px;
-        }
-        
-        .report-meta {
-            font-size: 9px;
-            color: #666666;
-            margin-top: 8px;
-        }
-        
-        .report-meta span {
-            margin: 0 10px;
-        }
-        
-        /* ========== INFORMACIÓN DE FILTROS ========== */
-        .filters-section {
-            margin-bottom: 20px;
-            padding: 12px 15px;
-            background: #f5f5f5;
-            border: 1px solid #dddddd;
-        }
-        
-        .filters-title {
-            font-size: 11px;
-            font-weight: bold;
-            color: #000000;
-            margin-bottom: 10px;
+        .letterhead .org-cell { padding-left: 12px; }
+        .letterhead .org-name { font-size: 20px; font-weight: bold; color: #1f2937; margin: 0; }
+        .letterhead .org-rif { font-size: 12px; color: #3c3c3c; margin: 1px 0 0; }
+        .letterhead .doc-title { font-size: 12px; color: #374151; margin: 4px 0 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .letterhead .doc-meta { font-size: 8.5px; color: #888; margin: 2px 0 0; }
+        .letterhead-rule { border: none; border-top: 2px solid #1f2937; border-bottom: 1px solid #d1d5db; margin: 0 0 12px; height: 0; }
+
+        /* ---------- Tarjetas de resumen ---------- */
+        .summary-strip { border-collapse: separate; border-spacing: 6px 0; margin: 0 0 10px -6px; width: calc(100% + 12px); }
+        .summary-strip td { border: 2px solid #d2d3d5; background: #f8fafc; border-radius: 4px; padding: 5px 7px; width: 25%; }
+        .stat-label { font-size: 10px; color: #4a4c51; text-transform: uppercase; letter-spacing: 0.3px; margin: 0 0 2px; }
+        .stat-value { font-size: 11px; color: #1f2937; font-weight: bold; margin: 0; }
+
+        /* ---------- Filtros aplicados ---------- */
+        .filters-line { margin: 0 0 12px; }
+        .filter-tag {
             display: inline-block;
-            border-bottom: 1px solid #000000;
-            padding-bottom: 2px;
-        }
-        
-        .filters-grid {
-            display: table;
-            width: 100%;
-            margin-top: 8px;
-        }
-        
-        .filter-row {
-            display: table-row;
-        }
-        
-        .filter-cell {
-            display: table-cell;
-            padding: 3px 0;
-        }
-        
-        .filter-label {
-            font-weight: bold;
-            color: #333333;
-            min-width: 120px;
-            padding-right: 10px;
-        }
-        
-        .filter-value {
-            color: #000000;
-        }
-        
-        .records-count {
-            float: right;
-            font-size: 9px;
-            color: #666666;
-            margin-top: 5px;
-        }
-        
-        .clearfix {
-            clear: both;
-        }
-        
-        /* ========== TABLA PRINCIPAL ========== */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
+            background: #eef2f7;
+            color: #1f2937;
+            border: 1px solid #dbe3ec;
+            border-radius: 10px;
+            padding: 2px 8px;
+            margin: 0 6px 4px 0;
             font-size: 8.5px;
         }
-        
-        .data-table thead {
-            display: table-header-group;
-        }
-        
-        .data-table th {
-            background-color: #979797ff;
-            color: #000000;
-            font-weight: bold;
-            text-align: left;
-            padding: 8px 6px;
-            border: 1px solid #cccccc;
-            border-bottom: 2px solid #000000;
-            text-transform: uppercase;
-            font-size: 8px;
-        }
-        
-        .data-table td {
-            padding: 6px 6px;
-            border: 1px solid #e0e0e0;
-            vertical-align: middle;
-        }
-        
-        .data-table tbody tr:nth-child(even) {
-            background-color: #fafafa;
-        }
-        
-        .data-table tbody tr:hover {
-            background-color: #f0f0f0;
-        }
-        
-        /* ========== BADGES ========== */
-        .status-badge {
+
+        /* ---------- Tabla de actividad ---------- */
+        .text-center { text-align: center; }
+        tbody tr:nth-child(even) td { background-color: #f8f9fb; }
+        tbody tr { page-break-inside: avoid; }
+        .badge {
             display: inline-block;
-            padding: 2px 8px;
-            font-size: 7px;
-            font-weight: bold;
-            border-radius: 2px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            white-space: nowrap;
-        }
-        
-        .badge-admin {
-            background-color: #e0e0e0;
-            color: #000000;
-            border: 1px solid #cccccc;
-        }
-        
-        .badge-basico {
-            background-color: #e8e8e8;
-            color: #333333;
-            border: 1px solid #dddddd;
-        }
-        
-        .badge-tecnico {
-            background-color: #f0f0f0;
-            color: #666666;
-            border: 1px solid #eeeeee;
-        }
-        
-        .badge-sistema {
-            background-color: #f5f5f5;
-            color: #999999;
-            border: 1px solid #eeeeee;
-        }
-        
-        .badge-created {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
-        }
-        
-        .badge-updated {
-            background-color: #e3f2fd;
-            color: #1565c0;
-            border: 1px solid #bbdefb;
-        }
-        
-        .badge-deleted {
-            background-color: #fce4ec;
-            color: #c62828;
-            border: 1px solid #f8bbd0;
-        }
-        
-        .badge-restored {
-            background-color: #fff3e0;
-            color: #e65100;
-            border: 1px solid #ffe0b2;
-        }
-        
-        .badge-login {
-            background-color: #f5f5f5;
-            color: #616161;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .badge-logout {
-            background-color: #f5f5f5;
-            color: #616161;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .badge-role_change {
-            background-color: #f3e5f5;
-            color: #6a1b9a;
-            border: 1px solid #e1bee7;
-        }
-        
-        /* ========== DETALLES DE CAMBIOS ========== */
-        .change-details {
-            font-size: 7.5px;
-            line-height: 1.4;
-        }
-        
-        .change-item {
-            display: inline-block;
-            background: #f5f5f5;
-            padding: 1px 5px;
-            border-radius: 2px;
-            margin: 1px 1px 1px 0;
-            font-size: 7px;
-            border: 1px solid #eeeeee;
-        }
-        
-        .old-value {
-            color: #c62828;
-            text-decoration: line-through;
-        }
-        
-        .new-value {
-            color: #2e7d32;
-            font-weight: bold;
-        }
-        
-        .arrow-symbol {
-            color: #999999;
-            margin: 0 1px;
-        }
-        
-        .no-details {
-            color: #999999;
-            font-style: italic;
-            font-size: 7px;
-        }
-        
-        /* ========== EVENTOS ========== */
-        .event-created { color: #2e7d32; font-weight: bold; }
-        .event-updated { color: #1565c0; font-weight: bold; }
-        .event-deleted { color: #c62828; font-weight: bold; }
-        .event-restored { color: #e65100; font-weight: bold; }
-        .event-login { color: #616161; }
-        .event-logout { color: #616161; }
-        .event-role_change { color: #6a1b9a; font-weight: bold; }
-        
-        /* ========== UTILIDADES ========== */
-        .text-right {
-            text-align: right;
-        }
-        
-        .text-center {
-            text-align: center;
-        }
-        
-        .text-bold {
-            font-weight: bold;
-        }
-        
-        .nowrap {
-            white-space: nowrap;
-        }
-        
-        .description-cell {
-            max-width: 200px;
-            min-width: 100px;
-            word-wrap: break-word;
-            line-height: 1.4;
-        }
-        
-        /* ========== EVITAR SALTO DE PÁGINA EN FILAS ========== */
-        .data-table tr {
-            page-break-inside: avoid;
-        }
-        
-        /* ========== PIE DE PÁGINA ========== */
-        .report-footer {
-            margin-top: 30px;
-            padding-top: 15px;
-            border-top: 1px solid #000000;
+            padding: 0 6px;
+            border-radius: 12px;
             font-size: 8px;
-            color: #666666;
-            text-align: center;
+            font-weight: bold;
+            background: #e5e7eb;
+            color: #37393c;
         }
-        
-        .footer-info {
-            margin-bottom: 5px;
-        }
-        
-        /* ========== NUMERACIÓN DE PÁGINAS (Fija en cada página) ========== */
-        .page-info {
-            position: fixed;
-            bottom: 25px;
-            right: 30px;
-            font-size: 8px;
-            color: #999999;
-            text-align: right;
-        }
-        
-        .page-info p {
-            margin: 0;
-            padding: 0;
-        }
+        .badge-admin { background: #dbeafe; color: #1e40af; }
+        .badge-basico { background: #d1fae5; color: #065f46; }
+        .badge-tecnico { background: #fef3c7; color: #92400e; }
+        .badge-sistema { background: #e5e7eb; color: #4b5563; }
+        .change { font-size: 8px; line-height: 1.5; }
+        .old { color: #dc2626; text-decoration: line-through; }
+        .new { color: #16a34a; font-weight: bold; }
+        .arrow { color: #9ca3af; margin: 0 3px; }
+        .muted { color: #9ca3af; font-style: italic; }
     </style>
 </head>
 <body>
+    @php
+        $words = preg_split('/\s+/', trim($filters['company_name']));
+        $initials = strtoupper(mb_substr($words[0] ?? '', 0, 1) . mb_substr($words[1] ?? '', 0, 1));
+    @endphp
 
-    <!-- ============================================================ -->
-    <!-- ENCABEZADO -->
-    <!-- ============================================================ -->
-    <div class="report-header">
-        <div class="report-title">Registro de Auditoría</div>
-        <div class="report-subtitle">{{ $filters['company_name'] }} - Sistema de Gestión Forestal</div>
-        <div class="report-meta">
-            <span> Generado: {{ $filters['generated_at'] }}</span>
-            <span>|</span>
-            <span> Total registros: {{ $filters['total'] }}</span>
-            <span>|</span>
-            <span> Usuario: {{ auth()->user()->name ?? 'Sistema' }}</span>
-            <span>|</span>
-            <span> IP: {{ request()->ip() ?? 'N/A' }}</span>
-        </div>
-    </div>
+    {{-- ============ Encabezado institucional (portada del reporte) ============ --}}
+    <table class="letterhead">
+        <tr>
+            <td class="logo-cell">
+                @if($logo && $logo['type'] === 'image')
+                    <img src="{{ $logo['src'] }}" alt="{{ $filters['company_name'] }}">
+                @elseif($logo && $logo['type'] === 'svg')
+                    {!! $logo['content'] !!}
+                @else
+                    <div class="logo-fallback">{{ $initials }}</div>
+                @endif
+            </td>
+            <td class="org-cell">
+                <p class="org-name">{{ $filters['company_name'] }}</p>
+                <p class="org-rif">RIF: {{ $filters['rif'] }}</p>
+                <p class="doc-title">Registro de Auditoría</p>
+                <p class="doc-meta">Generado el {{ $filters['generated_at'] }} por {{ $filters['generated_by'] }}</p>
+            </td>
+        </tr>
+    </table>
+    <hr class="letterhead-rule">
 
-    <!-- ============================================================ -->
-    <!-- FILTROS APLICADOS -->
-    <!-- ============================================================ -->
-    <div class="filters-section">
-        <div class="filters-title">🔍 Filtros Aplicados</div>
-        <div class="records-count">Mostrando {{ $activities->count() }} registros</div>
-        <div class="clearfix"></div>
-        
-        <div class="filters-grid">
-            @php
-                $filtersApplied = [];
-                if($filters['search']) $filtersApplied[] = ['label' => 'Búsqueda', 'value' => '"'.$filters['search'].'"'];
-                if($filters['date_from']) $filtersApplied[] = ['label' => 'Desde', 'value' => $filters['date_from']];
-                if($filters['date_to']) $filtersApplied[] = ['label' => 'Hasta', 'value' => $filters['date_to']];
-                if($filters['role'] && $filters['role'] != 'all') $filtersApplied[] = ['label' => 'Rol', 'value' => ucfirst($filters['role'])];
-                if($filters['event_type'] && $filters['event_type'] != 'all') $filtersApplied[] = ['label' => 'Evento', 'value' => ucfirst($filters['event_type'])];
-                if($filters['subject_type'] && $filters['subject_type'] != 'all') $filtersApplied[] = ['label' => 'Modelo', 'value' => ucfirst($filters['subject_type'])];
-            @endphp
+    {{-- ============ Resumen ejecutivo del reporte ============ --}}
+    <table class="summary-strip">
+        <tr>
+            <td>
+                <p class="stat-label">Total de registros</p>
+                <p class="stat-value">{{ $filters['total'] }}</p>
+            </td>
+            <td>
+                <p class="stat-label">Usuarios involucrados</p>
+                <p class="stat-value">{{ $filters['distinct_users'] }}</p>
+            </td>
+            <td>
+                <p class="stat-label">Período cubierto</p>
+                <p class="stat-value">{{ $filters['period_label'] }}</p>
+            </td>
+            <td>
+                <p class="stat-label">Generado por</p>
+                <p class="stat-value">{{ $filters['generated_by'] }}</p>
+            </td>
+        </tr>
+    </table>
 
-            @forelse($filtersApplied as $filter)
-            <div class="filter-row">
-                <div class="filter-cell filter-label">{{ $filter['label'] }}:</div>
-                <div class="filter-cell filter-value">{{ $filter['value'] }}</div>
-            </div>
-            @empty
-            <div class="filter-row">
-                <div class="filter-cell filter-label">Ningún filtro aplicado</div>
-                <div class="filter-cell filter-value">Mostrando todos los registros</div>
-            </div>
-            @endforelse
-        </div>
-    </div>
+    {{-- ============ Filtros activos, como chips ============ --}}
+    @if(count($activeFilters))
+        <p class="filters-line">
+            @foreach($activeFilters as $label => $value)
+                <span class="filter-tag"><strong>{{ $label }}:</strong> {{ $value }}</span>
+            @endforeach
+        </p>
+    @endif
 
-    <!-- ============================================================ -->
-    <!-- TABLA DE DATOS -->
-    <!-- ============================================================ -->
-    <table class="data-table">
+    {{-- ============ Detalle de actividad ============ --}}
+    <table>
+        {{-- En vertical hay menos ancho disponible que en horizontal, así que
+             "Detalles" (la columna con más texto) recibe más proporción y
+             "Rol"/"Fecha" se ajustan a lo mínimo necesario. Los porcentajes
+             deben sumar 100. --}}
+        <colgroup>
+            <col style="width:3%">
+            <col style="width:12%">
+            <col style="width:7%">
+            <col style="width:13%">
+            <col style="width:12%">
+            <col style="width:53%">
+        </colgroup>
         <thead>
             <tr>
-                <th style="width: 4%;">#</th>
-                <th style="width: 14%;">Usuario</th>
-                <th style="width: 10%;">Rol</th>
-                <th style="width: 18%;">Actividad</th>
-                <th style="width: 12%;">Fecha/Hora</th>
-                <th style="width: 42%;">Detalles</th>
+                <th>#</th>
+                <th>Usuario</th>
+                <th>Rol</th>
+                <th>Actividad</th>
+                <th>Fecha</th>
+                <th>Detalles</th>
             </tr>
         </thead>
         <tbody>
             @forelse($activities as $index => $activity)
                 @php
-                    // ===== ROL =====
-                    $roleKey = $activity->causer?->role ?? 'sistema';
-                    $roleBadge = 'badge-' . ($roleKey === 'sistema' ? 'sistema' : $roleKey);
-                    $roleLabel = $roleKey === 'sistema' ? 'Sistema' : ucfirst($roleKey);
-
-                    // ===== ACTIVIDAD =====
-                    $event = $activity->event ?? 'default';
-                    $eventClass = 'event-' . $event;
-                    $eventBadge = 'badge-' . $event;
-                    
-                    $eventTranslations = [
-                        'created' => 'Creado',
-                        'updated' => 'Actualizado',
-                        'deleted' => 'Eliminado',
-                        'restored' => 'Restaurado',
-                        'login' => 'Inicio sesión',
-                        'logout' => 'Cierre sesión',
-                        'role_change' => 'Cambio rol',
+                    $roleColors = [
+                        'administrador' => 'badge-admin',
+                        'basico' => 'badge-basico',
+                        'tecnico' => 'badge-tecnico',
+                        'default' => 'badge-sistema'
                     ];
-                    
-                    $modelName = $activity->subject_type ? class_basename($activity->subject_type) : null;
-                    $modelTranslations = ['User' => 'Usuario', 'Polygon' => 'Polígono', 'Producer' => 'Productor'];
-                    $modelTranslation = $modelTranslations[$modelName] ?? $modelName ?? '';
-                    
-                    if (str_contains($activity->description, 'fue actualizado su rol')) {
-                        $translated = 'Rol actualizado';
-                    } elseif (!empty($modelTranslation) && isset($eventTranslations[$event])) {
-                        $translated = $modelTranslation . ' ' . $eventTranslations[$event];
-                    } else {
-                        $translated = $activity->description;
+                    $roleKey = $activity->causer?->role ?? 'default';
+                    $roleLabel = $roleKey === 'default' ? 'Sistema' : ucfirst($roleKey);
+                    $roleBadge = $roleColors[$roleKey] ?? 'badge-sistema';
+
+                    // Traducción de descripción
+                    $translations = [
+                        'El usuario ha sido updated' => 'Usuario actualizado',
+                        'El usuario ha sido restored' => 'Usuario restaurado',
+                        'El usuario ha sido created' => 'Usuario creado',
+                        'El usuario ha sido deleted' => 'Usuario eliminado',
+                        'Polygon created' => 'Polígono creado',
+                        'Polygon updated' => 'Polígono actualizado',
+                        'Polygon deleted' => 'Polígono eliminado',
+                        'Polygon restored' => 'Polígono restaurado',
+                        'Producer created' => 'Productor creado',
+                        'Producer updated' => 'Productor actualizado',
+                        'Producer deleted' => 'Productor eliminado',
+                        'Producer restored' => 'Productor restaurado',
+                    ];
+                    $description = $activity->description;
+                    $translated = $translations[$description] ?? $description;
+                    if (str_contains($description, "fue actualizado su rol")) {
+                        $translated = "Rol actualizado";
                     }
 
-                    // ===== DETALLES =====
-                    $detailsHtml = '<span class="no-details">Sin detalles</span>';
-                    
+                    // Detalles formateados (usa .old / .new / .arrow definidos arriba
+                    // para mostrar el "antes -> después" como un diff visual real)
+                    $details = '<span class="muted">Sin detalles</span>';
                     if ($activity->properties && $activity->properties->has('old_role') && $activity->properties->has('new_role')) {
-                        $oldRole = $activity->properties['old_role'] ?? 'N/A';
-                        $newRole = $activity->properties['new_role'] ?? 'N/A';
-                        $detailsHtml = '<span class="change-item">Rol: <span class="old-value">' . $oldRole . '</span> <span class="arrow-symbol">→</span> <span class="new-value">' . $newRole . '</span></span>';
-                    }
-                    elseif ($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old')) {
-                        $excluded = ['updated_at', 'created_at', 'deleted_at'];
+                        $details = '<strong>Rol:</strong> '
+                            . '<span class="old">' . e($activity->properties['old_role']) . '</span>'
+                            . '<span class="arrow">&#8594;</span>'
+                            . '<span class="new">' . e($activity->properties['new_role']) . '</span>';
+                    } elseif ($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old')) {
+                        $excluded = ['description', 'updated_at', 'created_at'];
                         $changes = collect($activity->properties['attributes'])
                             ->filter(function($new, $attr) use ($activity, $excluded) {
                                 if (in_array($attr, $excluded)) return false;
-                                $old = $activity->properties['old'][$attr] ?? null;
-                                return $new != $old;
-                            })->take(3);
-                        
-                        if ($changes->count() > 0) {
+                                return ($new != ($activity->properties['old'][$attr] ?? null));
+                            })
+                            ->take(3);
+                        if ($changes->count()) {
                             $parts = [];
                             foreach ($changes as $attr => $newVal) {
-                                $oldVal = $activity->properties['old'][$attr] ?? null;
+                                $oldVal = $activity->properties['old'][$attr] ?? 'N/A';
                                 if (is_bool($oldVal) || $oldVal === '0' || $oldVal === '1') $oldVal = $oldVal ? 'Activo' : 'Inactivo';
                                 if (is_bool($newVal) || $newVal === '0' || $newVal === '1') $newVal = $newVal ? 'Activo' : 'Inactivo';
-                                $fieldTranslations = ['name' => 'Nombre', 'email' => 'Correo', 'role' => 'Rol', 'is_active' => 'Estado', 'producer_id' => 'Productor', 'parish_id' => 'Parroquia', 'description' => 'Descripción', 'geometry' => 'Geometría', 'area' => 'Área', 'rut' => 'RUT', 'phone' => 'Teléfono', 'address' => 'Dirección'];
-                                $fieldName = $fieldTranslations[$attr] ?? $attr;
-                                $parts[] = '<span class="change-item">' . $fieldName . ': <span class="old-value">' . ($oldVal ?? 'N/A') . '</span> <span class="arrow-symbol">→</span> <span class="new-value">' . $newVal . '</span></span>';
+                                $parts[] = '<strong>' . e($attr) . ':</strong> '
+                                    . '<span class="old">' . e($oldVal) . '</span>'
+                                    . '<span class="arrow">&#8594;</span>'
+                                    . '<span class="new">' . e($newVal) . '</span>';
                             }
-                            $detailsHtml = implode(' ', $parts);
+                            $details = implode('<br>', $parts);
+                        } else {
+                            $details = '<span class="muted">Sin cambios relevantes</span>';
                         }
-                    }
-                    elseif ($activity->properties && $activity->properties->has('updated_fields')) {
-                        $fields = is_array($activity->properties['updated_fields']) ? implode(', ', $activity->properties['updated_fields']) : $activity->properties['updated_fields'];
-                        $detailsHtml = '<span class="change-item">Campos: ' . $fields . '</span>';
+                    } elseif ($activity->properties && $activity->properties->has('updated_fields')) {
+                        $details = '<span class="muted">Campos actualizados</span>';
                     }
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td>
-                        <strong>{{ $activity->causer?->name ?? 'Sistema' }}</strong>
-                        @if($activity->causer?->email)
-                            <br><span style="font-size:7px;color:#999999;">{{ $activity->causer->email }}</span>
-                        @endif
-                    </td>
-                    <td><span class="status-badge {{ $roleBadge }}">{{ $roleLabel }}</span></td>
-                    <td>
-                        <span class="{{ $eventClass }}">{{ $translated }}</span>
-                        @if($activity->subject_type)
-                            <br><span style="font-size:7px;color:#999999;">{{ $modelTranslation }}</span>
-                        @endif
-                    </td>
-                    <td class="nowrap">
-                        {{ $activity->created_at->format('d/m/Y') }}
-                        <br><span style="font-size:7px;color:#999999;">{{ $activity->created_at->format('H:i:s') }}</span>
-                    </td>
-                    <td><div class="change-details">{!! $detailsHtml !!}</div></td>
+                    <td>{{ $activity->causer?->name ?? 'Sistema' }}</td>
+                    <td><span class="badge {{ $roleBadge }}">{{ $roleLabel }}</span></td>
+                    <td>{{ $translated }}</td>
+                    <td>{{ $activity->created_at->format('d/m/Y H:i') }}</td>
+                    <td class="change">{!! $details !!}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center" style="padding:30px 0;color:#999999;">
-                        <span style="font-size:18px;">📭</span>
-                        <br><br>
-                        <strong style="font-size:11px;color:#333333;">No se encontraron actividades</strong>
-                        <br>
-                        <span style="font-size:8px;">Para los filtros seleccionados no hay registros disponibles</span>
-                    </td>
+                    <td colspan="6" class="text-center">No se encontraron actividades.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 
-    <!-- ============================================================ -->
-    <!-- PIE DE PÁGINA -->
-    <!-- ============================================================ -->
-    <div class="report-footer">
-        <div class="footer-info">{{ $filters['company_name'] }} · RIF: {{ $filters['rif'] }} · Sistema de Gestión Forestal</div>
-        <div class="footer-info">Documento generado automáticamente - No requiere firma</div>
-        <div class="footer-info">Confidencial - Uso exclusivo interno</div>
-        <div class="footer-info">© {{ date('Y') }} {{ $filters['company_name'] }} - Todos los derechos reservados</div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- NUMERACIÓN DE PÁGINAS (Fija en cada página) -->
-    <!-- ============================================================ -->
-    <div class="page-info">
-        <p>© {{ date('Y') }} - {{ $filters['company_name'] }}</p>
-        <p>Página {PAGE_NUM} de {PAGE_COUNT}</p>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- SCRIPT PHP PARA ACTUALIZAR LA NUMERACIÓN -->
-    <!-- ============================================================ -->
+    {{--
+        Encabezado y pie de página repetidos en TODAS las páginas.
+        DomPDF no soporta content: counter(page) de forma confiable ni
+        repite HTML normal en cada página, así que se usa su mecanismo
+        nativo vía script embebido con $pdf->page_text(). El HTML de arriba
+        (letterhead, resumen, filtros) sólo aparece una vez, al inicio del
+        documento; esto es lo que realmente se repite en cada hoja impresa.
+    --}}
     <script type="text/php">
-        if (isset($pdf)) {
-            $font = $fontMetrics->getFont("Helvetica", "normal");
-            $boldFont = $fontMetrics->getFont("Helvetica", "bold");
-            
-            $pageWidth = 842;
-            $pageHeight = 595;
-            $margin = 40;
-            $bottomY = 25;
-            
-            // Actualizar el texto de la página en cada página
-            $pageText = "© {{ date('Y') }} - {{ addslashes($filters['company_name']) }}";
-            $pdf->page_text($pageWidth - 250, $bottomY, $pageText, $font, 7, [0.5, 0.5, 0.5]);
-            
-            $pageNumText = "Página {PAGE_NUM} de {PAGE_COUNT}";
-            $pdf->page_text($pageWidth - 80, $bottomY, $pageNumText, $boldFont, 7, [0.3, 0.3, 0.3]);
-        }
-    </script>
+    if (isset($pdf)) {
+        $fontRegular = $fontMetrics->getFont("DejaVu Sans", "normal");
+        $fontBold = $fontMetrics->getFont("DejaVu Sans", "bold");
+
+        // Ancho y alto reales de la hoja, tomados del canvas de DomPDF en
+        // vez de dejarlos fijos. Así, si cambias setPaper() en el
+        // controlador entre 'portrait' y 'landscape', el encabezado, el
+        // pie de página y las líneas se acomodan solos.
+        $pageWidth = $pdf->get_width();
+        $pageHeight = $pdf->get_height();
+        $margin = 28;
+
+        $grayColor = [0.42, 0.45, 0.5];
+        $navyColor = [0.12, 0.16, 0.22];
+
+        $companyName = "{{ addslashes($filters['company_name']) }}";
+        $rif = "{{ addslashes($filters['rif']) }}";
+        $generatedAt = "{{ addslashes($filters['generated_at']) }}";
+
+        // ---------- Franja superior repetida ----------
+        $topY = 30;
+        $topLeft = $companyName . "  ·  Registro de Auditoría";
+        $pdf->page_text($margin, $topY, $topLeft, $fontBold, 8, $navyColor);
+
+        $topRight = "Documento de uso interno \xC2\xB7 Confidencial";
+        $topRightWidth = $fontMetrics->getTextWidth($topRight, $fontRegular, 8);
+        $pdf->page_text($pageWidth - $topRightWidth - $margin, $topY, $topRight, $fontRegular, 8, $grayColor);
+
+        $pdf->line($margin, $topY + 12, $pageWidth - $margin, $topY + 12, $grayColor, 0.5);
+
+        // ---------- Pie de página repetido ----------
+        // Número de página centrado y en negrita, como en el formato
+        // clásico de reportes impresos.
+        //
+        // OJO: en DomPDF, el eje Y de page_text() se mide desde ARRIBA de
+        // la hoja (igual que el resto de sus coordenadas), no desde abajo.
+        // Por eso "bottomY" se calcula restando desde $pageHeight y NO se
+        // deja como un número pequeño (35) — un número pequeño ahí es lo
+        // que causaba que el pie apareciera pegado al encabezado.
+        $bottomMargin = 35;
+        $bottomY = $pageHeight - $bottomMargin;
+
+        $pageText = "Página {PAGE_NUM} de {PAGE_COUNT}";
+        $pageTextWidth = $fontMetrics->getTextWidth($pageText, $fontBold, 8);
+        $pdf->page_text(($pageWidth - $pageTextWidth) / 2, $bottomY, $pageText, $fontBold, 8, $navyColor);
+
+        $footerLeft = $companyName . " · RIF: " . $rif;
+        $pdf->page_text($margin, $bottomY, $footerLeft, $fontRegular, 8, $grayColor);
+
+        $footerRight = "Generado: " . $generatedAt;
+        $footerRightWidth = $fontMetrics->getTextWidth($footerRight, $fontRegular, 8);
+        $pdf->page_text($pageWidth - $footerRightWidth - $margin, $bottomY, $footerRight, $fontRegular, 8, $grayColor);
+
+        $pdf->line($margin, $bottomY - 6, $pageWidth - $margin, $bottomY - 6, $grayColor, 0.5);
+    }
+</script>
 </body>
 </html>
