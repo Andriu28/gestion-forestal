@@ -10,15 +10,15 @@
            versión horizontal para aprovechar mejor el ancho, ya que en
            vertical hay menos espacio para las 6 columnas de la tabla. */
         @page {
-            margin: 88px 28px 65px 28px;
+            margin: 68px 34px 65px 34px;
         }
         body { font-family: 'DejaVu Sans', sans-serif; font-size: 9.5px; color: #222; margin: 0; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #797979; padding: 4px 5px; text-align: left; vertical-align: top; }
-        th { background-color: #1f2937; color: #fff; font-weight: bold; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; }
+        th, td { border: 1px solid #c9c9c9; padding: 4px 5px; text-align: left; vertical-align: top; }
+        th { background-color: #3f4348; color: #fff; font-weight: bold; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; }
 
         /* ---------- Encabezado institucional (sólo primera página) ---------- */
-        .letterhead { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .letterhead { width: 100%; border-collapse: collapse; margin-bottom: 3px; }
         .letterhead td { border: none; padding: 0; vertical-align: middle; }
         /* ==========================================================
            TAMAÑO DEL LOGO — edita aquí.
@@ -30,7 +30,7 @@
            ========================================================== */
         .letterhead .logo-cell { width: 60px; } /* ancho de la celda que contiene el logo */
         .letterhead .logo-cell svg { width: 46px; height: 46px; } /* tamaño si el logo es SVG */
-        .letterhead .logo-cell img { width: 66px; height: 66px; } /* tamaño si el logo es PNG/JPG */
+        .letterhead .logo-cell img { width: 76px; height: 76px; } /* tamaño si el logo es PNG/JPG */
         .letterhead .logo-fallback {
             width: 56px; height: 56px; /* tamaño del monograma cuando no hay logo cargado */
             background: #1f2937;
@@ -38,15 +38,32 @@
             font-size: 16px; /* si cambias el tamaño de arriba, ajusta este ~ a un tercio del alto */
             font-weight: bold;
             text-align: center;
-            line-height: 66px; /* debe ser igual al "height" de arriba para que las iniciales centren bien */
+            line-height: 76px; /* debe ser igual al "height" de arriba para que las iniciales centren bien */
             border-radius: 6px;
         }
         .letterhead .org-cell { padding-left: 12px; }
-        .letterhead .org-name { font-size: 20px; font-weight: bold; color: #1f2937; margin: 0; }
+        .letterhead .org-name { font-size: 24px; font-weight: bold; color: #000000; margin: 0; }
         .letterhead .org-rif { font-size: 12px; color: #3c3c3c; margin: 1px 0 0; }
-        .letterhead .doc-title { font-size: 12px; color: #374151; margin: 4px 0 0; text-transform: uppercase; letter-spacing: 0.5px; }
-        .letterhead .doc-meta { font-size: 8.5px; color: #888; margin: 2px 0 0; }
-        .letterhead-rule { border: none; border-top: 2px solid #1f2937; border-bottom: 1px solid #d1d5db; margin: 0 0 12px; height: 0; }
+        .letterhead .doc-info-cell { padding-left: 24px; text-align: right; vertical-align: middle; }
+        .letterhead .doc-title { font-size: 16px; color: #22272f; margin: 4px 0 0; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .letterhead .doc-meta { font-size: 12px; color: #5d5d5d; margin: 2px 0 0; }
+        .letterhead-rule { border: none; border-top: 2px solid #1f293779; border-bottom: 1px solid #d1d5db; margin: 0 0 12px; height: 0; }
+
+        /* ---------- Marca de agua / fondo ---------- */
+        .pdf-content { position: relative; z-index: 1; }
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-40deg);
+            font-size: 72px;
+            color: rgba(0, 0, 0, 0.08);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            z-index: 0;
+            white-space: nowrap;
+        }
 
         /* ---------- Tarjetas de resumen ---------- */
         .summary-strip { border-collapse: separate; border-spacing: 6px 0; margin: 0 0 10px -6px; width: calc(100% + 12px); }
@@ -64,12 +81,12 @@
             border-radius: 10px;
             padding: 2px 8px;
             margin: 0 6px 4px 0;
-            font-size: 8.5px;
+            font-size: 9px;
         }
 
         /* ---------- Tabla de actividad ---------- */
         .text-center { text-align: center; }
-        tbody tr:nth-child(even) td { background-color: #f8f9fb; }
+        tbody tr:nth-child(even) td { background-color: #0b0b0b17; }
         tbody tr { page-break-inside: avoid; }
         .badge {
             display: inline-block;
@@ -97,8 +114,11 @@
         $initials = strtoupper(mb_substr($words[0] ?? '', 0, 1) . mb_substr($words[1] ?? '', 0, 1));
     @endphp
 
-    {{-- ============ Encabezado institucional (portada del reporte) ============ --}}
-    <table class="letterhead">
+    <div class="watermark">Confidencial</div>
+
+    <div class="pdf-content">
+        {{-- ============ Encabezado institucional (portada del reporte) ============ --}}
+        <table class="letterhead">
         <tr>
             <td class="logo-cell">
                 @if($logo && $logo['type'] === 'image')
@@ -112,10 +132,15 @@
             <td class="org-cell">
                 <p class="org-name">{{ $filters['company_name'] }}</p>
                 <p class="org-rif">RIF: {{ $filters['rif'] }}</p>
+                <p class="doc-meta">Venezuela es cacao</p>
+            </td>
+            <td class="doc-info-cell">
                 <p class="doc-title">Registro de Auditoría</p>
-                <p class="doc-meta">Generado el {{ $filters['generated_at'] }} por {{ $filters['generated_by'] }}</p>
+                <p class="doc-meta">Generado el {{ $filters['generated_at'] }}</p>
+                <p class="doc-meta"> por {{ $filters['generated_by'] }}</p>
             </td>
         </tr>
+        
     </table>
     <hr class="letterhead-rule">
 
@@ -133,10 +158,6 @@
             <td>
                 <p class="stat-label">Período cubierto</p>
                 <p class="stat-value">{{ $filters['period_label'] }}</p>
-            </td>
-            <td>
-                <p class="stat-label">Generado por</p>
-                <p class="stat-value">{{ $filters['generated_by'] }}</p>
             </td>
         </tr>
     </table>
@@ -272,14 +293,27 @@
         $fontRegular = $fontMetrics->getFont("DejaVu Sans", "normal");
         $fontBold = $fontMetrics->getFont("DejaVu Sans", "bold");
 
-        // Ancho y alto reales de la hoja, tomados del canvas de DomPDF en
-        // vez de dejarlos fijos. Así, si cambias setPaper() en el
-        // controlador entre 'portrait' y 'landscape', el encabezado, el
-        // pie de página y las líneas se acomodan solos.
+        // Detectar orientación automáticamente
         $pageWidth = $pdf->get_width();
         $pageHeight = $pdf->get_height();
-        $margin = 28;
 
+        // Si el ancho es > alto, es landscape
+        // Si el alto es > ancho, es portrait
+        $isLandscape = $pageWidth > $pageHeight;
+
+        // Para A4:
+        // Portrait: 595 x 842
+        // Landscape: 842 x 595
+        // Forzamos los valores exactos para evitar desviaciones
+        if ($isLandscape) {
+            $pageWidth = 842;
+            $pageHeight = 595;
+        } else {
+            $pageWidth = 595;
+            $pageHeight = 842;
+        }
+
+        $margin = 28;
         $grayColor = [0.42, 0.45, 0.5];
         $navyColor = [0.12, 0.16, 0.22];
 
@@ -287,32 +321,49 @@
         $rif = "{{ addslashes($filters['rif']) }}";
         $generatedAt = "{{ addslashes($filters['generated_at']) }}";
 
-        // ---------- Franja superior repetida ----------
+        // ---------- Franja superior ----------
         $topY = 30;
         $topLeft = $companyName . "  ·  Registro de Auditoría";
         $pdf->page_text($margin, $topY, $topLeft, $fontBold, 8, $navyColor);
 
-        $topRight = "Documento de uso interno \xC2\xB7 Confidencial";
+        $topRight = "Documento de uso interno · Confidencial";
         $topRightWidth = $fontMetrics->getTextWidth($topRight, $fontRegular, 8);
         $pdf->page_text($pageWidth - $topRightWidth - $margin, $topY, $topRight, $fontRegular, 8, $grayColor);
 
         $pdf->line($margin, $topY + 12, $pageWidth - $margin, $topY + 12, $grayColor, 0.5);
 
-        // ---------- Pie de página repetido ----------
-        // Número de página centrado y en negrita, como en el formato
-        // clásico de reportes impresos.
-        //
-        // OJO: en DomPDF, el eje Y de page_text() se mide desde ARRIBA de
-        // la hoja (igual que el resto de sus coordenadas), no desde abajo.
-        // Por eso "bottomY" se calcula restando desde $pageHeight y NO se
-        // deja como un número pequeño (35) — un número pequeño ahí es lo
-        // que causaba que el pie apareciera pegado al encabezado.
+        // ---------- Pie de página ----------
         $bottomMargin = 35;
         $bottomY = $pageHeight - $bottomMargin;
 
+        // ================================================================
+        // 🔧 AJUSTE MANUAL DEL NÚMERO DE PÁGINA (IZQUIERDA ↔ DERECHA)
+        // ================================================================
+        // Valores de ejemplo para A4 PORTRAIT (ancho: 595):
+        //   297 = centrado perfecto
+        //   250 = un poco a la izquierda
+        //   350 = un poco a la derecha
+        //   200 = más a la izquierda
+        //   400 = más a la derecha
+        //
+        // Valores de ejemplo para A4 LANDSCAPE (ancho: 842):
+        //   421 = centrado perfecto
+        //   380 = un poco a la izquierda
+        //   460 = un poco a la derecha
+        //   320 = más a la izquierda
+        //   520 = más a la derecha
+        // ================================================================
+        
         $pageText = "Página {PAGE_NUM} de {PAGE_COUNT}";
         $pageTextWidth = $fontMetrics->getTextWidth($pageText, $fontBold, 8);
-        $pdf->page_text(($pageWidth - $pageTextWidth) / 2, $bottomY, $pageText, $fontBold, 8, $navyColor);
+        
+        // 🔽 CAMBIA EL VALOR DE centerX PARA MOVER IZQUIERDA/DERECHA 🔽
+        // $centerX = 297;  // ← Centrado perfecto (portrait)
+        // $centerX = 250;  // ← Un poco a la izquierda
+        // $centerX = 350;  // ← Un poco a la derecha
+        $centerX = 266;  // ← VALOR ACTUAL - CÁMBIALO SEGÚN NECESITES
+        
+        $pdf->page_text($centerX, $bottomY, $pageText, $fontBold, 8, $navyColor);
 
         $footerLeft = $companyName . " · RIF: " . $rif;
         $pdf->page_text($margin, $bottomY, $footerLeft, $fontRegular, 8, $grayColor);
