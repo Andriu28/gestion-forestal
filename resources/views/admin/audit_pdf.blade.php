@@ -14,7 +14,7 @@
         }
         body { font-family: 'DejaVu Sans', sans-serif; font-size: 9.5px; color: #222; margin: 0; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #c9c9c9; padding: 4px 5px; text-align: left; vertical-align: top; }
+        th, td { border: 1px solid #a0a0a0; padding: 4px 5px; text-align: left; vertical-align: top; }
         th { background-color: #3f4348; color: #fff; font-weight: bold; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; }
 
         /* ---------- Encabezado institucional (sólo primera página) ---------- */
@@ -81,7 +81,7 @@
             border-radius: 10px;
             padding: 2px 8px;
             margin: 0 6px 4px 0;
-            font-size: 9px;
+            font-size: 10px;
         }
 
         /* ---------- Tabla de actividad ---------- */
@@ -90,17 +90,17 @@
         tbody tr { page-break-inside: avoid; }
         .badge {
             display: inline-block;
-            padding: 0 6px;
+            padding: 3px 6px;
             border-radius: 12px;
             font-size: 8px;
             font-weight: bold;
             background: #e5e7eb;
             color: #37393c;
         }
-        .badge-admin { background: #dbeafe; color: #1e40af; }
-        .badge-basico { background: #d1fae5; color: #065f46; }
-        .badge-tecnico { background: #fef3c7; color: #92400e; }
-        .badge-sistema { background: #e5e7eb; color: #4b5563; }
+        .badge-admin { background: #dbeafe; color: #03050e; }
+        .badge-basico { background: #d1fae5; color: #000000; }
+        .badge-tecnico { background: #fef3c7; color: #000000; }
+        .badge-sistema { background: #e5e7eb; color: #040405; }
         .change { font-size: 8px; line-height: 1.5; }
         .old { color: #dc2626; text-decoration: line-through; }
         .new { color: #16a34a; font-weight: bold; }
@@ -330,37 +330,14 @@
         $topRightWidth = $fontMetrics->getTextWidth($topRight, $fontRegular, 8);
         $pdf->page_text($pageWidth - $topRightWidth - $margin, $topY, $topRight, $fontRegular, 8, $grayColor);
 
-        $pdf->line($margin, $topY + 12, $pageWidth - $margin, $topY + 12, $grayColor, 0.5);
-
         // ---------- Pie de página ----------
         $bottomMargin = 35;
         $bottomY = $pageHeight - $bottomMargin;
-
-        // ================================================================
-        // 🔧 AJUSTE MANUAL DEL NÚMERO DE PÁGINA (IZQUIERDA ↔ DERECHA)
-        // ================================================================
-        // Valores de ejemplo para A4 PORTRAIT (ancho: 595):
-        //   297 = centrado perfecto
-        //   250 = un poco a la izquierda
-        //   350 = un poco a la derecha
-        //   200 = más a la izquierda
-        //   400 = más a la derecha
-        //
-        // Valores de ejemplo para A4 LANDSCAPE (ancho: 842):
-        //   421 = centrado perfecto
-        //   380 = un poco a la izquierda
-        //   460 = un poco a la derecha
-        //   320 = más a la izquierda
-        //   520 = más a la derecha
-        // ================================================================
         
         $pageText = "Página {PAGE_NUM} de {PAGE_COUNT}";
         $pageTextWidth = $fontMetrics->getTextWidth($pageText, $fontBold, 8);
         
         // 🔽 CAMBIA EL VALOR DE centerX PARA MOVER IZQUIERDA/DERECHA 🔽
-        // $centerX = 297;  // ← Centrado perfecto (portrait)
-        // $centerX = 250;  // ← Un poco a la izquierda
-        // $centerX = 350;  // ← Un poco a la derecha
         $centerX = 266;  // ← VALOR ACTUAL - CÁMBIALO SEGÚN NECESITES
         
         $pdf->page_text($centerX, $bottomY, $pageText, $fontBold, 8, $navyColor);
@@ -372,7 +349,7 @@
         $footerRightWidth = $fontMetrics->getTextWidth($footerRight, $fontRegular, 8);
         $pdf->page_text($pageWidth - $footerRightWidth - $margin, $bottomY, $footerRight, $fontRegular, 8, $grayColor);
 
-        $pdf->line($margin, $bottomY - 6, $pageWidth - $margin, $bottomY - 6, $grayColor, 0.5);
+        // ✅ LÍNEA ELIMINADA - YA NO ESTÁ AQUÍ
     }
 </script>
 </body>
