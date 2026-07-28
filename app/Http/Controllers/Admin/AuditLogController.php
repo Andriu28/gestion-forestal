@@ -362,6 +362,6 @@ class AuditLogController extends Controller
         $pdf->setOption('isPhpEnabled', true);         // Habilita PHP embebido (numeración/encabezado por página)
         $pdf->setOption('isHtml5ParserEnabled', true);  // Habilita HTML5
 
-        return $pdf->stream('auditoria_' . now()->format('Y-m-d_H-i') . '.pdf');
+        return $pdf->download('auditoria_' . now()->format('Y-m-d_H-i') . '.pdf');
     }
 }
