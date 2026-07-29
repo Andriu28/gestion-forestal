@@ -20,17 +20,40 @@ class Producer extends Model
         'latitude',
         'longitude',
         'address',
+        'state_id',
+        'municipality_id',
+        'parish_id',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
     ];
 
-    // En Producer.php - actualiza el método getActivitylogOptions()
+    // ============================================
+    // RELACIONES CON DIVISIÓN TERRITORIAL
+    // ============================================
+    public function state()
+    {
+        return $this->belongsTo(State::class);
+    }
+
+    public function municipality()
+    {
+        return $this->belongsTo(Municipality::class);
+    }
+
+    public function parish()
+    {
+        return $this->belongsTo(Parish::class);
+    }
+
+    // ============================================
+    // ACTIVITY LOG
+    // ============================================
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'lastname', 'description', 'is_active'])
+            ->logOnly(['name', 'lastname', 'description', 'is_active', 'state_id', 'municipality_id', 'parish_id'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(function(string $eventName) {
                 $producerName = $this->name && $this->lastname 
@@ -42,16 +65,14 @@ class Producer extends Model
                         return "Productor '{$producerName}' fue creado";
                         
                     case 'updated':
-                        // Detectar qué campo cambió específicamente
                         $changes = $this->getChanges();
-                        unset($changes['updated_at']); // Quitar updated_at del log
+                        unset($changes['updated_at']);
                         
                         if (count($changes) === 1 && isset($changes['is_active'])) {
                             $newStatus = $changes['is_active'] ? 'activado' : 'desactivado';
                             return "Productor '{$producerName}' fue {$newStatus}";
                         }
                         
-                        // Para múltiples cambios o cambios no específicos
                         $changedFields = array_keys($changes);
                         if (count($changedFields) === 1) {
                             $field = $changedFields[0];
@@ -59,7 +80,10 @@ class Producer extends Model
                                 'name' => 'nombre',
                                 'lastname' => 'apellido',
                                 'description' => 'descripción',
-                                'is_active' => 'estado'
+                                'is_active' => 'estado',
+                                'state_id' => 'estado',
+                                'municipality_id' => 'municipio',
+                                'parish_id' => 'parroquia',
                             ];
                             
                             $fieldName = $fieldNames[$field] ?? $field;
@@ -81,6 +105,9 @@ class Producer extends Model
             ->dontSubmitEmptyLogs();
     }
 
+    // ============================================
+    // SCOPES
+    // ============================================
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -88,17 +115,58 @@ class Producer extends Model
 
     public function scopeSearch($query, $search)
     {
-        return $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('lastname', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+        return $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('lastname', 'like', "%{$search}%")
+              ->orWhere('description', 'like', "%{$search}%")
+              // Buscar por nombre de estado, municipio o parroquia (usando relaciones)
+              ->orWhereHas('state', function ($q2) use ($search) {
+                  $q2->where('name', 'like', "%{$search}%");
+              })
+              ->orWhereHas('municipality', function ($q2) use ($search) {
+                  $q2->where('name', 'like', "%{$search}%");
+              })
+              ->orWhereHas('parish', function ($q2) use ($search) {
+                  $q2->where('name', 'like', "%{$search}%");
+              });
+        });
     }
 
     
-   // Relación con polygons
+   // ============================================
+   // RELACIÓN CON POLYGONS (ya existente)
+   // ============================================
     public function polygons()
     {
         return $this->hasMany(Polygon::class);
     }
 
+    // ============================================
+    // ACCESSORS (opcional, para mostrar nombres)
+    // ============================================
+    public function getStateNameAttribute()
+    {
+        return $this->state ? $this->state->name : 'Sin estado';
+    }
+
+    public function getMunicipalityNameAttribute()
+    {
+        return $this->municipality ? $this->municipality->name : 'Sin municipio';
+    }
+
+    public function getParishNameAttribute()
+    {
+        return $this->parish ? $this->parish->name : 'Sin parroquia';
+    }
+
+    // Obtener ubicación completa formateada
+    public function getFullLocationAttribute()
+    {
+        $parts = [];
+        if ($this->parish) $parts[] = $this->parish->name;
+        if ($this->municipality) $parts[] = $this->municipality->name;
+        if ($this->state) $parts[] = $this->state->name;
+        return implode(', ', $parts) ?: 'Sin ubicación';
+    }
    
 }
