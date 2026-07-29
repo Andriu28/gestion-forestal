@@ -28,6 +28,9 @@
     @yield('head-styles')
     @yield('head-scripts')
 
+    <!-- ============== NUEVO: Stack de estilos ============== -->
+    @stack('styles')
+
     <!-- =======================
          Inicialización de tema y sidebar antes de renderizar
     ======================== -->
@@ -175,6 +178,9 @@
 
    
     @livewireScripts
+    
+    <!-- ============== NUEVO: Stack de scripts ============== -->
+    @stack('scripts')
     
 </body>
 

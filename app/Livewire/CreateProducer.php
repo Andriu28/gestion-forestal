@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Producer;
 use Livewire\Component;
+use Livewire\Attributes\On;
 
 class CreateProducer extends Component
 {
@@ -19,7 +20,7 @@ class CreateProducer extends Component
     {
         return [
             'name' => ['required', 'string', 'min:3'],
-            'lastname' => ['required', 'string', 'max:255','min:3'],
+            'lastname' => ['required', 'string', 'max:255', 'min:3'],
             'description' => ['required', 'string'],
             'is_active' => ['boolean'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
@@ -28,30 +29,29 @@ class CreateProducer extends Component
         ];
     }
 
-    protected function validationAttributes()
-    {
-        return [
-            'name' => 'nombre',
-            'lastname' => 'apellido',
-            'description' => 'descripción',
-            'is_active' => 'productor activo',
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
-            'address' => $this->address,
-        ];
-    }
 
-    public function updated($propertyName)
+    #[On('locationUpdated')]
+    public function locationUpdated($data)
     {
-        $this->validateOnly($propertyName);
+        $this->latitude = $data['latitude'];
+        $this->longitude = $data['longitude'];
+        $this->address = $data['address'];
     }
 
     public function store()
     {
-        $validatedData = $this->validate();
+        $validated = $this->validate();
 
-        Producer::create($validatedData);
-        
+        Producer::create([
+            'name' => $validated['name'],
+            'lastname' => $validated['lastname'],
+            'description' => $validated['description'],
+            'is_active' => $validated['is_active'],
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'address' => $this->address,
+        ]);
+
         return redirect()->route('producers.index')->with('swal', [
             'icon' => 'success',
             'title' => 'Éxito',
