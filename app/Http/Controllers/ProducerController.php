@@ -7,18 +7,12 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreProducerRequest;
 use App\Http\Requests\UpdateProducerRequest;
 use App\Traits\Filterable;
-use App\Services\PdfService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 
 class ProducerController extends Controller
 {
     use Filterable;
-
-    protected PdfService $pdfService;
-
-    public function __construct(PdfService $pdfService)
-    {
-        $this->pdfService = $pdfService;
-    }
 
     /**
      * Muestra la lista de productores con filtros.
@@ -380,51 +374,146 @@ class ProducerController extends Controller
     }
 
     /**
-     * Genera un PDF con la lista de productores aplicando los mismos filtros.
+     * Localiza el logo institucional (PNG/JPG primero, SVG como respaldo) y
+     * lo prepara para incrustarlo en el PDF. Misma lógica que
+     * AuditLogController::getLogoImage(), copiada aquí directamente (sin
+     * trait) para que ambos controladores no dependan de un archivo
+     * compartido.
+     *
+     * @return array{type: string, src?: string, content?: string}|null
      */
-    public function generatePdf(Request $request)
+    private function getLogoImage(): ?array
     {
-        $search = $request->input('search');
-        $status = $request->input('status', 'all');
-
-        $query = Producer::query();
-
-        // Búsqueda flexible con el trait
-        $query = $this->applySearchFilter(
-            $query,
-            $search,
-            ['name', 'lastname', 'description'],
-            []
-        );
-
-        // Filtro de estado
-        match ($status) {
-            'active'   => $query->where('is_active', true),
-            'inactive' => $query->where('is_active', false),
-            'deleted'  => $query->onlyTrashed(),
-            'all'      => $query->withTrashed(),
-            default    => $query,
-        };
-
-        $producers = $query->orderBy('name')->get();
-
-        $filters = [
-            'search' => $search,
-            'status' => $status,
-            'total' => $producers->count(),
-            'generated_at' => now()->format('d/m/Y H:i:s'),
+        $rasterCandidates = [
+            'images/logo.png',
+            'logo.png',
+            'images/logo.jpg',
+            'logo.jpg',
+            'favicon.png',
         ];
 
-        return $this->pdfService->download(
-            'producers.pdf',
-            [
-                'producers' => $producers,
-                'filters' => $filters,
-            ],
-            'productores_' . now()->format('Y-m-d_H-i') . '.pdf',
-            'A4',
-            'landscape'
-        );
+        foreach ($rasterCandidates as $relative) {
+            $path = public_path($relative);
+            if (!is_file($path)) {
+                continue;
+            }
+
+            try {
+                $data = file_get_contents($path);
+                $mime = function_exists('mime_content_type')
+                    ? (mime_content_type($path) ?: 'image/png')
+                    : 'image/png';
+
+                return [
+                    'type' => 'image',
+                    'src' => 'data:' . $mime . ';base64,' . base64_encode($data),
+                ];
+            } catch (\Throwable $e) {
+                Log::warning('Producers PDF: no se pudo leer el logo raster', [
+                    'path' => $path,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $svgPath = public_path('favicon.svg');
+        if (is_file($svgPath)) {
+            try {
+                $svg = file_get_contents($svgPath);
+                $svg = preg_replace('/<\?xml.*?\?>/s', '', $svg);
+                $svg = preg_replace('/<!DOCTYPE.*?>/s', '', $svg);
+
+                if (!preg_match('/<svg[^>]*\swidth\s*=/i', $svg)) {
+                    $svg = preg_replace('/<svg/', '<svg width="46" height="46"', $svg, 1);
+                }
+
+                return [
+                    'type' => 'svg',
+                    'content' => trim($svg),
+                ];
+            } catch (\Throwable $e) {
+                Log::warning('Producers PDF: no se pudo leer el logo SVG', [
+                    'path' => $svgPath,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        Log::warning('Producers PDF: no se encontró ningún logo institucional; se usará el monograma de respaldo.', [
+            'buscado_en' => array_merge($rasterCandidates, ['favicon.svg']),
+        ]);
+
+        return null;
     }
+
+    /**
+ * Genera un PDF con la lista de productores aplicando los mismos filtros.
+ */
+public function generatePdf(Request $request)
+{
+    $search = $request->input('search');
+    $status = $request->input('status', 'all');
+
+    $query = Producer::query();
+
+    // Búsqueda flexible con el trait
+    $query = $this->applySearchFilter(
+        $query,
+        $search,
+        ['name', 'lastname', 'description'],
+        []
+    );
+
+    // Filtro de estado
+    match ($status) {
+        'active'   => $query->where('is_active', true),
+        'inactive' => $query->where('is_active', false),
+        'deleted'  => $query->onlyTrashed(),
+        'all'      => $query->withTrashed(),
+        default    => $query,
+    };
+
+    $producers = $query->orderBy('name')->get();
+
+    // Contadores para estadísticas
+    $activeCount = Producer::where('is_active', true)->count();
+    $inactiveCount = Producer::where('is_active', false)->count();
+    $deletedCount = Producer::onlyTrashed()->count();
+
+    $filters = [
+        'search' => $search,
+        'status' => $status,
+        'total' => $producers->count(),
+        'active_count' => $activeCount,
+        'inactive_count' => $inactiveCount,
+        'deleted_count' => $deletedCount,
+        'generated_at' => now()->format('d/m/Y H:i:s'),
+        'generated_by' => auth()->user()->name ?? 'Sistema',
+        'company_name' => 'Cacao San José',
+        'rif' => 'J-12345678-9',
+    ];
+
+   // Logo institucional: mismo método que AuditLogController::getLogoImage(),
+    // prioriza el logo raster real (PNG/JPG) antes de caer a SVG, y usa el
+    // mismo fallback visual (.logo-fallback del Blade).
+    $logo = $this->getLogoImage();
+
+    $pdf = Pdf::loadView('producers.pdf', [
+        'producers' => $producers,
+        'filters' => $filters,
+        'logo' => $logo,
+    ]);
+
+    // Mismas opciones de DomPDF que en AuditLogController::generatePdf().
+    // Antes esto pasaba por PdfService con dpi=>72 y sin isPhpEnabled
+    // explícito, lo que probablemente impedía que el <script type="text/php">
+    // del encabezado/pie de página del Blade se ejecutara, y cambiaba el
+    // escalado de todo el documento respecto al de auditoría.
+    $pdf->setPaper('A4', 'portrait');
+    $pdf->setOption('isPhpEnabled', true);          // Habilita el script embebido de encabezado/pie de página
+    $pdf->setOption('isHtml5ParserEnabled', true);   // Habilita HTML5
+
+    return $pdf->download('productores_' . now()->format('Y-m-d_H-i') . '.pdf');
+}
 
 }

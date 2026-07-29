@@ -1141,7 +1141,9 @@ class PolygonMap {
     processLocationData(data, centroid) {
         const address = data.address || {};
         
-        let parish = address.village || address.town || address.city || address.municipality || '';
+         // CORREGIDO: Extraer correctamente los datos
+         // Parroquia: usar 'municipality' primero (contiene "Parroquia Santa Rosa")
+        let parish = address.municipality || '';
         let municipality = address.county || address.state_district || address.region || '';
         let state = address.state || address.region || '';
         
