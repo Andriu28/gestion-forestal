@@ -6,13 +6,11 @@ use Livewire\Component;
 
 class LocationPicker extends Component
 {
-    // Propiedades sincronizadas con la vista
     public $latitude = null;
     public $longitude = null;
     public $address = '';
     public $mapId = 'map';
 
-    // Configuración
     public $showCoordinates = true;
     public $showAddress = true;
     public $showLocateButton = true;
@@ -21,14 +19,10 @@ class LocationPicker extends Component
     public $initialCenterLat = 10.6694;
     public $placeholder = 'Haz clic en el mapa para seleccionar una ubicación';
 
-    protected function rules()
-    {
-        return [
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'address' => ['nullable', 'string', 'max:500'],
-        ];
-    }
+    // Componentes de dirección (para mostrar en el componente)
+    public $parroquia = '';
+    public $municipio = '';
+    public $estado = '';
 
     public function mount(
         $latitude = null,
@@ -56,18 +50,23 @@ class LocationPicker extends Component
         $this->placeholder = $placeholder;
     }
 
-    // Este método es llamado desde JavaScript para actualizar los datos
-    public function setLocation($latitude, $longitude, $address)
+    public function setLocation($latitude, $longitude, $address, $components = null)
     {
         $this->latitude = $latitude;
         $this->longitude = $longitude;
         $this->address = $address;
 
-        // Livewire 3: dispatch envía el evento hacia arriba (padre)
+        if ($components) {
+            $this->parroquia = $components['parroquia'] ?? '';
+            $this->municipio = $components['municipio'] ?? '';
+            $this->estado = $components['estado'] ?? '';
+        }
+
         $this->dispatch('locationUpdated', [
             'latitude' => $latitude,
             'longitude' => $longitude,
             'address' => $address,
+            'components' => $components ?? [],
         ]);
     }
 
