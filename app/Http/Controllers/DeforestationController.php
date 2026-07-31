@@ -212,64 +212,69 @@ class DeforestationController extends Controller
     {
         try {
             DB::transaction(function () use (&$dataToPass, $existingId) {
-                $polygonId = $existingId;
-                if (!$polygonId) {
-                    $polygonRow = DB::selectOne(
-                        "INSERT INTO polygons (name, description, geometry, producer_id, area_ha, created_at, updated_at)
-                         VALUES (?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?, ?, ?) RETURNING id",
-                        [
-                            $dataToPass['polygon_name'],
-                            $dataToPass['description'],
-                            $dataToPass['original_geojson'],
-                            $dataToPass['producer_id'],
-                            $dataToPass['polygon_area_ha'],
-                            now(),
-                            now()
-                        ]
-                    );
-                    $polygonId = $polygonRow->id;
+                $polygon = null;
+
+                if ($existingId) {
+                    // Actualizar polígono existente (usando Eloquent)
+                    $polygon = Polygon::withTrashed()->findOrFail($existingId);
+                    $polygon->update([
+                        'name'        => $dataToPass['polygon_name'],
+                        'description' => $dataToPass['description'],
+                        'producer_id' => $dataToPass['producer_id'],
+                        'area_ha'     => $dataToPass['polygon_area_ha'],
+                    ]);
                 } else {
-                    DB::update(
-                        "UPDATE polygons SET name = ?, description = ?, producer_id = ?, updated_at = ? WHERE id = ?",
+                    // Crear nuevo polígono (usando el método del modelo)
+                    $geoJson = $dataToPass['original_geojson'];
+                    $polygon = Polygon::createWithGeometry(
                         [
-                            $dataToPass['polygon_name'],
-                            $dataToPass['description'],
-                            $dataToPass['producer_id'],
-                            now(),
-                            $polygonId
-                        ]
+                            'name'          => $dataToPass['polygon_name'],
+                            'description'   => $dataToPass['description'],
+                            'producer_id'   => $dataToPass['producer_id'],
+                            'area_ha'       => $dataToPass['polygon_area_ha'],
+                            'is_active'     => true,
+                            'location_data' => [
+                                'detected_parish'       => null,
+                                'detected_municipality' => null,
+                                'detected_state'        => null,
+                                'created_info' => [
+                                    'source' => 'deforestation_analysis',
+                                    'created_at' => now()->toISOString(),
+                                ],
+                            ],
+                        ],
+                        $geoJson
                     );
                 }
 
-                // Guardar cada año del desglose
+                // Guardar/actualizar registros de deforestación (usando Eloquent)
                 foreach ($dataToPass['total_loss']['yearlyBreakdown'] as $yearData) {
-                    $exists = DB::table('deforestation')
-                        ->where('polygon_id', $polygonId)
-                        ->where('year', $yearData['year'])
-                        ->exists();
-
-                    if ($exists) {
-                        DB::table('deforestation')
-                            ->where('polygon_id', $polygonId)
-                            ->where('year', $yearData['year'])
-                            ->update([
-                                'deforested_area_ha' => $yearData['area_ha'],
-                                'percentage_loss'    => $yearData['percentage'],
-                                'updated_at'         => now(),
-                            ]);
-                    } else {
-                        DB::table('deforestation')->insert([
-                            'polygon_id'         => $polygonId,
-                            'year'               => $yearData['year'],
+                    Deforestation::updateOrCreate(
+                        [
+                            'polygon_id' => $polygon->id,
+                            'year'       => $yearData['year'],
+                        ],
+                        [
                             'deforested_area_ha' => $yearData['area_ha'],
                             'percentage_loss'    => $yearData['percentage'],
-                            'created_at'         => now(),
-                            'updated_at'         => now(),
-                        ]);
-                    }
+                        ]
+                    );
                 }
 
-                $dataToPass['polygon_id'] = $polygonId;
+                $dataToPass['polygon_id'] = $polygon->id;
+
+                // Registrar actividad manual (análisis completado)
+                activity()
+                    ->causedBy(auth()->user())
+                    ->performedOn($polygon)
+                    ->withProperties([
+                        'start_year'  => $dataToPass['start_year'],
+                        'end_year'    => $dataToPass['end_year'],
+                        'total_deforested' => $dataToPass['total_loss']['totalDeforestedArea'],
+                    ])
+                    ->event('analyzed')
+                    ->log("Análisis de deforestación completado para el polígono '{$polygon->name}'");
+
             });
             session()->flash('save_success', 'Análisis guardado correctamente.');
         } catch (\Exception $e) {
@@ -581,20 +586,37 @@ class DeforestationController extends Controller
             if ($saveAnalysis) {
                 try {
                     DB::transaction(function () use ($newResults, $polygonId, $areaHa) {
+                        $polygon = Polygon::withTrashed()->findOrFail($polygonId);
+
                         foreach ($newResults as $year => $data) {
                             if ($data['status'] === 'success') {
                                 $currentArea = (float) $data['area__ha'];
                                 $percentage = $areaHa > 0 ? ($currentArea / $areaHa) * 100 : 0;
-                                DB::table('deforestation')->insert([
-                                    'polygon_id' => $polygonId,
-                                    'year' => (int) $year,
-                                    'deforested_area_ha' => $currentArea,
-                                    'percentage_loss' => $percentage > 100 ? 100 : $percentage,
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ]);
+
+                                Deforestation::updateOrCreate(
+                                    [
+                                        'polygon_id' => $polygonId,
+                                        'year'       => (int) $year,
+                                    ],
+                                    [
+                                        'deforested_area_ha' => $currentArea,
+                                        'percentage_loss'    => $percentage > 100 ? 100 : $percentage,
+                                    ]
+                                );
                             }
                         }
+
+                        // Registrar actividad
+                        activity()
+                            ->causedBy(auth()->user())
+                            ->performedOn($polygon)
+                            ->withProperties([
+                                'start_year' => request()->input('start_year'),
+                                'end_year'   => request()->input('end_year'),
+                            ])
+                            ->event('analyzed')
+                            ->log("Nuevo análisis de deforestación para el polígono '{$polygon->name}'");
+
                     });
                     session()->flash('save_success', 'Los nuevos datos del análisis han sido guardados.');
                 } catch (\Exception $e) {

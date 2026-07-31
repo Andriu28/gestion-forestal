@@ -3,14 +3,19 @@
         <div class="p-4 overflow-hidden shadow-sm bg-stone-100/90 dark:bg-custom-gray sm:rounded-2xl shadow-soft md:p-6 lg:p-8">
 
             @if(session('save_success'))
-                <div class="save-message success">
-                    <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                        {{ session('save_success') }}
-                    </div>
-                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        showCustomAlert('success', 'Éxito', '{{ session('save_success') }}');
+                    });
+                </script>
+            @endif
+
+            @if(isset($dataToPass['save_error']))
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        showCustomAlert('error', 'Error', '{{ $dataToPass['save_error'] }}');
+                    });
+                </script>
             @endif
 
             <!-- Encabezado -->

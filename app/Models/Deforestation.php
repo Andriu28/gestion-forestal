@@ -5,45 +5,64 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\LogsActivityWithDescriptions;
 
 class Deforestation extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivityWithDescriptions;
 
-    // Nombre de la tabla (si no sigue convenciones)
     protected $table = 'deforestation';
 
-    // Campos que se pueden llenar masivamente
     protected $fillable = [
         'polygon_id',
         'year',
         'deforested_area_ha',
-        'percentage_loss'
+        'percentage_loss',
     ];
 
-    // Casts para los tipos de datos
     protected $casts = [
         'deforested_area_ha' => 'decimal:4',
-        'percentage_loss' => 'decimal:2',
-        'year' => 'integer',
+        'percentage_loss'    => 'decimal:2',
     ];
 
-    // Relación inversa con Polygon
-    public function polygon(): BelongsTo
+    // =========================================================================
+    // Relaciones
+    // =========================================================================
+
+    public function polygon()
     {
         return $this->belongsTo(Polygon::class);
     }
 
-    // Accesor para el área formateada
-    public function getAreaFormattedAttribute(): string
+    // =========================================================================
+    // Configuración de Activity Log
+    // =========================================================================
+
+    protected function getActivitylogAttributes(): array
     {
-        return number_format($this->deforested_area_ha, 4) . ' ha';
+        return ['polygon_id', 'year', 'deforested_area_ha', 'percentage_loss'];
     }
 
-    // Accesor para el porcentaje formateado
-    public function getPercentageFormattedAttribute(): string
+    protected function getActivityDescriptions(): array
     {
-        return number_format($this->percentage_loss, 2) . ' %';
+        return [
+            'polygon_id'           => 'Polígono asociado',
+            'year'                 => 'Año',
+            'deforested_area_ha'   => 'Área deforestada (ha)',
+            'percentage_loss'      => 'Porcentaje de pérdida',
+        ];
+    }
+
+    protected function getActivityPriority(): array
+    {
+        return ['year', 'deforested_area_ha', 'percentage_loss'];
+    }
+
+    protected function getActivityLabel(): ?string
+    {
+        if ($this->polygon) {
+            return "Análisis de '{$this->polygon->name}' - {$this->year}";
+        }
+        return "Análisis #{$this->id} - {$this->year}";
     }
 }
