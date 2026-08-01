@@ -163,12 +163,6 @@
             animation: markerFadeIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             animation-delay: 0.35s;
             position: relative;
-            z-index: 1;
-        }
-
-        /* Al hacer hover, el marcador completo sube por encima de todos */
-        .map-marker:hover {
-            z-index: 9999;
         }
 
         .map-marker__pin {
@@ -178,7 +172,6 @@
             transition: transform 0.15s ease;
             pointer-events: auto;
             cursor: pointer;
-            z-index: 2;
             position: relative;
         }
 
@@ -198,7 +191,7 @@
             border-radius: 12px;
             border: 1px solid rgba(15, 23, 42, 0.08);
             box-shadow: 0 4px 16px rgba(15, 23, 42, 0.18), 0 1px 4px rgba(15, 23, 42, 0.08);
-            z-index: 100;
+            z-index: 10;
             overflow: hidden;
             opacity: 0;
             pointer-events: none;
@@ -208,7 +201,6 @@
         .map-marker:hover .map-marker__card {
             opacity: 1;
             transform: translateX(-50%) translateY(0) scale(1);
-            z-index: 10000;
         }
 
         /* Barra de color a la izquierda */
@@ -618,6 +610,11 @@
                 });
 
                 this.currentBaseLayer = this.baseLayers.osm;
+
+                // Recalcular el apilamiento (z-index) de los marcadores cada vez
+                // que cambia la vista, para que el orden "quién tapa a quién"
+                // siga correspondiendo a la posición real en pantalla.
+                this.map.on('moveend', () => this.updateMarkerStacking());
             }
 
             setupEventListeners() {
@@ -789,193 +786,258 @@
                 this.markerOverlays = [];
             }
 
-            createMarkerOverlay(feature) {
-                const geom = feature.getGeometry();
-                let interiorPoint = null;
-                if (geom.getInteriorPoint) {
-                    interiorPoint = geom.getInteriorPoint().getCoordinates();
-                } else {
-                    interiorPoint = geom.getClosestPoint(geom.getExtent());
-                }
+createMarkerOverlay(feature) {
+    const geom = feature.getGeometry();
+    let interiorPoint = null;
+    if (geom.getInteriorPoint) {
+        interiorPoint = geom.getInteriorPoint().getCoordinates();
+    } else {
+        interiorPoint = geom.getClosestPoint(geom.getExtent());
+    }
 
-                const properties = feature.getProperties();
-                const name = properties.name || 'Polígono sin nombre';
-                const producer = properties.producer || 'Sin productor asignado';
-                const hasProducer = properties.type === 'with_producer';
-                
-                // Obtener datos de deforestación
-                const deforestations = properties.deforestations || [];
-                const hasDeforestationData = deforestations && deforestations.length > 0;
-                
-                // Determinar el estado de deforestación
-                let deforestationStatus = properties.deforestation_status || 'no_data';
-                let markerClass = 'map-marker--no-data';
-                let statusText = 'Sin datos';
-                let statusIcon = '';
-                let deforestationInfoHtml = '';
-                
-                // Calcular área
-                const areaText = properties.area_ha ? parseFloat(properties.area_ha).toFixed(2) + ' ha' : 'Sin área';
-                
-                // =============================================
-                // CALCULAR PROMEDIO DE DEFORESTACIÓN
-                // =============================================
-                
-                if (deforestationStatus === 'has_deforestation') {
-                    markerClass = 'map-marker--has-deforestation';
-                    statusText = 'Con deforestación';
-                    statusIcon = '🔴';
-                    
-                    if (hasDeforestationData) {
-                        // Convertir todos los porcentajes a números
-                        const lossData = deforestations.map(d => ({
-                            year: d.year,
-                            loss: parseFloat(d.percentage_loss) || 0
-                        }));
-                        
-                        // Ordenar por año
-                        lossData.sort((a, b) => a.year - b.year);
-                        
-                        // Calcular estadísticas
-                        const totalLoss = lossData.reduce((sum, d) => sum + d.loss, 0);
-                        const avgLoss = lossData.length > 0 ? totalLoss / lossData.length : 0;
-                        const maxLossEntry = lossData.reduce((max, current) => 
-                            current.loss > max.loss ? current : max, 
-                            lossData[0] || { year: null, loss: 0 }
-                        );
-                        
-                        // Rango de años
-                        const firstYear = lossData.length > 0 ? lossData[0].year : null;
-                        const lastYear = lossData.length > 0 ? lossData[lossData.length - 1].year : null;
-                        const yearRange = (firstYear && lastYear) 
-                            ? (firstYear === lastYear ? firstYear : `${firstYear} - ${lastYear}`)
-                            : 'N/A';
-                        
-                        // Años con pérdida > 0
-                        const yearsWithLoss = lossData
-                            .filter(d => d.loss > 0)
-                            .map(d => d.year);
-                        
-                        deforestationInfoHtml = `
-                            <div class="deforestation-info has-deforestation">
-                                <div class="deforestation-stats">
-                                    <span class="loss avg">📊 ${avgLoss.toFixed(2)}% promedio</span>
-                                    <span class="loss max">🔴 ${maxLossEntry.loss.toFixed(2)}% máximo</span>
-                                </div>
-                                <div class="deforestation-meta">
-                                    <span>📅 ${yearRange}</span>
-                                    <span>📈 ${lossData.length} años</span>
-                                    ${yearsWithLoss.length > 0 ? `<span>⚠️ ${yearsWithLoss.length} con pérdida</span>` : ''}
-                                </div>
-                            </div>
-                        `;
-                    }
-                } else if (deforestationStatus === 'no_deforestation') {
-                    markerClass = 'map-marker--no-deforestation';
-                    statusText = 'Sin deforestación';
-                    statusIcon = '🟢';
-                    deforestationInfoHtml = `
-                        <div class="deforestation-info no-deforestation">
-                            <span class="loss">✅ Sin pérdida registrada</span>
-                            ${hasDeforestationData ? `<span style="font-size:8.5px;color:#6b7280;margin-left:4px;">📅 ${deforestations.length} años analizados</span>` : ''}
-                        </div>
-                    `;
-                } else if (!hasProducer) {
-                    markerClass = 'map-marker--no-producer';
-                    statusText = 'Sin productor';
-                    statusIcon = '🔵';
-                    // Si no tiene productor pero tiene datos de deforestación, mostrarlos
-                    if (hasDeforestationData) {
-                        const lossData = deforestations.map(d => ({
-                            year: d.year,
-                            loss: parseFloat(d.percentage_loss) || 0
-                        }));
-                        const totalLoss = lossData.reduce((sum, d) => sum + d.loss, 0);
-                        const avgLoss = lossData.length > 0 ? totalLoss / lossData.length : 0;
-                        const maxLoss = Math.max(...lossData.map(d => d.loss));
-                        
-                        deforestationInfoHtml = `
-                            <div class="deforestation-info has-deforestation" style="border-top-color:rgba(59,130,246,0.15);">
-                                <div class="deforestation-stats">
-                                    <span class="loss avg" style="color:#3b82f6;">📊 ${avgLoss.toFixed(2)}% promedio</span>
-                                    <span class="loss max" style="color:#dc2626;">🔴 ${maxLoss.toFixed(2)}% máximo</span>
-                                </div>
-                                <div class="deforestation-meta">
-                                    <span>📈 ${lossData.length} años</span>
-                                </div>
-                            </div>
-                        `;
-                    }
-                } else {
-                    markerClass = 'map-marker--no-data';
-                    statusText = 'Sin datos';
-                    statusIcon = '⚪';
-                    deforestationInfoHtml = `
-                        <div class="deforestation-info no-data">
-                            <span class="loss">⚪ Sin análisis de deforestación</span>
-                        </div>
-                    `;
-                }
-
-                // Icono dentro del pin según el estado
-                let pinIcon = '';
-                if (deforestationStatus === 'has_deforestation') {
-                    pinIcon = `<text x="20" y="15.5" text-anchor="middle" font-size="5" font-weight="bold" fill="#ffffff">!</text>`;
-                } else if (deforestationStatus === 'no_deforestation') {
-                    pinIcon = `<path d="M17.5 13l1.8 1.8 3.6-4" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
-                } else if (!hasProducer) {
-                    pinIcon = `
-                        <circle cx="20" cy="11.5" r="1.8" fill="#ffffff" opacity="0.9"/>
-                        <path d="M17.5 15.5c0-1.4 1.1-2.5 2.5-2.5s2.5 1.1 2.5 2.5" stroke="#ffffff" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-                    `;
-                } else {
-                    pinIcon = `<text x="20" y="15.5" text-anchor="middle" font-size="5.5" font-weight="bold" fill="#ffffff">?</text>`;
-                }
-
-                // Truncar nombres si son muy largos
-                let displayName = name;
-                if (displayName.length > 36) displayName = displayName.slice(0, 34) + '…';
-                
-                let displayProducer = producer;
-                if (displayProducer.length > 26) displayProducer = displayProducer.slice(0, 24) + '…';
-
-                const container = document.createElement('div');
-                container.className = `map-marker ${markerClass}`;
-                container.setAttribute('title', `${name} — ${statusText}`);
-                
-                container.innerHTML = `
-                    <div class="map-marker__card">
-                        <div class="map-marker__card-title">🌳 ${this.escapeHtml(displayName)}</div>
-                        <div class="map-marker__producer-area">
-                            ${hasProducer 
-                                ? `👤 <span>${this.escapeHtml(displayProducer)}</span>` 
-                                : `🔵 <span>Sin productor</span>`
-                            }
-                            <span class="area-badge">📐 ${areaText}</span>
-                        </div>
-                        ${deforestationInfoHtml}
+    const properties = feature.getProperties();
+    const name = properties.name || 'Polígono sin nombre';
+    const producer = properties.producer || 'Sin productor asignado';
+    const hasProducer = properties.type === 'with_producer';
+    
+    // Obtener datos de deforestación
+    const deforestations = properties.deforestations || [];
+    const hasDeforestationData = deforestations && deforestations.length > 0;
+    
+    // Determinar el estado de deforestación
+    let deforestationStatus = properties.deforestation_status || 'no_data';
+    let markerClass = 'map-marker--no-data';
+    let statusText = 'Sin datos';
+    let statusIcon = '';
+    let deforestationInfoHtml = '';
+    
+    // Calcular área
+    const areaText = properties.area_ha ? parseFloat(properties.area_ha).toFixed(2) + ' ha' : 'Sin área';
+    
+    // =============================================
+    // CALCULAR PROMEDIO DE DEFORESTACIÓN
+    // =============================================
+    
+    if (deforestationStatus === 'has_deforestation') {
+        markerClass = 'map-marker--has-deforestation';
+        statusText = 'Con deforestación';
+        statusIcon = '🔴';
+        
+        if (hasDeforestationData) {
+            const lossData = deforestations.map(d => ({
+                year: d.year,
+                loss: parseFloat(d.percentage_loss) || 0
+            }));
+            
+            lossData.sort((a, b) => a.year - b.year);
+            
+            const totalLoss = lossData.reduce((sum, d) => sum + d.loss, 0);
+            const avgLoss = lossData.length > 0 ? totalLoss / lossData.length : 0;
+            const maxLossEntry = lossData.reduce((max, current) => 
+                current.loss > max.loss ? current : max, 
+                lossData[0] || { year: null, loss: 0 }
+            );
+            
+            const firstYear = lossData.length > 0 ? lossData[0].year : null;
+            const lastYear = lossData.length > 0 ? lossData[lossData.length - 1].year : null;
+            const yearRange = (firstYear && lastYear) 
+                ? (firstYear === lastYear ? firstYear : `${firstYear} - ${lastYear}`)
+                : 'N/A';
+            
+            const yearsWithLoss = lossData
+                .filter(d => d.loss > 0)
+                .map(d => d.year);
+            
+            deforestationInfoHtml = `
+                <div class="deforestation-info has-deforestation">
+                    <div class="deforestation-stats">
+                        <span class="loss avg">📊 ${avgLoss.toFixed(2)}% promedio</span>
+                        <span class="loss max">🔴 ${maxLossEntry.loss.toFixed(2)}% máximo</span>
                     </div>
-                    <div class="map-marker__pin">
-                        <svg viewBox="0 0 40 40" width="40" height="40" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M20 2C13.37 2 8 7.37 8 14c0 5.96 8.5 16.2 10.98 18.87a1.5 1.5 0 0 0 2.04 0C23.5 30.2 32 19.96 32 14c0-6.63-5.37-12-12-12z" 
-                                class="marker-fill" stroke="#ffffff" stroke-width="1.5"/>
-                            <circle cx="20" cy="13" r="5" fill="#ffffff" opacity="0.9"/>
-                            ${pinIcon}
-                        </svg>
+                    <div class="deforestation-meta">
+                        <span>📅 ${yearRange}</span>
+                        <span>📈 ${lossData.length} años</span>
+                        ${yearsWithLoss.length > 0 ? `<span>⚠️ ${yearsWithLoss.length} con pérdida</span>` : ''}
                     </div>
-                `;
+                </div>
+            `;
+        }
+    } else if (deforestationStatus === 'no_deforestation') {
+        markerClass = 'map-marker--no-deforestation';
+        statusText = 'Sin deforestación';
+        statusIcon = '🟢';
+        deforestationInfoHtml = `
+            <div class="deforestation-info no-deforestation">
+                <span class="loss">✅ Sin pérdida registrada</span>
+                ${hasDeforestationData ? `<span style="font-size:8.5px;color:#6b7280;margin-left:4px;">📅 ${deforestations.length} años analizados</span>` : ''}
+            </div>
+        `;
+    } else if (!hasProducer) {
+        markerClass = 'map-marker--no-producer';
+        statusText = 'Sin productor';
+        statusIcon = '🔵';
+        if (hasDeforestationData) {
+            const lossData = deforestations.map(d => ({
+                year: d.year,
+                loss: parseFloat(d.percentage_loss) || 0
+            }));
+            const totalLoss = lossData.reduce((sum, d) => sum + d.loss, 0);
+            const avgLoss = lossData.length > 0 ? totalLoss / lossData.length : 0;
+            const maxLoss = Math.max(...lossData.map(d => d.loss));
+            
+            deforestationInfoHtml = `
+                <div class="deforestation-info has-deforestation" style="border-top-color:rgba(59,130,246,0.15);">
+                    <div class="deforestation-stats">
+                        <span class="loss avg" style="color:#3b82f6;">📊 ${avgLoss.toFixed(2)}% promedio</span>
+                        <span class="loss max" style="color:#dc2626;">🔴 ${maxLoss.toFixed(2)}% máximo</span>
+                    </div>
+                    <div class="deforestation-meta">
+                        <span>📈 ${lossData.length} años</span>
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        markerClass = 'map-marker--no-data';
+        statusText = 'Sin datos';
+        statusIcon = '⚪';
+        deforestationInfoHtml = `
+            <div class="deforestation-info no-data">
+                <span class="loss">⚪ Sin análisis de deforestación</span>
+            </div>
+        `;
+    }
 
-                const overlay = new ol.Overlay({
-                    element: container,
-                    position: interiorPoint,
-                    positioning: 'bottom-center',
-                    stopEvent: false,
-                    offset: [0, 0]
-                });
+    // Icono dentro del pin
+    let pinIcon = '';
+    if (deforestationStatus === 'has_deforestation') {
+        pinIcon = `<text x="20" y="15.5" text-anchor="middle" font-size="5" font-weight="bold" fill="#ffffff">!</text>`;
+    } else if (deforestationStatus === 'no_deforestation') {
+        pinIcon = `<path d="M17.5 13l1.8 1.8 3.6-4" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+    } else if (!hasProducer) {
+        pinIcon = `
+            <circle cx="20" cy="11.5" r="1.8" fill="#ffffff" opacity="0.9"/>
+            <path d="M17.5 15.5c0-1.4 1.1-2.5 2.5-2.5s2.5 1.1 2.5 2.5" stroke="#ffffff" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        `;
+    } else {
+        pinIcon = `<text x="20" y="15.5" text-anchor="middle" font-size="5.5" font-weight="bold" fill="#ffffff">?</text>`;
+    }
 
-                this.map.addOverlay(overlay);
-                this.markerOverlays.push(overlay);
+    // Truncar nombres
+    let displayName = name;
+    if (displayName.length > 36) displayName = displayName.slice(0, 34) + '…';
+    
+    let displayProducer = producer;
+    if (displayProducer.length > 26) displayProducer = displayProducer.slice(0, 24) + '…';
+
+    const container = document.createElement('div');
+    container.className = `map-marker ${markerClass}`;
+    container.setAttribute('title', `${name} — ${statusText}`);
+    
+    container.innerHTML = `
+        <div class="map-marker__card">
+            <div class="map-marker__card-title">🌳 ${this.escapeHtml(displayName)}</div>
+            <div class="map-marker__producer-area">
+                ${hasProducer 
+                    ? `👤 <span>${this.escapeHtml(displayProducer)}</span>` 
+                    : `🔵 <span>Sin productor</span>`
+                }
+                <span class="area-badge">📐 ${areaText}</span>
+            </div>
+            ${deforestationInfoHtml}
+        </div>
+        <div class="map-marker__pin">
+            <svg viewBox="0 0 40 40" width="40" height="40" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 2C13.37 2 8 7.37 8 14c0 5.96 8.5 16.2 10.98 18.87a1.5 1.5 0 0 0 2.04 0C23.5 30.2 32 19.96 32 14c0-6.63-5.37-12-12-12z" 
+                    class="marker-fill" stroke="#ffffff" stroke-width="1.5"/>
+                <circle cx="20" cy="13" r="5" fill="#ffffff" opacity="0.9"/>
+                ${pinIcon}
+            </svg>
+        </div>
+    `;
+
+    // =============================================
+    // CREAR OVERLAY — Z-INDEX SEGÚN POSICIÓN EN PANTALLA
+    // =============================================
+    // OJO: OpenLayers envuelve el `element` que le pasamos dentro de SU
+    // PROPIO div (.ol-overlay-container), y ese wrapper lleva un
+    // `transform: translate(...)` inline. Cualquier elemento con transform
+    // crea su propio contexto de apilamiento en CSS, así que el z-index que
+    // realmente compite entre marcadores es el del WRAPPER, no el de
+    // nuestro `container` (.map-marker). Poner el z-index en `container`
+    // no tenía ningún efecto entre overlays distintos — por eso algunas
+    // tarjetas seguían apareciendo detrás de pines vecinos. La coordenada Y
+    // en pantalla se usa como z-index base: el marcador más "bajo" (más
+    // cerca del usuario) siempre queda encima del que está más "arriba".
+    const overlay = new ol.Overlay({
+        element: container,
+        position: interiorPoint,
+        positioning: 'bottom-center',
+        stopEvent: false,
+        offset: [0, 0]
+    });
+
+    container._hovered = false;
+
+    // El wrapper (.ol-overlay-container) solo existe una vez que el overlay
+    // se agrega al mapa, así que lo añadimos primero.
+    this.map.addOverlay(overlay);
+    this.markerOverlays.push(overlay);
+
+    const overlayWrapper = container.parentElement;
+    if (overlayWrapper) {
+        overlayWrapper.style.zIndex = '1';
+    }
+
+    container.addEventListener('mouseenter', () => {
+        container._hovered = true;
+        if (container.parentElement) {
+            container.parentElement.style.zIndex = '9999';
+        }
+    });
+
+    container.addEventListener('mouseleave', () => {
+        container._hovered = false;
+        // Pequeño retraso para permitir que termine cualquier transición
+        setTimeout(() => {
+            if (!container._hovered && container.parentElement) {
+                container.parentElement.style.zIndex = container.dataset.baseZIndex || '1';
             }
+        }, 50);
+    });
+}
+
+/**
+ * Recalcula el z-index de todos los marcadores según su posición vertical
+ * actual en pantalla (píxel Y). Se debe llamar después de crear/mover los
+ * overlays y en cada 'moveend' del mapa para mantener el apilamiento
+ * correcto al hacer pan/zoom.
+ *
+ * Importante: el z-index se aplica sobre el WRAPPER que crea OpenLayers
+ * (overlay.getElement().parentElement), no sobre el elemento que nosotros
+ * creamos — ver nota en createMarkerOverlay().
+ */
+updateMarkerStacking() {
+    if (!this.markerOverlays || this.markerOverlays.length === 0) return;
+
+    this.markerOverlays.forEach((overlay) => {
+        const element = overlay.getElement();
+        const wrapper = element ? element.parentElement : null;
+        const position = overlay.getPosition();
+        if (!element || !wrapper || !position) return;
+
+        const pixel = this.map.getPixelFromCoordinate(position);
+        if (!pixel) return;
+
+        const baseZIndex = String(Math.round(pixel[1]));
+        element.dataset.baseZIndex = baseZIndex;
+
+        // No pisar el z-index elevado de un marcador que está en hover
+        if (!element._hovered) {
+            wrapper.style.zIndex = baseZIndex;
+        }
+    });
+}
 
             escapeHtml(text) {
                 if (!text) return '';
@@ -1013,7 +1075,11 @@
                         const extent = this.polygonsLayer.getSource().getExtent();
                         this.map.getView().fit(extent, { padding: [50, 50, 50, 50], maxZoom: 15 });
                     }
-                    
+
+                    // Ajustar el z-index inicial de todos los marcadores según
+                    // su posición en pantalla ya con la vista final aplicada
+                    this.updateMarkerStacking();
+
                     console.log(`✅ Polígonos cargados: ${features.length}`);
                 } catch (error) {
                     console.error('Error loading polygons:', error);
