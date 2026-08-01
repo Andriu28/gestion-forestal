@@ -445,9 +445,12 @@ class PolygonController extends Controller
     /**
      * Devuelve todos los polígonos activos como GeoJSON FeatureCollection.
      */
+    /**
+     * Devuelve todos los polígonos activos como GeoJSON FeatureCollection.
+     */
     public function geojson(): JsonResponse
     {
-        $polygons = Polygon::with(['producer', 'parish.municipality.state'])
+        $polygons = Polygon::with(['producer', 'parish.municipality.state', 'deforestations'])
             ->active()
             ->get();
 
@@ -458,6 +461,23 @@ class PolygonController extends Controller
                     [$polygon->id]
                 )?->geojson ?? '{}';
 
+                // Obtener datos de deforestación
+                $deforestations = $polygon->deforestations->map(function ($d) {
+                    return [
+                        'year' => $d->year,
+                        'percentage_loss' => $d->percentage_loss,
+                    ];
+                })->toArray();
+
+                // Determinar el estado de deforestación
+                $deforestationStatus = 'no_data';
+                if ($deforestations) {
+                    $hasLoss = collect($deforestations)->contains(function ($d) {
+                        return ($d['percentage_loss'] ?? 0) > 0;
+                    });
+                    $deforestationStatus = $hasLoss ? 'has_deforestation' : 'no_deforestation';
+                }
+
                 return [
                     'type'       => 'Feature',
                     'properties' => [
@@ -467,6 +487,8 @@ class PolygonController extends Controller
                         'area_ha'     => $polygon->area_ha,
                         'description' => $polygon->description,
                         'type'        => $polygon->type,
+                        'deforestation_status' => $deforestationStatus,
+                        'deforestations' => $deforestations,
                     ],
                     'geometry' => json_decode($geojsonStr, true),
                 ];
@@ -789,5 +811,28 @@ class PolygonController extends Controller
         }
 
         return back()->with('error', $message);
+    }
+
+    /**
+     * Determina el estado de deforestación de un polígono.
+     * 
+     * @param Polygon $polygon
+     * @return string
+     */
+    private function getDeforestationStatus(Polygon $polygon): string
+    {
+        // Verificar si tiene análisis de deforestación
+        $deforestations = $polygon->deforestations;
+        
+        if ($deforestations->count() > 0) {
+            // Verificar si algún análisis tiene pérdida > 0
+            $hasLoss = $deforestations->contains(function ($deforestation) {
+                return ($deforestation->percentage_loss ?? 0) > 0;
+            });
+            
+            return $hasLoss ? 'has_deforestation' : 'no_deforestation';
+        }
+        
+        return 'no_data';
     }
 }
