@@ -215,7 +215,7 @@ class AuditLogController extends Controller
         $query = $this->applySearchFilter(
             $query,
             $search,
-            ['description', 'properties'],
+            ['description'],
             ['causer' => ['name', 'email', 'role']]
         );
 
@@ -305,9 +305,9 @@ class AuditLogController extends Controller
             'event_type' => $request->get('event_type'),
             'subject_type' => $request->get('subject_type'),
         ]);
-
+// dd($activities->total(), $activities->items());
         $users = User::orderBy('name')->get(['id', 'name']);
-
+        
         return view('admin.audit_log', [
             'activities' => $activities,
             'search' => $request->get('search'),

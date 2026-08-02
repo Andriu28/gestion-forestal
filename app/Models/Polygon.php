@@ -213,15 +213,12 @@ class Polygon extends Model
 
     /**
      * Crea el registro incluyendo la geometría PostGIS.
-     * Usa SQL solo para el INSERT con ST_GeomFromGeoJSON; después carga el
-     * modelo con Eloquent para que Spatie registre el evento 'created'.
-     *
-     * @param  array  $data         Campos fillable del polígono.
-     * @param  string $geoJsonGeometry  GeoJSON de la geometría (ya normalizado).
+     * @param array  $data
+     * @param string $geoJsonGeometry
+     * @param bool   $logActivity  Si es true, registra actividad automáticamente.
      * @return static
-     * @throws \RuntimeException
      */
-    public static function createWithGeometry(array $data, string $geoJsonGeometry): static
+    public static function createWithGeometry(array $data, string $geoJsonGeometry, bool $logActivity = true): static
     {
         $now = now();
 
@@ -257,45 +254,50 @@ class Polygon extends Model
 
         $polygon = static::with('parish.municipality.state')->findOrFail($row->id);
 
-        // ===== CREACIÓN MANUAL DEL LOG =====
-        activity()
-            ->performedOn($polygon)
-            ->causedBy(auth()->user())
-            ->withProperties([
-                'attributes' => [
-                    'name'        => $polygon->name,
-                    'description' => $polygon->description,
-                    'producer_id' => $polygon->producer_id,
-                    'parish_id'   => $polygon->parish_id,
-                    'is_active'   => $polygon->is_active,
-                ],
-                'old' => null, // No hay valores antiguos en creación
-            ])
-            ->event('created')
-            ->log( $polygon->getActivityLabel() . ' fue creado' );
+        // ===== CREACIÓN MANUAL DEL LOG (SOLO SI $logActivity ES TRUE) =====
+        if ($logActivity) {
+            activity()
+                ->performedOn($polygon)
+                ->causedBy(auth()->user())
+                ->withProperties([
+                    'attributes' => [
+                        'name'        => $polygon->name,
+                        'description' => $polygon->description,
+                        'producer_id' => $polygon->producer_id,
+                        'parish_id'   => $polygon->parish_id,
+                        'is_active'   => $polygon->is_active,
+                    ],
+                    'old' => null,
+                ])
+                ->event('created')
+                ->log($polygon->getActivityLabel() . ' fue creado');
+        }
 
         return $polygon;
     }
 
     /**
      * Actualiza los campos del polígono incluyendo la geometría PostGIS.
-     * Separa el UPDATE de geometría (SQL crudo, necesario para PostGIS)
-     * del UPDATE de campos normales (Eloquent, necesario para Spatie).
-     *
-     * @param  array  $data             Campos fillable a actualizar.
-     * @param  string $geoJsonGeometry  GeoJSON de la geometría (ya normalizado).
+     * @param array  $data
+     * @param string $geoJsonGeometry
+     * @param bool   $logActivity  Si es true, dispara eventos de Eloquent y registra actividad.
      * @return bool
      */
-    public function updateWithGeometry(array $data, string $geoJsonGeometry): bool
+    public function updateWithGeometry(array $data, string $geoJsonGeometry, bool $logActivity = true): bool
     {
-        // 1. Actualizar solo la geometría con SQL (PostGIS no lo soporta Eloquent)
         DB::statement(
             'UPDATE polygons SET geometry = ST_SetSRID(ST_GeomFromGeoJSON(?), 4326) WHERE id = ?',
             [$geoJsonGeometry, $this->id]
         );
 
-        // 2. Actualizar el resto con Eloquent → dispara el evento 'updated' → Spatie lo captura
-        return $this->fill($data)->save();
+        // Actualizar el resto con Eloquent
+        $this->fill($data);
+
+        if ($logActivity) {
+            return $this->save(); // Dispara eventos 'updating', 'updated' → Spatie lo captura
+        } else {
+            return $this->saveQuietly(); // No dispara eventos
+        }
     }
 
     public function recalculateGeometryStats(): void

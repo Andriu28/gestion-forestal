@@ -245,7 +245,7 @@ $roleTranslations = [
                             <tbody class="bg-stone-100/90 dark:bg-custom-gray divide-y divide-gray-200">
                                 @foreach($activities as $activity)
                                     <tr class="hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
-                                        <!-- Columna Usuario (sin cambios) -->
+                                        <!-- Columna Usuario -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 <div>
@@ -259,7 +259,7 @@ $roleTranslations = [
                                             </div>
                                         </td>
 
-                                        <!-- Columna Rol (sin cambios) -->
+                                        <!-- Columna Rol -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap">
                                             @if($activity->causer && $activity->causer->role)
                                                 @php
@@ -296,6 +296,7 @@ $roleTranslations = [
                                                         'updated'  => 'edit',
                                                         'deleted'  => 'trash',
                                                         'restored' => 'rotate-ccw',
+                                                        'analyzed' => 'activity', // usamos el icono genérico
                                                         default    => 'activity'
                                                     };
                                                     $color = match($activity->event) {
@@ -312,6 +313,7 @@ $roleTranslations = [
                                                         'updated'  => 'actualizado',
                                                         'deleted'  => 'eliminado',
                                                         'restored' => 'restaurado',
+                                                        'analyzed' => 'analizado',
                                                     ];
                                                     $modelName = $activity->subject_type ? class_basename($activity->subject_type) : null;
                                                     $modelTranslations = [
@@ -324,6 +326,10 @@ $roleTranslations = [
                                                     // Caso especial: cambio de rol (detectado por la descripción)
                                                     if (str_contains($activity->description, 'fue actualizado su rol')) {
                                                         $translated = 'Rol actualizado';
+                                                    } elseif ($activity->event === 'analyzed') {
+                                                        // Evento de análisis de deforestación
+                                                        $polygonName = $activity->properties['polygon_name'] ?? $modelTranslation;
+                                                        $translated = "Polígono '{$polygonName}' analizado";
                                                     } else {
                                                         // Construir la frase: "Modelo evento" (ej. "Polígono creado")
                                                         $translated = trim($modelTranslation . ' ' . ($eventTranslations[$activity->event] ?? $activity->event));
@@ -337,10 +343,11 @@ $roleTranslations = [
                                                 <div class="flex-shrink-0 mr-3">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ $color }}">
                                                         @if($icon == 'plus')
-                                                             <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
+                                                            <line x1="12" y1="5" x2="12" y2="19"/>
+                                                            <line x1="5" y1="12" x2="19" y2="12"/>
                                                         @elseif($icon == 'edit')
-                                                        <path d="M13 21h8"/><path d="m15 5 4 4"/>
-                                                        <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                                         @elseif($icon == 'trash')
                                                             <path d="M3 6h18"/>
                                                             <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
@@ -368,7 +375,7 @@ $roleTranslations = [
                                             </div>
                                         </td>
 
-                                        <!-- Columna Fecha (sin cambios) -->
+                                        <!-- Columna Fecha -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
                                             <div>{{ $activity->created_at->format('d/m/Y') }}</div>
                                             <div class="text-xs text-gray-500 dark:text-gray-500">{{ $activity->created_at->format('H:i:s') }}</div>
@@ -376,8 +383,17 @@ $roleTranslations = [
 
                                         <!-- Columna Detalles (MEJORADA) -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2">
-                                            {{-- Único caso: cambios automáticos (estructura estándar: attributes + old) --}}
-                                            @if($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old'))
+                                            {{-- 1. Cambio de rol manual (legacy) --}}
+                                            @if($activity->properties && $activity->properties->has('old_role') && $activity->properties->has('new_role'))
+                                                <div class="flex items-center gap-1 text-xs">
+                                                    <span class="font-medium text-gray-700 dark:text-gray-300">Rol:</span>
+                                                    <span class="text-red-500 line-through">{{ $activity->properties['old_role'] ?? 'N/A' }}</span>
+                                                    <span class="text-gray-400 dark:text-gray-500">→</span>
+                                                    <span class="text-green-600 dark:text-green-400 font-medium">{{ $activity->properties['new_role'] ?? 'N/A' }}</span>
+                                                </div>
+
+                                            {{-- 2. Cambios automáticos (estructura real: attributes + old) --}}
+                                            @elseif($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old'))
                                                 @php
                                                     // Campos que no queremos mostrar
                                                     $excludedFields = ['updated_at', 'created_at'];
@@ -412,7 +428,6 @@ $roleTranslations = [
                                                         $translations = [
                                                             'is_active' => 'Estado',
                                                             'name' => 'Nombre',
-                                                            'lastname' => 'Apellido',
                                                             'email' => 'Correo',
                                                             'role' => 'Rol',
                                                             'password' => 'Contraseña',
@@ -436,9 +451,7 @@ $roleTranslations = [
                                                     // Obtener todos los cambios (sin límite), ordenados según preferencia
                                                     $changes = collect($activity->properties['attributes'])
                                                         ->filter(function($newValue, $attribute) use ($activity, $excludedFields) {
-                                                            // 1. Excluir campos de la lista negra
                                                             if (in_array($attribute, $excludedFields)) return false;
-                                                            // 2. Verificar que realmente haya cambiado
                                                             $oldValue = $activity->properties['old'][$attribute] ?? null;
                                                             return $newValue != $oldValue;
                                                         })
@@ -446,7 +459,6 @@ $roleTranslations = [
                                                             $pos = array_search($key, $preferredOrder);
                                                             return $pos === false ? 999 : $pos;
                                                         });
-                                                        // NOTA: Ya no se aplica ->take(3), se muestran todos
                                                 @endphp
 
                                                 @if($changes->count() > 0)
@@ -472,13 +484,94 @@ $roleTranslations = [
                                                         @endforeach
                                                     </div>
                                                 @else
-                                                    {{-- Si no hay cambios relevantes (filtrados) --}}
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                                                         Sin detalles
                                                     </span>
                                                 @endif
 
-                                            {{-- Fallback para cualquier otro formato (incluye old_role/new_role, updated_fields, etc.) --}}
+                                            {{-- 3. Propiedades genéricas (ej. análisis de deforestación) --}}
+                                            @elseif($activity->properties && $activity->properties->count() > 0)
+                                                @php
+                                                    // Traducciones de claves
+                                                    $keyTranslations = [
+                                                        'start_year' => 'Año inicio',
+                                                        'end_year' => 'Año fin',
+                                                        'total_deforested' => 'Área deforestada (ha)',
+                                                        'total_percentage' => 'Porcentaje de pérdida',
+                                                        'years_analyzed' => 'Años analizados',
+                                                    ];
+                                                    // Claves que NO queremos mostrar
+                                                    $hiddenKeys = ['polygon_updated'];
+                                                    
+                                                    // Configuración de formato para ciertas claves
+                                                    $formatConfig = [
+                                                        'start_year' => 'integer',
+                                                        'end_year' => 'integer',
+                                                        'total_deforested' => 'decimal:4',
+                                                        'total_percentage' => 'decimal:2',
+                                                    ];
+                                                @endphp
+                                                <div class="text-xs space-y-1 max-w-xs">
+                                                    @foreach($activity->properties as $key => $value)
+                                                        @if(in_array($key, $hiddenKeys))
+                                                            @continue
+                                                        @endif
+                                                        @php
+                                                            $label = $keyTranslations[$key] ?? ucfirst(str_replace('_', ' ', $key));
+                                                        @endphp
+                                                        <div class="flex items-start gap-1">
+                                                            <span class="font-medium text-gray-700 dark:text-gray-300 min-w-[80px]">{{ $label }}:</span>
+                                                            <span class="text-gray-900 dark:text-gray-100 truncate max-w-[140px]">
+                                                                @if(is_array($value) || is_object($value))
+                                                                    @if($key === 'years_analyzed')
+                                                                        {{-- Resumen de años --}}
+                                                                        <span class="text-xs text-gray-500">
+                                                                            {{ count((array)$value) }} años analizados
+                                                                            @php
+                                                                                $withLoss = collect((array)$value)->filter(fn($v) => ($v['area__ha'] ?? 0) > 0)->count();
+                                                                            @endphp
+                                                                            @if($withLoss > 0)
+                                                                                ({{ $withLoss }} con pérdida)
+                                                                            @endif
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="text-xs text-gray-500">[Array]</span>
+                                                                    @endif
+                                                                @else
+                                                                    @php
+                                                                        $formattedValue = $value;
+                                                                        $format = $formatConfig[$key] ?? null;
+                                                                        
+                                                                        if ($format === 'integer') {
+                                                                            $formattedValue = number_format((int)$value, 0, '', '');
+                                                                        } elseif ($format === 'decimal:4') {
+                                                                            $formattedValue = number_format((float)$value, 4, ',', '.');
+                                                                        } elseif ($format === 'decimal:2') {
+                                                                            $formattedValue = number_format((float)$value, 2, ',', '.');
+                                                                            if ($key === 'total_percentage') {
+                                                                                $formattedValue .= ' %';
+                                                                            }
+                                                                        } elseif (is_numeric($value)) {
+                                                                            // Por defecto: sin decimales si es entero, con 4 si es flotante
+                                                                            if (floor($value) == $value) {
+                                                                                $formattedValue = number_format((int)$value, 0, '', '.');
+                                                                            } else {
+                                                                                $formattedValue = number_format((float)$value, 4, ',', '.');
+                                                                            }
+                                                                        } elseif (is_bool($value)) {
+                                                                            $formattedValue = $value ? 'Sí' : 'No';
+                                                                        } else {
+                                                                            $formattedValue = $value;
+                                                                        }
+                                                                    @endphp
+                                                                    {{ $formattedValue }}
+                                                                @endif
+                                                            </span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+
+                                            {{-- 4. Sin detalles --}}
                                             @else
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                                                     Sin detalles
@@ -486,8 +579,8 @@ $roleTranslations = [
                                             @endif
                                         </td>
                                     </tr>
-                                    @endforeach
-                                </tbody>
+                                @endforeach
+                            </tbody>
                         </table>
                     </div>
                     

@@ -205,9 +205,6 @@ class DeforestationController extends Controller
         return $dataToPass;
     }
 
-    /**
-     * Guarda o actualiza un solo polígono y sus análisis anuales.
-     */
     private function saveSinglePolygonData(array &$dataToPass, $existingId)
     {
         try {
@@ -215,16 +212,16 @@ class DeforestationController extends Controller
                 $polygon = null;
 
                 if ($existingId) {
-                    // Actualizar polígono existente (usando Eloquent)
+                    // Actualizar polígono existente (SIN LOG)
                     $polygon = Polygon::withTrashed()->findOrFail($existingId);
-                    $polygon->update([
+                    $polygon->updateQuietly([
                         'name'        => $dataToPass['polygon_name'],
                         'description' => $dataToPass['description'],
                         'producer_id' => $dataToPass['producer_id'],
                         'area_ha'     => $dataToPass['polygon_area_ha'],
                     ]);
                 } else {
-                    // Crear nuevo polígono (usando el método del modelo)
+                    // Crear nuevo polígono (SIN LOG)
                     $geoJson = $dataToPass['original_geojson'];
                     $polygon = Polygon::createWithGeometry(
                         [
@@ -243,37 +240,43 @@ class DeforestationController extends Controller
                                 ],
                             ],
                         ],
-                        $geoJson
+                        $geoJson,
+                        false // ← DESACTIVAR LOG
                     );
                 }
 
-                // Guardar/actualizar registros de deforestación (usando Eloquent)
-                foreach ($dataToPass['total_loss']['yearlyBreakdown'] as $yearData) {
-                    Deforestation::updateOrCreate(
-                        [
-                            'polygon_id' => $polygon->id,
-                            'year'       => $yearData['year'],
-                        ],
-                        [
-                            'deforested_area_ha' => $yearData['area_ha'],
-                            'percentage_loss'    => $yearData['percentage'],
-                        ]
-                    );
-                }
+                // Guardar/actualizar registros de deforestación (SIN LOG)
+                Deforestation::withoutEvents(function () use ($polygon, $dataToPass) {
+                    foreach ($dataToPass['total_loss']['yearlyBreakdown'] as $yearData) {
+                        Deforestation::updateOrCreate(
+                            [
+                                'polygon_id' => $polygon->id,
+                                'year'       => $yearData['year'],
+                            ],
+                            [
+                                'deforested_area_ha' => $yearData['area_ha'],
+                                'percentage_loss'    => $yearData['percentage'],
+                            ]
+                        );
+                    }
+                });
 
                 $dataToPass['polygon_id'] = $polygon->id;
 
-                // Registrar actividad manual (análisis completado)
+                // ===== REGISTRO ÚNICO DEL ANÁLISIS =====
                 activity()
                     ->causedBy(auth()->user())
                     ->performedOn($polygon)
                     ->withProperties([
-                        'start_year'  => $dataToPass['start_year'],
-                        'end_year'    => $dataToPass['end_year'],
+                        'start_year'      => $dataToPass['start_year'],
+                        'end_year'        => $dataToPass['end_year'],
                         'total_deforested' => $dataToPass['total_loss']['totalDeforestedArea'],
+                        'total_percentage' => $dataToPass['total_loss']['totalPercentage'],
+                        'polygon_updated'  => $existingId !== null,
+                        'years_analyzed'   => $dataToPass['yearly_results'], // array con detalle por año
                     ])
                     ->event('analyzed')
-                    ->log("Análisis de deforestación completado para el polígono '{$polygon->name}'");
+                    ->log("Poligono '{$polygon->name}' analizado");
 
             });
             session()->flash('save_success', 'Análisis guardado correctamente.');
@@ -580,14 +583,20 @@ class DeforestationController extends Controller
         $existingYears = array_keys($existingRecords);
         $yearsToAnalyze = array_diff($requestedYears, $existingYears);
 
+        // 1. Primero consultar GFW para los años faltantes
         $newResults = [];
         if (!empty($yearsToAnalyze)) {
             $newResults = $this->getParallelYearlyStats($geometryGeoJson, $yearsToAnalyze);
-            if ($saveAnalysis) {
-                try {
-                    DB::transaction(function () use ($newResults, $polygonId, $areaHa) {
-                        $polygon = Polygon::withTrashed()->findOrFail($polygonId);
+        }
 
+        // 2. Guardar si se solicita y hay nuevos resultados
+        if (!empty($newResults) && $saveAnalysis) {
+            try {
+                DB::transaction(function () use ($newResults, $polygonId, $areaHa, $startYear, $end_year, $polygonName) {
+                    $polygon = Polygon::withTrashed()->findOrFail($polygonId);
+
+                    // Guardar sin eventos
+                    Deforestation::withoutEvents(function () use ($newResults, $polygonId, $areaHa) {
                         foreach ($newResults as $year => $data) {
                             if ($data['status'] === 'success') {
                                 $currentArea = (float) $data['area__ha'];
@@ -605,28 +614,40 @@ class DeforestationController extends Controller
                                 );
                             }
                         }
-
-                        // Registrar actividad
-                        activity()
-                            ->causedBy(auth()->user())
-                            ->performedOn($polygon)
-                            ->withProperties([
-                                'start_year' => request()->input('start_year'),
-                                'end_year'   => request()->input('end_year'),
-                            ])
-                            ->event('analyzed')
-                            ->log("Nuevo análisis de deforestación para el polígono '{$polygon->name}'");
-
                     });
-                    session()->flash('save_success', 'Los nuevos datos del análisis han sido guardados.');
-                } catch (\Exception $e) {
-                    Log::error("Error al guardar nuevos años para polígono {$polygonId}: " . $e->getMessage());
-                }
+
+                    // Registrar evento analyzed
+                    $totalLossResults = $this->calculateTotalLossStats(
+                        array_replace($existingRecords, $newResults),
+                        $areaHa,
+                        $startYear,
+                        $end_year
+                    );
+
+                    activity()
+                        ->causedBy(auth()->user())
+                        ->performedOn($polygon)
+                        ->withProperties([
+                            'start_year'      => $startYear,
+                            'end_year'        => $end_year,
+                            'total_deforested' => $totalLossResults['totalDeforestedArea'],
+                            'total_percentage' => $totalLossResults['totalPercentage'],
+                            'polygon_updated'  => true,
+                            'years_analyzed'   => $newResults,
+                        ])
+                        ->event('analyzed')
+                        ->log("Nuevo análisis de deforestación completado para el polígono '{$polygon->name}'");
+
+                });
+                session()->flash('save_success', 'Los nuevos datos del análisis han sido guardados.');
+            } catch (\Exception $e) {
+                Log::error("Error al guardar nuevos años para polígono {$polygonId}: " . $e->getMessage());
             }
         }
 
+        // 3. Combinar resultados y mostrar vista
         $combinedResults = array_replace(
-            array_map(fn($item) => (array)$item, $existingRecords), 
+            array_map(fn($item) => (array)$item, $existingRecords),
             $newResults
         );
         ksort($combinedResults);
