@@ -465,13 +465,12 @@ class DeforestationController extends Controller
         $polygon = Polygon::with('analyses')->findOrFail($polygonId);
         $analyses = $polygon->analyses->sortBy('year');
 
-        // Si no hay análisis guardados, redirigir con mensaje
         if ($analyses->isEmpty()) {
             return redirect()->route('deforestation.create')
                 ->withErrors(['error' => 'Este polígono no tiene análisis guardados.']);
         }
 
-        // Construir la estructura $dataToPass a partir del polígono y sus análisis
+        // Construir la estructura $dataToPass
         $yearlyResults = [];
         $totalDeforestedArea = 0;
         $startYear = $analyses->first()->year;
@@ -488,7 +487,6 @@ class DeforestationController extends Controller
 
         $totalPercentage = $polygon->area_ha > 0 ? ($totalDeforestedArea / $polygon->area_ha) * 100 : 0;
 
-        // Construir el desglose anual para la vista (ya está en $yearlyResults)
         $yearlyBreakdown = [];
         foreach ($analyses as $analysis) {
             $yearlyBreakdown[$analysis->year] = [
@@ -498,15 +496,18 @@ class DeforestationController extends Controller
             ];
         }
 
+        // Obtener el GeoJSON usando el método del modelo
+        $originalGeojson = $polygon->getGeometryGeoJson(); // ← aquí
+
         $dataToPass = [
             'polygon_id' => $polygon->id,
             'producer_id' => $polygon->producer_id,
             'analysis_year' => $endYear,
             'start_year' => $startYear,
             'end_year' => $endYear,
-            'original_geojson' => json_encode($polygon->geometry), // Asumiendo que es un objeto Geometry
+            'original_geojson' => $originalGeojson, // ahora contiene un string GeoJSON válido
             'type' => 'Polygon',
-            'geometry' => [], // No es necesario para la vista
+            'geometry' => [],
             'area__ha' => $totalDeforestedArea,
             'polygon_area_ha' => $polygon->area_ha,
             'status' => 'success',
