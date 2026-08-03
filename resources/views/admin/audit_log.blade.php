@@ -327,9 +327,8 @@ $roleTranslations = [
                                                     if (str_contains($activity->description, 'fue actualizado su rol')) {
                                                         $translated = 'Rol actualizado';
                                                     } elseif ($activity->event === 'analyzed') {
-                                                        // Evento de análisis de deforestación
-                                                        $polygonName = $activity->properties['polygon_name'] ?? $modelTranslation;
-                                                        $translated = "Polígono '{$polygonName}' analizado";
+                                                        // Usar la descripción completa para el análisis de deforestación
+                                                        $translated = $activity->description;
                                                     } else {
                                                         // Construir la frase: "Modelo evento" (ej. "Polígono creado")
                                                         $translated = trim($modelTranslation . ' ' . ($eventTranslations[$activity->event] ?? $activity->event));

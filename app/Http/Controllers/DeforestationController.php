@@ -223,6 +223,7 @@ class DeforestationController extends Controller
                 } else {
                     // Crear nuevo polígono (SIN LOG)
                     $geoJson = $dataToPass['original_geojson'];
+                    /* dd($dataToPass['polygon_name']); */
                     $polygon = Polygon::createWithGeometry(
                         [
                             'name'          => $dataToPass['polygon_name'],
