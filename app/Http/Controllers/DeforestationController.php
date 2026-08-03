@@ -464,7 +464,67 @@ class DeforestationController extends Controller
     {
         $polygon = Polygon::with('analyses')->findOrFail($polygonId);
         $analyses = $polygon->analyses->sortBy('year');
-        return view('deforestation.results', compact('polygon', 'analyses'));
+
+        // Si no hay análisis guardados, redirigir con mensaje
+        if ($analyses->isEmpty()) {
+            return redirect()->route('deforestation.create')
+                ->withErrors(['error' => 'Este polígono no tiene análisis guardados.']);
+        }
+
+        // Construir la estructura $dataToPass a partir del polígono y sus análisis
+        $yearlyResults = [];
+        $totalDeforestedArea = 0;
+        $startYear = $analyses->first()->year;
+        $endYear = $analyses->last()->year;
+
+        foreach ($analyses as $analysis) {
+            $yearlyResults[$analysis->year] = [
+                'area__ha' => $analysis->deforested_area_ha,
+                'status' => 'success',
+                'year' => $analysis->year,
+            ];
+            $totalDeforestedArea += $analysis->deforested_area_ha;
+        }
+
+        $totalPercentage = $polygon->area_ha > 0 ? ($totalDeforestedArea / $polygon->area_ha) * 100 : 0;
+
+        // Construir el desglose anual para la vista (ya está en $yearlyResults)
+        $yearlyBreakdown = [];
+        foreach ($analyses as $analysis) {
+            $yearlyBreakdown[$analysis->year] = [
+                'year' => $analysis->year,
+                'area_ha' => $analysis->deforested_area_ha,
+                'percentage' => $polygon->area_ha > 0 ? ($analysis->deforested_area_ha / $polygon->area_ha) * 100 : 0,
+            ];
+        }
+
+        $dataToPass = [
+            'polygon_id' => $polygon->id,
+            'producer_id' => $polygon->producer_id,
+            'analysis_year' => $endYear,
+            'start_year' => $startYear,
+            'end_year' => $endYear,
+            'original_geojson' => json_encode($polygon->geometry), // Asumiendo que es un objeto Geometry
+            'type' => 'Polygon',
+            'geometry' => [], // No es necesario para la vista
+            'area__ha' => $totalDeforestedArea,
+            'polygon_area_ha' => $polygon->area_ha,
+            'status' => 'success',
+            'polygon_name' => $polygon->name,
+            'description' => $polygon->description ?? '',
+            'yearly_results' => $yearlyResults,
+            'total_loss' => [
+                'totalDeforestedArea' => $totalDeforestedArea,
+                'totalPercentage' => $totalPercentage,
+                'validYears' => $analyses->count(),
+                'totalYearsInRange' => $endYear - $startYear + 1,
+                'yearlyBreakdown' => $yearlyBreakdown,
+            ],
+            'external_id' => null,
+            'productor_name' => $polygon->producer ? $polygon->producer->name : 'Sin productor',
+        ];
+
+        return view('deforestation.results', compact('dataToPass'));
     }
 
     public function getAnalysisData($polygonId): JsonResponse

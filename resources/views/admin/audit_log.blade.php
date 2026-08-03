@@ -287,92 +287,98 @@ $roleTranslations = [
                                         </td>
 
                                         <!-- Columna Actividad (MEJORADA) -->
-                                        <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2">
-                                            <div class="flex items-center">
-                                                @php
-                                                    // 1. Icono y color basados en $activity->event
-                                                    $icon = match($activity->event) {
-                                                        'created'  => 'plus',
-                                                        'updated'  => 'edit',
-                                                        'deleted'  => 'trash',
-                                                        'restored' => 'rotate-ccw',
-                                                        'analyzed' => 'activity', // usamos el icono genérico
-                                                        default    => 'activity'
-                                                    };
-                                                    $color = match($activity->event) {
-                                                        'created'  => 'text-green-500',
-                                                        'updated'  => 'text-blue-500',
-                                                        'deleted'  => 'text-red-500',
-                                                        'restored' => 'text-yellow-500',
-                                                        default    => 'text-gray-500'
-                                                    };
+<td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2">
+    <div class="flex items-center">
+        @php
+            // 1. Icono y color basados en $activity->event
+            $icon = match($activity->event) {
+                'created'  => 'plus',
+                'updated'  => 'edit',
+                'deleted'  => 'trash',
+                'restored' => 'rotate-ccw',
+                'analyzed' => 'activity',
+                default    => 'activity'
+            };
+            $color = match($activity->event) {
+                'created'  => 'text-green-500',
+                'updated'  => 'text-blue-500',
+                'deleted'  => 'text-red-500',
+                'restored' => 'text-yellow-500',
+                'analyzed' => 'text-purple-500',
+                default    => 'text-gray-500'
+            };
 
-                                                    // 2. Traducción de la actividad basada en evento + modelo
-                                                    $eventTranslations = [
-                                                        'created'  => 'creado',
-                                                        'updated'  => 'actualizado',
-                                                        'deleted'  => 'eliminado',
-                                                        'restored' => 'restaurado',
-                                                        'analyzed' => 'analizado',
-                                                    ];
-                                                    $modelName = $activity->subject_type ? class_basename($activity->subject_type) : null;
-                                                    $modelTranslations = [
-                                                        'User'     => 'Usuario',
-                                                        'Polygon'  => 'Polígono',
-                                                        'Producer' => 'Productor',
-                                                    ];
-                                                    $modelTranslation = $modelTranslations[$modelName] ?? $modelName ?? '';
+            // 2. Traducción de la actividad
+            $eventTranslations = [
+                'created'  => 'creado',
+                'updated'  => 'actualizado',
+                'deleted'  => 'eliminado',
+                'restored' => 'restaurado',
+                'analyzed' => 'analizado',
+            ];
+            $modelName = $activity->subject_type ? class_basename($activity->subject_type) : null;
+            $modelTranslations = [
+                'User'     => 'Usuario',
+                'Polygon'  => 'Polígono',
+                'Producer' => 'Productor',
+            ];
+            $modelTranslation = $modelTranslations[$modelName] ?? $modelName ?? '';
 
-                                                    // Caso especial: cambio de rol (detectado por la descripción)
-                                                    if (str_contains($activity->description, 'fue actualizado su rol')) {
-                                                        $translated = 'Rol actualizado';
-                                                    } elseif ($activity->event === 'analyzed') {
-                                                        // Usar la descripción completa para el análisis de deforestación
-                                                        $translated = $activity->description;
-                                                    } else {
-                                                        // Construir la frase: "Modelo evento" (ej. "Polígono creado")
-                                                        $translated = trim($modelTranslation . ' ' . ($eventTranslations[$activity->event] ?? $activity->event));
-                                                        // Si no hay modelo, usar la descripción original
-                                                        if (empty($modelTranslation)) {
-                                                            $translated = $activity->description;
-                                                        }
-                                                    }
-                                                @endphp
+            // Caso especial: cambio de rol
+            if (str_contains($activity->description, 'fue actualizado su rol')) {
+                $translated = 'Rol actualizado';
+            } elseif ($activity->event === 'analyzed') {
+                $translated = $activity->description;
+            } else {
+                $translated = trim($modelTranslation . ' ' . ($eventTranslations[$activity->event] ?? $activity->event));
+                if (empty($modelTranslation)) {
+                    $translated = $activity->description;
+                }
+            }
+        @endphp
 
-                                                <div class="flex-shrink-0 mr-3">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ $color }}">
-                                                        @if($icon == 'plus')
-                                                            <line x1="12" y1="5" x2="12" y2="19"/>
-                                                            <line x1="5" y1="12" x2="19" y2="12"/>
-                                                        @elseif($icon == 'edit')
-                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                                        @elseif($icon == 'trash')
-                                                            <path d="M3 6h18"/>
-                                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                                                        @elseif($icon == 'rotate-ccw')
-                                                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                                                            <path d="M3 3v5h5"/>
-                                                        @else
-                                                            <circle cx="12" cy="12" r="10"/>
-                                                            <polyline points="12 6 12 12 16 14"/>
-                                                        @endif
-                                                    </svg>
-                                                </div>
+        <div class="flex-shrink-0 mr-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ $color }}">
+                @if($icon == 'plus')
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                @elseif($icon == 'edit')
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                @elseif($icon == 'trash')
+                    <path d="M3 6h18"/>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                @elseif($icon == 'rotate-ccw')
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                @else
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                @endif
+            </svg>
+        </div>
 
-                                                <div>
-                                                    <div class="text-sm text-gray-900 dark:text-gray-400">
-                                                        {{ Str::limit($translated, 30) }}
-                                                    </div>
-                                                    @if($activity->subject_type)
-                                                        <div class="text-xs text-gray-500 dark:text-gray-500">
-                                                            {{ $modelTranslation }}
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </td>
+        <div>
+            <div class="text-sm text-gray-900 dark:text-gray-400">
+                @if($activity->event === 'analyzed' && $activity->subject_id)
+                    <a href="{{ route('deforestation.results', $activity->subject_id) }}"
+                       class="hover:underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                       title="Ver análisis del polígono">
+                        {{ Str::limit($translated, 30) }}
+                    </a>
+                @else
+                    {{ Str::limit($translated, 30) }}
+                @endif
+            </div>
+            @if($activity->subject_type)
+                <div class="text-xs text-gray-500 dark:text-gray-500">
+                    {{ $modelTranslation }}
+                </div>
+            @endif
+        </div>
+    </div>
+</td>
 
                                         <!-- Columna Fecha -->
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">
