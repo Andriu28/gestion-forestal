@@ -85,31 +85,40 @@ class DeforestationController extends Controller
         if ($geojson['type'] === 'FeatureCollection') {
             $features = $geojson['features'];
             if (count($features) === 1) {
-                // Tratar como un solo polígono
+                // Un solo polígono: registrar análisis individual
                 $singleFeature = $features[0];
-                $dataToPass = $this->processSinglePolygon($singleFeature, $globalParams);
+                $dataToPass = $this->processSinglePolygon($singleFeature, $globalParams, false);
                 return view('deforestation.results', compact('dataToPass'));
             } else {
+                // Múltiples polígonos: registrar un evento agrupado
                 $multiResults = [];
+                $polygonIds = [];
+
+Log::info('Análisis múltiple iniciado', [
+    'save_analysis' => $globalParams['save_analysis'],
+    'count' => count($features),
+    'polygon_name' => $globalParams['polygon_name'],
+]);
                 foreach ($features as $feature) {
-                    $multiResults[] = $this->processSinglePolygon($feature, $globalParams);
+                    $result = $this->processSinglePolygon($feature, $globalParams, true); // ← skipActivity = true
+                    $multiResults[] = $result;
+                    if (isset($result['polygon_id'])) {
+                        $polygonIds[] = $result['polygon_id'];
+                    }
+                }
+                // Registrar el evento agrupado si se guardó el análisis
+                if ($globalParams['save_analysis'] && !empty($polygonIds)) {
+                    $this->registerMultiAnalysisEvent($polygonIds, $globalParams, $multiResults);
                 }
                 return view('deforestation.multi-results', compact('multiResults'));
             }
-        } else {
-            // Si no es FeatureCollection, lo envolvemos en una estructura de Feature
-            if ($geojson['type'] !== 'Feature') {
-                $geojson = ['type' => 'Feature', 'geometry' => $geojson, 'properties' => []];
-            }
-            $dataToPass = $this->processSinglePolygon($geojson, $globalParams);
-            return view('deforestation.results', compact('dataToPass'));
         }
     }
 
     /**
      * Procesa un único polígono (Feature GeoJSON) y devuelve sus datos.
      */
-    private function processSinglePolygon(array $feature, array $globalParams): array
+    private function processSinglePolygon(array $feature, array $globalParams, bool $skipActivity = false): array
     {
         $geometryGeoJson = $feature['geometry'];
         $properties = $feature['properties'] ?? [];
@@ -199,16 +208,21 @@ class DeforestationController extends Controller
 
         // Guardar si se solicitó
         if ($globalParams['save_analysis']) {
+Log::info('Guardando polígono individual', [
+    'polygon_name' => $globalParams['polygon_name'],
+    'area' => $areaHa,
+    'save_analysis' => $globalParams['save_analysis'],
+]);
             $this->saveSinglePolygonData($dataToPass, $polygonId);
         }
 
         return $dataToPass;
     }
 
-    private function saveSinglePolygonData(array &$dataToPass, $existingId)
+    private function saveSinglePolygonData(array &$dataToPass, $existingId, bool $skipActivity = false)
     {
         try {
-            DB::transaction(function () use (&$dataToPass, $existingId) {
+            DB::transaction(function () use (&$dataToPass, $existingId, $skipActivity) {
                 $polygon = null;
 
                 if ($existingId) {
@@ -264,27 +278,30 @@ class DeforestationController extends Controller
 
                 $dataToPass['polygon_id'] = $polygon->id;
 
-                // ===== REGISTRO ÚNICO DEL ANÁLISIS =====
-                activity()
-                    ->causedBy(auth()->user())
-                    ->performedOn($polygon)
-                    ->withProperties([
-                        'start_year'      => $dataToPass['start_year'],
-                        'end_year'        => $dataToPass['end_year'],
-                        'total_deforested' => $dataToPass['total_loss']['totalDeforestedArea'],
-                        'total_percentage' => $dataToPass['total_loss']['totalPercentage'],
-                        'polygon_updated'  => $existingId !== null,
-                        'years_analyzed'   => $dataToPass['yearly_results'], // array con detalle por año
-                    ])
-                    ->event('analyzed')
-                    ->log("Poligono '{$polygon->name}' analizado");
-
+                    if (!$skipActivity) {
+                    activity()
+                        ->causedBy(auth()->user())
+                        ->performedOn($polygon)
+                        ->withProperties([
+                            'start_year'      => $dataToPass['start_year'],
+                            'end_year'        => $dataToPass['end_year'],
+                            'total_deforested' => $dataToPass['total_loss']['totalDeforestedArea'],
+                            'total_percentage' => $dataToPass['total_loss']['totalPercentage'],
+                            'polygon_updated'  => $existingId !== null,
+                            'years_analyzed'   => $dataToPass['yearly_results'],
+                        ])
+                        ->event('analyzed')
+                        ->log("Poligono '{$polygon->name}' analizado");
+                }
+                
             });
+            Log::info('Polígono guardado correctamente', ['id' => $polygon->id]);
             session()->flash('save_success', 'Análisis guardado correctamente.');
         } catch (\Exception $e) {
             Log::error('Error guardando polígono: ' . $e->getMessage());
             $dataToPass['save_error'] = 'Error al guardar: ' . $e->getMessage();
         }
+        
     }
 
     /**
@@ -456,74 +473,48 @@ class DeforestationController extends Controller
     public function multipleResults(Request $request): View
     {
         $polygonIds = explode(',', $request->input('polygon_ids', ''));
-        $polygons = Polygon::with('analyses')->whereIn('id', $polygonIds)->get();
-        return view('deforestation.multiple-results', compact('polygons'));
+        
+        if (empty($polygonIds)) {
+            return redirect()->route('deforestation.create')
+                ->withErrors(['error' => 'No se especificaron polígonos para mostrar.']);
+        }
+
+        $polygons = Polygon::with(['analyses', 'producer'])
+            ->whereIn('id', $polygonIds)
+            ->get();
+
+        if ($polygons->isEmpty()) {
+            return redirect()->route('deforestation.create')
+                ->withErrors(['error' => 'No se encontraron polígonos con los IDs proporcionados.']);
+        }
+
+        $multiResults = [];
+        foreach ($polygons as $polygon) {
+            try {
+                $multiResults[] = $this->buildDataFromPolygon($polygon);
+            } catch (\Exception $e) {
+                Log::warning($e->getMessage());
+            }
+        }
+
+        if (empty($multiResults)) {
+            return redirect()->route('deforestation.create')
+                ->withErrors(['error' => 'Los polígonos seleccionados no tienen análisis guardados.']);
+        }
+
+        return view('deforestation.multi-results', compact('multiResults'));
     }
     
     public function results($polygonId): View
     {
-        $polygon = Polygon::with('analyses')->findOrFail($polygonId);
-        $analyses = $polygon->analyses->sortBy('year');
+        $polygon = Polygon::with(['analyses', 'producer'])->findOrFail($polygonId);
 
-        if ($analyses->isEmpty()) {
+        try {
+            $dataToPass = $this->buildDataFromPolygon($polygon);
+        } catch (\Exception $e) {
             return redirect()->route('deforestation.create')
-                ->withErrors(['error' => 'Este polígono no tiene análisis guardados.']);
+                ->withErrors(['error' => $e->getMessage()]);
         }
-
-        // Construir la estructura $dataToPass
-        $yearlyResults = [];
-        $totalDeforestedArea = 0;
-        $startYear = $analyses->first()->year;
-        $endYear = $analyses->last()->year;
-
-        foreach ($analyses as $analysis) {
-            $yearlyResults[$analysis->year] = [
-                'area__ha' => $analysis->deforested_area_ha,
-                'status' => 'success',
-                'year' => $analysis->year,
-            ];
-            $totalDeforestedArea += $analysis->deforested_area_ha;
-        }
-
-        $totalPercentage = $polygon->area_ha > 0 ? ($totalDeforestedArea / $polygon->area_ha) * 100 : 0;
-
-        $yearlyBreakdown = [];
-        foreach ($analyses as $analysis) {
-            $yearlyBreakdown[$analysis->year] = [
-                'year' => $analysis->year,
-                'area_ha' => $analysis->deforested_area_ha,
-                'percentage' => $polygon->area_ha > 0 ? ($analysis->deforested_area_ha / $polygon->area_ha) * 100 : 0,
-            ];
-        }
-
-        // Obtener el GeoJSON usando el método del modelo
-        $originalGeojson = $polygon->getGeometryGeoJson(); // ← aquí
-
-        $dataToPass = [
-            'polygon_id' => $polygon->id,
-            'producer_id' => $polygon->producer_id,
-            'analysis_year' => $endYear,
-            'start_year' => $startYear,
-            'end_year' => $endYear,
-            'original_geojson' => $originalGeojson, // ahora contiene un string GeoJSON válido
-            'type' => 'Polygon',
-            'geometry' => [],
-            'area__ha' => $totalDeforestedArea,
-            'polygon_area_ha' => $polygon->area_ha,
-            'status' => 'success',
-            'polygon_name' => $polygon->name,
-            'description' => $polygon->description ?? '',
-            'yearly_results' => $yearlyResults,
-            'total_loss' => [
-                'totalDeforestedArea' => $totalDeforestedArea,
-                'totalPercentage' => $totalPercentage,
-                'validYears' => $analyses->count(),
-                'totalYearsInRange' => $endYear - $startYear + 1,
-                'yearlyBreakdown' => $yearlyBreakdown,
-            ],
-            'external_id' => null,
-            'productor_name' => $polygon->producer ? $polygon->producer->name : 'Sin productor',
-        ];
 
         return view('deforestation.results', compact('dataToPass'));
     }
@@ -734,5 +725,94 @@ class DeforestationController extends Controller
         ];
 
         return view('deforestation.results', compact('dataToPass'));
+    }
+
+    /**
+     * Construye el array dataToPass para un polígono con sus análisis.
+     */
+    private function buildDataFromPolygon(Polygon $polygon): array
+    {
+        $analyses = $polygon->analyses->sortBy('year');
+
+        if ($analyses->isEmpty()) {
+            throw new \Exception("El polígono '{$polygon->name}' no tiene análisis guardados.");
+        }
+
+        $yearlyResults = [];
+        $totalDeforestedArea = 0;
+        $startYear = $analyses->first()->year;
+        $endYear = $analyses->last()->year;
+
+        foreach ($analyses as $analysis) {
+            $yearlyResults[$analysis->year] = [
+                'area__ha' => $analysis->deforested_area_ha,
+                'status' => 'success',
+                'year' => $analysis->year,
+            ];
+            $totalDeforestedArea += $analysis->deforested_area_ha;
+        }
+
+        $totalPercentage = $polygon->area_ha > 0 ? ($totalDeforestedArea / $polygon->area_ha) * 100 : 0;
+
+        $yearlyBreakdown = [];
+        foreach ($analyses as $analysis) {
+            $yearlyBreakdown[$analysis->year] = [
+                'year' => $analysis->year,
+                'area_ha' => $analysis->deforested_area_ha,
+                'percentage' => $polygon->area_ha > 0 ? ($analysis->deforested_area_ha / $polygon->area_ha) * 100 : 0,
+            ];
+        }
+
+        return [
+            'polygon_id' => $polygon->id,
+            'producer_id' => $polygon->producer_id,
+            'analysis_year' => $endYear,
+            'start_year' => $startYear,
+            'end_year' => $endYear,
+            'original_geojson' => $polygon->getGeometryGeoJson(),
+            'type' => 'Polygon',
+            'geometry' => [],
+            'area__ha' => $totalDeforestedArea,
+            'polygon_area_ha' => $polygon->area_ha,
+            'status' => 'success',
+            'polygon_name' => $polygon->name,
+            'description' => $polygon->description ?? '',
+            'yearly_results' => $yearlyResults,
+            'total_loss' => [
+                'totalDeforestedArea' => $totalDeforestedArea,
+                'totalPercentage' => $totalPercentage,
+                'validYears' => $analyses->count(),
+                'totalYearsInRange' => $endYear - $startYear + 1,
+                'yearlyBreakdown' => $yearlyBreakdown,
+            ],
+            'external_id' => null,
+            'productor_name' => $polygon->producer ? $polygon->producer->name : 'Sin productor',
+        ];
+    }
+
+    /**
+     * Registra un evento agrupado para múltiples polígonos analizados.
+     */
+    private function registerMultiAnalysisEvent(array $polygonIds, array $globalParams, array $multiResults): void
+    {
+        $totalArea = array_sum(array_column($multiResults, 'polygon_area_ha'));
+        $totalDeforested = array_sum(array_map(function($r) {
+            return $r['total_loss']['totalDeforestedArea'] ?? 0;
+        }, $multiResults));
+        $totalPercentage = $totalArea > 0 ? ($totalDeforested / $totalArea) * 100 : 0;
+
+        activity()
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'polygon_ids' => $polygonIds,
+                'count' => count($polygonIds),
+                'start_year' => $globalParams['start_year'],
+                'end_year' => $globalParams['end_year'],
+                'total_area' => $totalArea,
+                'total_deforested' => $totalDeforested,
+                'total_percentage' => $totalPercentage,
+            ])
+            ->event('analyzed_multiple')
+            ->log("Análisis de deforestación completado para " . count($polygonIds) . " polígonos");
     }
 }

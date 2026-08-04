@@ -122,7 +122,9 @@ class DeforestationMap {
             satellite: new ol.layer.Tile({
                 source: new ol.source.XYZ({
                     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                    attributions: 'Tiles © Esri'
+                    attributions: 'Tiles © Esri',
+                    maxZoom: 17,   // Límite superior de zoom (puedes usar 18 o 19)
+                    minZoom: 1    // Opcional: límite inferior
                 }),
                 visible: false,
                 title: 'Satélite Esri'

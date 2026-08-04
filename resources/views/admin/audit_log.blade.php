@@ -304,7 +304,6 @@ $roleTranslations = [
                 'updated'  => 'text-blue-500',
                 'deleted'  => 'text-red-500',
                 'restored' => 'text-yellow-500',
-                'analyzed' => 'text-purple-500',
                 default    => 'text-gray-500'
             };
 
@@ -360,12 +359,23 @@ $roleTranslations = [
         </div>
 
         <div>
+            <!-- Dentro de la celda de Actividad, donde se muestra el texto -->
             <div class="text-sm text-gray-900 dark:text-gray-400">
                 @if($activity->event === 'analyzed' && $activity->subject_id)
                     <a href="{{ route('deforestation.results', $activity->subject_id) }}"
-                       class="hover:underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                       title="Ver análisis del polígono">
+                    class="hover:underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                    title="Ver análisis del polígono">
                         {{ Str::limit($translated, 30) }}
+                    </a>
+                @elseif($activity->event === 'analyzed_multiple' && isset($activity->properties['polygon_ids']))
+                    @php
+                        $ids = implode(',', $activity->properties['polygon_ids']);
+                        $count = $activity->properties['count'] ?? 0;
+                    @endphp
+                    <a href="{{ route('deforestation.multiple-results', ['polygon_ids' => $ids]) }}"
+                    class="hover:underline text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
+                    title="Ver análisis múltiple">
+                        Análisis múltiple de {{ $count }} polígonos
                     </a>
                 @else
                     {{ Str::limit($translated, 30) }}
