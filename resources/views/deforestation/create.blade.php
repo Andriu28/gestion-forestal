@@ -308,20 +308,21 @@
                             <x-input-error :messages="$errors->get('address')" class="mt-2" />
                         </div>
 
-                        <div class="mt-4">
-                            <x-input-label for="producer_id" :value="__('Productor')" /> <!-- MODIFICADO: se quitó (Opcional) -->
-                            <select id="producer_id" name="producer_id"
-                                class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <option value="">Seleccione un productor</option>
-                                @foreach($producers as $producer)
-                                    <option value="{{ $producer->id }}" {{ old('producer_id') == $producer->id ? 'selected' : '' }}>
-                                        {{ $producer->name }} {{ $producer->lastname }}
-                                    </option>
-                                @endforeach
-                            </select>
+                        <div id="producer-container" class="mt-4">
+                            <x-input-label for="producer_id" :value="__('Productor')" />
+                            <x-select-input
+                                id="producer_id"
+                                name="producer_id"
+                                :options="$producers->pluck('name', 'id')->toArray()"
+                                :selected="old('producer_id')"
+                                placeholder="Seleccione un productor"
+                                class="w-full"
+                            />
                             <x-input-error class="mt-2" :messages="$errors->get('producer_id')" />
-                            <!-- MODIFICADO: div para mensaje de error del productor -->
                             <div id="producer-error" class="text-red-600 text-sm mt-1 hidden"></div>
+                            <p id="multi-producer-hint" class="text-xs text-blue-600 dark:text-blue-400 mt-1 hidden">
+                                Los productores se extraerán automáticamente de las propiedades del archivo importado.
+                            </p>
                         </div>
                         
                         <div class="mt-4 grid grid-cols-2 gap-4 mb-6">
@@ -1062,11 +1063,31 @@ document.getElementById('import-area').addEventListener('change', async function
         reader.onload = function(event) {
             try {
                 const geojson = JSON.parse(event.target.result);
+                
+                // --- DETECCIÓN DE MÚLTIPLES POLÍGONOS ---
+                const isMulti = geojson.type === 'FeatureCollection' && geojson.features.length > 1;
+                
+                const producerContainer = document.getElementById('producer-container');
+                const producerHint = document.getElementById('multi-producer-hint');
+                const producerSelect = document.getElementById('producer_id');
+
+                if (isMulti) {
+                    producerContainer.classList.add('opacity-50', 'pointer-events-none');
+                    producerSelect.disabled = true;
+                    producerHint.classList.remove('hidden');
+                } else {
+                    producerContainer.classList.remove('opacity-50', 'pointer-events-none');
+                    producerSelect.disabled = false;
+                    producerHint.classList.add('hidden');
+                }
+                // --- FIN DETECCIÓN ---
+
                 window.deforestationMapInstance.importGeoJSON(geojson);
             } catch (err) {
                 window.deforestationMapInstance.showAlert('Archivo GeoJSON inválido.', 'error');
             }
         };
+
         reader.readAsText(file);
     }
     else if (ext === 'kml') {
@@ -1203,15 +1224,23 @@ function validateSaveOption() {
     const producerErrorDiv = document.getElementById('producer-error');
     const nameRequiredHint = document.getElementById('name-required-hint');
     const submitButton = document.getElementById('submit-button');
-    
+
+    // Detectar si el GeoJSON es múltiple
+    const geometryInput = document.getElementById('geometry');
+    let isMulti = false;
+    try {
+        const geojson = JSON.parse(geometryInput.value);
+        isMulti = geojson.type === 'FeatureCollection' && geojson.features.length > 1;
+    } catch(e) {}
+
     const nameValue = nameInput.value.trim();
-    const producerValue = producerSelect.value; // vacío si no hay selección
-    
+    const producerValue = producerSelect.value;
+
     if (saveCheckbox.checked) {
         nameRequiredHint.classList.remove('hidden');
         let hasError = false;
-        
-        // Validar nombre
+
+        // Validar nombre solo si NO es múltiple o si el nombre está vacío (puedes hacerlo opcional)
         if (!nameValue) {
             nameErrorDiv.textContent = 'Para guardar el análisis, debes ingresar un nombre para el área.';
             nameErrorDiv.classList.remove('hidden');
@@ -1221,9 +1250,9 @@ function validateSaveOption() {
             nameErrorDiv.classList.add('hidden');
             nameInput.classList.remove('border-red-500', 'focus:ring-red-500');
         }
-        
-        // Validar productor
-        if (!producerValue) {
+
+        // Validar productor solo si NO es múltiple
+        if (!isMulti && !producerValue) {
             producerErrorDiv.textContent = 'Para guardar el análisis, debes seleccionar un productor.';
             producerErrorDiv.classList.remove('hidden');
             producerSelect.classList.add('border-red-500', 'focus:ring-red-500');
@@ -1232,7 +1261,7 @@ function validateSaveOption() {
             producerErrorDiv.classList.add('hidden');
             producerSelect.classList.remove('border-red-500', 'focus:ring-red-500');
         }
-        
+
         submitButton.disabled = hasError;
         submitButton.title = hasError ? "Completa los campos requeridos" : "";
         submitButton.classList.toggle('cursor-not-allowed', hasError);

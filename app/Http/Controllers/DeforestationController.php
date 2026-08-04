@@ -130,6 +130,7 @@ Log::info('Análisis múltiple iniciado', [
 
         // Buscar productor en BD por nombre
         $producer = Producer::where('name', $productorName)->first();
+        
         $producerId = $producer ? $producer->id : $globalParams['producer_id']; // Usar el global si no se encontró
 
         $geometryString = json_encode($geometryGeoJson);
@@ -208,12 +209,7 @@ Log::info('Análisis múltiple iniciado', [
 
         // Guardar si se solicitó
         if ($globalParams['save_analysis']) {
-Log::info('Guardando polígono individual', [
-    'polygon_name' => $globalParams['polygon_name'],
-    'area' => $areaHa,
-    'save_analysis' => $globalParams['save_analysis'],
-]);
-            $this->saveSinglePolygonData($dataToPass, $polygonId);
+            $this->saveSinglePolygonData($dataToPass, $polygonId, $skipActivity);
         }
 
         return $dataToPass;
@@ -295,7 +291,6 @@ Log::info('Guardando polígono individual', [
                 }
                 
             });
-            Log::info('Polígono guardado correctamente', ['id' => $polygon->id]);
             session()->flash('save_success', 'Análisis guardado correctamente.');
         } catch (\Exception $e) {
             Log::error('Error guardando polígono: ' . $e->getMessage());
