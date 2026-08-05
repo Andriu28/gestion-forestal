@@ -175,7 +175,8 @@
             position: relative;
         }
 
-        .map-marker:hover .map-marker__pin {
+        .map-marker:hover .map-marker__pin,
+        .map-marker.map-marker--active .map-marker__pin {
             transform: scale(1.12);
         }
 
@@ -198,7 +199,7 @@
             transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.15s ease;
         }
 
-        .map-marker:hover .map-marker__card {
+        .map-marker.map-marker--active .map-marker__card {
             opacity: 1;
             transform: translateX(-50%) translateY(0) scale(1);
         }
@@ -453,6 +454,7 @@
                 this.map = null;
                 this.polygonsLayer = null;
                 this.markerOverlays = [];
+                this.activeMarkerElement = null;
                 this.coordinateDisplay = null;
                 this.baseLayers = {};
                 this.currentBaseLayer = null;
@@ -668,6 +670,11 @@
                     if (!baseMapToggle?.contains(e.target) && !baseMapMenu?.contains(e.target)) {
                         closeMenu('base-map-menu');
                     }
+
+                    // Cerrar la tarjeta flotante abierta si el click fue fuera de ella
+                    if (this.activeMarkerElement && !this.activeMarkerElement.contains(e.target)) {
+                        this.closeMarkerCard(this.activeMarkerElement);
+                    }
                 });
             }
 
@@ -784,6 +791,7 @@
                 if (!this.markerOverlays || this.markerOverlays.length === 0) return;
                 this.markerOverlays.forEach(o => this.map.removeOverlay(o));
                 this.markerOverlays = [];
+                this.activeMarkerElement = null;
             }
 
 createMarkerOverlay(feature) {
@@ -989,22 +997,53 @@ createMarkerOverlay(feature) {
         overlayWrapper.style.zIndex = '1';
     }
 
-    container.addEventListener('mouseenter', () => {
-        container._hovered = true;
-        if (container.parentElement) {
-            container.parentElement.style.zIndex = '9999';
-        }
+    // Antes la tarjeta se mostraba con :hover (mouseenter/mouseleave).
+    // Ahora se abre/cierra con un click sobre el marcador.
+    container.addEventListener('click', (e) => {
+        e.stopPropagation(); // evita que el listener global (click fuera) la cierre de inmediato
+        this.toggleMarkerCard(container);
     });
+}
 
-    container.addEventListener('mouseleave', () => {
-        container._hovered = false;
-        // Pequeño retraso para permitir que termine cualquier transición
-        setTimeout(() => {
-            if (!container._hovered && container.parentElement) {
-                container.parentElement.style.zIndex = container.dataset.baseZIndex || '1';
-            }
-        }, 50);
-    });
+/**
+ * Abre o cierra la tarjeta de un marcador al hacer click.
+ * Solo una tarjeta permanece abierta a la vez: si había otra activa,
+ * se cierra automáticamente antes de abrir/alternar la nueva.
+ */
+toggleMarkerCard(container) {
+    const isActive = container.classList.contains('map-marker--active');
+
+    if (this.activeMarkerElement && this.activeMarkerElement !== container) {
+        this.closeMarkerCard(this.activeMarkerElement);
+    }
+
+    if (isActive) {
+        this.closeMarkerCard(container);
+    } else {
+        this.openMarkerCard(container);
+    }
+}
+
+openMarkerCard(container) {
+    container.classList.add('map-marker--active');
+    // Reutilizamos el flag `_hovered` porque updateMarkerStacking() lo usa
+    // para no pisar el z-index elevado del marcador actualmente abierto.
+    container._hovered = true;
+    if (container.parentElement) {
+        container.parentElement.style.zIndex = '9999';
+    }
+    this.activeMarkerElement = container;
+}
+
+closeMarkerCard(container) {
+    container.classList.remove('map-marker--active');
+    container._hovered = false;
+    if (container.parentElement) {
+        container.parentElement.style.zIndex = container.dataset.baseZIndex || '1';
+    }
+    if (this.activeMarkerElement === container) {
+        this.activeMarkerElement = null;
+    }
 }
 
 /**
