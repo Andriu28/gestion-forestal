@@ -76,13 +76,14 @@
                         <div class="w-5 h-5 rounded-full bg-green-500 border-2 border-white shadow-md"></div>
                         <span class="text-sm text-gray-700 dark:text-gray-300">Sin deforestación</span>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-5 h-5 rounded-full bg-gray-400 border-2 border-white shadow-md"></div>
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Sin datos de deforestación</span>
-                    </div>
+
                     <div class="flex items-center gap-2">
                         <div class="w-5 h-5 rounded-full bg-blue-500 border-2 border-white shadow-md"></div>
                         <span class="text-sm text-gray-700 dark:text-gray-300">Sin productor asignado</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded-full bg-gray-400 border-2 border-white shadow-md"></div>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Sin datos de deforestación</span>
                     </div>
                 </div>
             </div>
@@ -211,7 +212,7 @@
             left: 0;
             top: 0;
             bottom: 0;
-            width: 4px;
+            width: 6px;
             border-radius: 12px 0 0 12px;
         }
 
@@ -294,12 +295,14 @@
 
         .deforestation-stats {
             display: flex;
+            justify-content: space-between;
             gap: 10px;
             flex-wrap: wrap;
         }
 
         .deforestation-meta {
             display: flex;
+            justify-content: space-between;
             gap: 8px;
             flex-wrap: wrap;
             color: #6b7280;
@@ -343,8 +346,22 @@
             color: #16a34a;
         }
 
+        .deforestation-info.no-deforestation {
+            display: flex;
+            justify-content: space-between;
+        
+        }
+
         .dark .deforestation-info.no-deforestation .loss {
             color: #86efac;
+        }
+
+        .deforestation-years {
+            color: #a0a3a9;
+        }
+
+        .dark .deforestation-years {
+            color: #a0a7b4;
         }
 
         /* Sin datos - gris */
@@ -369,7 +386,7 @@
 
         /* Modo oscuro */
         .dark .map-marker__card {
-            background: #1e293b;
+            background: #22272f;
             border-color: rgba(255, 255, 255, 0.08);
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.3);
         }
@@ -859,13 +876,14 @@ createMarkerOverlay(feature) {
             deforestationInfoHtml = `
                 <div class="deforestation-info has-deforestation">
                     <div class="deforestation-stats">
-                        <span class="loss avg">📊 ${avgLoss.toFixed(2)}% promedio</span>
+                        <span class="loss avg"> ${avgLoss.toFixed(2)}% promedio</span>
                         <span class="loss max">🔴 ${maxLossEntry.loss.toFixed(2)}% máximo</span>
                     </div>
                     <div class="deforestation-meta">
-                        <span>📅 ${yearRange}</span>
-                        <span>📈 ${lossData.length} años</span>
-                        ${yearsWithLoss.length > 0 ? `<span>⚠️ ${yearsWithLoss.length} con pérdida</span>` : ''}
+                        <span> ${yearRange}</span>
+
+                        ${yearsWithLoss.length > 0 ? `<span> ${yearsWithLoss.length} con pérdida</span>` : ''}
+                        <span> ${lossData.length} años analizados</span>
                     </div>
                 </div>
             `;
@@ -876,8 +894,8 @@ createMarkerOverlay(feature) {
         statusIcon = '🟢';
         deforestationInfoHtml = `
             <div class="deforestation-info no-deforestation">
-                <span class="loss">✅ Sin pérdida registrada</span>
-                ${hasDeforestationData ? `<span style="font-size:8.5px;color:#6b7280;margin-left:4px;">📅 ${deforestations.length} años analizados</span>` : ''}
+                <span class="loss"> Sin pérdida registrada</span>
+                ${hasDeforestationData ? `<span class="deforestation-years" style="font-size:12px;margin-left:4px;">${deforestations.length} años analizados</span>` : ''}
             </div>
         `;
     } else if (!hasProducer) {
@@ -896,11 +914,11 @@ createMarkerOverlay(feature) {
             deforestationInfoHtml = `
                 <div class="deforestation-info has-deforestation" style="border-top-color:rgba(59,130,246,0.15);">
                     <div class="deforestation-stats">
-                        <span class="loss avg" style="color:#3b82f6;">📊 ${avgLoss.toFixed(2)}% promedio</span>
-                        <span class="loss max" style="color:#dc2626;">🔴 ${maxLoss.toFixed(2)}% máximo</span>
+                        <span class="loss avg" style="color:#3b82f6;"> ${avgLoss.toFixed(2)}% promedio</span>
+                        <span class="loss max" style="color:#dc2626;"> ${maxLoss.toFixed(2)}% máximo</span>
                     </div>
                     <div class="deforestation-meta">
-                        <span>📈 ${lossData.length} años</span>
+                        <span> ${lossData.length} años</span>
                     </div>
                 </div>
             `;
@@ -911,7 +929,7 @@ createMarkerOverlay(feature) {
         statusIcon = '⚪';
         deforestationInfoHtml = `
             <div class="deforestation-info no-data">
-                <span class="loss">⚪ Sin análisis de deforestación</span>
+                <span class="loss">Sin análisis de deforestación</span>
             </div>
         `;
     }
@@ -944,13 +962,13 @@ createMarkerOverlay(feature) {
     
     container.innerHTML = `
         <div class="map-marker__card">
-            <div class="map-marker__card-title">🌳 ${this.escapeHtml(displayName)}</div>
+            <div class="map-marker__card-title"> ${this.escapeHtml(displayName)}</div>
             <div class="map-marker__producer-area">
                 ${hasProducer 
-                    ? `👤 <span>${this.escapeHtml(displayProducer)}</span>` 
+                    ? `<span>${this.escapeHtml(displayProducer)}</span>` 
                     : `🔵 <span>Sin productor</span>`
                 }
-                <span class="area-badge">📐 ${areaText}</span>
+                <span class="area-badge"> ${areaText}</span>
             </div>
             ${deforestationInfoHtml}
         </div>
