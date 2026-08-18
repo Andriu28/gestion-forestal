@@ -362,11 +362,26 @@ $roleTranslations = [
             <!-- Dentro de la celda de Actividad, donde se muestra el texto -->
             <div class="text-sm text-gray-900 dark:text-gray-400">
                 @if($activity->event === 'analyzed' && $activity->subject_id)
+                    {{-- Análisis guardado con enlace --}}
                     <a href="{{ route('deforestation.results', $activity->subject_id) }}"
                     class="hover:underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                     title="Ver análisis del polígono">
                         {{ Str::limit($translated, 30) }}
                     </a>
+                @elseif($activity->event === 'analyzed' && isset($activity->properties['saved']) && !$activity->properties['saved'])
+                    <a href="{{ route('deforestation.view-unsaved', $activity->id) }}"
+                    class="hover:underline text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300">
+                        {{ Str::limit($translated, 30) }}
+                        <span class="text-xs text-gray-400">(no guardado)</span>
+                    </a>
+                @elseif($activity->event === 'analyzed_multiple' && isset($activity->properties['saved']) && !$activity->properties['saved'])
+                    @php
+                        $count = $activity->properties['count'] ?? 0;
+                    @endphp
+                    <span class="text-gray-500 italic">
+                        Análisis múltiple de {{ $count }} polígonos
+                        <span class="text-xs text-gray-400">(no guardado)</span>
+                    </span>
                 @elseif($activity->event === 'analyzed_multiple' && isset($activity->properties['polygon_ids']))
                     @php
                         $ids = implode(',', $activity->properties['polygon_ids']);
@@ -378,6 +393,7 @@ $roleTranslations = [
                         Análisis múltiple de {{ $count }} polígonos
                     </a>
                 @else
+                    {{-- Otros eventos --}}
                     {{ Str::limit($translated, 30) }}
                 @endif
             </div>

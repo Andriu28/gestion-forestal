@@ -17,6 +17,7 @@ use Illuminate\Support\Str;
 use PDF;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
+use Spatie\Activitylog\Models\Activity;
 
 class DeforestationController extends Controller
 {
@@ -46,6 +47,24 @@ class DeforestationController extends Controller
 
         $producers = Producer::active()->get();
         return view('deforestation.create', compact('saveByDefault', 'producers'));
+    }
+
+    public function viewUnsaved($activityId)
+    {
+        $activity = Activity::findOrFail($activityId);
+        $data = $activity->properties;
+
+        // Construir $dataToPass a partir de $data
+        $dataToPass = [
+            'polygon_name'     => $data['polygon_name'] ?? 'Área sin nombre',
+            'start_year'       => $data['start_year'],
+            'end_year'         => $data['end_year'],
+            'total_deforested' => $data['total_deforested'],
+            'total_percentage' => $data['total_percentage'],
+            // ... otros campos necesarios para la vista
+        ];
+
+        return view('deforestation.results-unsaved', compact('dataToPass'));
     }
     
     /**
@@ -79,6 +98,7 @@ class DeforestationController extends Controller
             return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
         }
 
+        // ===== MANEJO SEGÚN TIPO DE GEOJSON =====
         if ($geojson['type'] === 'FeatureCollection') {
             $features = $geojson['features'];
             if (count($features) === 1) {
@@ -87,6 +107,9 @@ class DeforestationController extends Controller
                 $dataToPass = $this->processSinglePolygon($singleFeature, $globalParams, false);
                 if ($globalParams['save_analysis'] && isset($dataToPass['polygon_id'])) {
                     return redirect()->route('deforestation.results', $dataToPass['polygon_id']);
+                }
+                if (!$globalParams['save_analysis']) {
+                    $this->registerUnsavedAnalysisEvent($dataToPass, $globalParams);
                 }
                 return view('deforestation.results', compact('dataToPass'));
             } else {
@@ -104,10 +127,23 @@ class DeforestationController extends Controller
                     $this->registerMultiAnalysisEvent($polygonIds, $globalParams, $multiResults);
                     return redirect()->route('deforestation.multiple-results', ['polygon_ids' => implode(',', $polygonIds)]);
                 }
+                if (!$globalParams['save_analysis']) {
+                    $this->registerUnsavedMultiAnalysisEvent($multiResults, $globalParams);
+                }
                 return view('deforestation.multi-results', compact('multiResults'));
             }
+        } elseif ($geojson['type'] === 'Feature') {
+            // GeoJSON Feature (muy común al dibujar desde el mapa)
+            $dataToPass = $this->processSinglePolygon($geojson, $globalParams, false);
+            if ($globalParams['save_analysis'] && isset($dataToPass['polygon_id'])) {
+                return redirect()->route('deforestation.results', $dataToPass['polygon_id']);
+            }
+            if (!$globalParams['save_analysis']) {
+                $this->registerUnsavedAnalysisEvent($dataToPass, $globalParams);
+            }
+            return view('deforestation.results', compact('dataToPass'));
         } elseif ($geojson['type'] === 'Polygon' || $geojson['type'] === 'MultiPolygon') {
-            // GeoJSON directo
+            // GeoJSON directo (solo geometría)
             $feature = [
                 'geometry'   => $geojson,
                 'properties' => []
@@ -115,6 +151,9 @@ class DeforestationController extends Controller
             $dataToPass = $this->processSinglePolygon($feature, $globalParams, false);
             if ($globalParams['save_analysis'] && isset($dataToPass['polygon_id'])) {
                 return redirect()->route('deforestation.results', $dataToPass['polygon_id']);
+            }
+            if (!$globalParams['save_analysis']) {
+                $this->registerUnsavedAnalysisEvent($dataToPass, $globalParams);
             }
             return view('deforestation.results', compact('dataToPass'));
         } else {
@@ -816,5 +855,50 @@ class DeforestationController extends Controller
             ])
             ->event('analyzed_multiple')
             ->log("Análisis de deforestación completado para " . count($polygonIds) . " polígonos");
+    }
+
+    /**
+     * Registra un evento de análisis no guardado (individual).
+     */
+    private function registerUnsavedAnalysisEvent(array $dataToPass, array $globalParams): void
+    {
+        activity()
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'start_year'       => $dataToPass['start_year'],
+                'end_year'         => $dataToPass['end_year'],
+                'total_deforested' => $dataToPass['total_loss']['totalDeforestedArea'],
+                'total_percentage' => $dataToPass['total_loss']['totalPercentage'],
+                'polygon_name'     => $dataToPass['polygon_name'],
+                'saved'            => false,
+            ])
+            ->event('analyzed')
+            ->log("Análisis de deforestación (no guardado)");
+    }
+
+    /**
+     * Registra un evento de análisis múltiple no guardado.
+     */
+    private function registerUnsavedMultiAnalysisEvent(array $multiResults, array $globalParams): void
+    {
+        $totalArea = array_sum(array_column($multiResults, 'polygon_area_ha'));
+        $totalDeforested = array_sum(array_map(function($r) {
+            return $r['total_loss']['totalDeforestedArea'] ?? 0;
+        }, $multiResults));
+        $totalPercentage = $totalArea > 0 ? ($totalDeforested / $totalArea) * 100 : 0;
+
+        activity()
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'count'            => count($multiResults),
+                'start_year'       => $globalParams['start_year'],
+                'end_year'         => $globalParams['end_year'],
+                'total_area'       => $totalArea,
+                'total_deforested' => $totalDeforested,
+                'total_percentage' => $totalPercentage,
+                'saved'            => false,
+            ])
+            ->event('analyzed_multiple')
+            ->log("Análisis múltiple de " . count($multiResults) . " polígonos (no guardado)");
     }
 }

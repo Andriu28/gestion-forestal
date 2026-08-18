@@ -190,8 +190,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/polygon', [DeforestationController::class, 'polygon'])->name('polygon');
         
         // Resultados
-        Route::get('/multiple-results', [DeforestationController::class, 'multipleResults'])
-            ->name('multiple-results');
+        Route::get('/multiple-results', [DeforestationController::class, 'multipleResults'])->name('multiple-results');
         Route::get('/results/{polygon}', [DeforestationController::class, 'results'])->name('results');
         
         // Exportación y reportes
@@ -199,8 +198,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/generar-report', [DeforestationController::class, 'report'])->name('report');
         
         // API para gráficos
-        Route::get('/api/analysis-data/{polygon}', [DeforestationController::class, 'getAnalysisData'])
-            ->name('api.analysis-data');
+        Route::get('/api/analysis-data/{polygon}', [DeforestationController::class, 'getAnalysisData'])->name('api.analysis-data');
+
+        // NUEVA RUTA PARA ANÁLISIS NO GUARDADOS
+        Route::get('/view-unsaved/{activityId}', [DeforestationController::class, 'viewUnsaved'])->name('view-unsaved');
     });
 });
 
