@@ -53,15 +53,15 @@ class DeforestationController extends Controller
     {
         $activity = Activity::findOrFail($activityId);
         $data = $activity->properties;
-
+dd($data);
         // Construir $dataToPass a partir de $data
         $dataToPass = [
             'polygon_name'     => $data['polygon_name'] ?? 'Área sin nombre',
             'start_year'       => $data['start_year'],
             'end_year'         => $data['end_year'],
+            'polygon_area_ha'  => $dataToPass['polygon_area_ha'],
             'total_deforested' => $data['total_deforested'],
             'total_percentage' => $data['total_percentage'],
-            // ... otros campos necesarios para la vista
         ];
 
         return view('deforestation.results-unsaved', compact('dataToPass'));
@@ -862,18 +862,21 @@ class DeforestationController extends Controller
      */
     private function registerUnsavedAnalysisEvent(array $dataToPass, array $globalParams): void
     {
+        dd($dataToPass);
         activity()
             ->causedBy(auth()->user())
             ->withProperties([
-                'start_year'       => $dataToPass['start_year'],
-                'end_year'         => $dataToPass['end_year'],
+                'polygon_name'     => $dataToPass['polygon_name'],
+                'polygon_area_ha'  => $dataToPass['polygon_area_ha'],
                 'total_deforested' => $dataToPass['total_loss']['totalDeforestedArea'],
                 'total_percentage' => $dataToPass['total_loss']['totalPercentage'],
-                'polygon_name'     => $dataToPass['polygon_name'],
+                'start_year'       => $dataToPass['start_year'],
+                'end_year'         => $dataToPass['end_year'],
+                'original_geojson'  => $dataToPass['original_geojson'],
                 'saved'            => false,
             ])
             ->event('analyzed')
-            ->log("Análisis de deforestación (no guardado)");
+            ->log("Análisis de deforestación");
     }
 
     /**
