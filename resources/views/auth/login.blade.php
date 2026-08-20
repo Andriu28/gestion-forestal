@@ -18,6 +18,7 @@
                 </svg>
             </button>
         </div>
+        
         <!-- Logo y título de la empresa -->
         <div class="text-center mb-4 sm:mb-5 md:mb-6">
             <div class="logo-container inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 md:w-32 md:h-32 bg-yellow-950/95 dark:bg-amber-700 rounded-full mb-2 sm:mb-3 shadow-lg">
@@ -51,9 +52,10 @@
         
 
             <!-- Contenido del card -->
-            <div class=" px-3 sm:px-4 md:px-5 sm:pb-4 ">
+            <div class="px-3 sm:px-4 md:px-5 sm:pb-4">
                 <form method="POST" id="loginForm" class="space-y-2.5 sm:space-y-3 md:space-y-5" action="{{ route('login') }}">
                     @csrf
+                   
                     <!-- Campo de email -->
                     <div class="space-y-1 sm:space-y-1.5">
                         <label for="email" class="block text-custom-dark dark:text-amber-100 font-medium text-sm sm:text-base transition-colors">
@@ -65,11 +67,8 @@
                             name="email"
                             value="{{ old('email') }}"
                             placeholder="usuario@empresa.com"
-                            class="w-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base border-[3px] border-stone-300/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 transition-all duration-200 transition transform hover:scale-[1.02] duration-300 hover:-translate-y-1 duration-300"
-                            
+                            class="w-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base border-[3px] border-stone-300/80 dark:border-gray-600 bg-stone-50 dark:bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-xl shadow-sm transition-all duration-200 hover:scale-[1.02] hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-amber-600/40 focus:border-amber-600/60 dark:focus:ring-amber-500/40 dark:focus:border-amber-500/60"
                         />
-                        
-                    
                     </div>
 
                     <!-- Campo de contraseña -->
@@ -83,68 +82,44 @@
                                 type="password"
                                 name="password"
                                 placeholder="Contraseña"
-                                class="w-full px-2.5 sm:px-4 py-1.5 sm:py-2 pr-8  text-sm sm:text-base border-[3px] border-stone-300/80  dark:border-gray-600 bg-white dark:bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 transition-all duration-200 transition transform hover:scale-[1.02] duration-300"
-                                
+                                class="w-full px-2.5 sm:px-4 py-1.5 sm:py-2 pr-8 text-sm sm:text-base border-[3px] border-stone-300/80 dark:border-gray-600 bg-white dark:bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-xl shadow-sm transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-amber-600/40 focus:border-amber-600/60 dark:focus:ring-amber-500/40 dark:focus:border-amber-500/60"
                             />
-                           
+                            <!-- Botón toggle password -->
                             <button
                                 type="button"
                                 title="Mostrar/Ocultar Contraseña"
                                 id="togglePassword"
                                 class="absolute right-2.5 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors p-0.5"
                             >
-                                <!-- Icono de ojo cerrado (por defecto) -->
                                 <svg id="eyeOff" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
                                 </svg>
-                                <!-- Icono de ojo abierto (oculto por defecto) -->
-                                <svg id="eyeOn"  class="w-5 h-5 sm:w-6 sm:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg id="eyeOn" class="w-5 h-5 sm:w-6 sm:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                 </svg>
                             </button>
                         </div>
                         <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                        <!-- <x-input-error :messages="$errors->get('password')" class="mt-2" /> -->
                     </div>
 
                     <!-- Recordarme y olvidé contraseña -->
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1.5 sm:space-y-0 pt-0.5">
-                        <!-- <div class="flex items-center space-x-1.5">
-                            <input
-                                name="remember"
-                                type="checkbox"
-                                class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-custom-gold-darker bg-gray-100 dark:bg-gray-600 border-custom-gold-light dark:border-gray-500 rounded focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium focus:ring-2 transition-colors"
-                            />
-                            <label for="remember" class="text-xs text-amber-700 dark:text-custom-gold-light transition-colors">
-                                Recordarme
-                            </label>
-                        </div> -->
-                        <button type="button" class="text-xs text-custom-gold-darker dark:text-custom-gold-medium hover:text-amber-800 dark:hover:text-amber-200 hover:underline transition-colors text-left sm:text-right">
-                                
-                            @if (Route::has('password.request'))
-                                <a href="{{ route('password.request') }}" class="text-xs text-custom-gold-darker dark:text-custom-gold-medium hover:text-amber-800 dark:hover:text-amber-200 hover:underline transition-colors text-left sm:text-right">
-                                    ¿Olvidaste tu contraseña?
-                                </a>
-                            @endif
-
-                        </button>
+                        @if (Route::has('password.request'))
+                            <a href="{{ route('password.request') }}" class="text-xs text-custom-gold-darker dark:text-custom-gold-medium hover:text-amber-800 dark:hover:text-amber-200 hover:underline transition-colors text-left sm:text-right">
+                                ¿Olvidaste tu contraseña?
+                            </a>
+                        @endif
                     </div>
 
-                    <!-- Botón de submit .-->
-                    <button type="submit" title="Iniciar sesión" class="relative w-full [background:linear-gradient(144deg,#3E2723,#4E342E_50%,#6D4C41)] dark:[background:linear-gradient(144deg,#3b220f,#61361d_50%,#794606)] text-white px-4 py-2 font-bold rounded-md hover:opacity-95 dark:hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md focus:scale-[1.03] hover:scale-[1.03] active:scale-95 before:content-[''] before:absolute before:inset-0 before:rounded-md before:ring-[3px] before:ring-offset-2 before:ring-offset-[#f1ae6dd1] before:ring-[#3E2723] dark:before:ring-offset-gray-950 dark:before:ring-amber-600/70">
+                    <!-- Botón de submit -->
+                    <button type="submit" title="Iniciar sesión" class="relative w-full bg-gradient-to-br from-amber-800 to-amber-950 dark:from-amber-700 dark:to-amber-900 text-white px-4 py-2 font-bold rounded-md hover:opacity-95 transition-all duration-200 shadow-sm hover:shadow-md focus:scale-[1.03] hover:scale-[1.03] active:scale-95 before:content-[''] before:absolute before:inset-0 before:rounded-md before:ring-[3px] before:ring-offset-2 before:ring-offset-amber-200/50 before:ring-amber-800/50 dark:before:ring-offset-gray-950 dark:before:ring-amber-600/50">
                         Iniciar Sesión
                     </button>
                 </form>
 
                 <!-- Separador y enlace de contacto -->
                 <div class="mt-3 pt-3 border-t border-amber-200 dark:border-gray-600 transition-colors">
-                   <!--  <p class="text-center text-xs text-custom-gold-darker dark:text-custom-gold-medium transition-colors">
-                        ¿Necesitas acceso?
-                        <button class="text-amber-800 dark:text-custom-gold-light hover:text-custom-dark dark:hover:text-amber-100 font-medium hover:underline ml-1 transition-colors">
-                            Contacta al administrador
-                        </button>
-                    </p> -->
                 </div>
             </div>
         </div>
@@ -158,7 +133,7 @@
  
 
     <script>
-       // Gestión del tema (modo oscuro/claro)
+        // Gestión del tema (modo oscuro/claro)
         class ThemeManager {
             constructor() {
                 this.theme = localStorage.getItem('theme') || 'light';
@@ -238,9 +213,6 @@
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {
                 loginForm.addEventListener('submit', function(e) {
-                    // No prevenir el comportamiento por defecto para que Laravel maneje la autenticación
-                    // Solo añadir feedback visual
-                    
                     const submitButton = e.target.querySelector('button[type="submit"]');
                     if (submitButton) {
                         const originalText = submitButton.textContent;
@@ -262,12 +234,10 @@
             const inputs = document.querySelectorAll('input[type="email"], input[type="password"]');
             inputs.forEach(input => {
                 input.addEventListener('focus', function() {
-                    this.classList.add('ring-2');
                     this.parentElement.classList.add('transform', 'scale-[1.01]');
                 });
                 
                 input.addEventListener('blur', function() {
-                    this.classList.remove('ring-2');
                     this.parentElement.classList.remove('transform', 'scale-[1.01]');
                 });
             });
@@ -307,5 +277,3 @@
         });
     </script>
 </x-guest-layout>
-
-
