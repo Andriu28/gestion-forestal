@@ -572,8 +572,7 @@ $roleTranslations = [
                                                                                 ({{ $withLoss }} con pérdida)
                                                                             @endif
                                                                         </span>
-                                                                    @else
-                                                                        <span class="text-xs text-gray-500">[Array]</span>
+                                                                    
                                                                     @endif
                                                                 @else
                                                                     @php

@@ -53,7 +53,6 @@ class DeforestationController extends Controller
     {
         $activity = Activity::findOrFail($activityId);
         $data = $activity->properties;
-dd($data);
         // Construir $dataToPass a partir de $data
         $dataToPass = [
             'polygon_name'     => $data['polygon_name'] ?? 'Área sin nombre',
@@ -862,7 +861,6 @@ dd($data);
      */
     private function registerUnsavedAnalysisEvent(array $dataToPass, array $globalParams): void
     {
-        dd($dataToPass);
         activity()
             ->causedBy(auth()->user())
             ->withProperties([

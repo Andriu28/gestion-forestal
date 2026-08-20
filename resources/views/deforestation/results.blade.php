@@ -181,77 +181,7 @@
                             </h3>
                             <!-- Controles del mapa -->
                             <div class="flex space-x-2">
-                                <!-- Botón para mostrar/ocultar capa de deforestación -->
-                                <button id="toggle-gfw-layer" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center shadow-lg" title="Ocultar Deforestación">
-                                    <span id="gfw-eye-open">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                                            <circle cx="12" cy="12" r="3"/>
-                                        </svg>
-                                    </span>
-                                    <span id="gfw-eye-closed" class="hidden">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                                            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                                            <line x1="2" x2="22" y1="2" y2="22"/>
-                                        </svg>
-                                    </span>
-                                </button>
-
-                                <!-- Control de opacidad -->
-                                <div class="relative">
-                                    <button id="result-opacity-control" title="Ajustar Opacidad" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center shadow-lg">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>
-                                            <path d="m22 17.46-8.58-3.91a2 2 0 0 0-1.66 0L3 17.46"/>
-                                            <path d="m22 12.46-8.58-3.91a2 2 0 0 0-1.66 0L3 12.46"/>
-                                        </svg>
-                                    </button>
-                                    
-                                    <!-- Panel de control de opacidad -->
-                                    <div id="result-opacity-panel" 
-                                        class="absolute mt-2 w-48 rounded-xl shadow-lg bg-gray-50 dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 right-0
-                                                transition-all duration-400 ease-out scale-95 opacity-0 pointer-events-none">
-                                        <div class="absolute -top-2 right-6 w-4 h-2 z-100 pointer-events-none">
-                                            <svg viewBox="0 0 16 8" class="w-4 h-2 text-white dark:text-gray-800">
-                                                <polygon points="8,0 16,8 0,8" fill="currentColor"/>
-                                            </svg>
-                                        </div>
-                                        
-                                        <!-- Contenido del panel -->
-                                        <div class="p-4 z-100">
-                                            <div class="flex items-center justify-between mb-2">
-                                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Opacidad GFW</span>
-                                                <span id="result-opacity-value" class="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">75%</span>
-                                            </div>
-                                            
-                                            <!-- Slider de opacidad -->
-                                            <input type="range" 
-                                                id="result-opacity-slider" 
-                                                min="0" 
-                                                max="100" 
-                                                value="75"
-                                                class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb">
-                                            
-                                            <!-- Botones predefinidos -->
-                                            <div class="flex space-x-2 mt-3">
-                                                <button type="button" data-opacity="25" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs">
-                                                    25%
-                                                </button>
-                                                <button type="button" data-opacity="50" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs">
-                                                    50%
-                                                </button>
-                                                <button type="button" data-opacity="75" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs">
-                                                    75%
-                                                </button>
-                                                <button type="button" data-opacity="100" class="flex-1 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs">
-                                                    100%
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                
                             </div>
                         </div>
                         <div id="result-map" style="height: 400px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative;">
@@ -374,8 +304,9 @@ function initResultMap() {
         layers: [
             new ol.layer.Tile({
                 source: new ol.source.XYZ({
-                    url: 'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                    attributions: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+                    url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=scUozK4fig7bE6jg7TPi',
+                    attributions: '© MapTiler & OpenStreetMap',
+                    tileSize: 512,
                     maxZoom: 20
                 })
             })
@@ -391,25 +322,10 @@ function initResultMap() {
         })
     });
 
-    // Añadir capa GFW (INICIALMENTE VISIBLE)
-    const GFW_LOSS_URL = 'https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png';
-    
-    gfwLossLayer = new ol.layer.Tile({
-        source: new ol.source.XYZ({
-            url: GFW_LOSS_URL,
-            attributions: 'Hansen/UMD/Google/USGS/NASA | GFW',
-        }),
-        opacity: 0.75,
-        visible: true // Visible por defecto
-    });
-    
-    resultMap.addLayer(gfwLossLayer);
-    
-    // Añadir el polígono al mapa
+    // Añadir el polígono al mapa (código existente)
     const format = new ol.format.GeoJSON();
-    
     let features = format.readFeatures(polygonGeojson, {
-        dataProjection: 'EPSG:4326', 
+        dataProjection: 'EPSG:4326',
         featureProjection: 'EPSG:3857'
     });
     
