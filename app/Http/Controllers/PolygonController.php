@@ -223,7 +223,6 @@ class PolygonController extends Controller
     {
         $validated = $request->validate($this->validationRules());
 
-        DB::beginTransaction();
         try {
             $parishId = $this->resolveParishId($validated, null);
             $geoJson  = $this->normalizeGeoJson($validated['geometry']);
@@ -257,7 +256,7 @@ class PolygonController extends Controller
             // Recalcular área y centroide desde PostGIS (lógica en el modelo)
             $polygon->recalculateGeometryStats();
 
-            DB::commit();
+            
 
             Log::info('Polígono creado', ['id' => $polygon->id, 'parish_id' => $polygon->parish_id]);
 
@@ -265,7 +264,7 @@ class PolygonController extends Controller
                 ->with('success', "Polígono '{$polygon->name}' creado exitosamente.");
 
         } catch (\Throwable $e) {
-            DB::rollBack();
+            
             Log::error('Error al crear polígono', ['error' => $e->getMessage()]);
             return back()->withInput()->with('error', 'Error al crear el polígono: ' . $e->getMessage());
         }
@@ -811,6 +810,200 @@ class PolygonController extends Controller
         }
 
         return back()->with('error', $message);
+    }
+
+    /**
+     * Muestra el formulario de importación de GeoJSON.
+     */
+    public function showImportForm(): View
+    {
+        $producers = Producer::active()->orderBy('name')->get(['id', 'name', 'lastname']);
+        $parishes  = Parish::orderBy('name')->get(['id', 'name']);
+
+        return view('polygons.import', compact('producers', 'parishes'));
+    }
+
+    /**
+     * Procesa la importación de un archivo GeoJSON.
+     */
+    public function import(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:json,geojson|max:10240', // 10 MB
+            'parish_id' => 'nullable|exists:parishes,id',
+            'default_producer_id' => 'nullable|exists:producers,id',
+            'create_missing_producers' => 'boolean',
+            'skip_existing' => 'boolean',
+            'srid' => 'nullable|integer|min:0',
+            'producer_field' => 'nullable|string|max:50',
+        ]);
+
+        $file = $request->file('file');
+        $content = file_get_contents($file->getPathname());
+        $geojson = json_decode($content, true);
+
+        // Detectar SRID desde el archivo
+        $detectedSrid = 4326; // valor por defecto
+        if (isset($geojson['crs']['properties']['name'])) {
+            $crsName = $geojson['crs']['properties']['name'];
+            // Ejemplo: "urn:ogc:def:crs:EPSG::2203" → extraer 2203
+            if (preg_match('/EPSG::(\d+)/', $crsName, $matches)) {
+                $detectedSrid = (int) $matches[1];
+            }
+        }
+
+        // Si el usuario especificó un SRID en el formulario, usarlo; si no, usar el detectado
+        $srid = $request->filled('srid') ? (int) $request->input('srid') : $detectedSrid;
+
+        if (!isset($geojson['type']) || $geojson['type'] !== 'FeatureCollection') {
+            return back()->withErrors(['file' => 'El archivo no es un FeatureCollection GeoJSON válido.']);
+        }
+
+        $features = $geojson['features'] ?? [];
+        if (empty($features)) {
+            return back()->withErrors(['file' => 'El archivo no contiene features.']);
+        }
+
+        $parishId = $request->input('parish_id');
+        $defaultProducerId = $request->input('default_producer_id');
+        $createMissingProducers = $request->boolean('create_missing_producers');
+        $skipExisting = $request->boolean('skip_existing');
+        $producerField = $request->input('producer_field', 'Productor');
+
+        $imported = 0;
+        $skipped = 0;
+        $errors = [];
+
+        // Para evitar timeout en archivos grandes
+        set_time_limit(0);
+
+        try {
+            foreach ($features as $index => $feature) {
+                try {
+                    // 1. Validar geometría
+                    if (!isset($feature['geometry']) || !isset($feature['geometry']['type'])) {
+                        throw new \Exception("Feature #$index no tiene geometría válida.");
+                    }
+
+                    $geometryType = $feature['geometry']['type'];
+                    if (!in_array($geometryType, ['Polygon', 'MultiPolygon'])) {
+                        throw new \Exception("Feature #$index tiene tipo de geometría no soportado: $geometryType");
+                    }
+
+                    $properties = $feature['properties'] ?? [];
+
+                    // 2. Obtener productor
+                    $producerName = trim($properties[$producerField] ?? '');
+                    $producerId = null;
+
+                    if (!empty($producerName)) {
+                        $producer = Producer::whereRaw('LOWER(name || \' \' || lastname) = ?', [strtolower($producerName)])
+                            ->orWhere('name', $producerName)
+                            ->first();
+
+                        if ($producer) {
+                            $producerId = $producer->id;
+                        } elseif ($createMissingProducers) {
+                            $parts = explode(' ', $producerName, 2);
+                            $firstName = $parts[0];
+                            $lastName = $parts[1] ?? '';
+                            $producer = Producer::create([
+                                'name' => $firstName,
+                                'lastname' => $lastName,
+                                'is_active' => true,
+                            ]);
+                            $producerId = $producer->id;
+                        }
+                    }
+
+                    // Si no se encontró productor y hay productor por defecto, usar ese
+                    if (!$producerId && $defaultProducerId) {
+                        $producerId = $defaultProducerId;
+                    }
+
+                    // 3. Determinar parroquia
+                    $finalParishId = $parishId;
+                   /*  if (!$finalParishId) {
+                        // Detección automática por intersección espacial
+                        $parish = $this->detectParishByGeometry($feature['geometry']);
+                        if ($parish) {
+                            $finalParishId = $parish->id;
+                        }
+                    } */
+
+                    // 4. Preparar datos
+                    $geoJsonString = json_encode($feature['geometry'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                    $externalId = $properties['id'] ?? null;
+                    $areaHa = $properties['Area_Ha'] ?? null;
+                    $useProvidedArea = !is_null($areaHa);
+
+                    // Verificar duplicado por external_id
+                    if ($externalId && $skipExisting) {
+                        $exists = Polygon::where('external_id', $externalId)->exists();
+                        if ($exists) {
+                            $skipped++;
+                            continue;
+                        }
+                    }
+
+                    // 5. Crear polígono
+                    $data = [
+                        'external_id' => $externalId,
+                        'name' => $properties['name'] ?? ($producerName ? "Polígono de $producerName" : 'Polígono importado'),
+                        'description' => $properties['description'] ?? null,
+                        'producer_id' => $producerId,
+                        'parish_id' => $finalParishId,
+                        'area_ha' => $areaHa,
+                        'is_active' => true,
+                        'location_data' => [
+                            'imported_from' => 'geojson',
+                            'original_properties' => $properties,
+                            'external_id' => $externalId,
+                        ],
+                    ];
+
+                    $polygon = Polygon::createWithGeometry($data, $geoJsonString, $srid, true);
+
+                    if (!$useProvidedArea) {
+                        $polygon->recalculateGeometryStats();
+                    } else {
+                        // Si se proporcionó área, actualizar el campo sin recalcular desde geometría
+                        $polygon->updateQuietly(['area_ha' => $areaHa]);
+                    }
+
+                    $imported++;
+                } catch (\Exception $e) {
+                    $errors[] = "Error en feature #$index: " . $e->getMessage();
+                    // Continuar con el siguiente
+                }
+            }
+
+
+            $message = "Importación completada. $imported polígonos importados.";
+            if ($skipped > 0) {
+                $message .= " $skipped polígonos omitidos (ya existían).";
+            }
+            if (!empty($errors)) {
+                $message .= " Errores: " . implode('; ', $errors);
+            }
+
+            return redirect()->route('polygons.index')->with('success', $message);
+
+        } catch (\Throwable $e) {
+            Log::error('Error en importación de polígonos', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Error durante la importación: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Detecta la parroquia que intersecta la geometría dada.
+     * Requiere que la tabla parishes tenga una columna 'geometry' (geometry, 4326).
+     */
+    private function detectParishByGeometry(array $geometry): ?Parish
+    {
+        $geoJson = json_encode($geometry);
+        return Parish::whereRaw("ST_Intersects(geometry, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326))", [$geoJson])
+            ->first();
     }
 
     /**

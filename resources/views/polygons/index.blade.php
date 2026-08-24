@@ -47,6 +47,22 @@
                                 </span>
                             </a>
 
+                            <!-- Botón para importar GeoJSON -->
+                            <a href="{{ route('polygons.import.form') }}" 
+                            title="Importar polígonos desde GeoJSON" 
+                            class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-yellow-600/70 dark:hover:bg-yellow-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
+                                <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-yellow-700/70 group-hover:text-white dark:text-yellow-500/70">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                </span>
+                                <span class="text-base font-medium transition-all duration-300 w-0 opacity-0 group-hover:w-16 group-hover:opacity-100 group-hover:ml-1 whitespace-nowrap overflow-hidden text-inherit">
+                                    Importar
+                                </span>
+                            </a>
+
                             <!-- Botón para ver eliminados -->
                             <a href="{{ route('polygons.deleted') }}" 
                             title="Ver polígonos eliminados" 
@@ -379,7 +395,7 @@
                                                                 <input type="hidden" name="save_analysis" id="save-{{ $polygon->id }}"> </form>
 
                                                             <button type="button" 
-                                                                    onclick="confirmAnalysis({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')"
+                                                                    onclick="confirmAnalysis({{ $polygon->id }}, '{{ json_encode($polygon->name) }}')"
                                                                     class="inline-flex items-center text-purple-800/50 hover:text-purple-600 dark:text-purple-400/60 dark:hover:text-purple-300  p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl  hover:bg-opacity-10 hover:scale-110"
                                                                     title="Analizar Deforestación">
                                                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
@@ -401,7 +417,7 @@
                                                             <button type="button" 
                                                                     class="inline-flex items-center text-yellow-700/40 hover:text-yellow-500/80 dark:text-yellow-400/60 dark:hover:text-yellow-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                                     title="Desactivar"
-                                                                    onclick="handleTogglePolygonStatus({{ $polygon->id }}, '{{ addslashes($polygon->name) }}', true)">
+                                                                    onclick="handleTogglePolygonStatus({{ $polygon->id }}, {{ json_encode($polygon->name) }}, true)">
                                                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                     <circle cx="12" cy="12" r="10" class="fill-none"/>
                                                                     <line x1="15" y1="9" x2="9" y2="15"/>
@@ -413,7 +429,7 @@
                                                             <button type="button" 
                                                                     class="inline-flex items-center text-green-700/40 hover:text-green-500/80 dark:text-green-400/60 dark:hover:text-green-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                                     title="Activar"
-                                                                    onclick="handleTogglePolygonStatus({{ $polygon->id }}, '{{ addslashes($polygon->name) }}', false)">
+                                                                    onclick="handleTogglePolygonStatus({{ $polygon->id }}, {{ json_encode($polygon->name) }}, true)">
                                                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                     <circle cx="12" cy="12" r="10" class="fill-none"/>
                                                                     <path d="m8 12 2.5 2.5L16 9"/>
@@ -425,7 +441,7 @@
                                                         <button type="button" 
                                                                 class="inline-flex items-center text-red-700/30 hover:text-red-600 dark:text-red-500/60 dark:hover:text-red-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Eliminar"
-                                                                onclick="handleDeletePolygon({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')">
+                                                                onclick="handleDeletePolygon({{ $polygon->id }}, {{ json_encode($polygon->name) }})">
                                                             <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                 <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                                                             </svg>
@@ -434,7 +450,7 @@
                                                         <button type="button" 
                                                                 class="inline-flex items-center text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                                 title="Restaurar"
-                                                                onclick="handleRestorePolygon({{ $polygon->id }}, '{{ addslashes($polygon->name) }}')">
+                                                                onclick="handleRestorePolygon({{ $polygon->id }}, {{ json_encode($polygon->name) }})">
                                                             <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
                                                             </svg>
@@ -645,7 +661,7 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive, statusText = nu
                 <line x1="9" y1="9" x2="15" y2="15" class="stroke-yellow-600"/>
             </svg>`;
             newTitle = 'Desactivar';
-            newOnclick = `handleTogglePolygonStatus(${polygonId}, '${polygonName.replace(/'/g, "\\'")}', true)`;
+            newOnclick = `handleTogglePolygonStatus(${polygonId}, ${JSON.stringify(polygonName)}, true)`;
         } else {
             // Icono para activar
             newSvg = `<svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 w-7 h-7">
@@ -653,7 +669,7 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive, statusText = nu
                 <path d="m8 12 2.5 2.5L16 9" class="stroke-green-600"/>
             </svg>`;
             newTitle = 'Activar';
-            newOnclick = `handleTogglePolygonStatus(${polygonId}, '${polygonName.replace(/'/g, "\\'")}', false)`;
+            newOnclick = `handleTogglePolygonStatus(${polygonId}, ${JSON.stringify(polygonName)}, true)`;
         }
         
         // Reemplazar el contenido del botón
@@ -776,7 +792,7 @@ function updatePolygonRowForRestored(polygonId, polygonName, isActive = true) {
                 <button type="button" 
                         class="inline-flex items-center transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                         title="${isActive ? 'Desactivar' : 'Activar'}"
-                        onclick="handleTogglePolygonStatus(${polygonId}, '${escapedName}', ${activeStatus})">
+                        onclick="handleTogglePolygonStatus(${polygonId}, ${JSON.stringify(polygonName)}, ${activeStatus})">
                     ${isActive ? 
                         `<svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 w-7 h-7">
                             <circle cx="12" cy="12" r="10" class="fill-yellow-100"/>
@@ -793,7 +809,7 @@ function updatePolygonRowForRestored(polygonId, polygonName, isActive = true) {
                 <button type="button" 
                         class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-300 transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl transition-all duration-300 hover:bg-opacity-10 hover:scale-110" 
                         title="Eliminar"
-                        onclick="handleDeletePolygon(${polygonId}, '${escapedName}')">
+                        onclick="handleDeletePolygon(${polygonId}, ${JSON.stringify(polygonName)})">
                     <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                         <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                     </svg>
@@ -806,13 +822,13 @@ function updatePolygonRowForRestored(polygonId, polygonName, isActive = true) {
 // Función para mostrar detalles del polígono en modal - VERSIÓN CON DEPURACIÓN
 async function showPolygonDetails(polygonId) {
     try {
-        console.log('🔍 ===== INICIO showPolygonDetails =====');
-        console.log('📌 ID del polígono:', polygonId);
+        console.log(' ===== INICIO showPolygonDetails =====');
+        console.log(' ID del polígono:', polygonId);
         
         // Mostrar loader en el modal
         const modalContent = document.getElementById('polygon-details-content');
         if (!modalContent) {
-            console.error('❌ ERROR: No se encontró el elemento polygon-details-content');
+            console.error(' ERROR: No se encontró el elemento polygon-details-content');
             return;
         }
         
@@ -827,11 +843,11 @@ async function showPolygonDetails(polygonId) {
             detail: 'view-polygon-details' 
         });
         window.dispatchEvent(event);
-        console.log('✅ Modal abierto');
+        console.log(' Modal abierto');
         
         // Obtener datos del polígono
         const url = `/polygons/${polygonId}/details`;
-        console.log('🌐 Haciendo fetch a:', url);
+        console.log(' Haciendo fetch a:', url);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -1248,11 +1264,11 @@ function formatPolygonDetails(polygon) {
 // Mostrar alertas de éxito/error de Laravel
 document.addEventListener('DOMContentLoaded', function() {
     @if(session('success'))
-        showCustomAlert('success', 'Éxito', '{{ session('success') }}');
+        window.showCustomAlert('success', 'Éxito', @json(session('success')));
     @endif
-    
+
     @if(session('error'))
-        showCustomAlert('error', 'Error', '{{ session('error') }}');
+        window.showCustomAlert('error', 'Error', @json(session('error')));
     @endif
 });
 
