@@ -88,7 +88,7 @@
                 </div>
 
                 <!-- Información del Área de Estudio -->
-                <div class="mb-8 p-4 bg-grey-300 dark:bg-gray-600/10 rounded-lg">
+                <div class="mb-8 p-4 bg-gray-50 dark:bg-gray-600/10 rounded-lg">
                     <h3 class="font-semibold text-xl text-grey-800 dark:text-grey-100 mb-2">Nombre del Polígono:
                         {{ $dataToPass['polygon_name'] }}
                     </h3>
@@ -132,7 +132,7 @@
 
                 <!-- Resumen Estadístico -->
                 <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                    <div class="bg-gray-50 dark:bg-gray-800/40 p-4 rounded-lg">
+                    <div class="bg-gray-50 dark:bg-gray-600/10 p-4 rounded-lg">
                         <h4 class="font-semibold text-lg text-gray-900 dark:text-gray-100 mb-3">Resumen del Área</h4>
                         <div class="space-y-2">
                             <div class="flex justify-between">
@@ -153,7 +153,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-gray-50 dark:bg-gray-800/40 p-4 rounded-lg">
+                    <div class="bg-gray-50 dark:bg-gray-600/10 p-4 rounded-lg">
                         <h4 class="font-semibold text-lg text-gray-900 dark:text-gray-100 mb-3">Estado del Servicio</h4>
                         <div class="space-y-2">
                             <div class="flex justify-between">
@@ -185,7 +185,7 @@
                         <h3 class="font-semibold text-xl text-gray-900 dark:text-gray-100 mb-3">
                             Distribución del Área
                         </h3>
-                        <div class="bg-gray-100 dark:bg-gray-800/40 p-4 rounded-lg shadow-inner" style="height: 430px;">
+                        <div class="bg-gray-50 dark:bg-gray-600/10 p-4 rounded-lg shadow-inner" style="height: 430px;">
                             <canvas id="area-distribution-chart"></canvas>
                         </div>
                     </div>
@@ -195,7 +195,7 @@
                             Evolución de la Deforestación ({{ $dataToPass['start_year'] }}-{{ $dataToPass['end_year'] }})
                         </h3>
                         
-                        <div class="w-full bg-gray-100 dark:bg-gray-800/40 p-4 rounded-lg shadow-inner" style="height: 400px;">
+                        <div class="w-full bg-gray-50 dark:bg-gray-600/10 p-4 rounded-lg shadow-inner" style="height: 400px;">
                             <canvas id="deforestation-evolution-chart"></canvas>
                         </div>
                     </div>
@@ -415,7 +415,7 @@ function initEvolutionChart() {
                                 
                                 // Mensaje adicional
                                 if (yearData.message && yearData.status !== 'success') {
-                                    tooltipLines.push(`📝 ${yearData.message}`);
+                                    tooltipLines.push(` ${yearData.message}`);
                                 }
                             }
                             
