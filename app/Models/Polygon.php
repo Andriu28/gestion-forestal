@@ -26,6 +26,7 @@ class Polygon extends Model
         'centroid_lat',
         'centroid_lng',
         'location_data',
+        'external_id',
     ];
 
     protected $casts = [
@@ -213,26 +214,29 @@ class Polygon extends Model
 
     /**
      * Crea el registro incluyendo la geometría PostGIS.
+     *
      * @param array  $data
      * @param string $geoJsonGeometry
-     * @param bool   $logActivity  Si es true, registra actividad automáticamente.
+     * @param int    $srid            SRID de entrada del GeoJSON (por defecto 4326)
+     * @param bool   $logActivity
      * @return static
      */
-    public static function createWithGeometry(array $data, string $geoJsonGeometry, bool $logActivity = true): static
+    public static function createWithGeometry(array $data, string $geoJsonGeometry, int $srid = 4326, bool $logActivity = true): static
     {
         $now = now();
 
         $row = DB::selectOne(
             "INSERT INTO polygons
-                (name, description, producer_id, parish_id, area_ha, is_active,
+                (external_id, name, description, producer_id, parish_id, area_ha, is_active,
                 centroid_lat, centroid_lng, location_data,
                 geometry, created_at, updated_at)
             VALUES
-                (?, ?, ?, ?, ?, ?,
+                (?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?,
-                ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, ?)
+                ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(?), ?), 4326), ?, ?)
             RETURNING id",
             [
+                $data['external_id'] ?? null,
                 $data['name'],
                 $data['description'] ?? null,
                 $data['producer_id'] ?? null,
@@ -243,6 +247,7 @@ class Polygon extends Model
                 $data['centroid_lng'] ?? null,
                 isset($data['location_data']) ? json_encode($data['location_data'], JSON_UNESCAPED_UNICODE) : null,
                 $geoJsonGeometry,
+                $srid,
                 $now,
                 $now,
             ]
@@ -254,7 +259,6 @@ class Polygon extends Model
 
         $polygon = static::with('parish.municipality.state')->findOrFail($row->id);
 
-        // ===== CREACIÓN MANUAL DEL LOG (SOLO SI $logActivity ES TRUE) =====
         if ($logActivity) {
             activity()
                 ->performedOn($polygon)
@@ -278,25 +282,26 @@ class Polygon extends Model
 
     /**
      * Actualiza los campos del polígono incluyendo la geometría PostGIS.
+     *
      * @param array  $data
      * @param string $geoJsonGeometry
-     * @param bool   $logActivity  Si es true, dispara eventos de Eloquent y registra actividad.
+     * @param int    $srid
+     * @param bool   $logActivity
      * @return bool
      */
-    public function updateWithGeometry(array $data, string $geoJsonGeometry, bool $logActivity = true): bool
+    public function updateWithGeometry(array $data, string $geoJsonGeometry, int $srid = 4326, bool $logActivity = true): bool
     {
         DB::statement(
-            'UPDATE polygons SET geometry = ST_SetSRID(ST_GeomFromGeoJSON(?), 4326) WHERE id = ?',
-            [$geoJsonGeometry, $this->id]
+            'UPDATE polygons SET geometry = ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(?), ?), 4326) WHERE id = ?',
+            [$geoJsonGeometry, $srid, $this->id]
         );
 
-        // Actualizar el resto con Eloquent
         $this->fill($data);
 
         if ($logActivity) {
-            return $this->save(); // Dispara eventos 'updating', 'updated' → Spatie lo captura
+            return $this->save();
         } else {
-            return $this->saveQuietly(); // No dispara eventos
+            return $this->saveQuietly();
         }
     }
 

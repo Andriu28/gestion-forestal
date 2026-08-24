@@ -161,6 +161,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/map', [PolygonController::class, 'map'])->name('map');
         Route::get('/geojson', [PolygonController::class, 'geojson'])->name('geojson');
         Route::get('/deleted', [PolygonController::class, 'deleted'])->name('deleted');
+
+        // Importación
+        Route::get('/import', [PolygonController::class, 'showImportForm'])->name('import.form');
+        Route::post('/import', [PolygonController::class, 'import'])->name('import');
         
         // API endpoints
         Route::post('/find-parish', [PolygonController::class, 'findParishApi'])
