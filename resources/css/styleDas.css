@@ -587,12 +587,12 @@
     margin: 6px;
     background: linear-gradient(#ffffffe3, #f2f2f2) padding-box,
     linear-gradient(135deg, transparent 4%, #904800aa, #e6e5e5) border-box;
-    border: 6px solid transparent;
+    border: 5px solid transparent;
     transition: all 0.1s; /* ← Transición en el estado base */
 }
 
 .dark .card-glow{
-    border: 6px solid rgba(35, 37, 46, 0.446);
+    border: 5px solid rgba(35, 37, 46, 0.446);
     background: linear-gradient(rgb(30, 32, 40),rgb(15, 17, 21)) padding-box,
     linear-gradient(135deg, transparent 4%, #e5831aba, rgb(44, 47, 62)) border-box;
 }

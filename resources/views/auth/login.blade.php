@@ -107,7 +107,7 @@
                     </div>
 
                     <!-- Botón de submit -->
-                    <button type="submit" title="Iniciar sesión" class="relative w-full bg-gradient-to-br from-amber-800 to-amber-950 dark:from-amber-700 dark:to-amber-900 text-white px-4 py-2 font-bold rounded-md hover:opacity-95 transition-all duration-200 shadow-sm hover:shadow-md focus:scale-[1.03] hover:scale-[1.03] active:scale-95 before:content-[''] before:absolute before:inset-0 before:rounded-md before:ring-[3px] before:ring-offset-2 before:ring-offset-amber-200/50 before:ring-amber-800/50 dark:before:ring-offset-gray-950 dark:before:ring-amber-600/50">
+                     <button type="submit" title="Iniciar sesión" class="relative w-full [background:linear-gradient(144deg,#3E2723,#4E342E_50%,#6D4C41)] dark:[background:linear-gradient(144deg,#3b220f,#61361d_50%,#794606)] text-white px-4 py-2 font-bold rounded-md hover:opacity-95 dark:hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md focus:scale-[1.03] hover:scale-[1.03] active:scale-95 before:content-[''] before:absolute before:inset-0 before:rounded-md before:ring-[3px] before:ring-offset-2 before:ring-offset-[#f1ae6dd1] before:ring-[#624945] dark:before:ring-offset-gray-950 dark:before:ring-amber-600/70">
                         Iniciar Sesión
                     </button>
                 </form>
