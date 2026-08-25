@@ -335,15 +335,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /// Gráfica de evolución de la deforestación - CON TOOLTIP MEJORADO
 let evolutionChart = null;
+let themeObserver = null;
 let yearlyData = @json($dataToPass['yearly_results'] ?? []);
 let startYear = {{ $dataToPass['start_year'] ?? 2020 }};
 let endYear = {{ $dataToPass['end_year'] ?? 2024 }};
 const totalYears = endYear - startYear + 1;
 
+function getTooltipThemeColors() {
+    const isDarkMode = document.documentElement.classList.contains('dark');
+
+    return {
+        backgroundColor: isDarkMode ? '#272a30' : '#ffffff',
+        titleColor: isDarkMode ? '#f8fafc' : '#0f172a',
+        bodyColor: isDarkMode ? '#e2e8f0' : '#334155',
+        borderColor: isDarkMode ? '#1f1f1f' : '#cfcfcf'
+    };
+}
+
 function initEvolutionChart() {
     const ctx = document.getElementById('deforestation-evolution-chart').getContext('2d');
-    
     const chartData = getChartData();
+    const tooltipTheme = getTooltipThemeColors();
     
     evolutionChart = new Chart(ctx, {
         type: 'line',
@@ -359,24 +371,22 @@ function initEvolutionChart() {
                     color: '#374151'
                 },
                 tooltip: {
-                    // Tooltip mejorado con estilos interactivos
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#1F2937',
+                    backgroundColor: tooltipTheme.backgroundColor,
+                    titleColor: tooltipTheme.titleColor,
                     titleFont: {
                         size: 14,
                         weight: 'bold'
                     },
-                    bodyColor: '#4B5563',
+                    bodyColor: tooltipTheme.bodyColor,
                     bodyFont: {
                         size: 12.5
                     },
-                    borderColor: 'rgba(59, 130, 246, 0.3)',
-                    borderWidth: 2,
-                    cornerRadius: 12,
-                    padding: 16,
-                    displayColors: true,
+                    borderColor: tooltipTheme.borderColor,
+                    borderWidth: 1.5,
+                    cornerRadius: 10,
+                    padding: 12,
+                    displayColors: false,
                     boxPadding: 6,
-                    usePointStyle: true,
                     callbacks: {
                         title: function(items) {
                             const year = items[0].label;
@@ -386,44 +396,27 @@ function initEvolutionChart() {
                             const value = context.parsed.y;
                             const year = context.label;
                             const yearData = yearlyData[year];
-                            
-                            // Formatear el valor
-                            const formattedValue = value.toLocaleString(undefined, { 
-                                minimumFractionDigits: 2, 
-                                maximumFractionDigits: 4 
+                            const formattedValue = value.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 4
                             });
-                            
-                            // Construir el tooltip con información detallada
-                            let tooltipLines = [];
-                            
-                            // Línea principal: Área deforestada
-                            tooltipLines.push(`Área Deforestada: ${formattedValue} ha`);
-                            
-                            // Información adicional si existe
-                            if (yearData) {
-                                // Estado
-                                if (yearData.status) {
-                                    const statusIcon = yearData.status === 'success' ? '✅' : '❌';
-                                    const statusText = yearData.status === 'success' ? 'Éxito' : 'Error';
-                                    tooltipLines.push(`${statusIcon} Estado: ${statusText}`);
-                                }
-                                
-                                // Tipo
-                                if (yearData.type) {
-                                    tooltipLines.push(`📐 Tipo: ${yearData.type}`);
-                                }
-                                
-                                // Mensaje adicional
-                                if (yearData.message && yearData.status !== 'success') {
-                                    tooltipLines.push(` ${yearData.message}`);
-                                }
+
+                            const tooltipLines = [`Área Deforestada: ${formattedValue} ha`];
+
+                            if (yearData && yearData.status) {
+                                const statusText = yearData.status === 'success' ? 'Éxito' : 'Error';
+                                tooltipLines.push(`Estado: ${statusText}`);
                             }
-                            
+
+                            if (yearData && yearData.type) {
+                                tooltipLines.push(`Tipo: ${yearData.type}`);
+                            }
+
+                            if (yearData && yearData.message && yearData.status !== 'success') {
+                                tooltipLines.push(yearData.message);
+                            }
+
                             return tooltipLines;
-                        },
-                        afterBody: function(items) {
-                            // Agregar una nota al final del tooltip
-                            return '💡 Pasa el mouse para más detalles';
                         }
                     }
                 },
@@ -524,6 +517,26 @@ function initEvolutionChart() {
     });
 
     updateProgress(Object.keys(yearlyData).length);
+
+    if (themeObserver) {
+        themeObserver.disconnect();
+    }
+
+    themeObserver = new MutationObserver(function() {
+        if (!evolutionChart) return;
+
+        const nextTheme = getTooltipThemeColors();
+        evolutionChart.options.plugins.tooltip.backgroundColor = nextTheme.backgroundColor;
+        evolutionChart.options.plugins.tooltip.titleColor = nextTheme.titleColor;
+        evolutionChart.options.plugins.tooltip.bodyColor = nextTheme.bodyColor;
+        evolutionChart.options.plugins.tooltip.borderColor = nextTheme.borderColor;
+        evolutionChart.update();
+    });
+
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
 }
 
 function getChartData() {
