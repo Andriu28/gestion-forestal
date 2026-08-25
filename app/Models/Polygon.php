@@ -424,4 +424,64 @@ class Polygon extends Model
     }
 
     
+    /**
+     * Crea un polígono a partir de los datos de un feature GeoJSON.
+     * Internamente maneja el área (usando la proporcionada o recalculando).
+     *
+     * @param array $featureData Datos del feature (properties + geometry)
+     * @param int   $srid       SRID del GeoJSON
+     * @param array $extra      Datos adicionales (producer_id, parish_id, etc.)
+     * @return static
+     * @throws \Exception
+     */
+    public static function createFromGeoJsonFeature(array $featureData, int $srid, array $extra = []): static
+    {
+        $properties = $featureData['properties'] ?? [];
+        $geometry = $featureData['geometry'];
+
+        // Validar geometría (opcional, ya se hizo en el controlador)
+        if (!isset($geometry['type']) || !in_array($geometry['type'], ['Polygon', 'MultiPolygon'])) {
+            throw new \Exception('Geometría inválida. Solo se permiten Polygon o MultiPolygon.');
+        }
+
+        $geoJsonString = json_encode($geometry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        // Extraer datos del feature
+        $externalId = $properties['id'] ?? null;
+        $areaHa = $properties['Area_Ha'] ?? null;
+        $name = $properties['name'] ?? ($extra['producer_name'] ?? 'Polígono importado');
+        $description = $properties['description'] ?? null;
+        $producerId = $extra['producer_id'] ?? null;
+        $parishId = $extra['parish_id'] ?? null;
+
+        // Preparar datos para el INSERT
+        $data = [
+            'external_id' => $externalId,
+            'name' => $name,
+            'description' => $description,
+            'producer_id' => $producerId,
+            'parish_id' => $parishId,
+            'area_ha' => $areaHa,
+            'is_active' => true,
+            'location_data' => [
+                'imported_from' => 'geojson',
+                'original_properties' => $properties,
+                'external_id' => $externalId,
+            ],
+        ];
+
+        // Crear el polígono (esto usa createWithGeometry, que ya acepta SRID)
+        $polygon = static::createWithGeometry($data, $geoJsonString, $srid, true);
+
+        // Decidir si recalcular el área
+        if (is_null($areaHa)) {
+            $polygon->recalculateGeometryStats();
+        } else {
+            // Si se proporcionó área, actualizar sin recalcular (ya está en $data, pero por si acaso)
+            $polygon->updateQuietly(['area_ha' => $areaHa]);
+        }
+
+        return $polygon;
+    }
+    
 }

@@ -164,7 +164,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Importación
         Route::get('/import', [PolygonController::class, 'showImportForm'])->name('import.form');
-        Route::post('/import', [PolygonController::class, 'import'])->name('import');
+        Route::post('/import/process', [PolygonController::class, 'processImport'])->name('import.process');
         
         // API endpoints
         Route::post('/find-parish', [PolygonController::class, 'findParishApi'])
