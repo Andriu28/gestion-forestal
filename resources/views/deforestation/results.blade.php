@@ -194,6 +194,19 @@
                         <h3 class="font-semibold text-xl text-gray-900 dark:text-gray-100 mb-3">
                             Evolución de la Deforestación ({{ $dataToPass['start_year'] }}-{{ $dataToPass['end_year'] }})
                         </h3>
+
+                        <div id="year-highlight-card" class="mb-3 hidden rounded-xl border border-slate-200 bg-gray-50 dark:bg-gray-600/10 p-3 shadow-sm backdrop-blur-sm dark:border-slate-700 ">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Año destacado</p>
+                                    <p id="highlight-year" class="mt-1 text-xl font-semibold text-slate-800 dark:text-slate-100">2024</p>
+                                </div>
+                                <div class="text-right">
+                                    <p id="highlight-label" class="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Máximo histórico</p>
+                                    <p id="highlight-value" class="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">0.00 ha</p>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div class="w-full bg-gray-50 dark:bg-gray-600/10 p-4 rounded-lg shadow-inner" style="height: 400px;">
                             <canvas id="deforestation-evolution-chart"></canvas>
@@ -401,7 +414,7 @@ function initEvolutionChart() {
                                 maximumFractionDigits: 4
                             });
 
-                            const tooltipLines = [`Área Deforestada: ${formattedValue} ha`];
+                            const tooltipLines = [`Superficie perdida: ${formattedValue} ha`];
 
                             if (yearData && yearData.status) {
                                 const statusText = yearData.status === 'success' ? 'Éxito' : 'Error';
@@ -487,6 +500,34 @@ function initEvolutionChart() {
             animation: {
                 duration: 1000,
                 easing: 'easeInOutQuart'
+            },
+            onClick: function(event, elements) {
+                if (!elements.length) return;
+
+                const element = elements[0];
+                const index = element.index;
+                const year = this.data.labels[index];
+                const value = this.data.datasets[0].data[index];
+                const maxValue = Math.max(...this.data.datasets[0].data);
+                const maxYear = this.data.labels[this.data.datasets[0].data.indexOf(maxValue)];
+                const isMax = Number(value) === Number(maxValue);
+
+                const card = document.getElementById('year-highlight-card');
+                const yearLabel = document.getElementById('highlight-year');
+                const labelText = document.getElementById('highlight-label');
+                const valueText = document.getElementById('highlight-value');
+
+                if (!card || !yearLabel || !labelText || !valueText) return;
+
+                const formattedValue = Number(value).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 4
+                });
+
+                yearLabel.textContent = year;
+                labelText.textContent = isMax ? 'Máximo histórico' : `Año ${year === maxYear ? 'máximo' : 'seleccionado'}`;
+                valueText.textContent = `${formattedValue} ha`;
+                card.classList.remove('hidden');
             },
             // Evento HOVER con tooltip mejorado
             onHover: function(event, elements) {
