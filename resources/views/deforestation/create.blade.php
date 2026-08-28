@@ -378,7 +378,9 @@
                                     id="save_analysis" 
                                     name="save_analysis" 
                                     value="1" 
-                                    class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                    class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded 
+                                        dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-green-500 
+                                        dark:focus:ring-green-400 dark:focus:ring-offset-gray-800"
                                     {{ old('save_analysis', session('save_analysis_by_default', false)) ? 'checked' : '' }}>
                                 <label for="save_analysis" class="ml-2 block text-base text-gray-700 dark:text-gray-300">
                                     Guardar análisis
