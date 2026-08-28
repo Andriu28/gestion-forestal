@@ -1,8 +1,9 @@
 @props(['route' => null])
 
-<div>
+
     <a href="{{ $route ?? 'javascript:history.back()' }}" 
-       class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out">
+       class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium">
         Regresar
     </a>
-</div>
+
+    
