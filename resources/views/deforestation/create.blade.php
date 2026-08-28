@@ -287,112 +287,124 @@
                     
                     <form id="analysis-form" action="{{ route('deforestation.analyze') }}" method="POST">
                         @csrf
-                        
-                        <div class="mt-4">
-                            <x-input-label for="name" :value="__('Nombre del Área:') " />
-                            <x-text-input 
-                                id="name" 
-                                class="mt-1 block w-full" 
-                                type="text" 
-                                name="name" 
-                                oninput="capitalizarPrimeraLetra(this)"
-                                placeholder="Ej: Reserva Natural XYZ"
-                                data-required-when-saving="true" />
-                            <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                            <div id="name-error" class="text-red-600 text-sm mt-1 hidden"></div>
-                        </div>
 
+                        <div class="mt-4 grid grid-cols-2 gap-4 mb-4">
+                            <div class="">
+                                <x-input-label for="name" :value="__('Nombre del Área:') " />
+                                <x-text-input 
+                                    id="name" 
+                                    class="block w-full" 
+                                    type="text" 
+                                    name="name" 
+                                    oninput="capitalizarPrimeraLetra(this)"
+                                    placeholder="Ej: Reserva Natural XYZ"
+                                    data-required-when-saving="true" />
+                                <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                                <div id="name-error" class="text-red-600 text-sm mt-1 hidden"></div>
+                            </div>
+                            
+                            <div id="producer-container" class="">
+                                <x-input-label for="producer_id" :value="__('Productor')" />
+                                <x-select-input
+                                    id="producer_id"
+                                    name="producer_id"
+                                    :options="$producers->pluck('name', 'id')->toArray()"
+                                    :selected="old('producer_id')"
+                                    placeholder="Seleccione un productor"
+                                    class="w-full"
+                                />
+                                <x-input-error class="mt-2" :messages="$errors->get('producer_id')" />
+                                <div id="producer-error" class="text-red-600 text-sm mt-1 hidden"></div>
+                                <p id="multi-producer-hint" class="text-xs text-blue-600 dark:text-blue-400 mt-1 hidden">
+                                    Los productores se extraerán automáticamente de las propiedades del archivo importado.
+                                </p>
+                            </div>
+                        </div>
+                        
                         <div class="mt-4">
                             <x-input-label for="description" :value="__('Descripción:')" />
                             <textarea id="description" name="description" oninput="capitalizarPrimeraLetra(this)" rows="2" class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" placeholder="Descripción del área de estudio..."></textarea>
                             <x-input-error :messages="$errors->get('address')" class="mt-2" />
                         </div>
-
-                        <div id="producer-container" class="mt-4">
-                            <x-input-label for="producer_id" :value="__('Productor')" />
-                            <x-select-input
-                                id="producer_id"
-                                name="producer_id"
-                                :options="$producers->pluck('name', 'id')->toArray()"
-                                :selected="old('producer_id')"
-                                placeholder="Seleccione un productor"
-                                class="w-full"
-                            />
-                            <x-input-error class="mt-2" :messages="$errors->get('producer_id')" />
-                            <div id="producer-error" class="text-red-600 text-sm mt-1 hidden"></div>
-                            <p id="multi-producer-hint" class="text-xs text-blue-600 dark:text-blue-400 mt-1 hidden">
-                                Los productores se extraerán automáticamente de las propiedades del archivo importado.
-                            </p>
-                        </div>
                         
-                        <div class="mt-4 grid grid-cols-2 gap-4 mb-6">
+                        <div class="mt-3 grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <x-input-label for="start_year" :value="__('Año Inicio:') " />
+                                <select class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                        id="start_year" name="start_year" required>
+                                    @for($i = 2001; $i <= 2024; $i++)
+                                        <option value="{{ $i }}" {{ $i == 2020 ? 'selected' : '' }}>{{ $i }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <x-input-label for="end_year" :value="__('Año Fin:') " />
+                                <select class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
+                                        id="end_year" name="end_year" required>
+                                    @for($i = 2001; $i <= 2024; $i++)
+                                        <option value="{{ $i }}" {{ $i == 2024 ? 'selected' : '' }}>{{ $i }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                        </div>
+                            
+                        {{-- Importar GeoJSON --}}
                         <div>
-                            <x-input-label for="start_year" :value="__('Año Inicio:') " />
-                            <select class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                    id="start_year" name="start_year" required>
-                                @for($i = 2001; $i <= 2024; $i++)
-                                    <option value="{{ $i }}" {{ $i == 2020 ? 'selected' : '' }}>{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <x-input-label for="end_year" :value="__('Año Fin:') " />
-                            <select class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" 
-                                    id="end_year" name="end_year" required>
-                                @for($i = 2001; $i <= 2024; $i++)
-                                    <option value="{{ $i }}" {{ $i == 2024 ? 'selected' : '' }}>{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <div class="flex items-center">
-                            <input type="checkbox" 
-                                id="save_analysis" 
-                                name="save_analysis" 
-                                value="1" 
-                                class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                {{ old('save_analysis', session('save_analysis_by_default', false)) ? 'checked' : '' }}>
-                            <label for="save_analysis" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                                Guardar análisis
-                            </label>
-                        </div>
-
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Si desactivas esta opción, el análisis se mostrará pero no se guardará.
-                            <!-- MODIFICADO: hint unificado para nombre y productor -->
-                            <span id="name-required-hint" class="font-semibold text-green-600 hidden"> (Nombre y productor requeridos)</span>
-                        </p>
-                        
-                    </div>
-                        
-                        <div class="mb-4">
-                            <button type="button" id="import-geojson" class="btn-control">
-                                <i class="fas fa-file-import mr-2"></i> Importar GeoJSON
-                            </button>
-                            <input type="file" id="import-area" accept=".json,.geojson" style="display: none;">
+                            <x-input-label for="import-area" :value="__('Archivo GeoJSON')" />
+                            <input type="file" id="import-area" name="import_area" accept=".json,.geojson"
+                                class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
+                                        file:mr-4 file:py-2.5 file:px-4
+                                        file:rounded-lg file:border-0
+                                        file:text-sm file:font-semibold
+                                        file:bg-blue-50 file:text-blue-700
+                                        dark:file:bg-blue-900/30 dark:file:text-blue-300
+                                        hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50
+                                        cursor-pointer border border-gray-300 dark:border-gray-600 rounded-lg
+                                        bg-white dark:bg-gray-800/50">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Selecciona un archivo GeoJSON (.json o .geojson).</p>
+                            <x-input-error class="mt-2" :messages="$errors->get('import_area')" />
                         </div>
                         
                         <input type="hidden" name="geometry" id="geometry">
                         <input type="hidden" name="area_ha" id="area_ha">
-                        
-                        <button type="submit" id="submit-button" 
-                            class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-                            disabled>
-                        <span id="loading-spinner" class="hidden mr-2">
-                            <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                        </span>
-                        <span id="button-text">Analizar Deforestación</span>
-                    </button>
 
-                    <!-- Agrega este pequeño indicador visual debajo del botón: -->
-                    <div id="button-status" class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center hidden">
-                        Completa los datos requeridos para habilitar el análisis
-                    </div>
+                        <div class="mt-4 mb-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" 
+                                    id="save_analysis" 
+                                    name="save_analysis" 
+                                    value="1" 
+                                    class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                    {{ old('save_analysis', session('save_analysis_by_default', false)) ? 'checked' : '' }}>
+                                <label for="save_analysis" class="ml-2 block text-base text-gray-700 dark:text-gray-300">
+                                    Guardar análisis
+                                </label>
+                            </div>
+
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Si desactivas esta opción, el análisis se mostrará pero no se guardará.
+                                <!-- MODIFICADO: hint unificado para nombre y productor -->
+                                <span id="name-required-hint" class="font-semibold text-green-600 hidden"> (Nombre y productor requeridos)</span>
+                            </p>
+                            
+                        </div> 
+
+                        <button type="submit" id="submit-button" 
+                                class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                                disabled>
+                            <span id="loading-spinner" class="hidden mr-2">
+                                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </span>
+                            <span id="button-text">Analizar Deforestación</span>
+                        </button>
+
+                        <!-- Agrega este pequeño indicador visual debajo del botón: -->
+                        <div id="button-status" class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center hidden">
+                            Completa los datos requeridos para habilitar el análisis
+                        </div>
                     </form>
                     <!-- create.blade.php - Añadir después del formulario -->
                     <div id="producers-info" class="mt-6 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg hidden">
