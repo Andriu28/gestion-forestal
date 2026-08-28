@@ -1,24 +1,25 @@
 <div>
     <form wire:submit="store" id="producer-form">
         @csrf
+        <div class="mt-4 grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <x-input-label for="name" :value="__('Nombre del productor *')" />
+                <x-text-input id="name" class="block mt-1 w-full" type="text"
+                    wire:model.live.debounce.250ms="name"
+                    autofocus
+                    oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
+                <x-input-error :messages="$errors->first('name')" class="mt-2" />
+            </div>
 
-        <div>
-            <x-input-label for="name" :value="__('Nombre del productor *')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text"
-                wire:model.live.debounce.250ms="name"
-                autofocus
-                oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
-            <x-input-error :messages="$errors->first('name')" class="mt-2" />
+            <div class="">
+                <x-input-label for="lastname" :value="__('Apellido *')" />
+                <x-text-input id="lastname" class="block mt-1 w-full" type="text"
+                    wire:model.live.debounce.250ms="lastname"
+                    oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
+                <x-input-error :messages="$errors->first('lastname')" class="mt-2" />
+            </div>  
         </div>
-
-        <div class="mt-4">
-            <x-input-label for="lastname" :value="__('Apellido *')" />
-            <x-text-input id="lastname" class="block mt-1 w-full" type="text"
-                wire:model.live.debounce.250ms="lastname"
-                oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
-            <x-input-error :messages="$errors->first('lastname')" class="mt-2" />
-        </div>
-
+            
         <div class="mt-4">
             <x-input-label for="description" :value="__('Descripción *')" />
             <textarea id="description" wire:model.live="description" rows="3"
