@@ -352,16 +352,19 @@
                         {{-- Importar GeoJSON --}}
                         <div>
                             <x-input-label for="import-area" :value="__('Archivo GeoJSON')" />
-                            <input type="file" id="import-area" name="import_area" accept=".json,.geojson"
-                                class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
-                                        file:mr-4 file:py-2.5 file:px-4
-                                        file:rounded-lg file:border-0
-                                        file:text-sm file:font-semibold
-                                        file:bg-blue-50 file:text-blue-700
-                                        dark:file:bg-blue-900/30 dark:file:text-blue-300
-                                        hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50
-                                        cursor-pointer border border-gray-300 dark:border-gray-600 rounded-lg
-                                        bg-white dark:bg-gray-800/50">
+                            <div class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/50 focus-within:ring-2 focus-within:ring-custom-gold-dark dark:focus-within:ring-custom-gold-medium/70 focus-within:border-custom-gold-dark dark:focus-within:border-custom-gold-medium/70 overflow-hidden">
+                                <input type="file" id="import-area" name="import_area" accept=".json,.geojson"
+                                    class="block w-full text-sm text-gray-500 dark:text-gray-400
+                                            file:mr-4 file:py-2.5 file:px-4
+                                            file:rounded-lg file:border-0
+                                            file:text-sm file:font-semibold
+                                            file:bg-blue-50 file:text-blue-700
+                                            dark:file:bg-blue-900/30 dark:file:text-blue-300
+                                            hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50
+                                            cursor-pointer
+                                            bg-transparent
+                                            focus:outline-none">
+                            </div>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Selecciona un archivo GeoJSON (.json o .geojson).</p>
                             <x-input-error class="mt-2" :messages="$errors->get('import_area')" />
                         </div>
