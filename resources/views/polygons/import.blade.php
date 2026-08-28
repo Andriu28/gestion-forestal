@@ -1,254 +1,444 @@
 {{-- resources/views/polygons/import.blade.php --}}
 <x-app-layout>
-    <div class="max-w-7xl mx-auto py-6">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                Importar Polígonos desde GeoJSON
-            </h2>
+    <div class="mx-auto">
+        {{-- Contenedor principal con animación de entrada --}}
+        <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6 animate-on-load">
+            <div class="text-gray-900 dark:text-gray-100">
+                <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-4 md:mb-4">
+                    Importar Polígonos desde GeoJSON
+                </h2>
 
-            <form id="import-form" action="{{ route('polygons.import.process') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
-                @csrf
+                <form id="import-form" action="{{ route('polygons.import.process') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                    @csrf
 
-                {{-- Campos del formulario original --}}
-                <div>
-                    <label for="file" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Archivo GeoJSON</label>
-                    <input type="file" name="file" id="file" accept=".json,.geojson" required
-                           class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
-                                  file:mr-4 file:py-2 file:px-4
-                                  file:rounded-md file:border-0
-                                  file:text-sm file:font-semibold
-                                  file:bg-blue-50 file:text-blue-700
-                                  dark:file:bg-blue-900 dark:file:text-blue-300
-                                  hover:file:bg-blue-100 dark:hover:file:bg-blue-800
-                                  cursor-pointer border border-gray-300 dark:border-gray-600 rounded-md">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Selecciona un archivo GeoJSON (.json o .geojson).</p>
-                </div>
-
-                {{-- SRID (automático, pero editable) --}}
-                <div>
-                    <label for="srid" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        SRID de entrada (sistema de coordenadas del archivo)
-                    </label>
-                    <input type="number" name="srid" id="srid" value="{{ old('srid', 2203) }}" min="0"
-                           class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Si el archivo tiene un CRS definido, se usará automáticamente. Puedes modificarlo si es necesario.
-                    </p>
-                </div>
-
-                {{-- Opciones globales --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Archivo --}}
                     <div>
-                        <label for="parish_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Parroquia predeterminada (se aplicará a todos los polígonos sin asignación manual)
-                        </label>
-                        <select name="parish_id" id="parish_id"
-                                class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                            <option value="">-- Sin asignar --</option>
-                            @foreach($parishes as $parish)
-                                <option value="{{ $parish->id }}">{{ $parish->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-input-label for="file" :value="__('Archivo GeoJSON *')" />
+                        <input type="file" name="file" id="file" accept=".json,.geojson" required
+                               class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
+                                      file:mr-4 file:py-2.5 file:px-4
+                                      file:rounded-lg file:border-0
+                                      file:text-sm file:font-semibold
+                                      file:bg-blue-50 file:text-blue-700
+                                      dark:file:bg-blue-900/30 dark:file:text-blue-300
+                                      hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50
+                                      cursor-pointer border border-stone-400/80 dark:border-gray-600 rounded-lg
+                                      bg-stone-50 dark:bg-gray-800/50
+                                      focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Selecciona un archivo GeoJSON (.json o .geojson).</p>
+                        <x-input-error class="mt-2" :messages="$errors->get('file')" />
                     </div>
+
+                    {{-- SRID --}}
                     <div>
-                        <label for="default_producer_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Productor predeterminado (se aplicará a los polígonos sin productor)
-                        </label>
-                        <select name="default_producer_id" id="default_producer_id"
-                                class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                            <option value="">-- Ninguno --</option>
-                            @foreach($producers as $producer)
-                                <option value="{{ $producer->id }}">{{ $producer->name }} {{ $producer->lastname }}</option>
-                            @endforeach
-                        </select>
+                        <x-input-label for="srid" :value="__('SRID de entrada (sistema de coordenadas del archivo)')" />
+                        <input type="number" name="srid" id="srid" value="{{ old('srid', 2203) }}" min="0"
+                               class="mt-1 block w-full border border-stone-400/80 dark:border-gray-600 rounded-lg shadow-sm 
+                                      bg-stone-50 dark:bg-gray-800/50 text-gray-900 dark:text-white px-3 py-2
+                                      focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                            Si el archivo tiene un CRS definido, se usará automáticamente. Puedes modificarlo si es necesario.
+                        </p>
                     </div>
-                </div>
 
-                <div>
-                    <label for="producer_field" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Nombre del campo en properties que contiene el productor
-                    </label>
-                    <input type="text" name="producer_field" id="producer_field" value="Productor"
-                           class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Ejemplo: "Productor", "propietario", "owner".</p>
-                </div>
-
-                <div class="flex space-x-4">
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" name="create_missing_producers" value="1" class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
-                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Crear productores que no existan</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" name="skip_existing" value="1" class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
-                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Omitir polígonos con 'id' ya existente</span>
-                    </label>
-                </div>
-
-                {{-- Contenedor para la tabla de previsualización (inicialmente oculto) --}}
-                <div id="preview-container" class="hidden">
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm">
-                        <div class="bg-gray-50 dark:bg-gray-800 px-4 py-2 flex justify-between items-center">
-                            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Previsualización de features</h3>
-                            <span id="feature-count" class="text-xs text-gray-500 dark:text-gray-400"></span>
+                    {{-- Opciones globales --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <x-input-label for="parish_id" :value="__('Parroquia predeterminada')" />
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1.5">Se aplicará a todos los polígonos sin asignación manual</p>
+                            <select name="parish_id" id="parish_id"
+                                    class="mt-1 block w-full border border-stone-400/80 dark:border-gray-600 rounded-lg shadow-sm 
+                                           bg-stone-50 dark:bg-gray-800/50 text-gray-900 dark:text-white px-3 py-2
+                                           focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                <option value="">-- Sin asignar --</option>
+                                @foreach($parishes as $parish)
+                                    <option value="{{ $parish->id }}">{{ $parish->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
+                        <div>
+                            <x-input-label for="default_producer_id" :value="__('Productor predeterminado')" />
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1.5">Se aplicará a los polígonos sin productor</p>
+                            <select name="default_producer_id" id="default_producer_id"
+                                    class="mt-1 block w-full border border-stone-400/80 dark:border-gray-600 rounded-lg shadow-sm 
+                                           bg-stone-50 dark:bg-gray-800/50 text-gray-900 dark:text-white px-3 py-2
+                                           focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                                <option value="">-- Ninguno --</option>
+                                @foreach($producers as $producer)
+                                    <option value="{{ $producer->id }}">{{ $producer->name }} {{ $producer->lastname }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    {{-- Campo productor --}}
+                    <div>
+                        <x-input-label for="producer_field" :value="__('Nombre del campo en properties que contiene el productor')" />
+                        <input type="text" name="producer_field" id="producer_field" value="Productor"
+                               class="mt-1 block w-full border border-stone-400/80 dark:border-gray-600 rounded-lg shadow-sm 
+                                      bg-stone-50 dark:bg-gray-800/50 text-gray-900 dark:text-white px-3 py-2
+                                      focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Ejemplo: "Productor", "propietario", "owner".</p>
+                    </div>
+
+                    {{-- Checkboxes --}}
+                    <div class="flex flex-wrap gap-4">
+                        <label class="inline-flex items-center cursor-pointer group">
+                            <input type="checkbox" name="create_missing_producers" value="1" 
+                                   class="rounded border border-stone-400/80 dark:border-gray-600 
+                                          bg-stone-50 dark:bg-gray-800/50 text-custom-gold-dark shadow-sm
+                                          focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70
+                                          transition-colors duration-200
+                                          group-hover:border-custom-gold-dark dark:group-hover:border-custom-gold-medium/70">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-custom-gold-dark dark:group-hover:text-custom-gold-medium/70 transition-colors duration-200">Crear productores que no existan</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer group">
+                            <input type="checkbox" name="skip_existing" value="1" 
+                                   class="rounded border border-stone-400/80 dark:border-gray-600 
+                                          bg-stone-50 dark:bg-gray-800/50 text-custom-gold-dark shadow-sm
+                                          focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70
+                                          transition-colors duration-200
+                                          group-hover:border-custom-gold-dark dark:group-hover:border-custom-gold-medium/70">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-custom-gold-dark dark:group-hover:text-custom-gold-medium/70 transition-colors duration-200">Omitir polígonos con 'id' ya existente</span>
+                        </label>
+                    </div>
+
+                    {{-- Contenedor para la tabla de previsualización (inicialmente oculto) --}}
+                    <div id="preview-container" class="hidden">
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-gray-800/50">
+                            <div class="bg-gray-50 dark:bg-gray-800/80 px-4 py-3 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                                <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Previsualización de features</h3>
+                                <span id="feature-count" class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-full"></span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" id="preview-table">
+                                    <thead class="bg-stone-100/90 dark:bg-custom-gray">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Área (Ha)</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Productor</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parroquia</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="preview-body" class="bg-gray-200/60 dark:bg-gray-700/30 divide-y divide-gray-200 dark:divide-gray-700">
+                                        <!-- Las filas se llenarán dinámicamente con JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end">
+                            <button type="submit" id="import-btn" 
+                                    class="px-6 py-2.5 bg-custom-gold-dark hover:bg-custom-gold-darker text-white rounded-lg shadow transition disabled:opacity-50 disabled:cursor-not-allowed font-medium" 
+                                    disabled>
+                                <span id="import-btn-text">Confirmar Importación</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Botones de acción --}}
+                    <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            <span id="file-status" class="font-medium text-gray-700 dark:text-gray-300">Ningún archivo seleccionado</span>
+                        </div>
+                        <div class="flex space-x-3">
+                            <a href="{{ route('polygons.index') }}"
+                               class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors duration-200">
+                                Cancelar
+                            </a>
+                            <button type="button" id="preview-btn" 
+                                    class="px-5 py-2.5 bg-custom-gold-dark hover:bg-custom-gold-darker text-white rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed" 
+                                    disabled>
+                                Previsualizar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal de previsualización --}}
+    <div id="preview-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <!-- Overlay -->
+            <div class="fixed inset-0 bg-black/50 transition-opacity" id="preview-modal-overlay"></div>
+            
+            <!-- Modal -->
+            <div class="relative bg-gray-100 dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-5xl transition-all duration-300 scale-95 opacity-0 pointer-events-none" id="preview-modal-content">
+                <!-- Header -->
+                <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Previsualización de Features</h3>
+                    <button id="close-preview-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Body -->
+                <div class="p-6 max-h-[70vh] overflow-y-auto">
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-gray-800/50">
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" id="preview-table">
-                                <thead class="bg-gray-100 dark:bg-gray-700">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" id="preview-modal-table">
+                                <thead class="bg-gray-200 dark:bg-gray-600/30 ">
                                     <tr>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">ID</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Nombre</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Área (Ha)</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Productor</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Parroquia</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">#</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Área (Ha)</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Productor</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parroquia</th>
                                     </tr>
                                 </thead>
-                                <tbody id="preview-body" class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                                <tbody id="preview-modal-body" class="bg-gray-50 dark:bg-custom-gray/30 divide-y divide-gray-200 dark:divide-gray-700">
                                     <!-- Las filas se llenarán dinámicamente con JavaScript -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    <div class="mt-4 flex justify-end">
-                        <button type="submit" id="import-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                </div>
+                
+                <!-- Footer -->
+                <div class="flex justify-between items-center p-6 border-t border-gray-200 dark:border-gray-600">
+                    <span id="preview-modal-count" class="text-sm text-gray-500 dark:text-gray-400"></span>
+                    <div class="flex space-x-3">
+                        <button id="close-preview-modal-btn" class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors duration-200">
+                            Cerrar
+                        </button>
+                        <button type="submit" form="import-form" id="preview-import-btn" 
+                                class="px-6 py-2.5 bg-custom-gold-dark hover:bg-custom-gold-darker text-white rounded-lg shadow transition font-medium">
                             Importar Ahora
                         </button>
                     </div>
                 </div>
-
-                {{-- Botón para cancelar siempre visible --}}
-                <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <a href="{{ route('polygons.index') }}"
-                       class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-                        Cancelar
-                    </a>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
-    
+    {{-- Scripts --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const fileInput = document.getElementById('file');
-            const previewContainer = document.getElementById('preview-container');
-            const previewBody = document.getElementById('preview-body');
-            const featureCount = document.getElementById('feature-count');
-            const importBtn = document.getElementById('import-btn');
-            const form = document.getElementById('import-form');
+            // =============================================
+            // ANIMACIÓN DE ENTRADA - EFECTO "APARECER DESDE ABAJO"
+            // =============================================
+            
+            // Aplicar la animación al contenedor principal
+            const container = document.querySelector('.animate-on-load');
+            if (container) {
+                container.style.opacity = '0';
+                container.style.transform = 'translateY(30px)';
+                container.style.transition = 'opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                
+                void container.offsetWidth;
+                
+                setTimeout(() => {
+                    container.style.opacity = '1';
+                    container.style.transform = 'translateY(0)';
+                }, 100);
+            }
 
-            // Función para leer y procesar el archivo
+            // =============================================
+            // ELEMENTOS DEL DOM
+            // =============================================
+            
+            const fileInput = document.getElementById('file');
+            const previewBtn = document.getElementById('preview-btn');
+            const importBtn = document.getElementById('import-btn');
+            const fileStatus = document.getElementById('file-status');
+            const form = document.getElementById('import-form');
+            
+            // Modal elements
+            const previewModal = document.getElementById('preview-modal');
+            const previewModalContent = document.getElementById('preview-modal-content');
+            const previewModalBody = document.getElementById('preview-modal-body');
+            const previewModalCount = document.getElementById('preview-modal-count');
+            const closePreviewModal = document.getElementById('close-preview-modal');
+            const closePreviewModalBtn = document.getElementById('close-preview-modal-btn');
+            const previewImportBtn = document.getElementById('preview-import-btn');
+            const previewModalOverlay = document.getElementById('preview-modal-overlay');
+
+            let currentFeatures = [];
+
+            // =============================================
+            // FUNCIONES DEL MODAL
+            // =============================================
+
+            function openModal() {
+                previewModal.classList.remove('hidden');
+                void previewModalContent.offsetWidth;
+                previewModalContent.classList.remove('scale-95', 'opacity-0', 'pointer-events-none');
+                previewModalContent.classList.add('scale-100', 'opacity-100', 'pointer-events-auto');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeModal() {
+                previewModalContent.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto');
+                previewModalContent.classList.add('scale-95', 'opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    previewModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }, 300);
+            }
+
+            closePreviewModal?.addEventListener('click', closeModal);
+            closePreviewModalBtn?.addEventListener('click', closeModal);
+            previewModalOverlay?.addEventListener('click', closeModal);
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !previewModal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+
+            // =============================================
+            // FUNCIONES DEL ARCHIVO
+            // =============================================
+
             fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
-                if (!file) return;
+                if (!file) {
+                    fileStatus.textContent = 'Ningún archivo seleccionado';
+                    previewBtn.disabled = true;
+                    importBtn.disabled = true;
+                    return;
+                }
+
+                fileStatus.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                previewBtn.disabled = false;
+                importBtn.disabled = true;
+                currentFeatures = [];
 
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     try {
                         const geojson = JSON.parse(event.target.result);
 
-                        // Validación básica
                         if (!geojson.type || geojson.type !== 'FeatureCollection') {
-                            alert('El archivo no es un FeatureCollection GeoJSON válido.');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'El archivo no es un FeatureCollection GeoJSON válido.',
+                                confirmButtonColor: '#c67a2e'
+                            });
                             return;
                         }
 
                         const features = geojson.features || [];
                         if (!features.length) {
-                            alert('El archivo no contiene features.');
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Advertencia',
+                                text: 'El archivo no contiene features.',
+                                confirmButtonColor: '#c67a2e'
+                            });
                             return;
                         }
 
-                        // Detectar SRID (opcional)
-                        let detectedSrid = 4326;
+                        currentFeatures = features;
+
                         if (geojson.crs && geojson.crs.properties && geojson.crs.properties.name) {
                             const match = geojson.crs.properties.name.match(/EPSG::(\d+)/);
                             if (match) {
-                                detectedSrid = parseInt(match[1]);
+                                const detectedSrid = parseInt(match[1]);
                                 document.getElementById('srid').value = detectedSrid;
                             }
                         }
 
-                        // Limpiar tabla
-                        previewBody.innerHTML = '';
-
-                        // Llenar tabla con los features
-                        features.forEach((feature, index) => {
-                            const props = feature.properties || {};
-                            const geometry = JSON.stringify(feature.geometry);
-
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td class="px-4 py-2">
-                                    <input type="text" name="features[${index}][id]" value="${props.id || ''}" class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm">
-                                </td>
-                                <td class="px-4 py-2">
-                                    <input type="text" name="features[${index}][name]" value="${props.name || props.Productor || 'Polígono'}" class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm">
-                                </td>
-                                <td class="px-4 py-2">
-                                    <input type="number" step="0.01" name="features[${index}][area_ha]" value="${props.Area_Ha || ''}" class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm">
-                                </td>
-                                <td class="px-4 py-2">
-                                    <select name="features[${index}][producer_id]" class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm">
-                                        <option value="">Sin asignar</option>
-                                        @foreach($producers as $producer)
-                                            <option value="{{ $producer->id }}" ${props.producer_id == {{ $producer->id }} ? 'selected' : ''}>
-                                                {{ $producer->name }} {{ $producer->lastname }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="px-4 py-2">
-                                    <select name="features[${index}][parish_id]" class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm">
-                                        <option value="">Sin asignar</option>
-                                        @foreach($parishes as $parish)
-                                            <option value="{{ $parish->id }}" ${props.parish_id == {{ $parish->id }} ? 'selected' : ''}>
-                                                {{ $parish->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                            `;
-                            previewBody.appendChild(row);
-
-                            // Agregar campo oculto para la geometría
-                            const hiddenGeo = document.createElement('input');
-                            hiddenGeo.type = 'hidden';
-                            hiddenGeo.name = `features[${index}][geometry]`;
-                            hiddenGeo.value = geometry;
-                            row.appendChild(hiddenGeo);
-
-                            // Campo opcional para nombre del productor (para creación)
-                            const hiddenProducerName = document.createElement('input');
-                            hiddenProducerName.type = 'hidden';
-                            hiddenProducerName.name = `features[${index}][producer_name]`;
-                            hiddenProducerName.value = props.Productor || '';
-                            row.appendChild(hiddenProducerName);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Archivo cargado',
+                            text: `Se encontraron ${features.length} features. Presiona "Previsualizar" para verlos.`,
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            toast: true,
+                            position: 'top-end'
                         });
 
-                        // Mostrar contenedor y habilitar botón
-                        previewContainer.classList.remove('hidden');
-                        featureCount.textContent = `${features.length} features`;
-                        importBtn.disabled = false;
-
-                        // Cambiar el texto del botón de importar a "Confirmar Importación"
-                        importBtn.textContent = 'Confirmar Importación';
+                        previewBtn.disabled = false;
 
                     } catch (error) {
-                        alert('Error al leer el archivo: ' + error.message);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error al leer el archivo',
+                            text: error.message,
+                            confirmButtonColor: '#c67a2e'
+                        });
                         console.error(error);
+                        previewBtn.disabled = true;
                     }
                 };
                 reader.readAsText(file);
             });
 
-            // Prevenir el envío si no se ha cargado un archivo válido
-            form.addEventListener('submit', function(e) {
-                if (importBtn.disabled) {
-                    e.preventDefault();
-                    alert('Por favor, carga un archivo GeoJSON válido primero.');
+            previewBtn.addEventListener('click', function() {
+                if (currentFeatures.length === 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sin datos',
+                        text: 'Por favor, carga un archivo GeoJSON válido primero.',
+                        confirmButtonColor: '#c67a2e'
+                    });
+                    return;
                 }
+
+                previewModalBody.innerHTML = '';
+                
+                currentFeatures.forEach((feature, index) => {
+                    const props = feature.properties || {};
+                    const row = document.createElement('tr');
+                    
+                    const id = props.id || props.ID || `feature-${index}`;
+                    const name = props.name || props.Nombre || props.Productor || 'Polígono';
+                    const area = props.area_ha || props.Area_Ha || props.area || '';
+                    const producer = props.producer || props.Productor || props.propietario || '';
+                    const parish = props.parish || props.Parroquia || props.parroquia || '';
+                    
+                    row.innerHTML = `
+                        <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">${index + 1}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-200 font-mono">${id}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-200">${name}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-200">${area ? parseFloat(area).toFixed(2) : '-'}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-200">${producer || '-'}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-200">${parish || '-'}</td>
+                    `;
+                    previewModalBody.appendChild(row);
+                });
+
+                previewModalCount.textContent = `${currentFeatures.length} features cargados`;
+                openModal();
             });
+
+            previewImportBtn?.addEventListener('click', function() {
+                form.dispatchEvent(new Event('submit'));
+            });
+
+            form.addEventListener('submit', function(e) {
+                if (currentFeatures.length === 0) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sin datos para importar',
+                        text: 'Por favor, carga un archivo GeoJSON válido primero.',
+                        confirmButtonColor: '#c67a2e'
+                    });
+                    return;
+                }
+                
+                Swal.fire({
+                    title: 'Importando...',
+                    text: 'Por favor espera mientras se procesan los datos',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            });
+
+            console.log('Import page initialized');
         });
     </script>
-    
+
 </x-app-layout>
