@@ -50,7 +50,10 @@
         <!-- ===== FIN MAPA ===== -->
 
         <div class="mt-4 flex items-center">
-            <input type="checkbox" id="is_active" wire:model="is_active" class="border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+            <input type="checkbox" id="is_active" wire:model="is_active" 
+                class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded 
+                                        dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-green-500 
+                                        dark:focus:ring-green-400 dark:focus:ring-offset-gray-800">
             <label for="is_active" class="ml-2 block text-sm text-gray-900 dark:text-gray-100">Productor activo</label>
         </div>
 
