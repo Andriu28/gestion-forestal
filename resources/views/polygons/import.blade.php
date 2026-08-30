@@ -85,21 +85,17 @@
                     <div class="flex flex-wrap gap-4">
                         <label class="inline-flex items-center cursor-pointer group">
                             <input type="checkbox" name="create_missing_producers" value="1" 
-                                   class="rounded border border-stone-400/80 dark:border-gray-600 
-                                          bg-stone-50 dark:bg-gray-800/50 text-custom-gold-dark shadow-sm
-                                          focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70
-                                          transition-colors duration-200
-                                          group-hover:border-custom-gold-dark dark:group-hover:border-custom-gold-medium/70">
-                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-custom-gold-dark dark:group-hover:text-custom-gold-medium/70 transition-colors duration-200">Crear productores que no existan</span>
+                                   class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded 
+                                        dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-green-500 
+                                        dark:focus:ring-green-400 dark:focus:ring-offset-gray-800">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-950 dark:group-hover:text-gray-50 transition-colors duration-200">Crear productores que no existan</span>
                         </label>
                         <label class="inline-flex items-center cursor-pointer group">
                             <input type="checkbox" name="skip_existing" value="1" 
-                                   class="rounded border border-stone-400/80 dark:border-gray-600 
-                                          bg-stone-50 dark:bg-gray-800/50 text-custom-gold-dark shadow-sm
-                                          focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70
-                                          transition-colors duration-200
-                                          group-hover:border-custom-gold-dark dark:group-hover:border-custom-gold-medium/70">
-                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-custom-gold-dark dark:group-hover:text-custom-gold-medium/70 transition-colors duration-200">Omitir polígonos con 'id' ya existente</span>
+                                   class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded 
+                                        dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-green-500 
+                                        dark:focus:ring-green-400 dark:focus:ring-offset-gray-800">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-950 dark:group-hover:text-gray-50 transition-colors duration-200">Omitir polígonos con 'id' ya existente</span>
                         </label>
                     </div>
 
