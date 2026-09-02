@@ -195,18 +195,62 @@
                             Evolución de la Deforestación ({{ $dataToPass['start_year'] }}-{{ $dataToPass['end_year'] }})
                         </h3>
 
-                        <div id="year-highlight-card" class="mb-3 hidden rounded-xl border border-slate-200 bg-gray-50 dark:bg-gray-600/10 p-3 shadow-sm backdrop-blur-sm dark:border-slate-700 ">
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <p class="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Año destacado</p>
-                                    <p id="highlight-year" class="mt-1 text-xl font-semibold text-slate-800 dark:text-slate-100">2024</p>
+                        <!-- ⭐ TARJETA DE AÑO DESTACADO MEJORADA ⭐ -->
+                        <div id="year-highlight-card" class="mb-3 hidden overflow-hidden rounded-xl border border-slate-200 bg-white dark:bg-gray-800 shadow-lg dark:border-slate-600 transition-all duration-300 hover:shadow-xl">
+                            <!-- Cabecera con gradiente -->
+                            <div class="bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 dark:from-emerald-600 dark:to-teal-600">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-medium uppercase tracking-wider text-white">📊 Análisis de Deforestación</span>
+                                    <span class="text-xs text-white/80">Año destacado</span>
                                 </div>
-                                <div class="text-right">
-                                    <p id="highlight-label" class="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Máximo histórico</p>
-                                    <p id="highlight-value" class="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">0.00 ha</p>
+                            </div>
+                            
+                            <!-- Cuerpo de la tarjeta -->
+                            <div class="p-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <!-- Columna Izquierda: Año con icono -->
+                                    <div class="flex flex-col items-center justify-center border-r border-slate-200 dark:border-slate-600">
+                                        <div class="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                                            <svg class="h-6 w-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                        </div>
+                                        <span class="text-[10px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Año</span>
+                                        <p id="highlight-year" class="text-4xl font-bold text-slate-800 dark:text-white">2024</p>
+                                    </div>
+                                    
+                                    <!-- Columna Derecha: Datos -->
+                                    <div class="flex flex-col justify-center space-y-2">
+                                        <div>
+                                            <span class="text-[10px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Estado</span>
+                                            <p id="highlight-label" class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">🏆 Máximo histórico</p>
+                                        </div>
+                                        <div>
+                                            <span class="text-[10px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Área deforestada</span>
+                                            <p id="highlight-value" class="text-xl font-bold text-slate-800 dark:text-white">0.00 ha</p>
+                                        </div>
+                                        <!-- Tendencia -->
+                                        <div>
+                                            <span id="highlight-trend" class="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                                <span>📈</span> Sin datos
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Barra de progreso -->
+                                <div class="mt-3">
+                                    <div class="flex justify-between text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                                        <span>Progreso respecto al máximo</span>
+                                        <span id="highlight-percentage">0%</span>
+                                    </div>
+                                    <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-600">
+                                        <div id="highlight-bar" class="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-700" style="width: 0%"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- ⭐ FIN TARJETA MEJORADA ⭐ -->
                         
                         <div class="w-full bg-gray-50 dark:bg-gray-600/10 p-4 rounded-lg shadow-inner" style="height: 400px;">
                             <canvas id="deforestation-evolution-chart"></canvas>
@@ -509,46 +553,111 @@ function initEvolutionChart() {
                 const year = this.data.labels[index];
                 const value = this.data.datasets[0].data[index];
                 const maxValue = Math.max(...this.data.datasets[0].data);
-                const maxYear = this.data.labels[this.data.datasets[0].data.indexOf(maxValue)];
                 const isMax = Number(value) === Number(maxValue);
 
                 const card = document.getElementById('year-highlight-card');
                 const yearLabel = document.getElementById('highlight-year');
                 const labelText = document.getElementById('highlight-label');
                 const valueText = document.getElementById('highlight-value');
+                const trendElement = document.getElementById('highlight-trend');
+                const bar = document.getElementById('highlight-bar');
+                const percentageElement = document.getElementById('highlight-percentage');
 
-                if (!card || !yearLabel || !labelText || !valueText) return;
+                if (!card || !yearLabel || !labelText || !valueText || !trendElement || !bar || !percentageElement) return;
 
                 const formattedValue = Number(value).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 4
                 });
 
+                // Actualizar año
                 yearLabel.textContent = year;
-                labelText.textContent = isMax ? 'Máximo histórico' : `Año ${year === maxYear ? 'máximo' : 'seleccionado'}`;
+
+                // Actualizar etiqueta con emoji y color según contexto
+                if (isMax) {
+                    labelText.textContent = '🏆 Máximo histórico';
+                    labelText.className = 'text-sm font-semibold text-amber-600 dark:text-amber-400';
+                } else if (value === 0) {
+                    labelText.textContent = '✅ Sin deforestación';
+                    labelText.className = 'text-sm font-semibold text-green-600 dark:text-green-400';
+                } else {
+                    labelText.textContent = '📊 Año seleccionado';
+                    labelText.className = 'text-sm font-semibold text-blue-600 dark:text-blue-400';
+                }
+
+                // Actualizar valor
                 valueText.textContent = `${formattedValue} ha`;
+
+                // Calcular tendencia comparando con año anterior
+                const previousIndex = index - 1;
+                let trend = '';
+                let trendColor = '';
+                let trendEmoji = '';
+
+                if (previousIndex >= 0) {
+                    const prevValue = this.data.datasets[0].data[previousIndex];
+                    if (value > prevValue) {
+                        trend = 'En aumento';
+                        trendColor = 'text-red-600 dark:text-red-400';
+                        trendEmoji = '📈';
+                    } else if (value < prevValue) {
+                        trend = 'En descenso';
+                        trendColor = 'text-emerald-600 dark:text-emerald-400';
+                        trendEmoji = '📉';
+                    } else {
+                        trend = 'Sin cambios';
+                        trendColor = 'text-blue-600 dark:text-blue-400';
+                        trendEmoji = '➡️';
+                    }
+                } else {
+                    trend = 'Primer año';
+                    trendColor = 'text-blue-600 dark:text-blue-400';
+                    trendEmoji = '📊';
+                }
+
+                trendElement.textContent = `${trendEmoji} ${trend}`;
+                trendElement.className = `inline-flex items-center gap-1 text-xs font-medium ${trendColor}`;
+
+                // Actualizar barra de progreso
+                const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
+                const displayPercentage = Math.min(percentage, 100);
+                bar.style.width = `${displayPercentage}%`;
+                percentageElement.textContent = `${displayPercentage.toFixed(1)}%`;
+
+                // Cambiar color de la barra según el valor
+                if (displayPercentage > 75) {
+                    bar.className = 'h-2 rounded-full bg-gradient-to-r from-red-500 to-red-600 transition-all duration-700';
+                } else if (displayPercentage > 50) {
+                    bar.className = 'h-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-700';
+                } else if (displayPercentage > 25) {
+                    bar.className = 'h-2 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-700';
+                } else {
+                    bar.className = 'h-2 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-700';
+                }
+
+                // Mostrar la tarjeta con animación
                 card.classList.remove('hidden');
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(-10px) scale(0.95)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0) scale(1)';
+                }, 50);
             },
             // Evento HOVER con tooltip mejorado
             onHover: function(event, elements) {
-                // Cambiar el cursor a pointer cuando está sobre un punto
                 event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                 
-                // Si hay elementos bajo el mouse, el tooltip ya se muestra automáticamente
-                // gracias a la configuración de tooltip
                 if (elements.length > 0) {
-                    // Podemos agregar efectos adicionales aquí si queremos
                     const element = elements[0];
                     const index = element.index;
                     const year = this.data.labels[index];
                     
-                    // Actualizar el título del gráfico para mostrar el año seleccionado
-                    // (efecto visual adicional)
                     this.options.plugins.title.text = 
                         `Evolución de la Deforestación - Año ${year} ({{ $dataToPass['start_year'] }}-{{ $dataToPass['end_year'] }})`;
                     this.update('none');
                 } else {
-                    // Restaurar el título original cuando el mouse sale
                     this.options.plugins.title.text = 
                         `Evolución de la Deforestación por Año ({{ $dataToPass['start_year'] }}-{{ $dataToPass['end_year'] }})`;
                     this.update('none');
@@ -578,6 +687,26 @@ function initEvolutionChart() {
         attributes: true,
         attributeFilter: ['class']
     });
+
+    // ⭐ AUTO-SELECCIONAR EL AÑO MÁXIMO AL CARGAR ⭐
+    setTimeout(() => {
+        if (evolutionChart) {
+            const dataValues = evolutionChart.data.datasets[0].data;
+            const maxIndex = dataValues.indexOf(Math.max(...dataValues));
+            
+            if (maxIndex !== -1 && dataValues[maxIndex] > 0) {
+                // Simular un clic en el punto máximo
+                const event = new Event('click');
+                event.elements = [{ index: maxIndex }];
+                
+                // Llamar al onClick manualmente
+                const onClickHandler = evolutionChart.options.onClick;
+                if (onClickHandler) {
+                    onClickHandler.call(evolutionChart, event, [{ index: maxIndex }]);
+                }
+            }
+        }
+    }, 600);
 }
 
 function getChartData() {
@@ -1017,5 +1146,49 @@ input[type="number"] {
         font-size: 12px !important;
         padding: 12px !important;
     }
+}
+
+/* ⭐ ESTILOS ADICIONALES PARA LA TARJETA MEJORADA ⭐ */
+#year-highlight-card {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#year-highlight-card:not(.hidden) {
+    animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Estilo para los números */
+#highlight-year, #highlight-value {
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
+
+/* Efecto hover en la barra de progreso */
+#highlight-bar {
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#highlight-bar:hover {
+    filter: brightness(1.2);
+}
+
+/* Badge animado */
+#highlight-label {
+    transition: all 0.3s ease;
+}
+
+#highlight-label:hover {
+    transform: scale(1.05);
 }
 </style>
