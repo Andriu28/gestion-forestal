@@ -567,7 +567,7 @@
                 this.baseLayers = {
                     osm: new ol.layer.Tile({
                         title: 'OpenStreetMap',
-                        visible: true,
+                        visible: false,
                         source: new ol.source.XYZ({
                             url: 'https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
                             attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -604,7 +604,7 @@
                             tileSize: 512,
                             maxZoom: 20
                         }),
-                        visible: false,
+                        visible: true,
                         title: 'MapTiler Satélite'
                     })
                 };
@@ -644,7 +644,18 @@
                     })
                 });
 
-                this.currentBaseLayer = this.baseLayers.osm;
+                this.currentBaseLayer = this.baseLayers.maptiler_satellite;
+
+                // Actualizar el texto del botón
+                const buttonElement = document.getElementById('base-map-toggle');
+                if (buttonElement) {
+                    buttonElement.innerHTML = `
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                        </svg>
+                        MapTiler Satélite
+                    `;
+                }
 
                 // Recalcular el apilamiento (z-index) de los marcadores cada vez
                 // que cambia la vista
@@ -705,9 +716,6 @@
                 document.getElementById('close-all-cards-btn')?.addEventListener('click', () => {
                     this.closeAllCards();
                 });
-                
-                // ELIMINADO: El listener que cerraba las tarjetas al hacer clic en el mapa
-                // Ahora SOLO se cierran al hacer clic en el propio pin
             }
 
             // =============================================
