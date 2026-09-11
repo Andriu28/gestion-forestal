@@ -53,12 +53,13 @@ class DeforestationController extends Controller
     {
         $activity = Activity::findOrFail($activityId);
         $data = $activity->properties;
+
         // Construir $dataToPass a partir de $data
         $dataToPass = [
             'polygon_name'     => $data['polygon_name'] ?? 'Área sin nombre',
             'start_year'       => $data['start_year'],
             'end_year'         => $data['end_year'],
-            'polygon_area_ha'  => $dataToPass['polygon_area_ha'],
+            'polygon_area_ha'  => $data['polygon_area_ha'],
             'total_deforested' => $data['total_deforested'],
             'total_percentage' => $data['total_percentage'],
         ];
