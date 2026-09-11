@@ -2,21 +2,57 @@
     <form wire:submit="update" id="producer-form">
         @csrf
 
-        <div>
-            <x-input-label for="name" :value="__('Nombre del productor *')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text"
-                wire:model.live.debounce.250ms="name"
-                autofocus
-                oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
-            <x-input-error :messages="$errors->first('name')" class="mt-2" />
-        </div>
+       <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-start">
 
-        <div class="mt-4">
-            <x-input-label for="lastname" :value="__('Apellido *')" />
-            <x-text-input id="lastname" class="block mt-1 w-full" type="text"
-                wire:model.live.debounce.250ms="lastname"
-                oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
-            <x-input-error :messages="$errors->first('lastname')" class="mt-2" />
+            {{-- Nombre --}}
+            <div class="md:col-span-4">
+                <x-input-label for="name" :value="__('Nombre del productor *')" />
+                <x-text-input id="name" class="block mt-1 w-full" type="text"
+                    wire:model.live.debounce.250ms="name"
+                    autofocus
+                    oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
+                <x-input-error :messages="$errors->first('name')" class="mt-2" />
+            </div>
+
+            {{-- Apellido --}}
+            <div class="md:col-span-4">
+                <x-input-label for="lastname" :value="__('Apellido *')" />
+                <x-text-input id="lastname" class="block mt-1 w-full" type="text"
+                    wire:model.live.debounce.250ms="lastname"
+                    oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
+                <x-input-error :messages="$errors->first('lastname')" class="mt-2" />
+            </div> 
+
+            {{-- Selector de nacionalidad usando el componente personalizado --}}
+            <div class="md:col-span-2">
+                <x-select-input 
+                    id="cedula_type"
+                    name="cedula_type"
+                    label="Tipo *"
+                    wire:model.live="cedula_type"
+                    :options="[
+                        'V' => 'V - Venezolano',
+                        'E' => 'E - Extranjero',
+                        'P' => 'P - Pasaporte',
+                        'J' => 'J - Jurídico',
+                        'G' => 'G - Gubernamental',
+                    ]"
+                />
+                <x-input-error :messages="$errors->first('cedula_type')" class="mt-2" />
+            </div>
+
+            {{-- Input numérico de cédula --}}
+            <div class="md:col-span-2">
+                <x-input-label for="cedula" :value="__('Cédula de identidad *')" />
+                <x-text-input id="cedula" class="block mt-1 w-full" type="text"
+                    inputmode="numeric"
+                    wire:model.live.debounce.250ms="cedula"
+                    maxlength="10"
+                    placeholder="Ej: 12345678"
+                    oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10);" />
+                <x-input-error :messages="$errors->first('cedula')" class="mt-2" />
+            </div>
+
         </div>
 
         <div class="mt-4">

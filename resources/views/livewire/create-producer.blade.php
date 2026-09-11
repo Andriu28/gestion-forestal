@@ -1,8 +1,10 @@
 <div>
     <form wire:submit="store" id="producer-form">
         @csrf
-        <div class="mt-4 grid grid-cols-2 gap-4 mb-4">
-            <div>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-start">
+
+            {{-- Nombre --}}
+            <div class="md:col-span-4">
                 <x-input-label for="name" :value="__('Nombre del productor *')" />
                 <x-text-input id="name" class="block mt-1 w-full" type="text"
                     wire:model.live.debounce.250ms="name"
@@ -11,13 +13,45 @@
                 <x-input-error :messages="$errors->first('name')" class="mt-2" />
             </div>
 
-            <div class="">
+            {{-- Apellido --}}
+            <div class="md:col-span-4">
                 <x-input-label for="lastname" :value="__('Apellido *')" />
                 <x-text-input id="lastname" class="block mt-1 w-full" type="text"
                     wire:model.live.debounce.250ms="lastname"
                     oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
                 <x-input-error :messages="$errors->first('lastname')" class="mt-2" />
-            </div>  
+            </div> 
+
+            {{-- Selector de nacionalidad usando el componente personalizado --}}
+            <div class="md:col-span-2">
+                <x-select-input 
+                    id="cedula_type"
+                    name="cedula_type"
+                    label="Tipo *"
+                    wire:model.live="cedula_type"
+                    :options="[
+                        'V' => 'V - Venezolano',
+                        'E' => 'E - Extranjero',
+                        'P' => 'P - Pasaporte',
+                        'J' => 'J - Jurídico',
+                        'G' => 'G - Gubernamental',
+                    ]"
+                />
+                <x-input-error :messages="$errors->first('cedula_type')" class="mt-2" />
+            </div>
+
+            {{-- Input numérico de cédula --}}
+            <div class="md:col-span-2">
+                <x-input-label for="cedula" :value="__('Cédula de identidad *')" />
+                <x-text-input id="cedula" class="block mt-1 w-full" type="text"
+                    inputmode="numeric"
+                    wire:model.live.debounce.250ms="cedula"
+                    maxlength="10"
+                    placeholder="Ej: 12345678"
+                    oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10);" />
+                <x-input-error :messages="$errors->first('cedula')" class="mt-2" />
+            </div>
+
         </div>
             
         <div class="mt-4">
@@ -91,24 +125,92 @@ class FormValidator {
                     message: 'Solo letras, sin espacios, números ni caracteres especiales. Debe empezar con mayúscula.'
                 }
             ]
+        },
+        {
+            id: 'cedula',
+            rules: [
+                { type: 'custom', validator: FormValidator.validateCedula }
+            ]
         }
     ];
+
+    /**
+     * Validación dinámica según el tipo de nacionalidad.
+     * - V, E, G → 5 a 8 dígitos
+     * - P      → 6 a 10 dígitos
+     * - J      → 8 a 10 dígitos
+     */
+    static validateCedula(value) {
+        const typeEl = document.getElementById('cedula_type');
+        const type = (typeEl?.value || 'V').toUpperCase();
+        const digits = (value || '').replace(/\D/g, '');
+
+        if (!/^\d+$/.test(digits)) return false;
+
+        const rules = {
+            V: { min: 5, max: 8  },
+            E: { min: 5, max: 8  },
+            G: { min: 5, max: 8  },
+            P: { min: 6, max: 10 },
+            J: { min: 8, max: 10 },
+        };
+        const { min, max } = rules[type] ?? rules.V;
+
+        return digits.length >= min && digits.length <= max;
+    }
+
+    static getCedulaMessage() {
+        const typeEl = document.getElementById('cedula_type');
+        const type = (typeEl?.value || 'V').toUpperCase();
+        const map = {
+            V: 'Cédula venezolana: 5 a 8 dígitos.',
+            E: 'Cédula de extranjero: 5 a 8 dígitos.',
+            P: 'Pasaporte: 6 a 10 dígitos.',
+            J: 'RIF jurídico: 8 a 10 dígitos.',
+            G: 'RIF gubernamental: 5 a 8 dígitos.',
+        };
+        return map[type] ?? map.V;
+    }
 
     static initializeFields() {
         this.fields.forEach(field => {
             const input = document.getElementById(field.id);
-            if (input) {
-                input.addEventListener('blur', () => this.validateField(field.id));
-                input.addEventListener('input', () => this.clearError(field.id));
+            if (!input) return;
 
+            input.addEventListener('blur', () => this.validateField(field.id));
+            input.addEventListener('input', () => this.clearError(field.id));
+
+            input.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length === 1) {
+                    e.target.value = value.toUpperCase();
+                }
+            });
+
+            // Limpieza específica para cédula
+            if (field.id === 'cedula') {
                 input.addEventListener('input', (e) => {
-                    const value = e.target.value;
-                    if (value.length === 1) {
-                        e.target.value = value.toUpperCase();
-                    }
+                    const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    if (e.target.value !== clean) e.target.value = clean;
+                });
+                input.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const paste = (e.clipboardData || window.clipboardData).getData('text');
+                    const clean = paste.replace(/\D/g, '').slice(0, 10);
+                    document.execCommand('insertText', false, clean);
                 });
             }
         });
+
+        // Revalidar cédula cuando cambie el tipo
+        const typeEl = document.getElementById('cedula_type');
+        if (typeEl) {
+            typeEl.addEventListener('change', () => {
+                this.clearError('cedula');
+                const cedula = document.getElementById('cedula');
+                if (cedula && cedula.value) this.validateField('cedula');
+            });
+        }
     }
 
     static validateField(fieldId) {
@@ -129,9 +231,20 @@ class FormValidator {
                         isValid = false;
                     }
                     break;
+
                 case 'pattern':
                     if (value && !rule.pattern.test(value)) {
                         this.showError(fieldId, rule.message);
+                        isValid = false;
+                    }
+                    break;
+
+                case 'custom':
+                    if (!rule.validator(value)) {
+                        const msg = fieldId === 'cedula'
+                            ? this.getCedulaMessage()
+                            : 'Valor inválido.';
+                        this.showError(fieldId, msg);
                         isValid = false;
                     }
                     break;
@@ -165,17 +278,13 @@ class FormValidator {
 
     static clearError(fieldId) {
         const errorDiv = document.getElementById(`${fieldId}-error`);
-        if (errorDiv) {
-            errorDiv.classList.add('hidden');
-        }
+        if (errorDiv) errorDiv.classList.add('hidden');
     }
 
     static validateForm() {
         let isValid = true;
         this.fields.forEach(field => {
-            if (!this.validateField(field.id)) {
-                isValid = false;
-            }
+            if (!this.validateField(field.id)) isValid = false;
         });
         return isValid;
     }
@@ -186,9 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const style = document.createElement('style');
         style.id = 'form-validator-styles';
         style.textContent = `
-            .shake-animation {
-                animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-            }
+            .shake-animation { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
             @keyframes shake {
                 10%, 90% { transform: translateX(-2px); }
                 20%, 80% { transform: translateX(3px); }
@@ -207,6 +314,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 fail();
             }
         });
+
+        // Re-inicializar campos tras cada actualización de Livewire
+        Livewire.hook('morphed', () => FormValidator.initializeFields());
     }
 });
 </script>
