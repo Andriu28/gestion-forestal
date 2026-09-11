@@ -25,6 +25,8 @@ class UpdateProducerRequest extends FormRequest
     {
         return [
             'name.required' => 'El nombre del productor es obligatorio.',
+            'cedula.required' => 'La cédula del productor es obligatoria.',
+            'cedula.unique' => 'La cédula ya está en uso.'
         ];
     }
 }

@@ -15,6 +15,8 @@ class Producer extends Model
     protected $fillable = [
         'name',
         'lastname',
+        'cedula_type',
+        'cedula', 
         'description',
         'is_active',
         'latitude',
@@ -53,7 +55,7 @@ class Producer extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'lastname', 'description', 'is_active', 'state_id', 'municipality_id', 'parish_id'])
+            ->logOnly(['name', 'lastname', 'cedula_type', 'cedula', 'description', 'is_active', 'state_id', 'municipality_id', 'parish_id'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(function(string $eventName) {
                 $producerName = $this->name && $this->lastname 
@@ -167,6 +169,13 @@ class Producer extends Model
         if ($this->municipality) $parts[] = $this->municipality->name;
         if ($this->state) $parts[] = $this->state->name;
         return implode(', ', $parts) ?: 'Sin ubicación';
+    }
+
+    // Accessor opcional para mostrar formateado en vistas
+    public function getCedulaFullAttribute(): string
+    {
+        if (!$this->cedula) return '—';
+        return "{$this->cedula_type}-" . number_format((int) $this->cedula, 0, '', '.');
     }
    
 }

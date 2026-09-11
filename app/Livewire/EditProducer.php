@@ -14,6 +14,9 @@ class EditProducer extends Component
     public Producer $producer;
     public $name = '';
     public $lastname = '';
+    public $cedula_type = 'V';
+    public $cedula = '';
+
     public $description = '';
     public $is_active = false;
 
@@ -37,6 +40,8 @@ class EditProducer extends Component
         $this->producer = $producer;
         $this->name = $producer->name;
         $this->lastname = $producer->lastname;
+        $this->cedula_type = $producer->cedula_type ?? 'V';
+        $this->cedula      = $producer->cedula;
         $this->description = $producer->description;
         $this->is_active = $producer->is_active;
 
@@ -65,6 +70,15 @@ class EditProducer extends Component
         return [
             'name' => ['required', 'string', 'min:3'],
             'lastname' => ['nullable', 'string', 'max:255'],
+            'cedula_type' => ['required', 'in:V,E,P,J,G'],
+            'cedula'      => [
+                'required',
+                'string',
+                'regex:/^[0-9]{5,10}$/',
+                \Illuminate\Validation\Rule::unique('producers')
+                    ->where(fn ($q) => $q->where('cedula_type', $this->cedula_type))
+                    ->ignore($this->producer->id),
+            ],
             'description' => ['nullable', 'string'],
             'is_active' => ['boolean'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
@@ -72,6 +86,26 @@ class EditProducer extends Component
             'address' => ['nullable', 'string', 'max:500'],
         ];
     }
+
+    public function updatedCedula($value)
+    {
+        $this->cedula = $this->cleanCedula($value);
+    }
+
+    private function cleanCedula($value)
+    {
+        // Eliminar todo excepto letras y números
+        $cleaned = preg_replace('/[^a-zA-Z0-9]/', '', $value);
+        // Convertir a mayúsculas
+        $cleaned = strtoupper($cleaned);
+        // Asegurar que el primer carácter sea una letra válida y el resto dígitos
+        if (preg_match('/^([VEPJG])(\d+)$/', $cleaned, $matches)) {
+            return $matches[1] . $matches[2];
+        }
+        // Si no cumple, devolver el valor limpio (la validación fallará después)
+        return $cleaned;
+    }
+
 
     protected function validationAttributes()
     {
@@ -137,6 +171,8 @@ class EditProducer extends Component
         $this->producer->update([
             'name' => $validatedData['name'],
             'lastname' => $validatedData['lastname'],
+            'cedula_type' => $validatedData['cedula_type'],
+            'cedula'      => $validatedData['cedula'],
             'description' => $validatedData['description'],
             'is_active' => $validatedData['is_active'],
             'latitude' => $this->latitude,

@@ -13,6 +13,8 @@ class CreateProducer extends Component
 {
     public $name = '';
     public $lastname = '';
+    public $cedula_type = 'V'; 
+    public $cedula = '';
     public $description = '';
     public $is_active = true;
 
@@ -36,12 +38,48 @@ class CreateProducer extends Component
         return [
             'name' => ['required', 'string', 'min:3'],
             'lastname' => ['required', 'string', 'max:255', 'min:3'],
+            'cedula_type' => ['required', 'in:V,E,P,J,G'],
+            'cedula'      => [
+                'required',
+                'string',
+                'regex:/^[0-9]{5,10}$/',
+                \Illuminate\Validation\Rule::unique('producers')
+                    ->where(fn ($q) => $q->where('cedula_type', $this->cedula_type)),
+            ],
             'description' => ['required', 'string'],
             'is_active' => ['boolean'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'address' => ['nullable', 'string', 'max:500'],
         ];
+    }
+
+    protected function messages()
+    {
+        return [
+            'cedula.regex'  => 'La cédula debe contener entre 5 y 10 dígitos (sin puntos ni guiones).',
+            'cedula.unique' => 'Ya existe un productor con esa cédula.',
+        ];
+    }
+
+    // Limpieza automática al escribir
+    public function updatedCedula($value)
+    {
+        $this->cedula = $this->cleanCedula($value);
+    }
+
+    private function cleanCedula($value)
+    {
+        // Eliminar todo excepto letras y números
+        $cleaned = preg_replace('/[^a-zA-Z0-9]/', '', $value);
+        // Convertir a mayúsculas
+        $cleaned = strtoupper($cleaned);
+        // Asegurar que el primer carácter sea una letra válida y el resto dígitos
+        if (preg_match('/^([VEPJG])(\d+)$/', $cleaned, $matches)) {
+            return $matches[1] . $matches[2];
+        }
+        // Si no cumple, devolver el valor limpio (la validación fallará después)
+        return $cleaned;
     }
 
     #[On('locationUpdated')]
@@ -91,12 +129,16 @@ class CreateProducer extends Component
     {
         $validated = $this->validate();
 
+        $validated['cedula'] = preg_replace('/\D/', '', $validated['cedula']);
+
         // Asegurar IDs antes de guardar
         $this->syncLocationIds();
 
         Producer::create([
             'name' => $validated['name'],
             'lastname' => $validated['lastname'],
+            'cedula_type' => $validated['cedula_type'],
+            'cedula'      => $this->cedula,
             'description' => $validated['description'],
             'is_active' => $validated['is_active'],
             'latitude' => $this->latitude,
@@ -113,6 +155,8 @@ class CreateProducer extends Component
             'text' => 'Productor creado exitosamente.'
         ]);
     }
+
+
 
     public function render()
     {
