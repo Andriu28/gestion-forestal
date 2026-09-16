@@ -55,7 +55,7 @@ class Producer extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'lastname', 'cedula_type', 'cedula', 'description', 'is_active', 'state_id', 'municipality_id', 'parish_id'])
+            ->logOnly(['name', 'lastname', 'cedula_type', 'cedula', 'description', 'state_id', 'municipality_id', 'parish_id'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(function(string $eventName) {
                 $producerName = $this->name && $this->lastname 

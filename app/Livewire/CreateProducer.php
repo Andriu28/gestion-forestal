@@ -8,12 +8,13 @@ use App\Models\Municipality;
 use App\Models\Parish;
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Illuminate\Validation\Rule;
 
 class CreateProducer extends Component
 {
     public $name = '';
     public $lastname = '';
-    public $cedula_type = 'V'; 
+    public $cedula_type = 'V';
     public $cedula = '';
     public $description = '';
     public $is_active = true;
@@ -23,78 +24,136 @@ class CreateProducer extends Component
     public $longitude = null;
     public $address = '';
 
-    // Componentes de dirección (para mostrar)
+    // Componentes de dirección
     public $parroquia = '';
     public $municipio = '';
     public $estado = '';
 
-    // IDs de las tablas maestras
+    // IDs maestros
     public $state_id = null;
     public $municipality_id = null;
     public $parish_id = null;
 
+    /**
+     * Límites por tipo de documento (usados por JS-less validation).
+     */
+    protected function cedulaLimits(): array
+    {
+        return [
+            'V' => [5, 8],
+            'E' => [5, 8],
+            'G' => [5, 8],
+            'P' => [6, 10],
+            'J' => [8, 10],
+        ];
+    }
+
+    /**
+     * Reglas de validación completas (usadas en store()).
+     */
     protected function rules()
     {
         return [
-            'name' => ['required', 'string', 'min:3'],
-            'lastname' => ['required', 'string', 'max:255', 'min:3'],
+            'name'        => ['required', 'string', 'min:3'],
+            'lastname'    => ['required', 'string', 'max:255', 'min:3'],
             'cedula_type' => ['required', 'in:V,E,P,J,G'],
             'cedula'      => [
                 'required',
                 'string',
-                'regex:/^[0-9]{5,10}$/',
-                \Illuminate\Validation\Rule::unique('producers')
+                $this->reglaFormatoCedula(),
+                Rule::unique('producers')
                     ->where(fn ($q) => $q->where('cedula_type', $this->cedula_type)),
             ],
             'description' => ['required', 'string'],
-            'is_active' => ['boolean'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'address' => ['nullable', 'string', 'max:500'],
+            'is_active'   => ['boolean'],
+            'latitude'    => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude'   => ['nullable', 'numeric', 'between:-180,180'],
+            'address'     => ['nullable', 'string', 'max:500'],
         ];
+    }
+
+    /**
+     * Regla de formato puro (sin unique). Se reutiliza en updatedCedula.
+     */
+    protected function reglaFormatoCedula(): string
+    {
+        [$min, $max] = $this->cedulaLimits()[$this->cedula_type] ?? [5, 10];
+        return 'regex:/^\d{' . $min . ',' . $max . '}$/';
     }
 
     protected function messages()
     {
+        $limits = $this->cedulaLimits();
+        [$min, $max] = $limits[$this->cedula_type] ?? [5, 10];
+
         return [
-            'cedula.regex'  => 'La cédula debe contener entre 5 y 10 dígitos (sin puntos ni guiones).',
-            'cedula.unique' => 'Ya existe un productor con esa cédula.',
+            'name.required'        => 'El nombre es obligatorio.',
+            'name.min'             => 'El nombre debe tener al menos 3 caracteres.',
+            'lastname.required'    => 'El apellido es obligatorio.',
+            'lastname.min'         => 'El apellido debe tener al menos 3 caracteres.',
+            'cedula.required'      => 'La cédula de identidad es obligatoria.',
+            'cedula.regex'         => "La cédula debe contener entre {$min} y {$max} dígitos para el tipo {$this->cedula_type}.",
+            'cedula.unique'        => 'Ya existe un productor con esa cédula para el tipo seleccionado.',
+            'description.required' => 'La descripción es obligatoria.',
         ];
     }
 
-    // Limpieza automática al escribir
-    public function updatedCedula($value)
+    protected function validationAttributes()
     {
-        $this->cedula = $this->cleanCedula($value);
+        return [
+            'name'        => 'nombre',
+            'lastname'    => 'apellido',
+            'cedula'      => 'cédula',
+            'cedula_type' => 'tipo de cédula',
+            'description' => 'descripción',
+        ];
     }
 
-    private function cleanCedula($value)
+    /**
+     * Al escribir cédula:
+     *   1. Limpiar a solo dígitos (defensa + respuesta al oninput del Blade).
+     *   2. Validar solo formato (sin unique) para no golpear la BD en cada tecla.
+     *   3. La regla unique se valida al hacer submit.
+     */
+    public function updatedCedula($value)
     {
-        // Eliminar todo excepto letras y números
-        $cleaned = preg_replace('/[^a-zA-Z0-9]/', '', $value);
-        // Convertir a mayúsculas
-        $cleaned = strtoupper($cleaned);
-        // Asegurar que el primer carácter sea una letra válida y el resto dígitos
-        if (preg_match('/^([VEPJG])(\d+)$/', $cleaned, $matches)) {
-            return $matches[1] . $matches[2];
+        $cleaned = preg_replace('/\D/', '', (string) $value);
+        $cleaned = substr($cleaned, 0, 10);
+
+        if ($cleaned !== $value) {
+            $this->cedula = $cleaned;
         }
-        // Si no cumple, devolver el valor limpio (la validación fallará después)
-        return $cleaned;
+
+        $this->validateOnly('cedula', [
+            'cedula' => ['required', 'string', $this->reglaFormatoCedula()],
+        ]);
+    }
+
+    /**
+     * Al cambiar el tipo, revalidar la cédula existente con los nuevos límites.
+     */
+    public function updatedCedulaType()
+    {
+        $this->resetValidation('cedula');
+
+        if (!empty($this->cedula)) {
+            $this->validateOnly('cedula', [
+                'cedula' => ['required', 'string', $this->reglaFormatoCedula()],
+            ]);
+        }
     }
 
     #[On('locationUpdated')]
     public function locationUpdated($data)
     {
-        $this->latitude = $data['latitude'];
+        $this->latitude  = $data['latitude'];
         $this->longitude = $data['longitude'];
-        $this->address = $data['address'];
+        $this->address   = $data['address'];
 
-        // Extraer componentes
-        $components = $data['components'] ?? [];
+        $components      = $data['components'] ?? [];
         $this->parroquia = $components['parroquia'] ?? '';
         $this->municipio = $components['municipio'] ?? '';
-        $this->estado = $components['estado'] ?? '';
-
+        $this->estado    = $components['estado']    ?? '';
     }
 
     protected function syncLocationIds()
@@ -109,14 +168,14 @@ class CreateProducer extends Component
 
             if (!empty($this->municipio)) {
                 $municipality = Municipality::firstOrCreate([
-                    'name' => $this->municipio,
+                    'name'     => $this->municipio,
                     'state_id' => $state->id,
                 ]);
                 $this->municipality_id = $municipality->id;
 
                 if (!empty($this->parroquia)) {
                     $parish = Parish::firstOrCreate([
-                        'name' => $this->parroquia,
+                        'name'            => $this->parroquia,
                         'municipality_id' => $municipality->id,
                     ]);
                     $this->parish_id = $parish->id;
@@ -127,36 +186,50 @@ class CreateProducer extends Component
 
     public function store()
     {
+        // Validación completa (incluye unique)
         $validated = $this->validate();
 
+        // Defensa adicional por si llega algo raro
         $validated['cedula'] = preg_replace('/\D/', '', $validated['cedula']);
 
-        // Asegurar IDs antes de guardar
         $this->syncLocationIds();
 
         Producer::create([
-            'name' => $validated['name'],
-            'lastname' => $validated['lastname'],
-            'cedula_type' => $validated['cedula_type'],
-            'cedula'      => $this->cedula,
-            'description' => $validated['description'],
-            'is_active' => $validated['is_active'],
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
-            'address' => $this->address,
-            'state_id' => $this->state_id,
+            'name'            => $validated['name'],
+            'lastname'        => $validated['lastname'],
+            'cedula_type'     => $validated['cedula_type'],
+            'cedula'          => $validated['cedula'],
+            'description'     => $validated['description'],
+            'is_active'       => $validated['is_active'],
+            'latitude'        => $this->latitude,
+            'longitude'       => $this->longitude,
+            'address'         => $this->address,
+            'state_id'        => $this->state_id,
             'municipality_id' => $this->municipality_id,
-            'parish_id' => $this->parish_id,
+            'parish_id'       => $this->parish_id,
         ]);
 
         return redirect()->route('producers.index')->with('swal', [
-            'icon' => 'success',
+            'icon'  => 'success',
             'title' => 'Éxito',
-            'text' => 'Productor creado exitosamente.'
+            'text'  => 'Productor creado exitosamente.',
         ]);
     }
 
+    public function updatedName()
+    {
+        $this->validateOnly('name');
+    }
 
+    public function updatedLastname()
+    {
+        $this->validateOnly('lastname');
+    }
+
+    public function updatedDescription()
+    {
+        $this->validateOnly('description');
+    }
 
     public function render()
     {

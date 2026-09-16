@@ -15,6 +15,7 @@ class StoreProducerRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
+            'cedula' => ['required', 'string', 'max:20', 'regex:/^[VEPJG]\d{5,8}$/', 'unique:producers,cedula'],
             'lastname' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'is_active' => 'boolean'

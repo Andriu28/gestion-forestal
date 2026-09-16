@@ -425,102 +425,148 @@ $roleTranslations = [
                                                     <span class="text-green-600 dark:text-green-400 font-medium">{{ $activity->properties['new_role'] ?? 'N/A' }}</span>
                                                 </div>
 
-                                            {{-- 2. Cambios automáticos (estructura real: attributes + old) --}}
-                                            @elseif($activity->properties && $activity->properties->has('attributes') && $activity->properties->has('old'))
-                                                @php
-                                                    // Campos que no queremos mostrar
-                                                    $excludedFields = ['updated_at', 'created_at'];
+                                           {{-- 2. Cambios automáticos (updated) o atributos iniciales (created/deleted/restored) --}}
+@elseif($activity->properties && $activity->properties->has('attributes'))
+    @php
+        /* ---------- Cache de resolución ID → nombre (por render) ---------- */
+        if (!isset($relationNameCache)) $relationNameCache = [];
 
-                                                    // Orden preferente para los campos
-                                                    $preferredOrder = ['name', 'description', 'is_active', 'producer_id', 'parish_id', 'email', 'role', 'rut', 'phone', 'address', 'geometry', 'area'];
+        $resolveName = function (?string $modelClass, $id) use (&$relationNameCache) {
+            if (empty($id) || !$modelClass) return null;
+            $key = $modelClass . ':' . $id;
+            if (!array_key_exists($key, $relationNameCache)) {
+                $relationNameCache[$key] = optional($modelClass::find($id))->name;
+            }
+            return $relationNameCache[$key];
+        };
 
-                                                    // Función para formatear valores
-                                                    $formatValue = function($value, $attribute) use ($activity) {
-                                                        if (is_null($value)) return 'N/A';
-                                                        if (is_bool($value) || $value === '0' || $value === '1' || $value === 0 || $value === 1) {
-                                                            return $value ? 'Activo' : 'Inactivo';
-                                                        }
-                                                        // Intentar obtener nombre para producer_id y parish_id si la relación está cargada
-                                                        if ($attribute === 'producer_id' && $activity->subject && method_exists($activity->subject, 'producer')) {
-                                                            $producer = $activity->subject->producer;
-                                                            if ($producer && $producer->id == $value) {
-                                                                return $producer->name ?? $value;
-                                                            }
-                                                        }
-                                                        if ($attribute === 'parish_id' && $activity->subject && method_exists($activity->subject, 'parish')) {
-                                                            $parish = $activity->subject->parish;
-                                                            if ($parish && $parish->id == $value) {
-                                                                return $parish->name ?? $value;
-                                                            }
-                                                        }
-                                                        return $value;
-                                                    };
+        // Mapa: campo → clase del modelo relacionado
+        // Añade aquí cualquier FK que quieras mostrar por nombre.
+        $relationMap = [
+            'state_id'         => \App\Models\State::class,
+            'municipality_id'  => \App\Models\Municipality::class,
+            'parish_id'        => \App\Models\Parish::class,
+            'producer_id'      => \App\Models\Producer::class,
+            // 'user_id'       => \App\Models\User::class,
+            // 'polygon_id'    => \App\Models\Polygon::class,
+        ];
 
-                                                    // Traducción de nombres de campo
-                                                    $translateField = function($field) {
-                                                        $translations = [
-                                                            'is_active' => 'Estado',
-                                                            'name' => 'Nombre',
-                                                            'email' => 'Correo',
-                                                            'role' => 'Rol',
-                                                            'password' => 'Contraseña',
-                                                            'created_at' => 'Creado',
-                                                            'updated_at' => 'Actualizado',
-                                                            'deleted_at' => 'Eliminado',
-                                                            'email_verified_at' => 'Verificado',
-                                                            'polygon_id' => 'ID Polígono',
-                                                            'producer_id' => 'Productor',
-                                                            'parish_id' => 'Parroquia',
-                                                            'geometry' => 'Geometría',
-                                                            'area' => 'Área',
-                                                            'description' => 'Descripción',
-                                                            'rut' => 'RUT',
-                                                            'phone' => 'Teléfono',
-                                                            'address' => 'Dirección',
-                                                        ];
-                                                        return $translations[$field] ?? ucfirst(str_replace('_', ' ', $field));
-                                                    };
+        /* ---------- Estado del evento ---------- */
+        $hasOld     = $activity->properties->has('old');
+        $isCreation = !$hasOld && $activity->event === 'created';
 
-                                                    // Obtener todos los cambios (sin límite), ordenados según preferencia
-                                                    $changes = collect($activity->properties['attributes'])
-                                                        ->filter(function($newValue, $attribute) use ($activity, $excludedFields) {
-                                                            if (in_array($attribute, $excludedFields)) return false;
-                                                            $oldValue = $activity->properties['old'][$attribute] ?? null;
-                                                            return $newValue != $oldValue;
-                                                        })
-                                                        ->sortBy(function($value, $key) use ($preferredOrder) {
-                                                            $pos = array_search($key, $preferredOrder);
-                                                            return $pos === false ? 999 : $pos;
-                                                        });
-                                                @endphp
+        $excludedFields = ['updated_at', 'created_at', 'deleted_at'];
 
-                                                @if($changes->count() > 0)
-                                                    <div class="text-xs space-y-1 max-w-xs">
-                                                        @foreach($changes as $attribute => $newValue)
-                                                            @php
-                                                                $oldValue = $activity->properties['old'][$attribute] ?? null;
-                                                                $label = $translateField($attribute);
-                                                                $formattedOld = $formatValue($oldValue, $attribute);
-                                                                $formattedNew = $formatValue($newValue, $attribute);
-                                                            @endphp
-                                                            <div class="flex items-center gap-1">
-                                                                <span class="font-medium text-gray-700 dark:text-gray-300 min-w-[50px]">{{ $label }}:</span>
-                                                                @if($formattedOld !== 'N/A')
-                                                                    <span class="text-red-500 line-through truncate max-w-[60px]">{{ $formattedOld }}</span>
-                                                                    <span class="text-gray-400 dark:text-gray-500">→</span>
-                                                                @else
-                                                                    <span class="text-gray-400 dark:text-gray-500 text-[10px]">[Nuevo]</span>
-                                                                    <span class="text-gray-400 dark:text-gray-500">→</span>
-                                                                @endif
-                                                                <span class="text-green-600 dark:text-green-400 font-medium truncate max-w-[60px]">{{ $formattedNew }}</span>
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                @else
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                                        Sin detalles
-                                                    </span>
-                                                @endif
+        $preferredOrder = [
+            'name', 'lastname', 'cedula_type', 'cedula', 'description', 'is_active',
+            'state_id', 'municipality_id', 'parish_id',
+            'address', 'latitude', 'longitude',
+        ];
+
+        /* ---------- Formateo de valores ---------- */
+        $formatValue = function ($value, $attribute) use ($resolveName, $relationMap) {
+            if (is_null($value) || $value === '') return 'N/A';
+
+            // Booleanos
+            if ($attribute === 'is_active') {
+                return ((int) $value) ? 'Activo' : 'Inactivo';
+            }
+
+            // FKs → nombre de la relación (con fallback al ID si no se encuentra)
+            if (isset($relationMap[$attribute])) {
+                $name = $resolveName($relationMap[$attribute], $value);
+                return $name ?: ('#' . $value);
+            }
+
+            // Booleanos genéricos
+            if (is_bool($value)) return $value ? 'Sí' : 'No';
+
+            return $value;
+        };
+
+        /* ---------- Traducción de etiquetas ---------- */
+        $translateField = function ($field) {
+            $translations = [
+                'name'             => 'Nombre',
+                'lastname'         => 'Apellido',
+                'cedula_type'      => 'Tipo de cédula',
+                'cedula'           => 'Cédula',
+                'description'      => 'Descripción',
+                'is_active'        => 'Estado',
+                'state_id'         => 'Estado',
+                'municipality_id'  => 'Municipio',
+                'parish_id'        => 'Parroquia',
+                'address'          => 'Dirección',
+                'latitude'         => 'Latitud',
+                'longitude'        => 'Longitud',
+                'producer_id'      => 'Productor',
+                'polygon_id'       => 'Polígono',
+                'user_id'          => 'Usuario',
+                'email'            => 'Correo',
+                'role'             => 'Rol',
+                'rut'              => 'RUT',
+                'phone'            => 'Teléfono',
+                'geometry'         => 'Geometría',
+                'area'             => 'Área',
+            ];
+            return $translations[$field] ?? ucfirst(str_replace('_', ' ', $field));
+        };
+
+        /* ---------- Filtrado + ordenamiento ---------- */
+        $changes = collect($activity->properties['attributes'])
+            ->filter(function ($newValue, $attribute) use ($activity, $excludedFields, $hasOld, $isCreation) {
+                if (in_array($attribute, $excludedFields, true)) return false;
+                if ($isCreation || !$hasOld) return true;   // creación/deleted/restored: mostrar todo
+                $oldValue = $activity->properties['old'][$attribute] ?? null;
+                return $newValue != $oldValue;
+            })
+            ->sortBy(function ($value, $key) use ($preferredOrder) {
+                $pos = array_search($key, $preferredOrder, true);
+                return $pos === false ? 999 : $pos;
+            });
+    @endphp
+
+    @if($changes->count() > 0)
+        <div class="text-xs space-y-1 max-w-xs">
+            @foreach($changes as $attribute => $newValue)
+                @php
+                    $oldValue = $hasOld
+                        ? ($activity->properties['old'][$attribute] ?? null)
+                        : null;
+
+                    $label        = $translateField($attribute);
+                    $formattedOld = $formatValue($oldValue, $attribute);
+                    $formattedNew = $formatValue($newValue, $attribute);
+                @endphp
+
+                <div class="flex items-center gap-1">
+                    <span class="font-medium text-gray-700 dark:text-gray-300 min-w-[70px]">
+                        {{ $label }}:
+                    </span>
+
+                    @if($hasOld && $formattedOld !== 'N/A')
+                        <span class="text-red-500 line-through truncate max-w-[80px]" title="{{ $formattedOld }}">
+                            {{ $formattedOld }}
+                        </span>
+                        <span class="text-gray-400 dark:text-gray-500">→</span>
+                    @elseif(!$hasOld)
+                        {{-- Creación: sin "antes" --}}
+                    @else
+                        <span class="text-gray-400 dark:text-gray-500 text-[10px]">[Nuevo]</span>
+                        <span class="text-gray-400 dark:text-gray-500">→</span>
+                    @endif
+
+                    <span class="text-green-600 dark:text-green-400 font-medium truncate max-w-[80px]" title="{{ $formattedNew }}">
+                        {{ $formattedNew }}
+                    </span>
+                </div>
+            @endforeach
+        </div>
+    @else
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+            Sin detalles
+        </span>
+    @endif
 
                                             {{-- 3. Propiedades genéricas (ej. análisis de deforestación) --}}
                                             @elseif($activity->properties && $activity->properties->count() > 0)
