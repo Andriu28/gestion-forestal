@@ -16,7 +16,8 @@ class Producer extends Model
         'name',
         'lastname',
         'cedula_type',
-        'cedula', 
+        'cedula',
+        'code', 
         'description',
         'is_active',
         'latitude',
@@ -55,7 +56,7 @@ class Producer extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'lastname', 'cedula_type', 'cedula', 'description', 'state_id', 'municipality_id', 'parish_id'])
+            ->logOnly(['name', 'lastname', 'cedula_type', 'cedula', 'code', 'description', 'state_id', 'municipality_id', 'parish_id'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(function(string $eventName) {
                 $producerName = $this->name && $this->lastname 
@@ -121,6 +122,7 @@ class Producer extends Model
             $q->where('name', 'like', "%{$search}%")
               ->orWhere('lastname', 'like', "%{$search}%")
               ->orWhere('description', 'like', "%{$search}%")
+              ->orWhere('code', 'like', "%{$search}%")
               // Buscar por nombre de estado, municipio o parroquia (usando relaciones)
               ->orWhereHas('state', function ($q2) use ($search) {
                   $q2->where('name', 'like', "%{$search}%");

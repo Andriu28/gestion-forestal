@@ -8,6 +8,7 @@ use App\Models\Municipality;
 use App\Models\Parish;
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Computed;
 use Illuminate\Validation\Rule;
 
 class CreateProducer extends Component
@@ -214,6 +215,27 @@ class CreateProducer extends Component
             'title' => 'Éxito',
             'text'  => 'Productor creado exitosamente.',
         ]);
+    }
+
+     /**
+     * Vista previa del código (CSJ + tipo + cédula).
+     * Se recalcula en cada render, que se dispara tras cada debounce
+     * de cedula y cedula_type.
+     */
+    #[Computed]
+    public function codePreview(): ?string
+    {
+        if (empty($this->cedula_type) || empty($this->cedula)) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D/', '', (string) $this->cedula);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        return 'CSJ' . strtoupper($this->cedula_type) . $digits;
     }
 
     public function updatedName()

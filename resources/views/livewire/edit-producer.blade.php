@@ -60,6 +60,25 @@
 
         </div>
 
+        {{-- Código generado (solo lectura, en tiempo real) --}}
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div class="md:col-span-4">
+                <x-input-label for="code" :value="__('Código de productor')" />
+
+                <x-text-input id="code"
+                    type="text"
+                    readonly
+                    class="block mt-1 w-full font-mono bg-gray-100 dark:bg-gray-700/60 cursor-not-allowed
+                        text-custom-gray dark:text-gray-200 border-stone-400/80 dark:border-gray-600
+                        focus:ring-0 focus:border-stone-400/80 dark:focus:border-gray-600"
+                    value="{{ $this->codePreview ?: '—' }}" />
+
+                <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                    Se genera automáticamente a partir del tipo y la cédula.
+                </p>
+            </div>
+        </div>
+
         <div class="mt-4">
             <x-input-label for="description" :value="__('Descripción *')" />
             <textarea id="description"

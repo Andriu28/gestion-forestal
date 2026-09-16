@@ -8,6 +8,7 @@ use App\Models\Municipality;
 use App\Models\Parish;
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Computed; 
 use Illuminate\Validation\Rule;
 
 class EditProducer extends Component
@@ -224,6 +225,29 @@ class EditProducer extends Component
             'title' => 'Éxito',
             'text'  => 'Productor actualizado exitosamente.',
         ]);
+    }
+
+    /**
+     * Vista previa del código. Si el productor ya tiene `code` guardado
+     * y la cédula/tipo no han cambiado, coincidirá exactamente.
+     * Si aún no tiene `code` (registro antiguo), se genera igual.
+     */
+    #[Computed]
+    public function codePreview(): ?string
+    {
+        if (empty($this->cedula_type) || empty($this->cedula)) {
+            // Fallback: si el productor tenía `code` pero se quedó sin cédula,
+            // mostramos el guardado para no perder referencia visual.
+            return $this->producer->code ?? null;
+        }
+
+        $digits = preg_replace('/\D/', '', (string) $this->cedula);
+
+        if ($digits === '') {
+            return $this->producer->code ?? null;
+        }
+
+        return 'CSJ' . strtoupper($this->cedula_type) . $digits;
     }
 
     public function updatedName()

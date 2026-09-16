@@ -28,7 +28,7 @@ class ProducerController extends Controller
         $query = $this->applySearchFilter(
             $query,
             $search,
-            ['name', 'lastname', 'description'], // columnas de la tabla producers
+            ['name', 'lastname', 'description', 'code'], // columnas de la tabla producers
             [] // sin relaciones por ahora
         );
 
@@ -349,14 +349,17 @@ class ProducerController extends Controller
             }
             
             $producerData = [
-                'id' => $producer->id,
-                'name' => $producer->name,
-                'lastname' => $producer->lastname,
+                'id'          => $producer->id,
+                'code'        => $producer->code,        // <-- nuevo
+                'name'        => $producer->name,
+                'lastname'    => $producer->lastname,
+                'cedula_type' => $producer->cedula_type, // <-- opcional, útil
+                'cedula'      => $producer->cedula,      // <-- opcional
                 'description' => $producer->description,
-                'is_active' => $producer->is_active,
-                'deleted_at' => $producer->deleted_at,
-                'created_at' => $producer->created_at,
-                'updated_at' => $producer->updated_at,
+                'is_active'   => $producer->is_active,
+                'deleted_at'  => $producer->deleted_at,
+                'created_at'  => $producer->created_at,
+                'updated_at'  => $producer->updated_at,
                 'polygons_count' => $polygonsCount,
             ];
             
@@ -460,7 +463,7 @@ public function generatePdf(Request $request)
     $query = $this->applySearchFilter(
         $query,
         $search,
-        ['name', 'lastname', 'description'],
+        ['name', 'lastname', 'description', 'code'],
         []
     );
 
