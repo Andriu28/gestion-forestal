@@ -6,14 +6,27 @@
 @if(auth()->check() && auth()->user()->role === 'administrador')
 
 {{-- Header --}}
-<div class="mb-6 flex items-end justify-between">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Panel de Control</h1>
-        <p class="text-sm text-gray-400 mt-0.5">{{ now()->translatedFormat('l, d \\d\\e F \\d\\e Y') }}</p>
+<div class="bg-[linear-gradient(135deg,_#1d0e04da_0%,_#884722e8_100%)] text-white shadow-[0_4px_15px_rgba(92,63,30,0.219)] dark:bg-[linear-gradient(135deg,_#231811dc_0%,_#502d14_100%)] dark:text-white rounded-2xl shadow p-5 lg:col-span-2 mb-4">
+    <div class="mb-6 flex items-end justify-between">
+        <div>
+            <p class="inline-block px-3 py-1 text-xs text-amber-300 font-semibold bg-amber-500/30 dark:bg-amber-500/20 text-white rounded-full mb-4">SISITEMA DE GESTIÓN FORESTAL </p>
+           
+            <h1 class="text-4xl font-black text-gray-200 dark:text-gray-300 mb-2">Bienvenido(a), {{ Auth::user()->name }}</h1>
+            <!-- Fecha -->
+            <p class="flex items-center gap-2 text-base text-gray-200 mt-0.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                {{ now()->translatedFormat('l, d \\d\\e F \\d\\e Y') }}
+                <span class="w-px h-4 bg-white/20"></span>
+                <span class="text-white/50">{{ now()->format('H:i') }} hrs</span>
+            </p>
+            
+        </div>
+        <span class="text-xs px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full font-medium">
+            ● En línea
+        </span>
     </div>
-    <span class="text-xs px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full font-medium">
-        ● En línea
-    </span>
 </div>
 
 {{-- ---- FILA 1: 4 KPIs principales ---- --}}
