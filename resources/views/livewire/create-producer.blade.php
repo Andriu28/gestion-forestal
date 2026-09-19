@@ -68,7 +68,7 @@
         <x-text-input id="code"
             type="text"
             readonly
-            class="block mt-1 w-full font-mono bg-gray-100 dark:bg-gray-700/60 cursor-not-allowed
+            class="block mt-1 w-full font-mono bg-gray-100 dark:bg-gray-700/60
                    text-custom-gray dark:text-gray-200 border-stone-400/80 dark:border-gray-600
                    focus:ring-0 focus:border-stone-400/80 dark:focus:border-gray-600"
             value="{{ $this->codePreview ?: '—' }}" />
