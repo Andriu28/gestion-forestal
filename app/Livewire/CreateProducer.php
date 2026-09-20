@@ -17,6 +17,7 @@ class CreateProducer extends Component
     public $lastname = '';
     public $cedula_type = 'V';
     public $cedula = '';
+    public $code = '';
     public $description = '';
     public $is_active = true;
 
@@ -200,6 +201,7 @@ class CreateProducer extends Component
             'lastname'        => $validated['lastname'],
             'cedula_type'     => $validated['cedula_type'],
             'cedula'          => $validated['cedula'],
+            'code'            => $this->codePreview(),
             'description'     => $validated['description'],
             'is_active'       => $validated['is_active'],
             'latitude'        => $this->latitude,
