@@ -205,19 +205,30 @@
                     if (str_contains($activity->description, 'iniciado sesión')) $ev = 'login';
                     elseif (str_contains($activity->description, 'cerrado sesión')) $ev = 'logout';
                 }
+
                 $badge = match($ev) {
-                    'created'  => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-                    'updated'  => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-                    'deleted'  => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-                    'restored' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-                    'login'    => 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-                    'logout'   => 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-                    default    => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+                    'created'            => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+                    'updated'            => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                    'deleted'            => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+                    'restored'           => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+                    'login'              => 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+                    'logout'             => 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+                    'analyzed_multiple'  => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+                    default              => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
                 };
-                $evLabel = ['created'=>'Creó','updated'=>'Actualizó','deleted'=>'Eliminó','restored'=>'Restauró','login'=>'Ingresó','logout'=>'Salió'][$ev] ?? ucfirst($ev);
+
+                $evLabel = [
+                    'created'           => 'Creó',
+                    'updated'           => 'Actualizó',
+                    'deleted'           => 'Eliminó',
+                    'restored'          => 'Restauró',
+                    'login'             => 'Ingresó',
+                    'logout'            => 'Salió',
+                    'analyzed_multiple' => 'Analizó',
+                ][$ev] ?? ucfirst(str_replace('_', ' ', $ev));
             @endphp
             <div class="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
-                <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $badge }} w-20 text-center flex-shrink-0">{{ $evLabel }}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $badge }} w-32 text-center flex-shrink-0">{{ $evLabel }}</span>
                 <span class="text-sm font-medium text-gray-800 dark:text-gray-200 w-28 flex-shrink-0 truncate">{{ $activity->causer?->name ?? 'Sistema' }}</span>
                 <span class="text-xs text-gray-400 flex-1 truncate">{{ Str::limit($activity->description, 50) }}</span>
                 <span class="text-xs text-gray-300 dark:text-gray-500 flex-shrink-0">{{ $activity->created_at->diffForHumans() }}</span>
