@@ -38,12 +38,13 @@ class ActivityRecordsSeeder extends Seeder
         $polygons = DB::table('polygons')->whereNull('deleted_at')->pluck('id', 'name')->toArray();
 
         // Si no hay datos, crear algunos de prueba
-        if (empty($producers)) {
+       if (empty($producers)) {
             $this->command->warn('No hay productores disponibles. Creando productores de prueba...');
             for ($i = 1; $i <= 5; $i++) {
                 $id = DB::table('producers')->insertGetId([
                     'name' => "Productor $i",
                     'lastname' => "Apellido $i",
+                    'cedula' => 'V-' . str_pad((string)(10000000 + $i), 8, '0', STR_PAD_LEFT),  // ✅ AGREGADO
                     'description' => "Productor de prueba $i",
                     'is_active' => true,
                     'created_at' => now(),
