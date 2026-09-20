@@ -319,13 +319,14 @@
             const target = 'detail-map';
             if (currentMap) currentMap.setTarget(null);
 
-            currentMap = new ol.Map({
+           currentMap = new ol.Map({
                 target: target,
                 layers: [
                     new ol.layer.Tile({
                         source: new ol.source.XYZ({
-                            url: 'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                            attributions: '© OpenStreetMap contributors',
+                            url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=scUozK4fig7bE6jg7TPi',
+                            attributions: '© MapTiler & OpenStreetMap',
+                            tileSize: 512,
                             maxZoom: 20
                         })
                     })
