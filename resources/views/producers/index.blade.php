@@ -106,11 +106,12 @@
                 @if($producers->count() > 0)
                     <div class="overflow-x-auto">
                         <table id="producers-table" class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-stone-100/90 dark:bg-custom-gray">
+                           <thead class="bg-stone-100/90 dark:bg-custom-gray">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Código</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Nombre</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Apellido</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Cédula</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Descripción</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Estado</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Acción</th>
@@ -119,9 +120,11 @@
                             <tbody class="bg-stone-100/90 dark:bg-custom-gray divide-y divide-gray-200">
                                 @foreach($producers as $producer)
                                     <tr id="producer-row-{{ $producer->id }}" class="hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
+                                        <tr id="producer-row-{{ $producer->id }}" class="hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->code }}</td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->name }}</td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->lastname ?? 'N/A' }}</td>
+                                        <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400 font-mono">{{ $producer->cedula ?? 'N/A' }}</td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 text-gray-900 dark:text-gray-400">
                                             {{ Str::limit($producer->description, 50) ?? 'Sin descripción' }}
                                         </td>
