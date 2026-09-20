@@ -1,20 +1,21 @@
 {{-- resources/views/polygons/import.blade.php --}}
 <x-app-layout>
     <div class="mx-auto">
-        {{-- Contenedor principal con animación de entrada --}}
         <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6 animate-on-load">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-4 md:mb-4">
                     Importar Polígonos desde GeoJSON
                 </h2>
 
-                <form id="import-form" action="{{ route('polygons.import.process') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                {{-- ✅ action apunta a la ruta POST que procesa el array de features --}}
+                <form id="import-form" action="{{ route('polygons.import.process') }}" method="POST" class="space-y-6">
                     @csrf
 
-                    {{-- Archivo --}}
+                    {{-- ⚠️ El archivo NO se envía al backend (solo se usa en JS para previsualizar).
+                         Por eso este input tiene name="_dummy_file" en vez de name="file". --}}
                     <div>
                         <x-input-label for="file" :value="__('Archivo GeoJSON *')" />
-                        <input type="file" name="file" id="file" accept=".json,.geojson" required
+                        <input type="file" name="_dummy_file" id="file" accept=".json,.geojson" required
                                class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
                                       file:mr-4 file:py-2.5 file:px-4
                                       file:rounded-lg file:border-0
@@ -28,7 +29,6 @@
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Selecciona un archivo GeoJSON (.json o .geojson).</p>
                         <x-input-error class="mt-2" :messages="$errors->get('file')" />
 
-                        {{-- Botón previsualizar (acción secundaria del archivo) --}}
                         <div class="mt-2 flex items-center gap-3">
                             <button type="button" id="preview-btn"
                                     class="px-2 py-1.5
@@ -138,7 +138,6 @@
                                         </tr>
                                     </thead>
                                     <tbody id="preview-body" class="bg-gray-200/60 dark:bg-gray-700/30 divide-y divide-gray-200 dark:divide-gray-700">
-                                        <!-- Las filas se llenarán dinámicamente con JavaScript -->
                                     </tbody>
                                 </table>
                             </div>
@@ -157,9 +156,7 @@
                                            transition-all duration-200
                                            focus:outline-none focus:ring-2 focus:ring-[#6B4226]/70
                                            focus:ring-offset-2 dark:focus:ring-offset-gray-800
-                                           disabled:opacity-50 disabled:cursor-not-allowed
-                                           disabled:hover:shadow-sm disabled:hover:from-[#6B4226] disabled:hover:to-[#8F5A34]
-                                           dark:disabled:hover:from-[#4E301B] dark:disabled:hover:to-[#6B4226]">
+                                           disabled:opacity-50 disabled:cursor-not-allowed">
                                 <span id="import-btn-text">Confirmar Importación</span>
                             </button>
                         </div>
@@ -176,7 +173,6 @@
                                 Cancelar
                             </a>
 
-                            {{-- BOTÓN IMPORTAR MUTANTE: gris apagado → cuero marrón --}}
                             <button type="submit" form="import-form" id="preview-import-btn"
                                     disabled
                                     class="px-5 py-2.5
@@ -190,9 +186,7 @@
                                            transition-all duration-200
                                            focus:outline-none focus:ring-2 focus:ring-[#6B4226]/70
                                            focus:ring-offset-2 dark:focus:ring-offset-gray-800
-                                           disabled:opacity-50 disabled:cursor-not-allowed
-                                           disabled:hover:shadow-sm disabled:hover:from-[#6B4226] disabled:hover:to-[#8F5A34]
-                                           dark:disabled:hover:from-[#4E301B] dark:disabled:hover:to-[#6B4226]">
+                                           disabled:opacity-50 disabled:cursor-not-allowed">
                                 Importar
                             </button>
                         </div>
@@ -205,12 +199,9 @@
     {{-- Modal de previsualización --}}
     <div id="preview-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <!-- Overlay -->
             <div class="fixed inset-0 bg-black/50 transition-opacity" id="preview-modal-overlay"></div>
             
-            <!-- Modal -->
             <div class="relative bg-gray-100 dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-5xl transition-all duration-300 scale-95 opacity-0 pointer-events-none" id="preview-modal-content">
-                <!-- Header -->
                 <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Previsualización de Features</h3>
                     <button id="close-preview-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
@@ -220,12 +211,11 @@
                     </button>
                 </div>
                 
-                <!-- Body -->
                 <div class="p-6 max-h-[70vh] overflow-y-auto">
                     <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-gray-800/50">
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" id="preview-modal-table">
-                                <thead class="bg-gray-200 dark:bg-gray-600/30 ">
+                                <thead class="bg-gray-200 dark:bg-gray-600/30">
                                     <tr>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">#</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
@@ -236,14 +226,12 @@
                                     </tr>
                                 </thead>
                                 <tbody id="preview-modal-body" class="bg-gray-50 dark:bg-custom-gray/30 divide-y divide-gray-200 dark:divide-gray-700">
-                                    <!-- Las filas se llenarán dinámicamente con JavaScript -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Footer -->
                 <div class="flex justify-between items-center p-6 border-t border-gray-200 dark:border-gray-600">
                     <span id="preview-modal-count" class="text-sm text-gray-500 dark:text-gray-400"></span>
                     <div class="flex space-x-3">
@@ -262,15 +250,12 @@
             // =============================================
             // ANIMACIÓN DE ENTRADA
             // =============================================
-            
             const container = document.querySelector('.animate-on-load');
             if (container) {
                 container.style.opacity = '0';
                 container.style.transform = 'translateY(30px)';
                 container.style.transition = 'opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                
                 void container.offsetWidth;
-                
                 setTimeout(() => {
                     container.style.opacity = '1';
                     container.style.transform = 'translateY(0)';
@@ -280,7 +265,6 @@
             // =============================================
             // ELEMENTOS DEL DOM
             // =============================================
-            
             const fileInput = document.getElementById('file');
             const previewBtn = document.getElementById('preview-btn');
             const importBtn = document.getElementById('import-btn');
@@ -288,7 +272,6 @@
             const form = document.getElementById('import-form');
             const previewImportBtn = document.getElementById('preview-import-btn');
             
-            // Modal elements
             const previewModal = document.getElementById('preview-modal');
             const previewModalContent = document.getElementById('preview-modal-content');
             const previewModalBody = document.getElementById('preview-modal-body');
@@ -302,7 +285,6 @@
             // =============================================
             // FUNCIONES DEL MODAL
             // =============================================
-
             function openModal() {
                 previewModal.classList.remove('hidden');
                 void previewModalContent.offsetWidth;
@@ -331,23 +313,22 @@
             });
 
             // =============================================
-            // FUNCIONES DEL ARCHIVO
+            // LECTURA DEL ARCHIVO
             // =============================================
-
             fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) {
                     fileStatus.textContent = 'Ningún archivo seleccionado';
                     previewBtn.disabled = true;
                     importBtn.disabled = true;
-                    previewImportBtn.disabled = true;      // ← Botón Importar vuelve a gris
+                    previewImportBtn.disabled = true;
                     return;
                 }
 
                 fileStatus.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
                 previewBtn.disabled = false;
                 importBtn.disabled = true;
-                previewImportBtn.disabled = false;         // ← Botón Importar se activa (cuero marrón)
+                previewImportBtn.disabled = false;
                 currentFeatures = [];
 
                 const reader = new FileReader();
@@ -363,7 +344,7 @@
                                 confirmButtonColor: '#63afc2'
                             });
                             previewBtn.disabled = true;
-                            previewImportBtn.disabled = true;   // ← Se desactiva si el archivo es inválido
+                            previewImportBtn.disabled = true;
                             return;
                         }
 
@@ -376,17 +357,17 @@
                                 confirmButtonColor: '#6b9ab6'
                             });
                             previewBtn.disabled = true;
-                            previewImportBtn.disabled = true;   // ← Se desactiva si no hay features
+                            previewImportBtn.disabled = true;
                             return;
                         }
 
                         currentFeatures = features;
 
+                        // Detectar SRID
                         if (geojson.crs && geojson.crs.properties && geojson.crs.properties.name) {
                             const match = geojson.crs.properties.name.match(/EPSG::(\d+)/);
                             if (match) {
-                                const detectedSrid = parseInt(match[1]);
-                                document.getElementById('srid').value = detectedSrid;
+                                document.getElementById('srid').value = parseInt(match[1]);
                             }
                         }
 
@@ -402,7 +383,7 @@
                         });
 
                         previewBtn.disabled = false;
-                        previewImportBtn.disabled = false;   // ← Confirmado: archivo válido
+                        previewImportBtn.disabled = false;
 
                     } catch (error) {
                         Swal.fire({
@@ -413,12 +394,15 @@
                         });
                         console.error(error);
                         previewBtn.disabled = true;
-                        previewImportBtn.disabled = true;    // ← Error: se desactiva
+                        previewImportBtn.disabled = true;
                     }
                 };
                 reader.readAsText(file);
             });
 
+            // =============================================
+            // PREVISUALIZAR (MODAL)
+            // =============================================
             previewBtn.addEventListener('click', function() {
                 if (currentFeatures.length === 0) {
                     Swal.fire({
@@ -457,13 +441,11 @@
                 openModal();
             });
 
-            previewImportBtn?.addEventListener('click', function() {
-                // Si está disabled, no hace nada (el navegador ya lo bloquea, pero por seguridad)
-                if (previewImportBtn.disabled) return;
-                form.dispatchEvent(new Event('submit'));
-            });
-
+            // =============================================
+            // 🔑 SUBMIT: CONSTRUIR LOS INPUTS features[] DINÁMICAMENTE
+            // =============================================
             form.addEventListener('submit', function(e) {
+                // Validar que haya features
                 if (currentFeatures.length === 0) {
                     e.preventDefault();
                     Swal.fire({
@@ -474,19 +456,52 @@
                     });
                     return;
                 }
-                
+
+                // ✅ Limpiar inputs previos por si el usuario envía dos veces
+                form.querySelectorAll('.dynamic-feature-input').forEach(el => el.remove());
+
+                // ✅ Construir inputs hidden con el formato que espera processImport()
+                const defaultProducerId = document.getElementById('default_producer_id').value;
+                const defaultParishId = document.getElementById('parish_id').value;
+                const producerField = document.getElementById('producer_field').value || 'Productor';
+
+                currentFeatures.forEach((feature, index) => {
+                    const props = feature.properties || {};
+                    const geometryStr = JSON.stringify(feature.geometry);
+
+                    // Campos que el controlador espera
+                    const fields = {
+                        id: props.id || props.ID || '',
+                        name: props.name || props.Nombre || 'Polígono importado',
+                        area_ha: props.area_ha || props.Area_Ha || props.area || '',
+                        producer_id: props.producer_id || defaultProducerId || '',
+                        parish_id: props.parish_id || defaultParishId || '',
+                        producer_name: props[producerField] || props.Productor || '',
+                        geometry: geometryStr,
+                    };
+
+                    // Añadir cada campo como input hidden
+                    Object.entries(fields).forEach(([key, value]) => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = `features[${index}][${key}]`;
+                        input.value = value;
+                        input.classList.add('dynamic-feature-input');
+                        form.appendChild(input);
+                    });
+                });
+
+                // ✅ Feedback visual (opcional)
                 Swal.fire({
                     title: 'Importando...',
                     text: 'Por favor espera mientras se procesan los datos',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
+                    didOpen: () => { Swal.showLoading(); }
                 });
-            });
 
-            console.log('Import page initialized');
+                // El form se envía normal (no hacemos preventDefault)
+            });
         });
     </script>
 
