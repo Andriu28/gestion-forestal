@@ -27,6 +27,26 @@
                                       focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Selecciona un archivo GeoJSON (.json o .geojson).</p>
                         <x-input-error class="mt-2" :messages="$errors->get('file')" />
+
+                        {{-- Botón previsualizar (acción secundaria del archivo) --}}
+                        <div class="mt-2 flex items-center gap-3">
+                            <button type="button" id="preview-btn"
+                                    class="px-2 py-1.5
+                                           bg-gray-200 hover:bg-gray-300
+                                           dark:bg-gray-700 dark:hover:bg-gray-600
+                                           text-gray-800 dark:text-gray-200
+                                           rounded-lg
+                                           font-medium
+                                           border border-transparent
+                                           dark:border-gray-600
+                                           transition-colors duration-200
+                                           disabled:opacity-50 disabled:cursor-not-allowed
+                                           disabled:hover:bg-gray-200 dark:disabled:hover:bg-gray-700"
+                                    disabled>
+                                Previsualizar
+                            </button>
+                            <span id="feature-count-inline" class="text-xs text-gray-500 dark:text-gray-400"></span>
+                        </div>
                     </div>
 
                     {{-- SRID --}}
@@ -124,9 +144,22 @@
                             </div>
                         </div>
                         <div class="mt-6 flex justify-end">
-                            <button type="submit" id="import-btn" 
-                                    class="px-6 py-2.5 bg-custom-gold-dark hover:bg-custom-gold-darker text-white rounded-lg shadow transition disabled:opacity-50 disabled:cursor-not-allowed font-medium" 
-                                    disabled>
+                            <button type="submit" id="import-btn"
+                                    disabled
+                                    class="px-6 py-2.5
+                                           bg-gradient-to-br from-[#6B4226] to-[#8F5A34]
+                                           dark:from-[#4E301B] dark:to-[#6B4226]
+                                           hover:from-[#4E301B] hover:to-[#6B4226]
+                                           dark:hover:from-[#3A2314] dark:hover:to-[#4E301B]
+                                           active:from-[#3A2314] active:to-[#4E301B]
+                                           text-white rounded-lg font-medium
+                                           shadow-sm hover:shadow-md
+                                           transition-all duration-200
+                                           focus:outline-none focus:ring-2 focus:ring-[#6B4226]/70
+                                           focus:ring-offset-2 dark:focus:ring-offset-gray-800
+                                           disabled:opacity-50 disabled:cursor-not-allowed
+                                           disabled:hover:shadow-sm disabled:hover:from-[#6B4226] disabled:hover:to-[#8F5A34]
+                                           dark:disabled:hover:from-[#4E301B] dark:disabled:hover:to-[#6B4226]">
                                 <span id="import-btn-text">Confirmar Importación</span>
                             </button>
                         </div>
@@ -137,15 +170,30 @@
                         <div class="text-sm text-gray-500 dark:text-gray-400">
                             <span id="file-status" class="font-medium text-gray-700 dark:text-gray-300">Ningún archivo seleccionado</span>
                         </div>
-                        <div class="flex space-x-3">
+                        <div class="flex items-center space-x-3">
                             <a href="{{ route('polygons.index') }}"
                                class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors duration-200">
                                 Cancelar
                             </a>
-                            <button type="button" id="preview-btn" 
-                                    class="px-5 py-2.5 bg-custom-gold-dark hover:bg-custom-gold-darker text-white rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed" 
-                                    disabled>
-                                Previsualizar
+
+                            {{-- BOTÓN IMPORTAR MUTANTE: gris apagado → cuero marrón --}}
+                            <button type="submit" form="import-form" id="preview-import-btn"
+                                    disabled
+                                    class="px-5 py-2.5
+                                           bg-gradient-to-br from-[#6B4226] to-[#8F5A34]
+                                           dark:from-[#4E301B] dark:to-[#6B4226]
+                                           hover:from-[#4E301B] hover:to-[#6B4226]
+                                           dark:hover:from-[#3A2314] dark:hover:to-[#4E301B]
+                                           active:from-[#3A2314] active:to-[#4E301B]
+                                           text-white rounded-lg font-medium
+                                           shadow-sm hover:shadow-md
+                                           transition-all duration-200
+                                           focus:outline-none focus:ring-2 focus:ring-[#6B4226]/70
+                                           focus:ring-offset-2 dark:focus:ring-offset-gray-800
+                                           disabled:opacity-50 disabled:cursor-not-allowed
+                                           disabled:hover:shadow-sm disabled:hover:from-[#6B4226] disabled:hover:to-[#8F5A34]
+                                           dark:disabled:hover:from-[#4E301B] dark:disabled:hover:to-[#6B4226]">
+                                Importar
                             </button>
                         </div>
                     </div>
@@ -202,10 +250,6 @@
                         <button id="close-preview-modal-btn" class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors duration-200">
                             Cerrar
                         </button>
-                        <button type="submit" form="import-form" id="preview-import-btn" 
-                                class="px-6 py-2.5 bg-custom-gold-dark hover:bg-custom-gold-darker text-white rounded-lg shadow transition font-medium">
-                            Importar Ahora
-                        </button>
                     </div>
                 </div>
             </div>
@@ -216,10 +260,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // =============================================
-            // ANIMACIÓN DE ENTRADA - EFECTO "APARECER DESDE ABAJO"
+            // ANIMACIÓN DE ENTRADA
             // =============================================
             
-            // Aplicar la animación al contenedor principal
             const container = document.querySelector('.animate-on-load');
             if (container) {
                 container.style.opacity = '0';
@@ -243,6 +286,7 @@
             const importBtn = document.getElementById('import-btn');
             const fileStatus = document.getElementById('file-status');
             const form = document.getElementById('import-form');
+            const previewImportBtn = document.getElementById('preview-import-btn');
             
             // Modal elements
             const previewModal = document.getElementById('preview-modal');
@@ -251,7 +295,6 @@
             const previewModalCount = document.getElementById('preview-modal-count');
             const closePreviewModal = document.getElementById('close-preview-modal');
             const closePreviewModalBtn = document.getElementById('close-preview-modal-btn');
-            const previewImportBtn = document.getElementById('preview-import-btn');
             const previewModalOverlay = document.getElementById('preview-modal-overlay');
 
             let currentFeatures = [];
@@ -297,12 +340,14 @@
                     fileStatus.textContent = 'Ningún archivo seleccionado';
                     previewBtn.disabled = true;
                     importBtn.disabled = true;
+                    previewImportBtn.disabled = true;      // ← Botón Importar vuelve a gris
                     return;
                 }
 
                 fileStatus.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
                 previewBtn.disabled = false;
                 importBtn.disabled = true;
+                previewImportBtn.disabled = false;         // ← Botón Importar se activa (cuero marrón)
                 currentFeatures = [];
 
                 const reader = new FileReader();
@@ -315,8 +360,10 @@
                                 icon: 'error',
                                 title: 'Error',
                                 text: 'El archivo no es un FeatureCollection GeoJSON válido.',
-                                confirmButtonColor: '#c67a2e'
+                                confirmButtonColor: '#63afc2'
                             });
+                            previewBtn.disabled = true;
+                            previewImportBtn.disabled = true;   // ← Se desactiva si el archivo es inválido
                             return;
                         }
 
@@ -326,8 +373,10 @@
                                 icon: 'warning',
                                 title: 'Advertencia',
                                 text: 'El archivo no contiene features.',
-                                confirmButtonColor: '#c67a2e'
+                                confirmButtonColor: '#6b9ab6'
                             });
+                            previewBtn.disabled = true;
+                            previewImportBtn.disabled = true;   // ← Se desactiva si no hay features
                             return;
                         }
 
@@ -353,6 +402,7 @@
                         });
 
                         previewBtn.disabled = false;
+                        previewImportBtn.disabled = false;   // ← Confirmado: archivo válido
 
                     } catch (error) {
                         Swal.fire({
@@ -363,6 +413,7 @@
                         });
                         console.error(error);
                         previewBtn.disabled = true;
+                        previewImportBtn.disabled = true;    // ← Error: se desactiva
                     }
                 };
                 reader.readAsText(file);
@@ -407,6 +458,8 @@
             });
 
             previewImportBtn?.addEventListener('click', function() {
+                // Si está disabled, no hace nada (el navegador ya lo bloquea, pero por seguridad)
+                if (previewImportBtn.disabled) return;
                 form.dispatchEvent(new Event('submit'));
             });
 
