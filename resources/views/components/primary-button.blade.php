@@ -7,8 +7,6 @@
  active:from-[#3A2314] active:to-[#4E301B]
  text-white rounded-lg font-medium
  shadow-sm hover:shadow-md
- transition-all duration-200
- focus:outline-none focus:ring-2 focus:ring-[#6B4226]/70
- focus:ring-offset-2 dark:focus:ring-offset-gray-800']) }}>
+ transition-all duration-200']) }}>
     {{ $slot }}
 </button
