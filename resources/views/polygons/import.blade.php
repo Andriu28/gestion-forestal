@@ -344,7 +344,7 @@
                     return;
                 }
 
-                fileStatus.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                fileStatus.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
                 previewBtn.disabled = false;
                 importBtn.disabled = true;
                 previewImportBtn.disabled = false;         // ← Botón Importar se activa (cuero marrón)
