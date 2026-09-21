@@ -1,37 +1,36 @@
 {{-- resources/views/polygons/import.blade.php --}}
 <x-app-layout>
     <div class="mx-auto">
-        <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6 animate-on-load">
+        <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6 animate-on-load">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-4 md:mb-4">
                     Importar Polígonos desde GeoJSON
                 </h2>
 
-                {{-- ✅ action apunta a la ruta POST que procesa el array de features --}}
                 <form id="import-form" action="{{ route('polygons.import.process') }}" method="POST" class="space-y-6">
                     @csrf
 
-                    {{-- ⚠️ El archivo NO se envía al backend (solo se usa en JS para previsualizar).
-                         Por eso este input tiene name="_dummy_file" en vez de name="file". --}}
+                    {{-- Archivo + botón Previsualizar en la misma fila --}}
                     <div>
                         <x-input-label for="file" :value="__('Archivo GeoJSON *')" />
-                        <input type="file" name="_dummy_file" id="file" accept=".json,.geojson" required
-                               class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
-                                      file:mr-4 file:py-2.5 file:px-4
-                                      file:rounded-lg file:border-0
-                                      file:text-sm file:font-semibold
-                                      file:bg-blue-50 file:text-blue-700
-                                      dark:file:bg-blue-900/30 dark:file:text-blue-300
-                                      hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50
-                                      cursor-pointer border border-stone-400/80 dark:border-gray-600 rounded-lg
-                                      bg-stone-50 dark:bg-gray-800/50
-                                      focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Selecciona un archivo GeoJSON (.json o .geojson).</p>
-                        <x-input-error class="mt-2" :messages="$errors->get('file')" />
 
-                        <div class="mt-2 flex items-center gap-3">
+                        <div class="mt-1 flex items-stretch gap-2">
+                            {{-- Input file --}}
+                            <input type="file" name="_dummy_file" id="file" accept=".json,.geojson" required
+                                   class="flex-1 block w-full text-sm text-gray-500 dark:text-gray-400
+                                          file:mr-4 file:py-2.5 file:px-4
+                                          file:rounded-lg file:border-0
+                                          file:text-sm file:font-semibold
+                                          file:bg-blue-50 file:text-blue-700
+                                          dark:file:bg-blue-900/30 dark:file:text-blue-300
+                                          hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50
+                                          cursor-pointer border border-stone-400/80 dark:border-gray-600 rounded-lg
+                                          bg-stone-50 dark:bg-gray-800/50
+                                          focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70">
+
+                            {{-- Botón Previsualizar --}}
                             <button type="button" id="preview-btn"
-                                    class="px-2 py-1.5
+                                    class="px-4 py-2
                                            bg-gray-200 hover:bg-gray-300
                                            dark:bg-gray-700 dark:hover:bg-gray-600
                                            text-gray-800 dark:text-gray-200
@@ -41,12 +40,15 @@
                                            dark:border-gray-600
                                            transition-colors duration-200
                                            disabled:opacity-50 disabled:cursor-not-allowed
-                                           disabled:hover:bg-gray-200 dark:disabled:hover:bg-gray-700"
+                                           disabled:hover:bg-gray-200 dark:disabled:hover:bg-gray-700
+                                           whitespace-nowrap flex items-center gap-2"
                                     disabled>
                                 Previsualizar
                             </button>
-                            <span id="feature-count-inline" class="text-xs text-gray-500 dark:text-gray-400"></span>
                         </div>
+
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Selecciona un archivo GeoJSON (.json o .geojson).</p>
+                        <x-input-error class="mt-2" :messages="$errors->get('file')" />
                     </div>
 
                     {{-- SRID --}}
@@ -123,11 +125,14 @@
                     <div id="preview-container" class="hidden">
                         <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-gray-800/50">
                             <div class="bg-gray-50 dark:bg-gray-800/80 px-4 py-3 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
-                                <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Previsualización de features</h3>
+                                <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Previsualización de features
+                                    <span class="text-xs text-gray-400 font-normal ml-2">(puedes editar los valores, excepto el ID)</span>
+                                </h3>
                                 <span id="feature-count" class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-full"></span>
                             </div>
                             <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" id="preview-table">
+                                <table class="min-w-max table-auto divide-y divide-gray-200 dark:divide-gray-700" id="preview-table">
                                     <thead class="bg-stone-100/90 dark:bg-custom-gray">
                                         <tr>
                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
@@ -138,13 +143,13 @@
                                         </tr>
                                     </thead>
                                     <tbody id="preview-body" class="bg-gray-200/60 dark:bg-gray-700/30 divide-y divide-gray-200 dark:divide-gray-700">
+                                        <!-- Filas dinámicas -->
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                         <div class="mt-6 flex justify-end">
-                            <button type="submit" id="import-btn"
-                                    disabled
+                            <button type="button" id="confirm-preview-btn"
                                     class="px-6 py-2.5
                                            bg-gradient-to-br from-[#6B4226] to-[#8F5A34]
                                            dark:from-[#4E301B] dark:to-[#6B4226]
@@ -155,24 +160,25 @@
                                            shadow-sm hover:shadow-md
                                            transition-all duration-200
                                            focus:outline-none focus:ring-2 focus:ring-[#6B4226]/70
-                                           focus:ring-offset-2 dark:focus:ring-offset-gray-800
-                                           disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span id="import-btn-text">Confirmar Importación</span>
+                                           focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                                Confirmar
                             </button>
                         </div>
                     </div>
 
                     {{-- Botones de acción --}}
-                    <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                     <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                         <div class="text-sm text-gray-500 dark:text-gray-400">
                             <span id="file-status" class="font-medium text-gray-700 dark:text-gray-300">Ningún archivo seleccionado</span>
                         </div>
+                    </div>
+
+                    <div class="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
                         <div class="flex items-center space-x-3">
                             <a href="{{ route('polygons.index') }}"
                                class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors duration-200">
                                 Cancelar
                             </a>
-
                             <button type="submit" form="import-form" id="preview-import-btn"
                                     disabled
                                     class="px-5 py-2.5
@@ -192,54 +198,6 @@
                         </div>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
-
-    {{-- Modal de previsualización --}}
-    <div id="preview-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="fixed inset-0 bg-black/50 transition-opacity" id="preview-modal-overlay"></div>
-            
-            <div class="relative bg-gray-100 dark:bg-custom-gray rounded-xl shadow-2xl w-full max-w-5xl transition-all duration-300 scale-95 opacity-0 pointer-events-none" id="preview-modal-content">
-                <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Previsualización de Features</h3>
-                    <button id="close-preview-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="p-6 max-h-[70vh] overflow-y-auto">
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-gray-800/50">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" id="preview-modal-table">
-                                <thead class="bg-gray-200 dark:bg-gray-600/30">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">#</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Área (Ha)</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Productor</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parroquia</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="preview-modal-body" class="bg-gray-50 dark:bg-custom-gray/30 divide-y divide-gray-200 dark:divide-gray-700">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex justify-between items-center p-6 border-t border-gray-200 dark:border-gray-600">
-                    <span id="preview-modal-count" class="text-sm text-gray-500 dark:text-gray-400"></span>
-                    <div class="flex space-x-3">
-                        <button id="close-preview-modal-btn" class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors duration-200">
-                            Cerrar
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -267,69 +225,38 @@
             // =============================================
             const fileInput = document.getElementById('file');
             const previewBtn = document.getElementById('preview-btn');
-            const importBtn = document.getElementById('import-btn');
             const fileStatus = document.getElementById('file-status');
             const form = document.getElementById('import-form');
             const previewImportBtn = document.getElementById('preview-import-btn');
-            
-            const previewModal = document.getElementById('preview-modal');
-            const previewModalContent = document.getElementById('preview-modal-content');
-            const previewModalBody = document.getElementById('preview-modal-body');
-            const previewModalCount = document.getElementById('preview-modal-count');
-            const closePreviewModal = document.getElementById('close-preview-modal');
-            const closePreviewModalBtn = document.getElementById('close-preview-modal-btn');
-            const previewModalOverlay = document.getElementById('preview-modal-overlay');
+            const previewContainer = document.getElementById('preview-container');
+            const previewBody = document.getElementById('preview-body');
+            const featureCount = document.getElementById('feature-count');
+            const confirmPreviewBtn = document.getElementById('confirm-preview-btn');
 
             let currentFeatures = [];
-
-            // =============================================
-            // FUNCIONES DEL MODAL
-            // =============================================
-            function openModal() {
-                previewModal.classList.remove('hidden');
-                void previewModalContent.offsetWidth;
-                previewModalContent.classList.remove('scale-95', 'opacity-0', 'pointer-events-none');
-                previewModalContent.classList.add('scale-100', 'opacity-100', 'pointer-events-auto');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeModal() {
-                previewModalContent.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto');
-                previewModalContent.classList.add('scale-95', 'opacity-0', 'pointer-events-none');
-                setTimeout(() => {
-                    previewModal.classList.add('hidden');
-                    document.body.style.overflow = '';
-                }, 300);
-            }
-
-            closePreviewModal?.addEventListener('click', closeModal);
-            closePreviewModalBtn?.addEventListener('click', closeModal);
-            previewModalOverlay?.addEventListener('click', closeModal);
-            
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && !previewModal.classList.contains('hidden')) {
-                    closeModal();
-                }
-            });
 
             // =============================================
             // LECTURA DEL ARCHIVO
             // =============================================
             fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
+
                 if (!file) {
                     fileStatus.textContent = 'Ningún archivo seleccionado';
                     previewBtn.disabled = true;
-                    importBtn.disabled = true;
                     previewImportBtn.disabled = true;
+                    previewContainer.classList.add('hidden');
+                    currentFeatures = [];
                     return;
                 }
 
                 fileStatus.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
                 previewBtn.disabled = false;
-                importBtn.disabled = true;
                 previewImportBtn.disabled = false;
                 currentFeatures = [];
+
+                previewContainer.classList.add('hidden');
+                previewBody.innerHTML = '';
 
                 const reader = new FileReader();
                 reader.onload = function(event) {
@@ -363,7 +290,6 @@
 
                         currentFeatures = features;
 
-                        // Detectar SRID
                         if (geojson.crs && geojson.crs.properties && geojson.crs.properties.name) {
                             const match = geojson.crs.properties.name.match(/EPSG::(\d+)/);
                             if (match) {
@@ -401,7 +327,7 @@
             });
 
             // =============================================
-            // PREVISUALIZAR (MODAL)
+            // PREVISUALIZAR → construye la tabla EDITABLE
             // =============================================
             previewBtn.addEventListener('click', function() {
                 if (currentFeatures.length === 0) {
@@ -414,38 +340,111 @@
                     return;
                 }
 
-                previewModalBody.innerHTML = '';
-                
+                previewBody.innerHTML = '';
+
+                const producersOptions = `
+                    <option value="">Sin asignar</option>
+                    @foreach($producers as $producer)
+                        <option value="{{ $producer->id }}">{{ $producer->name }} {{ $producer->lastname }}</option>
+                    @endforeach
+                `;
+
+                const parishesOptions = `
+                    <option value="">Sin asignar</option>
+                    @foreach($parishes as $parish)
+                        <option value="{{ $parish->id }}">{{ $parish->name }}</option>
+                    @endforeach
+                `;
+
                 currentFeatures.forEach((feature, index) => {
                     const props = feature.properties || {};
                     const row = document.createElement('tr');
-                    
-                    const id = props.id || props.ID || `feature-${index}`;
+
+                    const id = props.id || props.ID || '';
                     const name = props.name || props.Nombre || props.Productor || 'Polígono';
                     const area = props.area_ha || props.Area_Ha || props.area || '';
-                    const producer = props.producer || props.Productor || props.propietario || '';
-                    const parish = props.parish || props.Parroquia || props.parroquia || '';
-                    
+                    const producerName = props.Productor || props.producer || props.propietario || '';
+                    const producerId = props.producer_id || '';
+                    const parishId = props.parish_id || '';
+
                     row.innerHTML = `
-                        <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">${index + 1}</td>
-                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-200 font-mono">${id}</td>
-                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-200">${name}</td>
-                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-200">${area ? parseFloat(area).toFixed(2) : '-'}</td>
-                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-200">${producer || '-'}</td>
-                        <td class="px-4 py-2 text-sm text-gray-900 dark:text-gray-200">${parish || '-'}</td>
+                           <td class="px-2 py-1 whitespace-nowrap">
+                            <input type="text" data-field="id" value="${id}" readonly
+                                size="${Math.max(String(id).length, 8)}"
+                                class="w-auto min-w-[8rem] px-2 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 
+                                          bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed
+                                          focus:outline-none">
+                        </td>
+                           <td class="px-2 py-1 whitespace-nowrap">
+                            <input type="text" data-field="name" value="${name}"
+                                size="${Math.max(String(name).length, 16)}"
+                                class="w-auto min-w-[12rem] px-2 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 
+                                          bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                          focus:outline-none focus:ring-2 focus:ring-custom-gold-dark/60">
+                        </td>
+                           <td class="px-2 py-1 whitespace-nowrap">
+                            <input type="number" step="0.01" data-field="area_ha" value="${area}"
+                                size="${Math.max(String(area).length, 10)}"
+                                class="w-auto min-w-[9rem] px-2 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 
+                                          bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                          focus:outline-none focus:ring-2 focus:ring-custom-gold-dark/60">
+                        </td>
+                           <td class="px-2 py-1 whitespace-nowrap">
+                            <select data-field="producer_id"
+                                 class="w-max min-w-[14rem] px-2 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 
+                                           bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                           focus:outline-none focus:ring-2 focus:ring-custom-gold-dark/60">
+                                ${producersOptions}
+                            </select>
+                            <input type="hidden" data-field="producer_name" value="${producerName}">
+                        </td>
+                        <td class="px-2 py-1 whitespace-nowrap">
+                            <select data-field="parish_id"
+                                    class="w-max min-w-[14rem] px-2 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 
+                                           bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                           focus:outline-none focus:ring-2 focus:ring-custom-gold-dark/60">
+                                ${parishesOptions}
+                            </select>
+                        </td>
                     `;
-                    previewModalBody.appendChild(row);
+
+                    previewBody.appendChild(row);
+
+                    const producerSelect = row.querySelector('[data-field="producer_id"]');
+                    const parishSelect = row.querySelector('[data-field="parish_id"]');
+
+                    if (producerId) producerSelect.value = producerId;
+                    if (parishId) parishSelect.value = parishId;
                 });
 
-                previewModalCount.textContent = `${currentFeatures.length} features cargados`;
-                openModal();
+                featureCount.textContent = `${currentFeatures.length} features`;
+                previewContainer.classList.remove('hidden');
+                previewContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
 
             // =============================================
-            // 🔑 SUBMIT: CONSTRUIR LOS INPUTS features[] DINÁMICAMENTE
+            // CONFIRMAR Y CERRAR → solo oculta la sección
+            // =============================================
+            confirmPreviewBtn?.addEventListener('click', function () {
+                previewContainer.classList.add('hidden');
+                document.querySelector('#import-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Cambios confirmados',
+                    text: 'Puedes proceder a importar cuando estés listo.',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            });
+
+            // =============================================
+            // SUBMIT: leer los valores EDITADOS y enviarlos
             // =============================================
             form.addEventListener('submit', function(e) {
-                // Validar que haya features
                 if (currentFeatures.length === 0) {
                     e.preventDefault();
                     Swal.fire({
@@ -457,41 +456,67 @@
                     return;
                 }
 
-                // ✅ Limpiar inputs previos por si el usuario envía dos veces
                 form.querySelectorAll('.dynamic-feature-input').forEach(el => el.remove());
 
-                // ✅ Construir inputs hidden con el formato que espera processImport()
-                const defaultProducerId = document.getElementById('default_producer_id').value;
-                const defaultParishId = document.getElementById('parish_id').value;
-                const producerField = document.getElementById('producer_field').value || 'Productor';
+                const rows = previewBody.querySelectorAll('tr');
 
-                currentFeatures.forEach((feature, index) => {
-                    const props = feature.properties || {};
-                    const geometryStr = JSON.stringify(feature.geometry);
+                if (rows.length === 0) {
+                    const defaultProducerId = document.getElementById('default_producer_id').value;
+                    const defaultParishId = document.getElementById('parish_id').value;
+                    const producerField = document.getElementById('producer_field').value || 'Productor';
 
-                    // Campos que el controlador espera
-                    const fields = {
-                        id: props.id || props.ID || '',
-                        name: props.name || props.Nombre || 'Polígono importado',
-                        area_ha: props.area_ha || props.Area_Ha || props.area || '',
-                        producer_id: props.producer_id || defaultProducerId || '',
-                        parish_id: props.parish_id || defaultParishId || '',
-                        producer_name: props[producerField] || props.Productor || '',
-                        geometry: geometryStr,
-                    };
+                    currentFeatures.forEach((feature, index) => {
+                        const props = feature.properties || {};
+                        const fields = {
+                            id: props.id || props.ID || '',
+                            name: props.name || props.Nombre || 'Polígono importado',
+                            area_ha: props.area_ha || props.Area_Ha || props.area || '',
+                            producer_id: props.producer_id || defaultProducerId || '',
+                            parish_id: props.parish_id || defaultParishId || '',
+                            producer_name: props[producerField] || props.Productor || '',
+                            geometry: JSON.stringify(feature.geometry),
+                        };
 
-                    // Añadir cada campo como input hidden
-                    Object.entries(fields).forEach(([key, value]) => {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = `features[${index}][${key}]`;
-                        input.value = value;
-                        input.classList.add('dynamic-feature-input');
-                        form.appendChild(input);
+                        Object.entries(fields).forEach(([key, value]) => {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = `features[${index}][${key}]`;
+                            input.value = value;
+                            input.classList.add('dynamic-feature-input');
+                            form.appendChild(input);
+                        });
                     });
-                });
+                } else {
+                    rows.forEach((row, index) => {
+                        const feature = currentFeatures[index];
+                        if (!feature) return;
 
-                // ✅ Feedback visual (opcional)
+                        const getValue = (field) => {
+                            const el = row.querySelector(`[data-field="${field}"]`);
+                            return el ? el.value : '';
+                        };
+
+                        const fields = {
+                            id: getValue('id'),
+                            name: getValue('name'),
+                            area_ha: getValue('area_ha'),
+                            producer_id: getValue('producer_id'),
+                            parish_id: getValue('parish_id'),
+                            producer_name: getValue('producer_name'),
+                            geometry: JSON.stringify(feature.geometry),
+                        };
+
+                        Object.entries(fields).forEach(([key, value]) => {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = `features[${index}][${key}]`;
+                            input.value = value;
+                            input.classList.add('dynamic-feature-input');
+                            form.appendChild(input);
+                        });
+                    });
+                }
+
                 Swal.fire({
                     title: 'Importando...',
                     text: 'Por favor espera mientras se procesan los datos',
@@ -499,8 +524,6 @@
                     allowEscapeKey: false,
                     didOpen: () => { Swal.showLoading(); }
                 });
-
-                // El form se envía normal (no hacemos preventDefault)
             });
         });
     </script>
