@@ -214,6 +214,7 @@
                     'login'              => 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
                     'logout'             => 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
                     'analyzed_multiple'  => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+                    'analyzed'           => 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-300',
                     default              => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
                 };
 
@@ -224,7 +225,8 @@
                     'restored'          => 'Restauró',
                     'login'             => 'Ingresó',
                     'logout'            => 'Salió',
-                    'analyzed_multiple' => 'Analizó',
+                    'analyzed_multiple' => 'Analizó varios',
+                    'analyzed'          => 'Analizó',
                 ][$ev] ?? ucfirst(str_replace('_', ' ', $ev));
             @endphp
             <div class="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
