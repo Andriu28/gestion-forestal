@@ -176,7 +176,7 @@
                     <div class="flex items-center justify-end pt-4 pb-3 border-t border-gray-200 dark:border-gray-700">
                         <div class="flex items-center space-x-3">
                             <a href="{{ route('polygons.index') }}"
-                               class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors duration-200">
+                               class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium">
                                 Cancelar
                             </a>
                             <button type="submit" form="import-form" id="preview-import-btn"
