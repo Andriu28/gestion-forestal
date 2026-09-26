@@ -65,4 +65,19 @@ class Deforestation extends Model
         }
         return "Análisis #{$this->id} - {$this->year}";
     }
+
+    protected static function booted(): void
+    {
+        static::saved(function (Deforestation $deforestation) {
+            $deforestation->polygon?->refreshDeforestedFlag();
+        });
+
+        static::deleted(function (Deforestation $deforestation) {
+            $deforestation->polygon?->refreshDeforestedFlag();
+        });
+
+        static::restored(function (Deforestation $deforestation) {
+            $deforestation->polygon?->refreshDeforestedFlag();
+        });
+    }
 }

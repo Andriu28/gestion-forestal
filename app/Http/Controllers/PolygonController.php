@@ -123,9 +123,9 @@ class PolygonController extends Controller
 
         // 6. Deforestación (con o sin)
         if ($hasDeforestation === 'yes') {
-            $query->whereHas('deforestations');
+            $query->where('deforested', true);
         } elseif ($hasDeforestation === 'no') {
-            $query->whereDoesntHave('deforestations');
+            $query->where('deforested', false);
         }
 
         // 7. Rango de años (polígonos que tienen deforestación en ese año)
@@ -902,6 +902,9 @@ class PolygonController extends Controller
                         $producer = Producer::create([
                             'name' => $firstName,
                             'lastname' => $lastName,
+                            'cedula'      => null,       // ← explícito: importación no provee cédula
+                            'cedula_type' => 'V',        // ← valor por defecto, coherente con Livewire
+                            'code'        => null,       // ← no se genera código sin cédula
                             'is_active' => true,
                         ]);
                         $producerId = $producer->id;
@@ -1034,6 +1037,9 @@ class PolygonController extends Controller
                         $producer = Producer::create([
                             'name' => $parts[0],
                             'lastname' => $parts[1] ?? '',
+                            'cedula'      => null,       // ← explícito
+                            'cedula_type' => 'V',        // ← consistente con Livewire
+                            'code'        => null,       // ← sin código sin cédula
                             'is_active' => true,
                         ]);
                     }

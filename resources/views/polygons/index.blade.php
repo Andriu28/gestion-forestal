@@ -342,6 +342,7 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Área (Ha)</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Descripción</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Estado</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Deforestado</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
@@ -365,6 +366,17 @@
                                                 @else
                                                     <span class="inline-block px-3 py-1 text-xs font-semibold {{ $polygon->is_active ? 'bg-green-500/70 dark:bg-green-400/50 text-white' : 'bg-yellow-400/60 dark:bg-yellow-400/70 text-white' }} rounded-full">
                                                         {{ $polygon->is_active ? 'Activo' : 'Inactivo' }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-2 whitespace-nowrap">
+                                                @if($polygon->deforested)
+                                                    <span class="inline-block px-3 py-1 text-xs font-semibold bg-red-500/80 text-white rounded-full">
+                                                        Deforestado
+                                                    </span>
+                                                @else
+                                                    <span class="inline-block px-3 py-1 text-xs font-semibold bg-emerald-500/80 text-white rounded-full">
+                                                        Sin pérdida
                                                     </span>
                                                 @endif
                                             </td>

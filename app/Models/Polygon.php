@@ -23,6 +23,7 @@ class Polygon extends Model
         'parish_id',
         'area_ha',
         'is_active',
+        'deforested', 
         'centroid_lat',
         'centroid_lng',
         'location_data',
@@ -31,6 +32,7 @@ class Polygon extends Model
 
     protected $casts = [
         'is_active'     => 'boolean',
+        'deforested'    => 'boolean',
         'area_ha'       => 'decimal:4',
         'location_data' => 'array',
         'centroid_lat'  => 'double',
@@ -117,6 +119,16 @@ class Polygon extends Model
         return $query->whereNull('producer_id');
     }
 
+    public function scopeDeforested(Builder $query): Builder
+    {
+        return $query->where('deforested', true);
+    }
+
+    public function scopeWithoutDeforestation(Builder $query): Builder
+    {
+        return $query->where('deforested', false);
+    }
+
     /**
      * Búsqueda por nombre, descripción, productor o jerarquía geográfica.
      * Envuelto en un grupo para que los OR no contaminen condiciones externas.
@@ -189,6 +201,14 @@ class Polygon extends Model
         }
 
         return 'Ubicación no asignada';
+    }
+
+    public function getDeforestationBadgeAttribute(): string
+    {
+        if ($this->deforested) {
+            return '<span class="inline-block px-3 py-1 text-xs font-semibold bg-red-600 text-white rounded-full">Con deforestación</span>';
+        }
+        return '<span class="inline-block px-3 py-1 text-xs font-semibold bg-green-600 text-white rounded-full">Sin deforestación</span>';
     }
 
     // ---- Campos detectados (leídos desde location_data) ---------------------
@@ -483,5 +503,22 @@ class Polygon extends Model
 
         return $polygon;
     }
+
+    /**
+     * Recalcula y persiste el flag `deforested` según sus registros actuales.
+     */
+    public function refreshDeforestedFlag(): void
+    {
+        // Fuerza consulta fresca a la BD (no confía en relaciones ya cargadas)
+        $hasDeforestation = $this->deforestations()
+            ->where('deforested_area_ha', '>', 0)
+            ->exists();
+
+        if ((bool) $this->deforested !== $hasDeforestation) {
+            $this->updateQuietly(['deforested' => $hasDeforestation]);
+        }
+    }
+
+    
     
 }

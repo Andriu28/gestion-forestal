@@ -370,6 +370,8 @@ class DeforestationController extends Controller
                     }
                 });
 
+                // sincronizar flag de deforestación (los eventos están desactivados arriba)
+                $this->syncDeforestationDerivedFields($polygon);    
                 $dataToPass['polygon_id'] = $polygon->id;
 
                     if (!$skipActivity) {
@@ -762,6 +764,9 @@ class DeforestationController extends Controller
                         }
                     });
 
+                    // sincronizar flag
+                    $this->syncDeforestationDerivedFields($polygon);
+
                     // Registrar evento analyzed
                     $totalLossResults = $this->calculateTotalLossStats(
                         array_replace($existingRecords, $newResults),
@@ -954,5 +959,29 @@ class DeforestationController extends Controller
             ])
             ->event('analyzed_multiple')
             ->log("Análisis múltiple de " . count($multiResults) . " polígonos (no guardado)");
+    }
+
+    /**
+     * Sincroniza los campos derivados del polígono que dependen de sus
+     * registros de deforestación.
+     *
+     * Se llama después de cualquier operación que modifique la tabla
+     * `deforestation` dentro de un bloque `withoutEvents`, porque en esos
+     * bloques los listeners del modelo Deforestation están desactivados
+     * y el flag no se actualizaría solo.
+     *
+     * Centraliza aquí cualquier campo futuro (ej: last_deforestation_year,
+     * total_loss_ha, etc.) para no repetir lógica en cada sitio de guardado.
+     */
+    private function syncDeforestationDerivedFields(Polygon $polygon): void
+    {
+        // 1. Recalcula y persiste el flag booleano `deforested`
+        $polygon->refreshDeforestedFlag();
+
+        // 2. (Futuro) Aquí podrías añadir más sincronizaciones, ej:
+        //    $polygon->updateQuietly([
+        //        'last_deforestation_year' => $polygon->deforestations()->max('year'),
+        //        'total_loss_ha'           => $polygon->deforestations()->sum('deforested_area_ha'),
+        //    ]);
     }
 }
