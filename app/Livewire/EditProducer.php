@@ -210,6 +210,7 @@ class EditProducer extends Component
             'lastname'        => $validatedData['lastname'],
             'cedula_type'     => $validatedData['cedula_type'],
             'cedula'          => $validatedData['cedula'],
+            'code'            => $this->codePreview(),
             'description'     => $validatedData['description'],
             'is_active'       => $validatedData['is_active'],
             'latitude'        => $this->latitude,

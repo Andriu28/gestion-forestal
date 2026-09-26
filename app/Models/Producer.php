@@ -179,5 +179,21 @@ class Producer extends Model
         if (!$this->cedula) return '—';
         return "{$this->cedula_type}-" . number_format((int) $this->cedula, 0, '', '.');
     }
+
+    /**
+     * Devuelve la cédula formateada como "V-12345678".
+     * Si no hay cédula registrada, devuelve null.
+     * Si hay cédula pero no tipo, asume 'V'.
+     */
+    public function getCedulaFormattedAttribute(): ?string
+    {
+        if (empty($this->cedula)) {
+            return null;
+        }
+
+        $type = $this->cedula_type ?: 'V';
+
+        return strtoupper($type) . '-' . $this->cedula;
+    }
    
 }

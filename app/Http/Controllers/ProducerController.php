@@ -355,6 +355,7 @@ class ProducerController extends Controller
                 'lastname'    => $producer->lastname,
                 'cedula_type' => $producer->cedula_type, // <-- opcional, útil
                 'cedula'      => $producer->cedula,      // <-- opcional
+                'cedula_formatted'  => $producer->cedula_formatted, 
                 'description' => $producer->description,
                 'is_active'   => $producer->is_active,
                 'deleted_at'  => $producer->deleted_at,

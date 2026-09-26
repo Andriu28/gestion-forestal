@@ -124,7 +124,8 @@
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->code }}</td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->name }}</td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->lastname ?? 'N/A' }}</td>
-                                        <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400 font-mono">{{ $producer->cedula ?? 'N/A' }}</td>
+                                        <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400 font-mono">{{ $producer->cedula_formatted ?? 'N/A' }}
+</td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 text-gray-900 dark:text-gray-400">
                                             {{ Str::limit($producer->description, 50) ?? 'Sin descripción' }}
                                         </td>
@@ -512,6 +513,14 @@ function formatProducerDetails(producer) {
                                     <div class="flex justify-between">
                                         <span class="text-gray-600 dark:text-gray-400">Apellido:</span>
                                         <span class="font-medium text-gray-900 dark:text-white">${producer.lastname || 'N/A'}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">Cédula:</span>
+                                        <span class="font-medium text-gray-900 dark:text-white font-mono">${producer.cedula_formatted || 'N/A'}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">Código:</span>
+                                        <span class="font-medium text-gray-900 dark:text-white font-mono">${producer.code || 'Sin código'}</span>
                                     </div>
                                 </div>
                             </div>
