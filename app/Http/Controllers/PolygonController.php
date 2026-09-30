@@ -871,6 +871,7 @@ class PolygonController extends Controller
         set_time_limit(0);
 
         foreach ($features as $index => $feature) {
+            $externalId = null;
             try {
                 // 1. Validar geometría
                 if (!isset($feature['geometry']) || !isset($feature['geometry']['type'])) {
@@ -920,7 +921,7 @@ class PolygonController extends Controller
 
                 // 4. Verificar duplicado por external_id
                 $externalId = $properties['id'] ?? null;
-                if ($externalId && $skipExisting && Polygon::where('external_id', $externalId)->exists()) {
+                if ($externalId && $skipExisting && Polygon::withTrashed()->where('external_id', $externalId)->exists()) {
                     $skipped++;
                     continue;
                 }
@@ -934,8 +935,27 @@ class PolygonController extends Controller
                 Polygon::createFromGeoJsonFeature($feature, $srid, $extra);
 
                 $imported++;
-            } catch (\Exception $e) {
-                $errors[] = "Error en feature #$index: " . $e->getMessage();
+            } catch (\Illuminate\Database\QueryException $e) {
+                // Detectar violación de unicidad de Postgres (SQLSTATE 23505)
+                if ($e->getCode() === '23505' || str_contains($e->getMessage(), '23505')) {
+                    $duplicado = $externalId ? " (ID externo: {$externalId})" : '';
+                    $errors[] = "Feature #{$index}: ya existe un polígono con este identificador{$duplicado}. "
+                            . "Activa 'Omitir duplicados' o elimina el registro existente antes de re-importar.";
+                    $skipped++;
+                } else {
+                    Log::error('Error importando feature', [
+                        'index' => $index,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $errors[] = "Feature #{$index}: error al guardar en la base de datos. Revisa el log para más detalles.";
+                }
+            } catch (\Throwable $e) {
+                Log::error('Error inesperado importando feature', [
+                    'index' => $index,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                $errors[] = "Feature #{$index}: " . $e->getMessage();
             }
         }
 
@@ -1007,8 +1027,10 @@ class PolygonController extends Controller
         $imported = 0;
         $skipped = 0;
         $errors = [];
+        $duplicated = [];
 
         foreach ($features as $index => $featureData) {
+            $externalId = null;
             try {
                 // Validar geometría
                 if (empty($featureData['geometry'])) {
@@ -1023,7 +1045,7 @@ class PolygonController extends Controller
                 $producerId = $featureData['producer_id'] ?? null;
 
                 // Omitir duplicados
-                if ($externalId && $skipExisting && Polygon::where('external_id', $externalId)->exists()) {
+                if ($externalId && $skipExisting && Polygon::withTrashed()->where('external_id', $externalId)->exists()) {
                     $skipped++;
                     continue;
                 }
@@ -1078,19 +1100,58 @@ class PolygonController extends Controller
                 }
 
                 $imported++;
-            } catch (\Exception $e) {
-                $errors[] = "Error en feature #$index: " . $e->getMessage();
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($e->getCode() === '23505' || str_contains($e->getMessage(), '23505')) {
+                    // Duplicado: NO cuenta como skipped, va a su propio contador
+                    $duplicated[] = $externalId ?? "#{$index}";
+                } else {
+                    Log::error('Error importando feature', [
+                        'index' => $index,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $errors[] = "Feature #{$index}: error de base de datos (revisa el log)";
+                }
+            } catch (\Throwable $e) {
+                Log::error('Error inesperado importando feature', [
+                    'index' => $index,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                $errors[] = "Feature #{$index}: " . $e->getMessage();
             }
         }
 
-        $message = "Importación completada. $imported polígonos importados.";
+        $message = $this->buildImportSummary($imported, $skipped, $duplicated, $errors);
+        return redirect()->route('polygons.index')->with('success', $message);
+    }
+
+    /**
+     * Construye un mensaje breve con los conteos de la importación.
+     * Sin listar IDs ni sugerencias: solo el resumen numérico.
+     */
+    private function buildImportSummary(
+        int $imported,
+        int $skipped,
+        array $duplicated,
+        array $errors
+    ): string {
+        $parts = [];
+
+        if ($imported > 0) {
+            $parts[] = "<strong>{$imported}</strong> importado" . ($imported === 1 ? '' : 's');
+        }
         if ($skipped > 0) {
-            $message .= " $skipped polígonos omitidos (ya existían).";
+            $parts[] = "<strong>{$skipped}</strong> omitido" . ($skipped === 1 ? '' : 's');
+        }
+        if (!empty($duplicated)) {
+            $n = count($duplicated);
+            $parts[] = "<strong>{$n}</strong> duplicado" . ($n === 1 ? '' : 's');
         }
         if (!empty($errors)) {
-            $message .= " Errores: " . implode('; ', $errors);
+            $n = count($errors);
+            $parts[] = "<strong>{$n}</strong> error" . ($n === 1 ? '' : 'es');
         }
 
-        return redirect()->route('polygons.index')->with('success', $message);
+        return empty($parts) ? 'Sin cambios.' : implode(' · ', $parts);
     }
 }

@@ -492,7 +492,10 @@ class DeforestationController extends Controller
         $yearlyBreakdown = [];
 
         foreach ($yearlyResults as $year => $yearData) {
-            if (isset($yearData['area__ha']) && $yearData['status'] === 'success') {
+            // Normalizar: puede venir como stdClass (query builder) o array
+            $yearData = (array) $yearData;
+
+            if (isset($yearData['area__ha']) && ($yearData['status'] ?? null) === 'success') {
                 $currentArea = $yearData['area__ha'];
                 $totalDeforestedArea += $currentArea;
                 $validYears++;
@@ -737,59 +740,65 @@ class DeforestationController extends Controller
             $newResults = $this->getParallelYearlyStats($geometryGeoJson, $yearsToAnalyze);
         }
 
-        // 2. Guardar si se solicita y hay nuevos resultados
-        if (!empty($newResults) && $saveAnalysis) {
+        // 2. Guardar si se solicita
+        if ($saveAnalysis) {
             try {
-                DB::transaction(function () use ($newResults, $polygonId, $areaHa, $startYear, $end_year, $polygonName) {
+                DB::transaction(function () use ($newResults, $polygonId, $areaHa, $startYear, $end_year, $existingRecords) {
                     $polygon = Polygon::withTrashed()->findOrFail($polygonId);
 
-                    // Guardar sin eventos
-                    Deforestation::withoutEvents(function () use ($newResults, $polygonId, $areaHa) {
-                        foreach ($newResults as $year => $data) {
-                            if ($data['status'] === 'success') {
-                                $currentArea = (float) $data['area__ha'];
-                                $percentage = $areaHa > 0 ? ($currentArea / $areaHa) * 100 : 0;
+                    // 2.a. Guardar SOLO si hay años nuevos
+                    if (!empty($newResults)) {
+                        Deforestation::withoutEvents(function () use ($newResults, $polygonId, $areaHa) {
+                            foreach ($newResults as $year => $data) {
+                                if ($data['status'] === 'success') {
+                                    $currentArea = (float) $data['area__ha'];
+                                    $percentage = $areaHa > 0 ? ($currentArea / $areaHa) * 100 : 0;
 
-                                Deforestation::updateOrCreate(
-                                    [
-                                        'polygon_id' => $polygonId,
-                                        'year'       => (int) $year,
-                                    ],
-                                    [
-                                        'deforested_area_ha' => $currentArea,
-                                        'percentage_loss'    => $percentage > 100 ? 100 : $percentage,
-                                    ]
-                                );
+                                    Deforestation::updateOrCreate(
+                                        [
+                                            'polygon_id' => $polygonId,
+                                            'year'       => (int) $year,
+                                        ],
+                                        [
+                                            'deforested_area_ha' => $currentArea,
+                                            'percentage_loss'    => $percentage > 100 ? 100 : $percentage,
+                                        ]
+                                    );
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
 
-                    // sincronizar flag
-                    $this->syncDeforestationDerivedFields($polygon);
+                    // 2.b. Sincronizar SIEMPRE (con o sin nuevos años)
+                    //      Los eventos del modelo están silenciados arriba por withoutEvents,
+                    //      así que hay que forzar el recálculo manualmente.
+                    $this->syncDeforestationDerivedFields($polygon); 
 
-                    // Registrar evento analyzed
-                    $totalLossResults = $this->calculateTotalLossStats(
-                        array_replace($existingRecords, $newResults),
-                        $areaHa,
-                        $startYear,
-                        $end_year
-                    );
+                    // 2.c. Registrar evento only si hubo nuevos años
+                    if (!empty($newResults)) {
+                        $totalLossResults = $this->calculateTotalLossStats(
+                            array_replace($existingRecords, $newResults),
+                            $areaHa,
+                            $startYear,
+                            $end_year
+                        );
 
-                    activity()
-                        ->causedBy(auth()->user())
-                        ->performedOn($polygon)
-                        ->withProperties([
-                            'start_year'      => $startYear,
-                            'end_year'        => $end_year,
-                            'total_deforested' => $totalLossResults['totalDeforestedArea'],
-                            'total_percentage' => $totalLossResults['totalPercentage'],
-                            'polygon_updated'  => true,
-                            'years_analyzed'   => $newResults,
-                        ])
-                        ->event('analyzed')
-                        ->log("Nuevo análisis de deforestación completado para el polígono '{$polygon->name}'");
-
+                        activity()
+                            ->causedBy(auth()->user())
+                            ->performedOn($polygon)
+                            ->withProperties([
+                                'start_year'       => $startYear,
+                                'end_year'         => $end_year,
+                                'total_deforested' => $totalLossResults['totalDeforestedArea'],
+                                'total_percentage' => $totalLossResults['totalPercentage'],
+                                'polygon_updated'  => true,
+                                'years_analyzed'   => $newResults,
+                            ])
+                            ->event('analyzed')
+                            ->log("Nuevo análisis de deforestación completado para el polígono '{$polygon->name}'");
+                    }
                 });
+
                 session()->flash('save_success', 'Los nuevos datos del análisis han sido guardados.');
             } catch (\Exception $e) {
                 Log::error("Error al guardar nuevos años para polígono {$polygonId}: " . $e->getMessage());

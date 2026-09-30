@@ -396,15 +396,16 @@
                                                         </button>
 
                                                         <form id="analyze-form-{{ $polygon->id }}" action="{{ route('deforestation.polygon') }}" method="POST" style="display: none;">
-                                                                @csrf
-                                                                <input type="hidden" name="id" value="{{ $polygon->id }}">
-                                                                <input type="hidden" name="name" value="{{ $polygon->name }}">
-                                                                <input type="hidden" name="geometry" value="{{ $polygon->geometry }}">
-                                                                <input type="hidden" name="area_ha" value="{{ $polygon->area_ha }}">
-                                                                <input type="hidden" name="description" value="{{ $polygon->description }}">
-                                                                <input type="hidden" name="start_year" id="start-{{ $polygon->id }}">
-                                                                <input type="hidden" name="end_year" id="end-{{ $polygon->id }}">
-                                                                <input type="hidden" name="save_analysis" id="save-{{ $polygon->id }}"> </form>
+                                                            @csrf
+                                                            <input type="hidden" name="id" value="{{ $polygon->id }}">
+                                                            <input type="hidden" name="name" value="{{ $polygon->name }}">
+                                                            <input type="hidden" name="geometry" value="{{ $polygon->geometry }}">
+                                                            <input type="hidden" name="area_ha" value="{{ $polygon->area_ha }}">
+                                                            <input type="hidden" name="description" value="{{ $polygon->description }}">
+                                                            <input type="hidden" name="start_year" id="start-{{ $polygon->id }}">
+                                                            <input type="hidden" name="end_year" id="end-{{ $polygon->id }}">
+                                                            <input type="hidden" name="save_analysis" id="save-{{ $polygon->id }}"> 
+                                                        </form>
 
                                                             <button type="button" 
                                                                     onclick="confirmAnalysis({{ $polygon->id }}, '{{ json_encode($polygon->name) }}')"
