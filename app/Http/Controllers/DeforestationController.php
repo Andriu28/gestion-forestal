@@ -391,9 +391,12 @@ class DeforestationController extends Controller
      */
     private function validateAnalyzeRequest(Request $request, bool $saveAnalysis)
     {
+        $minYear = (int) config('deforestation.min_year');
+        $maxYear = (int) config('deforestation.max_year');
+
         $rules = [
-            'start_year'    => 'required|integer|min:2001|max:2024',
-            'end_year'      => 'required|integer|min:2001|max:2025|gte:start_year',
+            'start_year'    => "required|integer|min:{$minYear}|max:{$maxYear}",
+            'end_year'      => "required|integer|min:{$minYear}|max:{$maxYear}|gte:start_year",
             'geometry'      => 'required|string',
             'area_ha'       => 'required|numeric|min:0.01',
             'description'   => 'nullable|string|max:1000',

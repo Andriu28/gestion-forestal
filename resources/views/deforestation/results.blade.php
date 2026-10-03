@@ -787,10 +787,11 @@ function saveYearEdit() {
         return;
     }
     
-    const currentYear = new Date().getFullYear();
-    if (newStartYear < 2000 || newStartYear > currentYear || 
-        newEndYear < 2000 || newEndYear > currentYear) {
-        alert(`Los años deben estar entre 2000 y ${currentYear}`);
+    const minYear = {{ config('deforestation.min_year') }};
+    const maxYear = {{ config('deforestation.max_year') }};
+    if (newStartYear < minYear || newStartYear > maxYear || 
+        newEndYear < minYear || newEndYear > maxYear) {
+        alert(`Los años deben estar entre ${minYear} y ${maxYear}`);
         return;
     }
     

@@ -1122,8 +1122,11 @@ class PolygonController extends Controller
             $deforestedHa = null;
             if (!empty($options['analyze_deforestation'])) {
                 try {
-                    $yearly = $polygon->analyzeDeforestationFromGFW(2020, 2025);
-                    $wasAnalyzed = true;
+                    $startYear = (int) config('deforestation.import_default_start_year');
+                    $endYear   = (int) config('deforestation.import_default_end_year');
+
+                    $yearly       = $polygon->analyzeDeforestationFromGFW($startYear, $endYear);
+                    $wasAnalyzed  = true;
                     $deforestedHa = array_sum(array_column($yearly, 'area__ha'));
                 } catch (\Throwable $e) {
                     Log::warning("Análisis post-importación falló para polígono {$polygon->id}", [
