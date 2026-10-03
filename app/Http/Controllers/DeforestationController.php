@@ -245,35 +245,34 @@ class DeforestationController extends Controller
         }
 
         $startYear = $globalParams['start_year'];
-        $endYear = $globalParams['end_year'];
-        $requestedYears = range($startYear, $endYear);
+        $endYear   = $globalParams['end_year'];
 
-        // Obtener registros existentes de deforestación para este polígono
-        $existingRecords = [];
+        // Delegamos el análisis al modelo cuando el polígono ya existe:
+        // lee años persistidos, consulta GFW solo por los faltantes y, si
+        // save_analysis está activo, persiste los nuevos.
+        // Para polígonos nuevos, consultamos GFW directamente (sin persistir);
+        // la persistencia se hace después al crear el polígono.
         if ($polygonId) {
-            $existingRecords = DB::table('deforestation')
-                ->select('year', 'deforested_area_ha as area__ha', DB::raw("'success' as status"))
-                ->where('polygon_id', $polygonId)
-                ->whereBetween('year', [$startYear, $endYear])
-                ->get()
-                ->keyBy('year')
-                ->toArray();
+            $polygon = Polygon::findOrFail($polygonId);
+
+            // Asegurar que el área en BD coincide con la que vamos a usar
+            if ((float) $polygon->area_ha !== (float) $areaHa) {
+                $polygon->updateQuietly(['area_ha' => $areaHa]);
+                $polygon->refresh();
+            }
+
+            $yearlyResults = $polygon->analyzeDeforestationFromGFW(
+                $startYear,
+                $endYear,
+                $globalParams['save_analysis']
+            );
+        } else {
+            $yearlyResults = $this->gfwService->getParallelYearlyStats(
+                $geometryGeoJson,
+                range($startYear, $endYear)
+            );
+            ksort($yearlyResults);
         }
-
-        $existingYears = array_keys($existingRecords);
-        $yearsToAnalyze = array_diff($requestedYears, $existingYears);
-
-        // Consultar GFW solo para años faltantes
-                $newResults = [];
-        if (!empty($yearsToAnalyze)) {
-            $newResults = $this->gfwService->getParallelYearlyStats($geometryGeoJson, array_values($yearsToAnalyze));
-        }
-
-        $yearlyResults = array_replace(
-            array_map(fn($item) => (array)$item, $existingRecords),
-            $newResults
-        );
-        ksort($yearlyResults);
 
         // Calcular pérdida total
         $totalLossResults = $this->calculateTotalLossStats($yearlyResults, $areaHa, $startYear, $endYear);
@@ -350,23 +349,15 @@ class DeforestationController extends Controller
                 }
 
                 // Guardar/actualizar registros de deforestación (SIN LOG)
-                Deforestation::withoutEvents(function () use ($polygon, $dataToPass) {
-                    foreach ($dataToPass['total_loss']['yearlyBreakdown'] as $yearData) {
-                        Deforestation::updateOrCreate(
-                            [
-                                'polygon_id' => $polygon->id,
-                                'year'       => $yearData['year'],
-                            ],
-                            [
-                                'deforested_area_ha' => $yearData['area_ha'],
-                                'percentage_loss'    => $yearData['percentage'],
-                            ]
-                        );
-                    }
-                });
+                                // Si el polígono ya existía, Polygon::analyzeDeforestationFromGFW()
+                // ya persistió los años y refrescó el flag.
+                // Si es nuevo, persistimos ahora con los datos ya consultados.
+                if (!$existingId) {
+                    $polygon->persistYearlyResultsFromBreakdown(
+                        $dataToPass['total_loss']['yearlyBreakdown']
+                    );
+                }
 
-                // sincronizar flag de deforestación (los eventos están desactivados arriba)
-                $this->syncDeforestationDerivedFields($polygon);    
                 $dataToPass['polygon_id'] = $polygon->id;
 
                     if (!$skipActivity) {

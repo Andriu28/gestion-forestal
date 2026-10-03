@@ -608,6 +608,39 @@ class Polygon extends Model
         });
     }
 
-    
+        /**
+     * Persiste los años que ya vienen calculados (formato del breakdown de la
+     * vista: [{year, area_ha, percentage}, ...]) sin re-consultar GFW.
+     *
+     * Se usa cuando ya consultamos GFW antes de tener el polígono persistido
+     * (polígono nuevo en el flujo del formulario).
+     *
+     * @param array<int, array{year: int, area_ha: float, percentage: float}> $yearlyBreakdown
+     */
+    public function persistYearlyResultsFromBreakdown(array $yearlyBreakdown): void
+    {
+        $areaHa = (float) $this->area_ha;
+
+        Deforestation::withoutEvents(function () use ($yearlyBreakdown, $areaHa) {
+            foreach ($yearlyBreakdown as $yearData) {
+                $area = (float) ($yearData['area_ha'] ?? 0);
+
+                Deforestation::updateOrCreate(
+                    [
+                        'polygon_id' => $this->id,
+                        'year'       => (int) $yearData['year'],
+                    ],
+                    [
+                        'deforested_area_ha' => $area,
+                        'percentage_loss'    => $areaHa > 0
+                            ? min(100, ($area / $areaHa) * 100)
+                            : 0,
+                    ]
+                );
+            }
+        });
+
+        $this->refreshDeforestedFlag();
+    }
     
 }
