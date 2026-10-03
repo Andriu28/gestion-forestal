@@ -642,5 +642,68 @@ class Polygon extends Model
 
         $this->refreshDeforestedFlag();
     }
+
+        /**
+     * Calcula los totales de pérdida a partir de un mapa de resultados anuales.
+     *
+     * @param  array<int, array{area__ha?: float, status?: string}>  $yearlyResults
+     *         Mapa [year => datos]. Cada entrada debe tener `area__ha` y `status`.
+     * @param  int  $startYear
+     * @param  int  $endYear
+     * @return array{
+     *     totalDeforestedArea: float,
+     *     totalPercentage: float,
+     *     validYears: int,
+     *     totalYearsInRange: int,
+     *     yearlyBreakdown: array<int, array{year:int, area_ha:float, percentage:float, status?:string}>
+     * }
+     */
+    public function buildTotalLossStats(array $yearlyResults, int $startYear, int $endYear): array
+    {
+        $areaHa              = (float) $this->area_ha;
+        $totalDeforestedArea = 0.0;
+        $validYears          = 0;
+        $yearlyBreakdown     = [];
+
+        foreach ($yearlyResults as $year => $yearData) {
+            $yearData = (array) $yearData;
+
+            if (isset($yearData['area__ha']) && ($yearData['status'] ?? null) === 'success') {
+                $currentArea          = (float) $yearData['area__ha'];
+                $totalDeforestedArea += $currentArea;
+                $validYears++;
+
+                $yearlyBreakdown[$year] = [
+                    'year'       => (int) $year,
+                    'area_ha'    => $currentArea,
+                    'percentage' => $areaHa > 0
+                        ? min(100, ($currentArea / $areaHa) * 100)
+                        : 0,
+                ];
+            } else {
+                $yearlyBreakdown[$year] = [
+                    'year'       => (int) $year,
+                    'area_ha'    => 0.0,
+                    'percentage' => 0.0,
+                    'status'     => 'no_data',
+                ];
+            }
+        }
+
+        // Si la suma anual excede el área del polígono, usamos el total como
+        // denominador para que el porcentaje nunca pase de 100 %.
+        $denominator     = max($areaHa, $totalDeforestedArea);
+        $totalPercentage = $denominator > 0
+            ? ($totalDeforestedArea / $denominator) * 100
+            : 0;
+
+        return [
+            'totalDeforestedArea' => $totalDeforestedArea,
+            'totalPercentage'     => $totalPercentage,
+            'validYears'          => $validYears,
+            'totalYearsInRange'   => $endYear - $startYear + 1,
+            'yearlyBreakdown'     => $yearlyBreakdown,
+        ];
+    }
     
 }

@@ -385,50 +385,6 @@ class DeforestationController extends Controller
         
     }
     
-    /**
-     * Calcula la pérdida total acumulada y el porcentaje de deforestación.
-     */
-    private function calculateTotalLossStats(array $yearlyResults, float $areaHa, int $startYear, int $endYear): array
-    {   
-        $totalDeforestedArea = 0;
-        $validYears = 0;
-        $yearlyBreakdown = [];
-
-        foreach ($yearlyResults as $year => $yearData) {
-            // Normalizar: puede venir como stdClass (query builder) o array
-            $yearData = (array) $yearData;
-
-            if (isset($yearData['area__ha']) && ($yearData['status'] ?? null) === 'success') {
-                $currentArea = $yearData['area__ha'];
-                $totalDeforestedArea += $currentArea;
-                $validYears++;
-                $yearlyBreakdown[$year] = [
-                    'year' => $year,
-                    'area_ha' => $currentArea,
-                    'percentage' => $areaHa < $currentArea ? 100 : ($currentArea / $areaHa) * 100
-                ];
-            } else {
-                $yearlyBreakdown[$year] = [
-                    'year' => $year,
-                    'area_ha' => 0,
-                    'percentage' => 0,
-                    'status' => 'no_data'
-                ];
-            }
-        }
-
-        $areaHa = $areaHa < $totalDeforestedArea ? $totalDeforestedArea : $areaHa;
-        $totalPercentage = $areaHa > 0 ? ($totalDeforestedArea / $areaHa) * 100 : 0;
-        $totalYearsInRange = $endYear - $startYear + 1;
-
-        return [
-            'totalDeforestedArea' => $totalDeforestedArea,
-            'totalPercentage' => $totalPercentage,
-            'validYears' => $validYears,
-            'totalYearsInRange' => $totalYearsInRange,
-            'yearlyBreakdown' => $yearlyBreakdown, 
-        ];
-    }
 
     /**
      * Valida la petición del análisis de deforestación (con soporte para múltiples polígonos)
@@ -638,10 +594,9 @@ class DeforestationController extends Controller
             $afterYears = $polygon->deforestations()->pluck('year')->all();
             $newYears   = array_values(array_diff($afterYears, $beforeYears));
 
-            $totalLossResults = $this->calculateTotalLossStats(
-                $yearlyResults, $areaHa, $startYear, $endYear
+            $totalLossResults = $polygon->buildTotalLossStats(
+                $yearlyResults, $startYear, $endYear
             );
-
             if (!empty($newYears)) {
                 activity()
                     ->causedBy(auth()->user())
@@ -664,8 +619,15 @@ class DeforestationController extends Controller
             session()->flash('save_success', 'Los nuevos datos del análisis han sido guardados.');
         }
 
-        $totalLossResults = $this->calculateTotalLossStats(
-            $yearlyResults, $areaHa, $startYear, $endYear
+        // Necesitamos una instancia de Polygon para calcular los totales.
+        // Si ya existe en BD, la usamos; si no, creamos una instancia "en memoria"
+        // con el área calculada para que el cálculo funcione igual.
+        $polygonForStats = $polygonId
+            ? Polygon::findOrFail($polygonId)
+            : (new Polygon(['area_ha' => $areaHa]));
+
+        $totalLossResults = $polygonForStats->buildTotalLossStats(
+            $yearlyResults, $startYear, $endYear
         );
 
         $dataToPass = [
@@ -676,9 +638,7 @@ class DeforestationController extends Controller
             'original_geojson' => $geometryString,
             'type'             => $geometryGeoJson['type'] ?? 'Polygon',
             'geometry'         => $geometryGeoJson['coordinates'][0] ?? [],
-            'area__ha'         => $areaHa < $totalLossResults['totalDeforestedArea']
-                                    ? $totalLossResults['totalDeforestedArea']
-                                    : $areaHa,
+            'area__ha'         => max($areaHa, $totalLossResults['totalDeforestedArea']),
             'polygon_area_ha'  => $areaHa,
             'status'           => 'success',
             'polygon_name'     => $polygonName,
