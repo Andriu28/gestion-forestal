@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Polygon;
 use App\Models\Producer;
-use App\Services\DeforestationService;
 use App\Services\PdfService;
 use App\Models\Deforestation;
 use Illuminate\Http\Request;
@@ -15,19 +14,15 @@ use App\Services\GFWService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PDF;
-use GuzzleHttp\Client;
-use GuzzleHttp\Promise;
 use Spatie\Activitylog\Models\Activity;
 
 class DeforestationController extends Controller
 {
-    protected $deforestationService;
     protected $gfwService;
     protected $pdfService;
     
-    public function __construct(DeforestationService $deforestationService, GFWService $gfwService, PdfService $pdfService)
+    public function __construct(GFWService $gfwService, PdfService $pdfService)
     {
-        $this->deforestationService = $deforestationService;
         $this->gfwService = $gfwService;
         $this->pdfService = $pdfService;
     }
@@ -269,9 +264,9 @@ class DeforestationController extends Controller
         $yearsToAnalyze = array_diff($requestedYears, $existingYears);
 
         // Consultar GFW solo para años faltantes
-        $newResults = [];
+                $newResults = [];
         if (!empty($yearsToAnalyze)) {
-            $newResults = $this->getParallelYearlyStats($geometryGeoJson, $yearsToAnalyze);
+            $newResults = $this->gfwService->getParallelYearlyStats($geometryGeoJson, array_values($yearsToAnalyze));
         }
 
         $yearlyResults = array_replace(
@@ -398,90 +393,7 @@ class DeforestationController extends Controller
         }
         
     }
-
-    /**
-     * Realiza consultas paralelas para múltiples años usando Guzzle
-     */
-    private function getParallelYearlyStats($geometryGeoJson, $years)
-    {
-        $results = [];
-        $client = new Client([
-            'timeout' => 30,
-            'connect_timeout' => 10,
-        ]);
-        
-        $promises = [];
-        foreach ($years as $year) {
-            $promises[$year] = $this->createGFWRequestPromise($client, $geometryGeoJson, (int)$year);
-        }
-        
-        try {
-            $responses = Promise\Utils::settle($promises)->wait();
-            foreach ($responses as $year => $response) {
-                if ($response['state'] === 'fulfilled') {
-                    $data = json_decode($response['value']->getBody(), true);
-                    Log::info("Respuesta GFW para año $year:", [
-                        'status' => $data['status'] ?? 'unknown',
-                        'area_ha' => $data['data'][0]['area__ha'] ?? 0,
-                    ]);
-                    $results[$year] = [
-                        'area__ha' => $data['data'][0]['area__ha'] ?? 0,
-                        'status' => $data['status'] ?? 'error',
-                        'year' => (int)$year
-                    ];
-                } else {
-                    $errorMessage = $response['reason']->getMessage();
-                    Log::error("Error en consulta GFW para año $year: " . $errorMessage);
-                    $results[$year] = [
-                        'area__ha' => 0,
-                        'status' => 'error',
-                        'year' => (int)$year,
-                        'error' => $errorMessage
-                    ];
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error("Error general en consultas paralelas: " . $e->getMessage());
-            foreach ($years as $year) {
-                $results[$year] = [
-                    'area__ha' => 0,
-                    'status' => 'error',
-                    'year' => (int)$year,
-                    'error' => 'Error general en consulta paralela: ' . $e->getMessage()
-                ];
-            }
-        }
-        return $results;
-    }
     
-    /**
-     * Crea una promise para consulta GFW
-     */
-    private function createGFWRequestPromise(Client $client, $geometryGeoJson, $year)
-    {
-        $url = env('GFW_API_BASE_URI') . '/dataset/umd_tree_cover_loss/latest/query';
-        $sql = sprintf("SELECT SUM(area__ha) FROM results WHERE umd_tree_cover_loss__year=%d", $year);
-        $payload = [
-            'geometry' => $geometryGeoJson,
-            'sql' => $sql
-        ];
-        Log::info("Enviando consulta GFW para año $year:", [
-            'url' => $url,
-            'sql' => $sql,
-        ]);
-        return $client->postAsync($url, [
-            'json' => $payload,
-            'headers' => [
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-                'x-api-key' => env('GFW_API_KEY'),
-                'User-Agent' => 'DeforestationAnalysisApp/1.0'
-            ],
-            'timeout' => 30,
-            'connect_timeout' => 10,
-        ]);
-    }
-
     /**
      * Calcula la pérdida total acumulada y el porcentaje de deforestación.
      */
@@ -620,8 +532,14 @@ class DeforestationController extends Controller
     public function getAnalysisData($polygonId): JsonResponse
     {
         $polygon = Polygon::findOrFail($polygonId);
-        $history = $this->deforestationService->getAnalysisHistory($polygon);
-        return response()->json($history);
+
+        return response()->json(
+            $polygon->analyses()
+                ->orderBy('year')
+                ->get()
+                ->keyBy('year')
+                ->toArray()
+        );
     }
     
     public function export($polygonId)
@@ -694,141 +612,88 @@ class DeforestationController extends Controller
     public function polygon(Request $request)
     {
         $geometryString = $request->input('geometry');
-        $startYear = (int) $request->input('start_year');
-        $end_year = (int) $request->input('end_year');
-        $polygonId = $request->input('id');
-        $polygonName = $request->input('name', 'Área de Estudio');
-        $saveAnalysis = $request->boolean('save_analysis');
+        $startYear      = (int) $request->input('start_year');
+        $endYear        = (int) $request->input('end_year');
+        $polygonId      = $request->input('id');
+        $polygonName    = $request->input('name', 'Área de Estudio');
+        $saveAnalysis   = $request->boolean('save_analysis');
 
-        if (preg_match('/^[0-9A-Fa-f]+$/', $geometryString)) {
-            $geoJsonRes = DB::selectOne("SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson", [$geometryString]);
+        // Convertir WKB hex a GeoJSON si hace falta
+        if (preg_match('/^[0-9A-Fa-f]+$/', (string) $geometryString)) {
+            $geoJsonRes     = DB::selectOne(
+                "SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson",
+                [$geometryString]
+            );
             $geometryString = $geoJsonRes->geojson;
         }
 
-        try {
-            $geometryGeoJson = json_decode($geometryString, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
-            }
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error procesando la geometría: ' . $e->getMessage()]);
+        $geometryGeoJson = json_decode($geometryString, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
         }
 
-        $requestedYears = range($startYear, $end_year);
+        /** @var Polygon $polygon */
+        $polygon = Polygon::withTrashed()->findOrFail($polygonId);
+        $areaHa  = (float) $polygon->area_ha;
 
-        $polygonData = DB::table('polygons')
-            ->where('id', $polygonId)
-            ->select('area_ha')
-            ->first();
+        // Años ya guardados ANTES de analizar (para saber cuáles son nuevos)
+        $beforeYears = $polygon->deforestations()->pluck('year')->all();
 
-        $areaHa = $polygonData ? (float)$polygonData->area_ha : (float)$request->input('area_ha');
+        // Analizar y persistir si se pidió guardar
+        $yearlyResults = $polygon->analyzeDeforestationFromGFW($startYear, $endYear, $saveAnalysis);
 
-        $existingRecords = DB::table('deforestation')
-            ->select('year', 'deforested_area_ha as area__ha', DB::raw("'success' as status"))
-            ->where('polygon_id', $polygonId)
-            ->whereBetween('year', [$startYear, $end_year])
-            ->get()
-            ->keyBy('year')
-            ->toArray();
-
-        $existingYears = array_keys($existingRecords);
-        $yearsToAnalyze = array_diff($requestedYears, $existingYears);
-
-        // 1. Primero consultar GFW para los años faltantes
-        $newResults = [];
-        if (!empty($yearsToAnalyze)) {
-            $newResults = $this->getParallelYearlyStats($geometryGeoJson, $yearsToAnalyze);
-        }
-
-        // 2. Guardar si se solicita
+        // Actividad + flash solo si guardamos y hubo años nuevos
         if ($saveAnalysis) {
-            try {
-                DB::transaction(function () use ($newResults, $polygonId, $areaHa, $startYear, $end_year, $existingRecords) {
-                    $polygon = Polygon::withTrashed()->findOrFail($polygonId);
+            $afterYears = $polygon->deforestations()->pluck('year')->all();
+            $newYears   = array_values(array_diff($afterYears, $beforeYears));
 
-                    // 2.a. Guardar SOLO si hay años nuevos
-                    if (!empty($newResults)) {
-                        Deforestation::withoutEvents(function () use ($newResults, $polygonId, $areaHa) {
-                            foreach ($newResults as $year => $data) {
-                                if ($data['status'] === 'success') {
-                                    $currentArea = (float) $data['area__ha'];
-                                    $percentage = $areaHa > 0 ? ($currentArea / $areaHa) * 100 : 0;
+            $totalLossResults = $this->calculateTotalLossStats(
+                $yearlyResults, $areaHa, $startYear, $endYear
+            );
 
-                                    Deforestation::updateOrCreate(
-                                        [
-                                            'polygon_id' => $polygonId,
-                                            'year'       => (int) $year,
-                                        ],
-                                        [
-                                            'deforested_area_ha' => $currentArea,
-                                            'percentage_loss'    => $percentage > 100 ? 100 : $percentage,
-                                        ]
-                                    );
-                                }
-                            }
-                        });
-                    }
-
-                    // 2.b. Sincronizar SIEMPRE (con o sin nuevos años)
-                    //      Los eventos del modelo están silenciados arriba por withoutEvents,
-                    //      así que hay que forzar el recálculo manualmente.
-                    $this->syncDeforestationDerivedFields($polygon); 
-
-                    // 2.c. Registrar evento only si hubo nuevos años
-                    if (!empty($newResults)) {
-                        $totalLossResults = $this->calculateTotalLossStats(
-                            array_replace($existingRecords, $newResults),
-                            $areaHa,
-                            $startYear,
-                            $end_year
-                        );
-
-                        activity()
-                            ->causedBy(auth()->user())
-                            ->performedOn($polygon)
-                            ->withProperties([
-                                'start_year'       => $startYear,
-                                'end_year'         => $end_year,
-                                'total_deforested' => $totalLossResults['totalDeforestedArea'],
-                                'total_percentage' => $totalLossResults['totalPercentage'],
-                                'polygon_updated'  => true,
-                                'years_analyzed'   => $newResults,
-                            ])
-                            ->event('analyzed')
-                            ->log("Nuevo análisis de deforestación completado para el polígono '{$polygon->name}'");
-                    }
-                });
-
-                session()->flash('save_success', 'Los nuevos datos del análisis han sido guardados.');
-            } catch (\Exception $e) {
-                Log::error("Error al guardar nuevos años para polígono {$polygonId}: " . $e->getMessage());
+            if (!empty($newYears)) {
+                activity()
+                    ->causedBy(auth()->user())
+                    ->performedOn($polygon)
+                    ->withProperties([
+                        'start_year'       => $startYear,
+                        'end_year'         => $endYear,
+                        'total_deforested' => $totalLossResults['totalDeforestedArea'],
+                        'total_percentage' => $totalLossResults['totalPercentage'],
+                        'polygon_updated'  => true,
+                        'years_analyzed'   => array_intersect_key(
+                            $yearlyResults,
+                            array_flip($newYears)
+                        ),
+                    ])
+                    ->event('analyzed')
+                    ->log("Nuevo análisis de deforestación completado para el polígono '{$polygon->name}'");
             }
+
+            session()->flash('save_success', 'Los nuevos datos del análisis han sido guardados.');
         }
 
-        // 3. Combinar resultados y mostrar vista
-        $combinedResults = array_replace(
-            array_map(fn($item) => (array)$item, $existingRecords),
-            $newResults
+        $totalLossResults = $this->calculateTotalLossStats(
+            $yearlyResults, $areaHa, $startYear, $endYear
         );
-        ksort($combinedResults);
-
-        $totalLossResults = $this->calculateTotalLossStats($combinedResults, $areaHa, $startYear, $end_year);
 
         $dataToPass = [
-            'polygon_id' => $polygonId,
-            'analysis_year' => $end_year,
-            'start_year' => $startYear,
-            'end_year' => $end_year,
+            'polygon_id'       => $polygon->id,
+            'analysis_year'    => $endYear,
+            'start_year'       => $startYear,
+            'end_year'         => $endYear,
             'original_geojson' => $geometryString,
-            'type' => $geometryGeoJson['type'] ?? 'Polygon',
-            'geometry' => $geometryGeoJson['coordinates'][0] ?? [],
-            'area__ha' => $areaHa < $totalLossResults['totalDeforestedArea'] ? $totalLossResults['totalDeforestedArea'] : $areaHa,
-            'polygon_area_ha' => $areaHa,
-            'status' => 'success',
-            'polygon_name' => $polygonName,
-            'description' => $request->input('description', ''),
-            'yearly_results' => $combinedResults,
-            'total_loss' => $totalLossResults,
+            'type'             => $geometryGeoJson['type'] ?? 'Polygon',
+            'geometry'         => $geometryGeoJson['coordinates'][0] ?? [],
+            'area__ha'         => $areaHa < $totalLossResults['totalDeforestedArea']
+                                    ? $totalLossResults['totalDeforestedArea']
+                                    : $areaHa,
+            'polygon_area_ha'  => $areaHa,
+            'status'           => 'success',
+            'polygon_name'     => $polygonName,
+            'description'      => $request->input('description', ''),
+            'yearly_results'   => $yearlyResults,
+            'total_loss'       => $totalLossResults,
         ];
 
         return view('deforestation.results', compact('dataToPass'));
@@ -971,26 +836,17 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Sincroniza los campos derivados del polígono que dependen de sus
-     * registros de deforestación.
+     * Recalcula y persiste el flag `deforested` del polígono.
      *
-     * Se llama después de cualquier operación que modifique la tabla
-     * `deforestation` dentro de un bloque `withoutEvents`, porque en esos
-     * bloques los listeners del modelo Deforestation están desactivados
-     * y el flag no se actualizaría solo.
+     * Se llama después de operaciones que modifican la tabla `deforestation`
+     * dentro de bloques `withoutEvents`, donde los listeners del modelo
+     * Deforestation están desactivados y el flag no se actualiza solo.
      *
-     * Centraliza aquí cualquier campo futuro (ej: last_deforestation_year,
-     * total_loss_ha, etc.) para no repetir lógica en cada sitio de guardado.
+     * Si en el futuro se agregan más campos derivados, la lógica debe vivir
+     * dentro de Polygon::refreshDeforestedFlag().
      */
     private function syncDeforestationDerivedFields(Polygon $polygon): void
     {
-        // 1. Recalcula y persiste el flag booleano `deforested`
         $polygon->refreshDeforestedFlag();
-
-        // 2. (Futuro) Aquí podrías añadir más sincronizaciones, ej:
-        //    $polygon->updateQuietly([
-        //        'last_deforestation_year' => $polygon->deforestations()->max('year'),
-        //        'total_loss_ha'           => $polygon->deforestations()->sum('deforested_area_ha'),
-        //    ]);
     }
 }

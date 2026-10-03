@@ -16,12 +16,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use App\Traits\Filterable;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class PolygonController extends Controller
 {
     use Filterable;
 
-    public function __construct(private readonly LocationService $locationService) {}
+    public function __construct(
+        private readonly LocationService $locationService,
+    ) {}
 
     // =========================================================================
     // Listados
@@ -840,8 +844,12 @@ class PolygonController extends Controller
             'skip_existing'            => 'boolean',
             'srid'                     => 'nullable|integer|min:0',
             'producer_field'           => 'nullable|string|max:50',
+            'analyze_deforestation'    => 'boolean',
+            'import_id'                => 'nullable|string|max:64',
         ]);
 
+
+        $importId = $request->input('import_id');
         $geojson = json_decode(file_get_contents($request->file('file')->getPathname()), true);
 
         if (($geojson['type'] ?? null) !== 'FeatureCollection') {
@@ -862,7 +870,7 @@ class PolygonController extends Controller
             $features
         );
 
-        $result = $this->processImportFeatures($normalized, $srid, $options);
+        $result = $this->processImportFeatures($normalized, $srid, $options, $importId);
 
         return redirect()->route('polygons.index')
             ->with('success', $this->buildImportSummary($result));
@@ -884,8 +892,11 @@ class PolygonController extends Controller
             'srid'                     => 'required|integer',
             'skip_existing'            => 'boolean',
             'create_missing_producers' => 'boolean',
+            'analyze_deforestation'    => 'boolean',
+            'import_id'                => 'nullable|string|max:64',
         ]);
 
+        $importId = $request->input('import_id');
         $options = $this->buildImportOptions($request);
         $srid    = (int) $request->input('srid');
 
@@ -895,7 +906,7 @@ class PolygonController extends Controller
             $request->input('features')
         );
 
-        $result = $this->processImportFeatures($normalized, $srid, $options);
+        $result = $this->processImportFeatures($normalized, $srid, $options, $importId);
 
         return redirect()->route('polygons.index')
             ->with('success', $this->buildImportSummary($result));
@@ -917,6 +928,7 @@ class PolygonController extends Controller
             'create_missing_producers' => $request->boolean('create_missing_producers'),
             'skip_existing'            => $request->boolean('skip_existing'),
             'producer_field'           => $request->input('producer_field', 'Productor'),
+            'analyze_deforestation'    => $request->boolean('analyze_deforestation'),
         ];
     }
 
@@ -987,39 +999,54 @@ class PolygonController extends Controller
      *
      * @return array{imported:int, skipped:int, duplicated:array, errors:array}
      */
-    private function processImportFeatures(array $features, int $srid, array $options): array
-    {
+    private function processImportFeatures(
+        array $features,
+        int $srid,
+        array $options,
+        ?string $importId = null
+    ): array {
         $imported   = 0;
         $skipped    = 0;
         $duplicated = [];
         $errors     = [];
+        $analyzed   = 0;
+
+        // Inicializar progreso
+        $this->initImportProgress($importId, count($features));
 
         set_time_limit(0);
 
         foreach ($features as $index => $feature) {
             try {
-                $this->importSingleFeature($feature, $index, $srid, $options, $imported, $skipped);
+                $wasAnalyzed = false;
+                $this->importSingleFeature(
+                    $feature, $index, $srid, $options,
+                    $imported, $skipped, $wasAnalyzed, $importId
+                );
+                if ($wasAnalyzed) {
+                    $analyzed++;
+                }
             } catch (\Illuminate\Database\QueryException $e) {
                 if ($this->isUniqueViolation($e)) {
                     $duplicated[] = $feature['external_id'] ?? "#{$index}";
                 } else {
                     Log::error('Error de BD importando feature', [
-                        'index' => $index,
-                        'error' => $e->getMessage(),
+                        'index' => $index, 'error' => $e->getMessage(),
                     ]);
                     $errors[] = "Feature #{$index}: error de base de datos";
                 }
             } catch (\Throwable $e) {
                 Log::error('Error inesperado importando feature', [
-                    'index' => $index,
-                    'error' => $e->getMessage(),
+                    'index' => $index, 'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
                 $errors[] = "Feature #{$index}: " . $e->getMessage();
             }
         }
 
-        return compact('imported', 'skipped', 'duplicated', 'errors');
+        $this->finishImportProgress($importId, 'done');
+
+        return compact('imported', 'skipped', 'duplicated', 'errors', 'analyzed');
     }
 
     /**
@@ -1031,60 +1058,101 @@ class PolygonController extends Controller
         int $srid,
         array $options,
         int &$imported,
-        int &$skipped
+        int &$skipped,
+        bool &$wasAnalyzed,
+        ?string $importId = null
     ): void {
-        // 1. Validar geometría
-        $geometry = $feature['geometry'];
-        if (empty($geometry) || empty($geometry['type'])) {
-            throw new \RuntimeException("Geometría inválida en feature #{$index}");
+        $wasAnalyzed = false;
+        $featureName = $feature['name'] ?? "Feature #{$index}";
+
+        try {
+            // 1. Validar geometría
+            $geometry = $feature['geometry'];
+            if (empty($geometry) || empty($geometry['type'])) {
+                $this->updateImportProgress($importId, $index, $featureName, 'error');
+                throw new \RuntimeException("Geometría inválida en feature #{$index}");
+            }
+            if (!in_array($geometry['type'], ['Polygon', 'MultiPolygon'], true)) {
+                $this->updateImportProgress($importId, $index, $featureName, 'error');
+                throw new \RuntimeException("Tipo no soportado en feature #{$index}: {$geometry['type']}");
+            }
+
+            // 2. Omitir duplicados
+            $externalId = $feature['external_id'];
+            if ($externalId && $options['skip_existing']
+                && Polygon::withTrashed()->where('external_id', $externalId)->exists()) {
+                $skipped++;
+                $this->updateImportProgress($importId, $index, $featureName, 'skipped');
+                return;
+            }
+
+            // 3. Resolver productor
+            $producerId = $this->resolveProducerId(
+                $feature['producer_id'],
+                $feature['producer_name'],
+                $options['default_producer_id'],
+                $options['create_missing_producers']
+            );
+
+            // 4. Crear polígono
+            $data = [
+                'external_id'   => $externalId,
+                'name'          => $featureName,
+                'description'   => $feature['description'] ?? null,
+                'producer_id'   => $producerId,
+                'parish_id'     => $feature['parish_id'] ?? $options['parish_id'],
+                'area_ha'       => $feature['area_ha'] ?? null,
+                'is_active'     => true,
+                'location_data' => [
+                    'imported_from'       => 'geojson',
+                    'original_properties' => $feature['raw_properties'],
+                    'external_id'         => $externalId,
+                ],
+            ];
+
+            $polygon = Polygon::createWithGeometry($data, json_encode($geometry), $srid, true);
+
+            if (is_null($data['area_ha'])) {
+                $polygon->recalculateGeometryStats();
+            } else {
+                $polygon->updateQuietly(['area_ha' => $data['area_ha']]);
+            }
+
+            // 5. Análisis opcional
+            $deforestedHa = null;
+            if (!empty($options['analyze_deforestation'])) {
+                try {
+                    $yearly = $polygon->analyzeDeforestationFromGFW(2020, 2025);
+                    $wasAnalyzed = true;
+                    $deforestedHa = array_sum(array_column($yearly, 'area__ha'));
+                } catch (\Throwable $e) {
+                    Log::warning("Análisis post-importación falló para polígono {$polygon->id}", [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            $imported++;
+            $this->updateImportProgress(
+                $importId,
+                $index,
+                $featureName,
+                $wasAnalyzed ? 'analyzed' : 'success',
+                $deforestedHa
+            );
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($this->isUniqueViolation($e)) {
+                $this->updateImportProgress($importId, $index, $featureName, 'duplicated');
+                throw $e;
+            }
+            $this->updateImportProgress($importId, $index, $featureName, 'error');
+            throw $e;
+        } catch (\Throwable $e) {
+            // Si no se actualizó antes (por ej. antes de resolver el nombre), lo marcamos aquí
+            $this->updateImportProgress($importId, $index, $featureName, 'error');
+            throw $e;
         }
-        if (!in_array($geometry['type'], ['Polygon', 'MultiPolygon'], true)) {
-            throw new \RuntimeException("Tipo de geometría no soportado en feature #{$index}: {$geometry['type']}");
-        }
-
-        // 2. Omitir duplicados si corresponde
-        $externalId = $feature['external_id'];
-        if ($externalId && $options['skip_existing']
-            && Polygon::withTrashed()->where('external_id', $externalId)->exists()) {
-            $skipped++;
-            return;
-        }
-
-        // 3. Resolver productor
-        $producerId = $this->resolveProducerId(
-            $feature['producer_id'],
-            $feature['producer_name'],
-            $options['default_producer_id'],
-            $options['create_missing_producers']
-        );
-
-        // 4. Armar datos para el modelo
-        $data = [
-            'external_id'   => $externalId,
-            'name'          => $feature['name'] ?? 'Polígono importado',
-            'description'   => $feature['description'] ?? null,
-            'producer_id'   => $producerId,
-            'parish_id'     => $feature['parish_id'] ?? $options['parish_id'],
-            'area_ha'       => $feature['area_ha'] ?? null,
-            'is_active'     => true,
-            'location_data' => [
-                'imported_from'       => 'geojson',
-                'original_properties' => $feature['raw_properties'],
-                'external_id'         => $externalId,
-            ],
-        ];
-
-        // 5. Crear polígono
-        $polygon = Polygon::createWithGeometry($data, json_encode($geometry), $srid, true);
-
-        // 6. Recalcular o respetar el área provista
-        if (is_null($data['area_ha'])) {
-            $polygon->recalculateGeometryStats();
-        } else {
-            $polygon->updateQuietly(['area_ha' => $data['area_ha']]);
-        }
-
-        $imported++;
     }
 
     /**
@@ -1147,6 +1215,9 @@ class PolygonController extends Controller
         if ($result['imported'] > 0) {
             $parts[] = "<strong>{$result['imported']}</strong> importado" . ($result['imported'] === 1 ? '' : 's');
         }
+        if (!empty($result['analyzed'])) {
+            $parts[] = "<strong>{$result['analyzed']}</strong> analizado" . ($result['analyzed'] === 1 ? '' : 's');
+        }
         if ($result['skipped'] > 0) {
             $parts[] = "<strong>{$result['skipped']}</strong> omitido" . ($result['skipped'] === 1 ? '' : 's');
         }
@@ -1160,6 +1231,113 @@ class PolygonController extends Controller
         }
 
         return empty($parts) ? 'Sin cambios.' : implode(' · ', $parts);
+    }
+
+    /**
+     * Inicializa el estado de progreso de una importación en cache.
+     */
+    private function initImportProgress(?string $importId, int $total): void
+    {
+        if (!$importId) {
+            return;
+        }
+
+        Cache::put("import_progress:{$importId}", [
+            'total'            => $total,
+            'current'          => 0,
+            'status'           => 'processing', // processing | done | error
+            'feature_statuses' => [],
+            'summary'          => [
+                'imported'   => 0,
+                'skipped'    => 0,
+                'duplicated' => [],
+                'errors'     => [],
+                'analyzed'   => 0,
+            ],
+            'started_at'       => now()->toISOString(),
+        ], now()->addHour());
+    }
+
+    /**
+     * Actualiza el progreso tras procesar un feature.
+     */
+    private function updateImportProgress(
+        ?string $importId,
+        int $featureIndex,
+        string $featureName,
+        string $status, // success | skipped | duplicated | error
+        ?float $deforestedHa = null
+    ): void {
+        if (!$importId) {
+            return;
+        }
+
+        $key   = "import_progress:{$importId}";
+        $state = Cache::get($key);
+
+        if (!$state) {
+            return;
+        }
+
+        $state['current'] = $featureIndex + 1;
+
+        $state['feature_statuses'][$featureIndex] = [
+            'name'           => $featureName,
+            'status'         => $status,
+            'deforested_ha'  => $deforestedHa,
+        ];
+
+        // Actualizar contadores del summary
+        match ($status) {
+            'success'     => $state['summary']['imported']++,
+            'analyzed'    => $state['summary']['analyzed']++,
+            'skipped'     => $state['summary']['skipped']++,
+            'duplicated'  => $state['summary']['duplicated'][] = $featureName,
+            'error'       => $state['summary']['errors'][]     = $featureName,
+            default       => null,
+        };
+
+        Cache::put($key, $state, now()->addHour());
+    }
+
+    /**
+     * Marca la importación como terminada.
+     */
+    private function finishImportProgress(?string $importId, string $status = 'done'): void
+    {
+        if (!$importId) {
+            return;
+        }
+
+        $key   = "import_progress:{$importId}";
+        $state = Cache::get($key);
+
+        if ($state) {
+            $state['status']     = $status;
+            $state['finished_at'] = now()->toISOString();
+            Cache::put($key, $state, now()->addHour());
+        }
+    }
+
+    /**
+     * Devuelve el estado de progreso de una importación en curso.
+     * Se consulta vía polling desde el widget.
+     */
+    public function importProgress(string $importId): JsonResponse
+    {
+        $state = Cache::get("import_progress:{$importId}");
+
+        if (!$state) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Importación no encontrada o expirada.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'state'   => $state,
+        ]);
     }
 
 }

@@ -519,6 +519,95 @@ class Polygon extends Model
         }
     }
 
+        /**
+     * Analiza la deforestación de este polígono contra GFW en el rango dado.
+     * Solo consulta los años que aún no están persistidos; los años ya
+     * existentes en la tabla `deforestation` se reutilizan tal cual.
+     *
+     * Persiste los nuevos resultados y sincroniza el flag `deforested`.
+     *
+     * @return array<int, array{area__ha: float, status: string, year: int, error?: string}>
+     *         Mapa [year => datos] con todos los años del rango.
+     */
+        public function analyzeDeforestationFromGFW(int $startYear, int $endYear, bool $persist = true): array
+    {
+        $geometry = json_decode($this->getGeometryGeoJson(), true);
+
+        if (empty($geometry) || empty($geometry['type']) || empty($geometry['coordinates'])) {
+            Log::warning("Polígono {$this->id} sin geometría; análisis omitido.");
+            return [];
+        }
+
+        // 1. Años ya persistidos en BD
+        $existing = $this->deforestations()
+            ->whereBetween('year', [$startYear, $endYear])
+            ->get()
+            ->mapWithKeys(fn ($d) => [
+                (int) $d->year => [
+                    'area__ha' => (float) $d->deforested_area_ha,
+                    'status'   => 'success',
+                    'year'     => (int) $d->year,
+                ],
+            ])
+            ->all();
+
+        // 2. Años faltantes
+        $requested    = range($startYear, $endYear);
+        $yearsToFetch = array_values(array_diff($requested, array_keys($existing)));
+
+        // 3. Consultar GFW solo por los faltantes
+        $fetched = [];
+        if (!empty($yearsToFetch)) {
+            $fetched = app(\App\Services\GFWService::class)
+                ->getParallelYearlyStats($geometry, $yearsToFetch);
+        }
+
+        // 4. Persistir (opcional)
+        if ($persist && !empty($fetched)) {
+            $this->persistDeforestationYears($fetched);
+            $this->refreshDeforestedFlag();
+        }
+
+        // 5. Combinar y devolver
+        $yearly = $existing;
+        foreach ($fetched as $year => $data) {
+            $yearly[(int) $year] = $data;
+        }
+        ksort($yearly);
+
+        return $yearly;
+    }
+
+    /**
+     * Persiste los resultados de GFW en la tabla `deforestation` sin disparar
+     * eventos del modelo, y refresca el flag `deforested` una sola vez.
+     *
+     * @param array<int, array{area__ha: float, status: string, year: int}> $yearlyData
+     */
+    private function persistDeforestationYears(array $yearlyData): void
+    {
+        $areaHa = (float) $this->area_ha;
+
+        Deforestation::withoutEvents(function () use ($yearlyData, $areaHa) {
+            foreach ($yearlyData as $year => $data) {
+                if (($data['status'] ?? null) !== 'success') {
+                    continue;
+                }
+
+                $currentArea = (float) ($data['area__ha'] ?? 0);
+                $percentage  = $areaHa > 0 ? min(100, ($currentArea / $areaHa) * 100) : 0;
+
+                Deforestation::updateOrCreate(
+                    ['polygon_id' => $this->id, 'year' => (int) $year],
+                    [
+                        'deforested_area_ha' => $currentArea,
+                        'percentage_loss'    => $percentage,
+                    ]
+                );
+            }
+        });
+    }
+
     
     
 }

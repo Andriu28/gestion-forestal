@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'gfw' => [
+        'base_uri'        => env('GFW_API_BASE_URI', 'https://data-api.globalforestwatch.org'),
+        'api_key'         => env('GFW_API_KEY'),
+        'timeout'         => (int) env('GFW_TIMEOUT', 30),
+        'connect_timeout' => (int) env('GFW_CONNECT_TIMEOUT', 10),
+        'dataset'         => env('GFW_DATASET', 'umd_tree_cover_loss'),
+        'version'         => env('GFW_DATASET_VERSION', 'latest'),
+    ],
+
 ];

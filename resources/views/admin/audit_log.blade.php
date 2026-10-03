@@ -583,7 +583,7 @@ $roleTranslations = [
                                                         'count' => 'Polígonos',
                                                     ];
                                                     // Claves que NO queremos mostrar
-                                                    $hiddenKeys = ['polygon_updated', 'original_geojson', 'saved', 'polygon_ids'];
+                                                    $hiddenKeys = ['polygon_updated', 'original_geojson', 'saved', 'polygon_ids', 'years_analyzed'];
                                                     
                                                     // Configuración de formato para ciertas claves
                                                     $formatConfig = [
