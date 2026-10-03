@@ -559,7 +559,7 @@ class Polygon extends Model
         $fetched = [];
         if (!empty($yearsToFetch)) {
             $fetched = app(\App\Services\GFWService::class)
-                ->getParallelYearlyStats($geometry, $yearsToFetch);
+                ->getYearlyStatsForRange($geometry, $yearsToFetch);
         }
 
         // 4. Persistir (opcional)

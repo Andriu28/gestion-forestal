@@ -267,15 +267,19 @@ class DeforestationController extends Controller
                 $globalParams['save_analysis']
             );
         } else {
-            $yearlyResults = $this->gfwService->getParallelYearlyStats(
+            // Instancia "en memoria" para reutilizar Polygon::buildTotalLossStats()
+            // sin necesidad de persistir. Solo necesita el área para calcular %.
+            $polygon = new Polygon(['area_ha' => $areaHa]);
+
+            $yearlyResults = $this->gfwService->getYearlyStatsForRange(
                 $geometryGeoJson,
                 range($startYear, $endYear)
             );
             ksort($yearlyResults);
         }
 
-        // Calcular pérdida total
-        $totalLossResults = $this->calculateTotalLossStats($yearlyResults, $areaHa, $startYear, $endYear);
+        // Calcular pérdida total (método del modelo, no del controller)
+        $totalLossResults = $polygon->buildTotalLossStats($yearlyResults, $startYear, $endYear);
 
         // Preparar datos para la vista / guardado
         $dataToPass = [

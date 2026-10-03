@@ -93,82 +93,107 @@ class GFWService
         );
     }
 
-    /**
-     * Consulta varios años en paralelo.
-     * Devuelve por año: ['area__ha' => float, 'status' => 'success'|'error', 'year' => int, 'error' => ?string]
+        /**
+     * Consulta las estadísticas anuales de pérdida de cobertura en UNA sola
+     * llamada a GFW, usando GROUP BY por año.
      *
-     * @param  array  $geometry  GeoJSON geometry (array)
-     * @param  int[]  $years
+     * @param  array  $geometry  GeoJSON geometry
+     * @param  int[]  $years     Lista de años (se normalizan y deduplican)
+     * @return array<int, array{area__ha: float, status: string, year: int, error?: string}>
+     *         Mapa [year => datos]. Los años solicitados que GFW no devuelva
+     *         (porque no hubo pérdida) se rellenan con area__ha = 0.
      */
-    public function getParallelYearlyStats(array $geometry, array $years): array
+    public function getYearlyStatsForRange(array $geometry, array $years): array
     {
-        $years = array_values(array_map('intval', $years));
+        $years = array_values(array_unique(array_map('intval', $years)));
 
         if (empty($years)) {
             return [];
         }
 
-        $promises = [];
-        foreach ($years as $year) {
-            $sql = sprintf(
-                "SELECT SUM(area__ha) FROM results WHERE %s__year=%d",
-                $this->defaultDataset,
-                $year
-            );
+        sort($years);
+        $minYear = $years[0];
+        $maxYear = $years[count($years) - 1];
 
-            $promises[$year] = $this->client->postAsync(
-                "dataset/{$this->defaultDataset}/{$this->defaultVersion}/query",
-                ['json' => ['geometry' => $geometry, 'sql' => $sql]]
-            );
-        }
+        $sql = sprintf(
+            "SELECT %s__year, SUM(area__ha) AS area__ha FROM results " .
+            "WHERE %s__year >= %d AND %s__year <= %d " .
+            "GROUP BY %s__year ORDER BY %s__year",
+            $this->defaultDataset,
+            $this->defaultDataset, $minYear,
+            $this->defaultDataset, $maxYear,
+            $this->defaultDataset,
+            $this->defaultDataset
+        );
 
+        // Pre-inicializamos TODOS los años solicitados con cero.
+        // Así si GFW no devuelve un año (no hubo pérdida) queda en 0 y el
+        // contrato de retorno es consistente para los consumidores.
         $results = [];
-
-        try {
-            $responses = \GuzzleHttp\Promise\Utils::settle($promises)->wait();
-
-            foreach ($responses as $year => $response) {
-                $results[$year] = $this->normalizeYearlyResponse((int) $year, $response);
-            }
-        } catch (\Throwable $e) {
-            Log::error('Error general en consultas paralelas GFW: ' . $e->getMessage());
-
-            foreach ($years as $year) {
-                $results[$year] = [
-                    'area__ha' => 0.0,
-                    'status'   => 'error',
-                    'year'     => $year,
-                    'error'    => 'Error general en consulta paralela: ' . $e->getMessage(),
-                ];
-            }
-        }
-
-        return $results;
-    }
-
-    /**
-     * Normaliza la respuesta de una promesa ya resuelta.
-     */
-    private function normalizeYearlyResponse(int $year, array $response): array
-    {
-        if (($response['state'] ?? 'rejected') !== 'fulfilled') {
-            $errorMessage = $response['reason']->getMessage() ?? 'Error desconocido';
-            Log::error("Error en consulta GFW para año {$year}: {$errorMessage}");
-
-            return [
+        foreach ($years as $year) {
+            $results[$year] = [
                 'area__ha' => 0.0,
-                'status'   => 'error',
+                'status'   => 'success',
                 'year'     => $year,
-                'error'    => $errorMessage,
             ];
         }
 
-        $data = json_decode($response['value']->getBody(), true) ?? [];
+        try {
+            $response = $this->client->post(
+                "dataset/{$this->defaultDataset}/{$this->defaultVersion}/query",
+                ['json' => ['geometry' => $geometry, 'sql' => $sql]]
+            );
 
-        return [
-            'area__ha' => (float) ($data['data'][0]['area__ha'] ?? 0),
-            'status'   => $data['status'] ?? 'error',
-            'year'     => $year,
-        ];
+            $payload = json_decode($response->getBody()->getContents(), true) ?? [];
+
+            if (($payload['status'] ?? null) !== 'success') {
+                $message = $payload['message'] ?? 'Respuesta inesperada de GFW.';
+                Log::error("GFW error en consulta por rango: {$message}");
+
+                return $this->fillYearsWithError($years, $message);
+            }
+
+            $yearColumn = "{$this->defaultDataset}__year";
+
+            foreach ($payload['data'] ?? [] as $row) {
+                $year = (int) ($row[$yearColumn] ?? 0);
+
+                if (isset($results[$year])) {
+                    $results[$year]['area__ha'] = (float) ($row['area__ha'] ?? 0);
+                }
+            }
+
+            return $results;
+        } catch (ClientException $e) {
+            $errorData = json_decode($e->getResponse()->getBody()->getContents(), true);
+            $message   = $errorData['message'] ?? 'Error de validación de la API.';
+            Log::error("GFW API Error (HTTP {$e->getCode()}): {$message}");
+
+            return $this->fillYearsWithError($years, $message);
+        } catch (\Throwable $e) {
+            Log::error('GFW API Error inesperado: ' . $e->getMessage());
+
+            return $this->fillYearsWithError($years, 'Error inesperado al conectar con la API.');
+        }
+    }
+
+    /**
+     * Rellena el mapa de años con el mismo error, manteniendo el shape
+     * consistente para los consumidores.
+     */
+    private function fillYearsWithError(array $years, string $message): array
+    {
+        $results = [];
+
+        foreach ($years as $year) {
+            $results[$year] = [
+                'area__ha' => 0.0,
+                'status'   => 'error',
+                'year'     => $year,
+                'error'    => $message,
+            ];
+        }
+
+        return $results;
     }
 }
