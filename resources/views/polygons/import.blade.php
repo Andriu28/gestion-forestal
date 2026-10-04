@@ -273,7 +273,7 @@
             });
         });
 // ============================================================
-// INTERCEPTAR SUBMIT DE IMPORTACIÓN + WIDGET GLOBAL
+// INTERCEPTAR SUBMIT DE IMPORTACIÓN
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -283,15 +283,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!form) return;
 
     form.addEventListener('submit', async (e) => {
-        const analyzeChk   = document.getElementById('analyze_deforestation');
-        const wantsAnalysis = analyzeChk?.checked;
-
-        // Si no se pidió análisis, dejamos el submit normal (rápido)
-        if (!wantsAnalysis) return;
-
         e.preventDefault();
 
-        // Generar import_id único
         const importId = (crypto.randomUUID?.() || Date.now().toString(36))
             + '-' + Math.random().toString(36).slice(2, 8);
 
@@ -304,13 +297,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         hiddenId.value = importId;
 
-        // Arrancar el widget global (persiste aunque el usuario navegue)
+        // Arrancar el widget ANTES del POST.
+        // El polling puede dar 404 durante ~1s hasta que el controller
+        // cree el cache entry. El widget tiene 6.4s de gracia.
         window.BackgroundProgress.start(importId, {
             title: 'Importando polígonos',
             progressUrl: '/polygons/import/progress/__ID__',
         });
 
-        // Enviar el formulario vía fetch
         try {
             const formData = new FormData(form);
             const res = await fetch(form.action, {
@@ -320,17 +314,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json',
                 },
-                redirect: 'manual',
             });
 
-            // 302 → terminó OK. Ya no redirigimos: el widget mostrará el resumen
-            // y el usuario decidirá cuándo ir a /polygons.
-            if (res.type === 'opaqueredirect' || res.status === 302) {
+            // 202 → job encolado, seguimos con el polling
+            if (res.status === 202) {
                 return;
             }
 
-            // 200 → errores de validación: recargamos
-            if (res.status === 200) {
+            // 422 → errores de validación; recargamos la página
+            if (res.status === 422) {
                 const html = await res.text();
                 document.open();
                 document.write(html);
@@ -338,11 +330,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Cualquier otro estado: fallback
             window.BackgroundProgress.stop();
+            form.submit();
         } catch (err) {
             console.error('Error enviando importación:', err);
             window.BackgroundProgress.stop();
-            form.submit(); // fallback: submit normal
+            form.submit();
         }
     });
 });
