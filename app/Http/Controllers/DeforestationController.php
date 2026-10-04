@@ -596,14 +596,15 @@ class DeforestationController extends Controller
         // Analizar y persistir si se pidió guardar
         $yearlyResults = $polygon->analyzeDeforestationFromGFW($startYear, $endYear, $saveAnalysis);
 
-        // Actividad + flash solo si guardamos y hubo años nuevos
+        // Calcular totales UNA sola vez y reutilizar
+        $totalLossResults = $polygon->buildTotalLossStats(
+            $yearlyResults, $startYear, $endYear
+        );
+
         if ($saveAnalysis) {
             $afterYears = $polygon->deforestations()->pluck('year')->all();
             $newYears   = array_values(array_diff($afterYears, $beforeYears));
 
-            $totalLossResults = $polygon->buildTotalLossStats(
-                $yearlyResults, $startYear, $endYear
-            );
             if (!empty($newYears)) {
                 activity()
                     ->causedBy(auth()->user())

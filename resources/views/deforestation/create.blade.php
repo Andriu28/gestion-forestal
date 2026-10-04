@@ -474,6 +474,8 @@
         </div>
     </div>
 </div>
+{{-- Widget de progreso reutilizable --}}
+    <x-background-progress-widget />
 </x-app-layout>
 
 <!-- Incluir OpenLayers -->
@@ -1316,70 +1318,121 @@ document.getElementById('producer_id').addEventListener('change', function() {
     validateSaveOption();
 });
 
-// ===== MANEJADOR DE ENVÍO DEL FORMULARIO ACTUALIZADO =====
-document.getElementById('analysis-form').addEventListener('submit', function(e) {
-    // Validar que haya un polígono dibujado
+// ===== MANEJADOR DE ENVÍO DEL FORMULARIO (AJAX + WIDGET GLOBAL) =====
+document.getElementById('analysis-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    // --- Validaciones (idénticas a antes) ---
     const geometry = document.getElementById('geometry').value;
-    if (!geometry) {
-        e.preventDefault();
-        showAlert('Debe dibujar un polígono en el mapa antes de analizar.', 'warning');
-        return false;
-    }
-    
-    // Validar que el área sea mayor a 0
+    if (!geometry) { showAlert('Debe dibujar un polígono en el mapa antes de analizar.', 'warning'); return; }
+
     const areaHa = parseFloat(document.getElementById('area_ha').value);
-    if (!areaHa || areaHa <= 0) {
-        e.preventDefault();
-        showAlert('El área debe ser mayor a 0 hectáreas.', 'warning');
-        return false;
-    }
-    
-    // Validar rango de años
+    if (!areaHa || areaHa <= 0) { showAlert('El área debe ser mayor a 0 hectáreas.', 'warning'); return; }
+
     const startYear = parseInt(document.getElementById('start_year').value);
-    const endYear = parseInt(document.getElementById('end_year').value);
-    if (startYear > endYear) {
-        e.preventDefault();
-        showAlert('El año de inicio no puede ser mayor al año de fin.', 'warning');
-        return false;
-    }
-    
-    // Validar la casilla de guardar, nombre y productor
-    const saveCheckbox = document.getElementById('save_analysis');
-    const nameInput = document.getElementById('name');
-    const producerSelect = document.getElementById('producer_id');
-    const nameValue = nameInput.value.trim();
-    const producerValue = producerSelect.value;
-    
+    const endYear   = parseInt(document.getElementById('end_year').value);
+    if (startYear > endYear) { showAlert('El año de inicio no puede ser mayor al año de fin.', 'warning'); return; }
+
+    const saveCheckbox    = document.getElementById('save_analysis');
+    const nameInput       = document.getElementById('name');
+    const producerSelect  = document.getElementById('producer_id');
+    const nameValue       = nameInput.value.trim();
+    const producerValue   = producerSelect.value;
+
     if (saveCheckbox.checked) {
         if (!nameValue) {
-            e.preventDefault();
             nameInput.classList.add('border-red-500', 'ring-2', 'ring-red-200');
             nameInput.focus();
             showAlert('Para guardar el análisis, debes ingresar un nombre para el área.', 'warning');
-            return false;
+            return;
         }
         if (!producerValue) {
-            e.preventDefault();
             producerSelect.classList.add('border-red-500', 'ring-2', 'ring-red-200');
             producerSelect.focus();
             showAlert('Para guardar el análisis, debes seleccionar un productor.', 'warning');
-            return false;
+            return;
         }
     }
-    
-    // Deshabilitar el botón de envío para evitar múltiples clics
+
+    // --- UI: bloquear solo el botón, no la página ---
     const submitButton = document.getElementById('submit-button');
-    const buttonText = document.getElementById('button-text');
-    const spinner = document.getElementById('loading-spinner');
-    
+    const buttonText   = document.getElementById('button-text');
+    const spinner      = document.getElementById('loading-spinner');
     submitButton.disabled = true;
     spinner.classList.remove('hidden');
-    buttonText.textContent = saveCheckbox.checked ? 'Analizando y guardando...' : 'Analizando...';
-    
-    // Mostrar loader overlay
-    showEnhancedLoader();
-    
-    return true;
+    buttonText.textContent = saveCheckbox.checked ? 'Analizando y guardando…' : 'Analizando…';
+
+    // --- Widget global ---
+    const taskId = (crypto.randomUUID?.() || Date.now().toString(36))
+        + '-' + Math.random().toString(36).slice(2, 8);
+
+    // El análisis no tiene progreso granular, mostramos estado "en curso" con timer
+    window.BackgroundProgress.start(taskId, {
+        title: 'Analizando deforestación',
+        noPolling: true,
+    });
+
+    // Simulación visual de progreso (mientras el fetch corre)
+    let fake = 0;
+    const fakeInterval = setInterval(() => {
+        if (fake < 90) {
+            fake += 5;
+            document.getElementById('bg-progress-bar').style.width = `${fake}%`;
+            document.getElementById('bg-progress-pct').textContent = `${fake}%`;
+            document.getElementById('bg-progress-text').textContent = 'Consultando GFW…';
+        }
+    }, 400);
+
+    try {
+        const formData = new FormData(this);
+        const res = await fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html',
+            },
+            redirect: 'follow',
+        });
+
+        clearInterval(fakeInterval);
+
+        if (!res.ok) {
+            // Errores de validación u otros → recargar con la respuesta
+            const html = await res.text();
+            document.open();
+            document.write(html);
+            document.close();
+            return;
+        }
+
+        // Éxito: reemplazamos el HTML de la página con la respuesta
+        const html = await res.text();
+
+        // Terminamos el widget antes de reemplazar el DOM
+        window.BackgroundProgress.update({
+            total: 1, current: 1, status: 'done',
+            feature_statuses: {},
+            summary: { imported: 0, analyzed: 1, skipped: 0, duplicated: [], errors: [] },
+        });
+        window.BackgroundProgress.stop();
+        localStorage.removeItem('bg_active_task');
+
+        // Reemplazar el contenido manteniendo el body
+        document.open();
+        document.write(html);
+        document.close();
+    } catch (err) {
+        clearInterval(fakeInterval);
+        window.BackgroundProgress.stop();
+        console.error('Error en análisis:', err);
+        showAlert('Error al procesar el análisis: ' + err.message, 'error');
+
+        // Restaurar botón
+        submitButton.disabled = false;
+        spinner.classList.add('hidden');
+        buttonText.textContent = 'Analizar Deforestación';
+    }
 });
 
 // ===== INICIALIZACIÓN AL CARGAR LA PÁGINA =====
