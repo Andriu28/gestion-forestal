@@ -53,8 +53,9 @@
 <script>
 if (!window.BackgroundProgress) {
     window.BackgroundProgress = (() => {
-        const STORAGE_KEY = 'bg_active_task';
-        const MAX_404_GRACE = 8; // ~6.4s de gracia (800ms × 8)
+        const STORAGE_KEY   = 'bg_active_task';
+        const MAX_404_GRACE = 8;
+
         let pollInterval = null;
         let currentTaskId = null;
         let progressUrlTemplate = null;
@@ -114,20 +115,36 @@ if (!window.BackgroundProgress) {
             c.scrollTop = c.scrollHeight;
         }
 
+        function persistState(partial) {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) return;
+            try {
+                const data = JSON.parse(stored);
+                Object.assign(data, partial);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {}
+        }
+
         function update(state) {
-            const total = state.total || 0;
+            const total   = state.total   || 0;
             const current = state.current || 0;
-            const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+            const pct     = total > 0 ? Math.round((current / total) * 100) : 0;
+
             el.bar().style.width = `${pct}%`;
             el.pct().textContent = `${pct}%`;
             el.text().textContent = `${current} de ${total}`;
             renderList(state.feature_statuses || {});
+
+            // Persistir el último estado para rehidratar tras navegar
+            persistState({ lastState: state });
+
             if (state.status === 'done') finish(state);
         }
 
         function finish(state) {
             stop();
             localStorage.removeItem(STORAGE_KEY);
+
             el.spinner()?.classList.add('hidden');
             el.bar().style.width = '100%';
             el.pct().textContent = '100%';
@@ -143,6 +160,7 @@ if (!window.BackgroundProgress) {
 
             el.summary().innerHTML = parts.length ? parts.join(' · ') : 'Sin cambios.';
             el.footer().classList.remove('hidden');
+
             if (!s.errors?.length) setTimeout(hide, 8000);
         }
 
@@ -155,9 +173,6 @@ if (!window.BackgroundProgress) {
                 });
 
                 if (res.status === 404) {
-                    // El servidor aún no ha creado el cache entry (timing normal
-                    // al inicio de la importación). Damos un pequeño periodo de
-                    // gracia antes de rendirnos.
                     consecutive404++;
                     if (consecutive404 >= MAX_404_GRACE) {
                         stop();
@@ -167,8 +182,6 @@ if (!window.BackgroundProgress) {
                 }
 
                 if (!res.ok) return;
-
-                // Respuesta válida → reset del contador de gracia
                 consecutive404 = 0;
 
                 const data = await res.json();
@@ -178,24 +191,33 @@ if (!window.BackgroundProgress) {
             }
         }
 
+        /**
+         * @param {string} taskId
+         * @param {object} options
+         * @param {string} options.title
+         * @param {string} options.progressUrl
+         * @param {boolean} options.noPolling   No arranca polling (para análisis sin progreso granular)
+         * @param {boolean} options.skipReset   No limpiar UI (para reenganche tras navegar)
+         */
         function start(taskId, options = {}) {
             currentTaskId = taskId;
             progressUrlTemplate = options.progressUrl || '/polygons/import/progress/__ID__';
             const noPolling = options.noPolling === true;
+            const skipReset = options.skipReset === true;
             consecutive404 = 0;
 
             setTitle(options.title || 'Procesando');
             show();
-            resetUI();
+            if (!skipReset) resetUI();
 
-            // Si no hay polling real, no guardamos en localStorage ni
-            // arrancamos el setInterval. El caller actualiza manualmente.
-            if (noPolling) return;
-
+            // Persistir la tarea activa
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
                 taskId,
                 progressUrl: progressUrlTemplate,
+                startedAt: Date.now(),
             }));
+
+            if (noPolling) return;
 
             if (pollInterval) clearInterval(pollInterval);
             poll();
@@ -206,13 +228,42 @@ if (!window.BackgroundProgress) {
             if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
         }
 
+        /**
+         * Se llama en cada carga de página: si hay una tarea activa en
+         * localStorage, se reengancha y muestra el widget inmediatamente
+         * con el último estado conocido, antes de esperar el primer poll.
+         */
         function attachIfActive() {
             const stored = localStorage.getItem(STORAGE_KEY);
             if (!stored) return;
+
             try {
-                const { taskId, progressUrl } = JSON.parse(stored);
-                if (taskId) start(taskId, { progressUrl, title: 'Importando polígonos' });
-            } catch (e) { localStorage.removeItem(STORAGE_KEY); }
+                const { taskId, progressUrl, lastState } = JSON.parse(stored);
+                if (!taskId) return;
+
+                setTitle('Importando polígonos');
+                show();
+
+                // Rehidratar UI con el último estado conocido para evitar el "flash"
+                if (lastState) {
+                    // Reconstruimos el widget sin disparar el "done" de nuevo
+                    const total   = lastState.total   || 0;
+                    const current = lastState.current || 0;
+                    const pct     = total > 0 ? Math.round((current / total) * 100) : 0;
+                    el.bar().style.width = `${pct}%`;
+                    el.pct().textContent = `${pct}%`;
+                    el.text().textContent = `${current} de ${total}`;
+                    renderList(lastState.feature_statuses || {});
+                }
+
+                start(taskId, {
+                    progressUrl,
+                    title: 'Importando polígonos',
+                    skipReset: true, // no borrar lo que acabamos de pintar
+                });
+            } catch (e) {
+                localStorage.removeItem(STORAGE_KEY);
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {

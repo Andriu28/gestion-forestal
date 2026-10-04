@@ -181,7 +181,8 @@
     
     <!-- ============== NUEVO: Stack de scripts ============== -->
     @stack('scripts')
-    
+    {{-- Widget de progreso global --}}
+    <x-background-progress-widget />
 </body>
 
 <!-- Script que contiene el js para las animaciones del menu de perfin de usuario -->

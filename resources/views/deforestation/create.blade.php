@@ -474,8 +474,6 @@
         </div>
     </div>
 </div>
-{{-- Widget de progreso reutilizable --}}
-    <x-background-progress-widget />
 </x-app-layout>
 
 <!-- Incluir OpenLayers -->

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Polygon;
 use App\Models\Producer;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -76,7 +77,8 @@ class PolygonImportService
         array $features,
         int $srid,
         array $options,
-        ?string $importId = null
+        ?string $importId = null,
+        ?User $causer = null,
     ): array {
         $imported   = 0;
         $skipped    = 0;
@@ -91,7 +93,8 @@ class PolygonImportService
                 $wasAnalyzed = false;
                 $this->importSingleFeature(
                     $feature, $index, $srid, $options,
-                    $imported, $skipped, $wasAnalyzed, $importId
+                    $imported, $skipped, $wasAnalyzed, $importId,
+                    $causer,
                 );
                 if ($wasAnalyzed) {
                     $analyzed++;
@@ -127,7 +130,8 @@ class PolygonImportService
         int &$imported,
         int &$skipped,
         bool &$wasAnalyzed,
-        ?string $importId = null
+        ?string $importId = null,
+        ?User $causer = null,
     ): void {
         $wasAnalyzed = false;
         $featureName = $feature['name'] ?? "Feature #{$index}";
@@ -173,7 +177,7 @@ class PolygonImportService
                 ],
             ];
 
-            $polygon = Polygon::createWithGeometry($data, json_encode($geometry), $srid, true);
+            $polygon = Polygon::createWithGeometry($data, json_encode($geometry), $srid, true, $causer);
 
             if (is_null($data['area_ha'])) {
                 $polygon->recalculateGeometryStats();

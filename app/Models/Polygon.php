@@ -241,8 +241,13 @@ class Polygon extends Model
      * @param bool   $logActivity
      * @return static
      */
-    public static function createWithGeometry(array $data, string $geoJsonGeometry, int $srid = 4326, bool $logActivity = true): static
-    {
+    public static function createWithGeometry(
+        array $data,
+        string $geoJsonGeometry,
+        int $srid = 4326,
+        bool $logActivity = true,
+        ?\App\Models\User $causer = null,   // ← nuevo
+    ): static {
         $now = now();
 
         $row = DB::selectOne(
@@ -282,7 +287,7 @@ class Polygon extends Model
         if ($logActivity) {
             activity()
                 ->performedOn($polygon)
-                ->causedBy(auth()->user())
+                ->causedBy($causer ?? auth()->user())
                 ->withProperties([
                     'attributes' => [
                         'name'        => $polygon->name,

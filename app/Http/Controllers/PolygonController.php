@@ -866,7 +866,13 @@ class PolygonController extends Controller
         // Inicializar progreso AHORA para que el polling lo vea de inmediato
         $this->importService->initImportProgress($importId, count($normalized));
 
-        ImportPolygonsJob::dispatch($normalized, $srid, $options, $importId);
+        ImportPolygonsJob::dispatch(
+            $normalized,
+            $srid,
+            $options,
+            $importId,
+            auth()->id(),   // ← capturamos aquí, dentro del request HTTP
+        );
 
         return response()->json([
             'success'   => true,

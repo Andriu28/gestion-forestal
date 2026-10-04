@@ -341,6 +341,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
     </script>
-    {{-- Widget de progreso reutilizable --}}
-    <x-background-progress-widget />
 </x-app-layout>
