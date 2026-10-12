@@ -192,6 +192,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Formulario y procesamiento
         Route::get('/create', [DeforestationController::class, 'create'])->name('create');
         Route::post('/analyze', [DeforestationController::class, 'analyze'])->name('analyze');
+        Route::get('/analyze/progress/{analysisId}', [DeforestationController::class, 'analysisProgress'])->name('analyze.progress');
+        Route::get('/analyze/view/{analysisId}', [DeforestationController::class, 'viewAsync'])->name('view-async');
         Route::post('/polygon', [DeforestationController::class, 'polygon'])->name('polygon');
         
         // Resultados

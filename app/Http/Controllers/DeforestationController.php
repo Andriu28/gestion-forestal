@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PDF;
 use Spatie\Activitylog\Models\Activity;
+use App\Services\DeforestationAnalysisService;
+use App\Jobs\AnalyzeDeforestationJob;
 
 class DeforestationController extends Controller
 {
@@ -62,149 +64,158 @@ class DeforestationController extends Controller
         return view('deforestation.results-unsaved', compact('dataToPass'));
     }
     
-    /**
-     * Procesa el análisis de deforestación (soporta FeatureCollection)
-     */
-    public function analyze(Request $request)
-    {
-        Log::info('=== INICIO DE ANÁLISIS ===');
-        Log::info('Datos del request:', $request->all());
+        public function analyze(Request $request)
+        {
+            Log::info('=== INICIO DE ANÁLISIS (async) ===');
 
-        $geometryString = $request->input('geometry');
+            $geometryString = $request->input('geometry');
 
-        if (preg_match('/^[0-9A-Fa-f]+$/', $geometryString)) {
-            Log::info('Geometría recibida como WKB hex, convirtiendo a GeoJSON');
-            $geoJsonRes = DB::selectOne("SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson", [$geometryString]);
-            $geometryString = $geoJsonRes->geojson;
-            Log::info('GeoJSON convertido desde WKB');
-        }
-
-        $saveAnalysis = $request->boolean('save_analysis');
-        Log::info('save_analysis = ' . ($saveAnalysis ? 'true' : 'false'));
-
-        $this->validateAnalyzeRequest($request, $saveAnalysis);
-
-        $globalParams = [
-            'start_year'    => (int) $request->input('start_year'),
-            'end_year'      => (int) $request->input('end_year'),
-            'save_analysis' => $saveAnalysis,
-            'polygon_name'  => $request->input('name', 'Área de Estudio'),
-            'description'   => $request->input('description', ''),
-            'producer_id'   => $request->input('producer_id'),
-        ];
-
-        Log::info('globalParams:', $globalParams);
-
-        session(['save_analysis_by_default' => $saveAnalysis]);
-
-        $geojson = json_decode($geometryString, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error('Error decodificando GeoJSON: ' . json_last_error_msg());
-            return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
-        }
-
-        Log::info('Tipo de GeoJSON: ' . ($geojson['type'] ?? 'undefined'));
-
-        // ===== MANEJO SEGÚN TIPO DE GEOJSON =====
-        if ($geojson['type'] === 'FeatureCollection') {
-            $features = $geojson['features'];
-            $featureCount = count($features);
-            Log::info("FeatureCollection con $featureCount features");
-
-            if ($featureCount === 1) {
-                // Un solo polígono dentro de una FeatureCollection
-                Log::info('Procesando FeatureCollection con un solo feature (como si fuera Feature)');
-                $singleFeature = $features[0];
-                $dataToPass = $this->processSinglePolygon($singleFeature, $globalParams, false);
-                Log::info('Resultado de processSinglePolygon (single feature):', [
-                    'polygon_id' => $dataToPass['polygon_id'] ?? 'null',
-                    'has_error' => isset($dataToPass['save_error'])
-                ]);
-                if ($globalParams['save_analysis'] && isset($dataToPass['polygon_id'])) {
-                    Log::info('Redirigiendo a results con polygon_id: ' . $dataToPass['polygon_id']);
-                    return redirect()->route('deforestation.results', $dataToPass['polygon_id']);
-                }
-                if (!$globalParams['save_analysis']) {
-                    $this->registerUnsavedAnalysisEvent($dataToPass, $globalParams);
-                    Log::info('Registrado evento de análisis no guardado (single)');
-                }
-                return view('deforestation.results', compact('dataToPass'));
-            } else {
-                // Múltiples polígonos
-                Log::info("Procesando múltiples polígonos ($featureCount features)");
-                $multiResults = [];
-                $polygonIds = [];
-                foreach ($features as $index => $feature) {
-                    Log::info("Procesando feature #$index");
-                    $result = $this->processSinglePolygon($feature, $globalParams, true);
-                    $multiResults[] = $result;
-                    if (isset($result['polygon_id'])) {
-                        $polygonIds[] = $result['polygon_id'];
-                        Log::info("Feature #$index guardado con polygon_id: " . $result['polygon_id']);
-                    } else {
-                        Log::warning("Feature #$index no se guardó. Error: " . ($result['save_error'] ?? 'desconocido'));
-                    }
-                }
-
-                Log::info('Resultados del procesamiento múltiple:', [
-                    'total_features' => count($features),
-                    'polygon_ids_count' => count($polygonIds),
-                    'polygon_ids' => $polygonIds
-                ]);
-
-                if ($globalParams['save_analysis'] && !empty($polygonIds)) {
-                    Log::info('Guardando evento de análisis múltiple y redirigiendo');
-                    $this->registerMultiAnalysisEvent($polygonIds, $globalParams, $multiResults);
-                    $ids = implode(',', $polygonIds);
-                    Log::info("Redirigiendo a multiple-results con polygon_ids: $ids");
-                    return redirect()->route('deforestation.multiple-results', ['polygon_ids' => $ids]);
-                }
-
-                if (!$globalParams['save_analysis']) {
-                    Log::info('Registrando evento de análisis múltiple no guardado');
-                    $this->registerUnsavedMultiAnalysisEvent($multiResults, $globalParams);
-                } else {
-                    Log::warning('No se guardó ningún polígono, mostrando vista con resultados en memoria');
-                }
-
-                return view('deforestation.multi-results', compact('multiResults'));
+            if (preg_match('/^[0-9A-Fa-f]+$/', $geometryString)) {
+                Log::info('Geometría recibida como WKB hex, convirtiendo a GeoJSON');
+                $geoJsonRes = DB::selectOne(
+                    "SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson",
+                    [$geometryString]
+                );
+                $geometryString = $geoJsonRes->geojson;
             }
-        } elseif ($geojson['type'] === 'Feature') {
-            Log::info('Procesando Feature individual');
-            $dataToPass = $this->processSinglePolygon($geojson, $globalParams, false);
-            Log::info('Resultado de processSinglePolygon (Feature):', [
-                'polygon_id' => $dataToPass['polygon_id'] ?? 'null'
-            ]);
-            if ($globalParams['save_analysis'] && isset($dataToPass['polygon_id'])) {
-                Log::info('Redirigiendo a results con polygon_id: ' . $dataToPass['polygon_id']);
-                return redirect()->route('deforestation.results', $dataToPass['polygon_id']);
-            }
-            if (!$globalParams['save_analysis']) {
-                $this->registerUnsavedAnalysisEvent($dataToPass, $globalParams);
-            }
-            return view('deforestation.results', compact('dataToPass'));
-        } elseif ($geojson['type'] === 'Polygon' || $geojson['type'] === 'MultiPolygon') {
-            Log::info('Procesando geometría directa (Polygon/MultiPolygon)');
-            $feature = [
-                'geometry'   => $geojson,
-                'properties' => []
+
+            $saveAnalysis = $request->boolean('save_analysis');
+
+            $this->validateAnalyzeRequest($request, $saveAnalysis);
+
+            $globalParams = [
+                'start_year'    => (int) $request->input('start_year'),
+                'end_year'      => (int) $request->input('end_year'),
+                'save_analysis' => $saveAnalysis,
+                'polygon_name'  => $request->input('name', 'Área de Estudio'),
+                'description'   => $request->input('description', ''),
+                'producer_id'   => $request->input('producer_id'),
             ];
-            $dataToPass = $this->processSinglePolygon($feature, $globalParams, false);
-            Log::info('Resultado de processSinglePolygon (geom directa):', [
-                'polygon_id' => $dataToPass['polygon_id'] ?? 'null'
+
+            session(['save_analysis_by_default' => $saveAnalysis]);
+
+            $geojson = json_decode($geometryString, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
+            }
+
+            $features = $this->buildFeaturesFromGeojson($geojson);
+            if (empty($features)) {
+                return back()->withErrors([
+                    'geometry' => 'Tipo de geometría no soportado: ' . ($geojson['type'] ?? 'null'),
+                ]);
+            }
+
+            /** @var DeforestationAnalysisService $service */
+            $service    = app(DeforestationAnalysisService::class);
+            $analysisId = (string) \Illuminate\Support\Str::uuid();
+            $total      = count($features);
+
+            $service->initProgress($analysisId, $total, [
+                'has_save'      => $saveAnalysis,
+                'feature_count' => $total,
             ]);
-            if ($globalParams['save_analysis'] && isset($dataToPass['polygon_id'])) {
-                Log::info('Redirigiendo a results con polygon_id: ' . $dataToPass['polygon_id']);
-                return redirect()->route('deforestation.results', $dataToPass['polygon_id']);
+
+            $causerId = auth()->id();
+            $jobs     = [];
+
+            foreach ($features as $index => $feature) {
+                $jobs[] = new \App\Jobs\AnalyzeDeforestationJob(
+                    feature:       $feature,
+                    index:         $index,
+                    globalParams:  $globalParams,
+                    analysisId:    $analysisId,
+                    totalFeatures: $total,
+                    causerId:      $causerId,
+                );
             }
-            if (!$globalParams['save_analysis']) {
-                $this->registerUnsavedAnalysisEvent($dataToPass, $globalParams);
-            }
-            return view('deforestation.results', compact('dataToPass'));
-        } else {
-            Log::error('Tipo de geometría no soportado: ' . ($geojson['type'] ?? 'null'));
-            return back()->withErrors(['geometry' => 'Tipo de geometría no soportado: ' . $geojson['type']]);
+
+            \Illuminate\Support\Facades\Bus::batch($jobs)
+                ->name("analysis:{$analysisId}")
+                ->allowFailures()
+                ->finally(function () use ($analysisId) {
+                    app(DeforestationAnalysisService::class)->finalizeProgress($analysisId);
+                })
+                ->dispatch();
+
+            return response()->json([
+                'success'     => true,
+                'analysis_id' => $analysisId,
+                'total'       => $total,
+                'has_save'    => $saveAnalysis,
+            ], 202);
         }
+
+        /**
+     * Normaliza el GeoJSON de entrada a un array de features homogéneo.
+     */
+    private function buildFeaturesFromGeojson(array $geojson): array
+    {
+        $type = $geojson['type'] ?? null;
+
+        if ($type === 'FeatureCollection') {
+            return $geojson['features'] ?? [];
+        }
+        if ($type === 'Feature') {
+            return [$geojson];
+        }
+        if ($type === 'Polygon' || $type === 'MultiPolygon') {
+            return [[
+                'geometry'   => $geojson,
+                'properties' => [],
+            ]];
+        }
+
+        return [];
+    }
+
+    /**
+     * Endpoint de polling para el widget BackgroundProgress.
+     */
+    public function analysisProgress(string $analysisId): JsonResponse
+    {
+        $state = app(DeforestationAnalysisService::class)->getProgress($analysisId);
+
+        if (!$state) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Análisis no encontrado o expirado.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'state'   => $state,
+        ]);
+    }
+
+    /**
+     * Renderiza results o multi-results desde el cache (para análisis sin guardar).
+     */
+    public function viewAsync(string $analysisId)
+    {
+        $service = app(DeforestationAnalysisService::class);
+        $state   = $service->getProgress($analysisId);
+
+        if (!$state || ($state['status'] ?? null) !== 'done') {
+            return redirect()->route('deforestation.create')
+                ->withErrors(['error' => 'El análisis no está listo o expiró.']);
+        }
+
+        $results = $service->getAllResults($analysisId);
+
+        if (empty($results)) {
+            return redirect()->route('deforestation.create')
+                ->withErrors(['error' => 'No se encontraron resultados para este análisis.']);
+        }
+
+        if (count($results) === 1) {
+            $dataToPass = $results[0];
+            return view('deforestation.results', compact('dataToPass'));
+        }
+
+        $multiResults = $results;
+        return view('deforestation.multi-results', compact('multiResults'));
     }
 
     /**

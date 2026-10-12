@@ -1316,20 +1316,29 @@ document.getElementById('producer_id').addEventListener('change', function() {
     validateSaveOption();
 });
 
-// ===== MANEJADOR DE ENVÍO DEL FORMULARIO (AJAX + WIDGET GLOBAL) =====
+// ===== MANEJADOR DE ENVÍO DEL FORMULARIO (ASYNC + WIDGET) =====
 document.getElementById('analysis-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
-    // --- Validaciones (idénticas a antes) ---
+    // --- Validaciones cliente (idénticas a antes) ---
     const geometry = document.getElementById('geometry').value;
-    if (!geometry) { showAlert('Debe dibujar un polígono en el mapa antes de analizar.', 'warning'); return; }
+    if (!geometry) {
+        showAlert('Debe dibujar un polígono en el mapa antes de analizar.', 'warning');
+        return;
+    }
 
     const areaHa = parseFloat(document.getElementById('area_ha').value);
-    if (!areaHa || areaHa <= 0) { showAlert('El área debe ser mayor a 0 hectáreas.', 'warning'); return; }
+    if (!areaHa || areaHa <= 0) {
+        showAlert('El área debe ser mayor a 0 hectáreas.', 'warning');
+        return;
+    }
 
     const startYear = parseInt(document.getElementById('start_year').value);
     const endYear   = parseInt(document.getElementById('end_year').value);
-    if (startYear > endYear) { showAlert('El año de inicio no puede ser mayor al año de fin.', 'warning'); return; }
+    if (startYear > endYear) {
+        showAlert('El año de inicio no puede ser mayor al año de fin.', 'warning');
+        return;
+    }
 
     const saveCheckbox    = document.getElementById('save_analysis');
     const nameInput       = document.getElementById('name');
@@ -1352,34 +1361,13 @@ document.getElementById('analysis-form').addEventListener('submit', async functi
         }
     }
 
-    // --- UI: bloquear solo el botón, no la página ---
+    // --- Bloquear UI mientras se lanza el análisis ---
     const submitButton = document.getElementById('submit-button');
     const buttonText   = document.getElementById('button-text');
     const spinner      = document.getElementById('loading-spinner');
     submitButton.disabled = true;
     spinner.classList.remove('hidden');
     buttonText.textContent = saveCheckbox.checked ? 'Analizando y guardando…' : 'Analizando…';
-
-    // --- Widget global ---
-    const taskId = (crypto.randomUUID?.() || Date.now().toString(36))
-        + '-' + Math.random().toString(36).slice(2, 8);
-
-    // El análisis no tiene progreso granular, mostramos estado "en curso" con timer
-    window.BackgroundProgress.start(taskId, {
-        title: 'Analizando deforestación',
-        noPolling: true,
-    });
-
-    // Simulación visual de progreso (mientras el fetch corre)
-    let fake = 0;
-    const fakeInterval = setInterval(() => {
-        if (fake < 90) {
-            fake += 5;
-            document.getElementById('bg-progress-bar').style.width = `${fake}%`;
-            document.getElementById('bg-progress-pct').textContent = `${fake}%`;
-            document.getElementById('bg-progress-text').textContent = 'Consultando GFW…';
-        }
-    }, 400);
 
     try {
         const formData = new FormData(this);
@@ -1388,45 +1376,56 @@ document.getElementById('analysis-form').addEventListener('submit', async functi
             body: formData,
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'text/html',
+                'Accept': 'application/json',
             },
-            redirect: 'follow',
         });
 
-        clearInterval(fakeInterval);
-
+        // Errores de validación del servidor (422 u otros)
         if (!res.ok) {
-            // Errores de validación u otros → recargar con la respuesta
-            const html = await res.text();
-            document.open();
-            document.write(html);
-            document.close();
+            let errorMessage = 'Error al iniciar el análisis.';
+            try {
+                const errorData = await res.json();
+                if (errorData.errors) {
+                    errorMessage = Object.values(errorData.errors).flat().join(' ');
+                } else if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (_) {}
+
+            showAlert(errorMessage, 'error');
+
+            // Restaurar botón
+            submitButton.disabled = false;
+            spinner.classList.add('hidden');
+            buttonText.textContent = 'Analizar Deforestación';
             return;
         }
 
-        // Éxito: reemplazamos el HTML de la página con la respuesta
-        const html = await res.text();
+        const data = await res.json();
 
-        // Terminamos el widget antes de reemplazar el DOM
-        window.BackgroundProgress.update({
-            total: 1, current: 1, status: 'done',
-            feature_statuses: {},
-            summary: { imported: 0, analyzed: 1, skipped: 0, duplicated: [], errors: [] },
+        if (!data.success || !data.analysis_id) {
+            showAlert('Respuesta inesperada del servidor.', 'error');
+            submitButton.disabled = false;
+            spinner.classList.add('hidden');
+            buttonText.textContent = 'Analizar Deforestación';
+            return;
+        }
+
+        // --- Análisis lanzado: arrancar el widget con progreso real ---
+        window.BackgroundProgress.start(data.analysis_id, {
+            title: 'Analizando deforestación',
+            progressUrl: "{{ route('deforestation.analyze.progress', '__ID__') }}",
         });
-        window.BackgroundProgress.stop();
-        localStorage.removeItem('bg_active_task');
 
-        // Reemplazar el contenido manteniendo el body
-        document.open();
-        document.write(html);
-        document.close();
+        // Restauramos el botón: el widget ahora es el que lleva el progreso
+        submitButton.disabled = false;
+        spinner.classList.add('hidden');
+        buttonText.textContent = 'Analizar Deforestación';
+
     } catch (err) {
-        clearInterval(fakeInterval);
-        window.BackgroundProgress.stop();
-        console.error('Error en análisis:', err);
-        showAlert('Error al procesar el análisis: ' + err.message, 'error');
+        console.error('Error al lanzar análisis:', err);
+        showAlert('Error de red: ' + err.message, 'error');
 
-        // Restaurar botón
         submitButton.disabled = false;
         spinner.classList.add('hidden');
         buttonText.textContent = 'Analizar Deforestación';

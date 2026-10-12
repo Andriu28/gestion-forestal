@@ -37,10 +37,19 @@
     <div id="bg-progress-list"
          class="max-h-52 overflow-y-auto px-4 py-3 space-y-1.5 text-xs"></div>
 
-    <div id="bg-progress-footer"
+        <div id="bg-progress-footer"
          class="hidden px-4 py-3 border-t border-gray-200 dark:border-gray-700
                 bg-gray-50 dark:bg-gray-900/40">
         <div class="text-xs text-gray-700 dark:text-gray-300" id="bg-progress-summary"></div>
+
+        {{-- Botón que aparece solo al terminar un análisis async --}}
+        <button type="button" id="bg-progress-view-result"
+                class="hidden mt-2 w-full py-2 text-sm font-semibold rounded-md
+                       bg-emerald-600 hover:bg-emerald-700
+                       text-white transition-colors shadow-sm">
+            Ver resultado
+        </button>
+
         <button type="button" id="bg-progress-close"
                 class="mt-2 w-full py-1.5 text-xs font-medium rounded-md
                        bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600
@@ -84,6 +93,7 @@ if (!window.BackgroundProgress) {
             el.list().innerHTML = '';
             el.footer().classList.add('hidden');
             el.spinner()?.classList.remove('hidden');
+            document.getElementById('bg-progress-view-result')?.classList.add('hidden');
         }
 
         function escapeHtml(str) {
@@ -93,7 +103,7 @@ if (!window.BackgroundProgress) {
         }
 
         function statusIcon(status) {
-            return ({ analyzed:'🔍', success:'✅', skipped:'⏭️', duplicated:'⚠️', error:'❌' }[status]) || '⏳';
+            return ({ analyzed:'', success:'', skipped:'', duplicated:'', error:'' }[status]) || '';
         }
 
         function renderList(features) {
@@ -152,15 +162,37 @@ if (!window.BackgroundProgress) {
 
             const s = state.summary || {};
             const parts = [];
-            if (s.imported)           parts.push(`✅ ${s.imported} importado(s)`);
-            if (s.analyzed)           parts.push(`🔍 ${s.analyzed} analizado(s)`);
-            if (s.skipped)            parts.push(`⏭️ ${s.skipped} omitido(s)`);
-            if (s.duplicated?.length) parts.push(`⚠️ ${s.duplicated.length} duplicado(s)`);
-            if (s.errors?.length)     parts.push(`❌ ${s.errors.length} error(es)`);
+            if (s.imported)           parts.push(` ${s.imported} importado(s)`);
+            if (s.analyzed)           parts.push(` ${s.analyzed} analizado(s)`);
+            if (s.skipped)            parts.push(` ${s.skipped} omitido(s)`);
+            if (s.duplicated?.length) parts.push(` ${s.duplicated.length} duplicado(s)`);
+            if (s.errors?.length)     parts.push(` ${s.errors.length} error(es)`);
 
             el.summary().innerHTML = parts.length ? parts.join(' · ') : 'Sin cambios.';
             el.footer().classList.remove('hidden');
 
+            // Si el backend indica a dónde ir (análisis async),
+            // mostramos el botón "Ver resultado" en vez de redirigir solo.
+            // El widget NO se auto-oculta: el usuario decide cuándo.
+            if (state.redirect_url) {
+                const viewBtn = document.getElementById('bg-progress-view-result');
+                if (viewBtn) {
+                    viewBtn.classList.remove('hidden');
+                    viewBtn.dataset.redirectUrl = state.redirect_url;
+
+                    // Reemplazamos cualquier listener previo para evitar duplicados
+                    const newBtn = viewBtn.cloneNode(true);
+                    newBtn.dataset.redirectUrl = state.redirect_url;
+                    viewBtn.replaceWith(newBtn);
+
+                    newBtn.addEventListener('click', () => {
+                        window.location.href = newBtn.dataset.redirectUrl;
+                    });
+                }
+                return; // No auto-ocultar
+            }
+
+            // Flujo antiguo (importación de polígonos): sin redirect_url
             if (!s.errors?.length) setTimeout(hide, 8000);
         }
 

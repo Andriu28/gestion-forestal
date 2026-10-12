@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Cache;
 use App\Services\PolygonImportService;
 use App\Jobs\ImportPolygonsJob;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Bus;
+use App\Jobs\ImportPolygonJob;
 
 class PolygonController extends Controller
 {
@@ -857,27 +859,53 @@ class PolygonController extends Controller
         $importId = $request->input('import_id') ?: (string) Str::uuid();
         $options  = $this->importService->buildImportOptions($request);
         $srid     = (int) $request->input('srid');
+        $causerId = auth()->id();
 
         $normalized = array_map(
             fn($f) => $this->importService->normalizeFrontendFeature($f),
             $request->input('features')
         );
 
-        // Inicializar progreso AHORA para que el polling lo vea de inmediato
-        $this->importService->initImportProgress($importId, count($normalized));
+        $total = count($normalized);
 
-        ImportPolygonsJob::dispatch(
-            $normalized,
-            $srid,
-            $options,
-            $importId,
-            auth()->id(),   // ← capturamos aquí, dentro del request HTTP
-        );
+        // Crear el cache entry ANTES de encolar para que el polling lo vea
+        $this->importService->initImportProgress($importId, $total);
+
+        // Un job por feature
+        $jobs = [];
+        foreach ($normalized as $index => $feature) {
+            $jobs[] = new ImportPolygonJob(
+                feature:       $feature,
+                index:         $index,
+                srid:          $srid,
+                options:       $options,
+                importId:      $importId,
+                totalFeatures: $total,
+                causerId:      $causerId,
+            );
+        }
+
+        Bus::batch($jobs)
+            ->name("import:{$importId}")
+            ->allowFailures() // que un polígono malo no cancele el batch
+            ->then(function () use ($importId) {
+                // Todos los jobs terminaron OK
+                app(\App\Services\PolygonImportService::class)->finalizeImport($importId, 'done');
+            })
+            ->catch(function () use ($importId) {
+                // Hubo al menos un fallo
+                app(\App\Services\PolygonImportService::class)->finalizeImport($importId, 'done');
+            })
+            ->finally(function () use ($importId) {
+                // Se ejecuta siempre (éxito o fallo) — idempotente por si acaso
+                app(\App\Services\PolygonImportService::class)->finalizeImport($importId, 'done');
+            })
+            ->dispatch();
 
         return response()->json([
             'success'   => true,
             'import_id' => $importId,
-            'total'     => count($normalized),
+            'total'     => $total,
         ], 202);
     }
 

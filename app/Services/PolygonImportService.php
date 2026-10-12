@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\Log;
 
 class PolygonImportService
 {
-    /**
-     * Construye las opciones comunes desde el request.
-     */
+    // =====================================================================
+    // Normalización de features (sin cambios respecto a la versión anterior)
+    // =====================================================================
+
     public function buildImportOptions(\Illuminate\Http\Request $request): array
     {
         return [
@@ -25,9 +26,6 @@ class PolygonImportService
         ];
     }
 
-    /**
-     * Normaliza un Feature GeoJSON crudo (de archivo).
-     */
     public function normalizeRawFeature(array $feature, string $producerField): array
     {
         $props = $feature['properties'] ?? [];
@@ -45,9 +43,6 @@ class PolygonImportService
         ];
     }
 
-    /**
-     * Normaliza un Feature del frontend (geometry como string JSON).
-     */
     public function normalizeFrontendFeature(array $featureData): array
     {
         $geometry = null;
@@ -70,88 +65,45 @@ class PolygonImportService
         ];
     }
 
-    /**
-     * Procesa una lista de features ya normalizados.
-     */
-    public function processImportFeatures(
-        array $features,
-        int $srid,
-        array $options,
-        ?string $importId = null,
-        ?User $causer = null,
-    ): array {
-        $imported   = 0;
-        $skipped    = 0;
-        $duplicated = [];
-        $errors     = [];
-        $analyzed   = 0;
+    // =====================================================================
+    // Import de UN feature (público, lo llama ImportPolygonJob)
+    // =====================================================================
 
-        set_time_limit(0);
-
-        foreach ($features as $index => $feature) {
-            try {
-                $wasAnalyzed = false;
-                $this->importSingleFeature(
-                    $feature, $index, $srid, $options,
-                    $imported, $skipped, $wasAnalyzed, $importId,
-                    $causer,
-                );
-                if ($wasAnalyzed) {
-                    $analyzed++;
-                }
-            } catch (\Illuminate\Database\QueryException $e) {
-                if ($this->isUniqueViolation($e)) {
-                    $duplicated[] = $feature['external_id'] ?? "#{$index}";
-                } else {
-                    Log::error('Error de BD importando feature', [
-                        'index' => $index, 'error' => $e->getMessage(),
-                    ]);
-                    $errors[] = "Feature #{$index}: error de base de datos";
-                }
-            } catch (\Throwable $e) {
-                Log::error('Error inesperado importando feature', [
-                    'index' => $index, 'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
-                $errors[] = "Feature #{$index}: " . $e->getMessage();
-            }
-        }
-
-        $this->finishImportProgress($importId, 'done');
-
-        return compact('imported', 'skipped', 'duplicated', 'errors', 'analyzed');
-    }
-
-    private function importSingleFeature(
-        array $feature,
-        int $index,
-        int $srid,
-        array $options,
-        int &$imported,
-        int &$skipped,
-        bool &$wasAnalyzed,
-        ?string $importId = null,
-        ?User $causer = null,
+    public function importSingleFeature(
+        array  $feature,
+        int    $index,
+        int    $srid,
+        array  $options,
+        string $importId,
+        int    $totalFeatures,
+        ?User  $causer = null,
     ): void {
-        $wasAnalyzed = false;
         $featureName = $feature['name'] ?? "Feature #{$index}";
+
+        // Fingimos el login para que el trait de activity atribuya al usuario.
+        // Se limpia al final (incluso si hay excepción).
+        $previousUser = auth()->user();
+        if ($causer) {
+            auth()->setUser($causer);
+        }
 
         try {
             $geometry = $feature['geometry'];
             if (empty($geometry) || empty($geometry['type'])) {
-                $this->updateImportProgress($importId, $index, $featureName, 'error');
-                throw new \RuntimeException("Geometría inválida en feature #{$index}");
+                $this->recordFeatureResult($importId, $index, $featureName, 'error',
+                    errorMessage: "Geometría inválida");
+                return;
             }
             if (!in_array($geometry['type'], ['Polygon', 'MultiPolygon'], true)) {
-                $this->updateImportProgress($importId, $index, $featureName, 'error');
-                throw new \RuntimeException("Tipo no soportado en feature #{$index}: {$geometry['type']}");
+                $this->recordFeatureResult($importId, $index, $featureName, 'error',
+                    errorMessage: "Tipo no soportado: {$geometry['type']}");
+                return;
             }
 
             $externalId = $feature['external_id'];
             if ($externalId && $options['skip_existing']
                 && Polygon::withTrashed()->where('external_id', $externalId)->exists()) {
-                $skipped++;
-                $this->updateImportProgress($importId, $index, $featureName, 'skipped');
+                $this->recordFeatureResult($importId, $index, $featureName, 'skipped');
                 return;
             }
 
@@ -186,14 +138,16 @@ class PolygonImportService
             }
 
             $deforestedHa = null;
+            $status       = 'success';
+
             if (!empty($options['analyze_deforestation'])) {
                 try {
                     $startYear = (int) config('deforestation.import_default_start_year');
                     $endYear   = (int) config('deforestation.import_default_end_year');
 
                     $yearly       = $polygon->analyzeDeforestationFromGFW($startYear, $endYear);
-                    $wasAnalyzed  = true;
                     $deforestedHa = array_sum(array_column($yearly, 'area__ha'));
+                    $status       = 'analyzed';
                 } catch (\Throwable $e) {
                     Log::warning("Análisis post-importación falló para polígono {$polygon->id}", [
                         'error' => $e->getMessage(),
@@ -201,27 +155,108 @@ class PolygonImportService
                 }
             }
 
-            $imported++;
-            $this->updateImportProgress(
-                $importId,
-                $index,
-                $featureName,
-                $wasAnalyzed ? 'analyzed' : 'success',
-                $deforestedHa
-            );
+            $this->recordFeatureResult($importId, $index, $featureName, $status, $deforestedHa);
 
         } catch (\Illuminate\Database\QueryException $e) {
-            if ($this->isUniqueViolation($e)) {
-                $this->updateImportProgress($importId, $index, $featureName, 'duplicated');
-                throw $e;
-            }
-            $this->updateImportProgress($importId, $index, $featureName, 'error');
+            $status = $this->isUniqueViolation($e) ? 'duplicated' : 'error';
+            $this->recordFeatureResult($importId, $index, $featureName, $status,
+                errorMessage: $e->getMessage());
             throw $e;
+
         } catch (\Throwable $e) {
-            $this->updateImportProgress($importId, $index, $featureName, 'error');
+            $this->recordFeatureResult($importId, $index, $featureName, 'error',
+                errorMessage: $e->getMessage());
             throw $e;
+
+        } finally {
+            if ($causer) {
+                auth()->forgetUser();
+                if ($previousUser) {
+                    auth()->setUser($previousUser);
+                }
+            }
         }
     }
+
+    // =====================================================================
+    // Progreso en cache — thread-safe con lock
+    // =====================================================================
+
+    public function initImportProgress(string $importId, int $total): void
+    {
+        Cache::put("import_progress:{$importId}", [
+            'total'            => $total,
+            'current'          => 0,
+            'status'           => 'processing',
+            'feature_statuses' => [],
+            'summary'          => [
+                'imported'   => 0,
+                'skipped'    => 0,
+                'duplicated' => [],
+                'errors'     => [],
+                'analyzed'   => 0,
+            ],
+            'started_at'       => now()->toISOString(),
+        ], now()->addHours(6));
+    }
+
+    /**
+     * Actualiza el progreso de un feature de forma atómica con Cache::lock.
+     * Sin esto, con múltiples jobs en paralelo, dos updates simultáneos
+     * pueden perderse por read-modify-write.
+     */
+    public function recordFeatureResult(
+        string  $importId,
+        int     $index,
+        string  $name,
+        string  $status,
+        ?float  $deforestedHa = null,
+        ?string $errorMessage = null,
+    ): void {
+        $key  = "import_progress:{$importId}";
+        $lock = Cache::lock("import_progress_lock:{$importId}", 10);
+
+        $lock->block(5, function () use ($key, $index, $name, $status, $deforestedHa, $errorMessage) {
+            $state = Cache::get($key);
+            if (!$state) return;
+
+            $state['feature_statuses'][$index] = [
+                'name'          => $name,
+                'status'        => $status,
+                'deforested_ha' => $deforestedHa,
+                'error'         => $errorMessage,
+            ];
+
+            // 'current' = cantidad de features ya procesados
+            $state['current'] = count($state['feature_statuses']);
+
+            match ($status) {
+                'success'    => $state['summary']['imported']++,
+                'analyzed'   => $state['summary']['analyzed']++,
+                'skipped'    => $state['summary']['skipped']++,
+                'duplicated' => $state['summary']['duplicated'][] = $name,
+                'error'      => $state['summary']['errors'][]     = $name,
+                default      => null,
+            };
+
+            Cache::put($key, $state, now()->addHours(6));
+        });
+    }
+
+    public function finalizeImport(string $importId, string $status = 'done'): void
+    {
+        $key   = "import_progress:{$importId}";
+        $state = Cache::get($key);
+        if ($state) {
+            $state['status']      = $status;
+            $state['finished_at'] = now()->toISOString();
+            Cache::put($key, $state, now()->addHours(6));
+        }
+    }
+
+    // =====================================================================
+    // Helpers privados
+    // =====================================================================
 
     private function resolveProducerId(
         ?int $producerId,
@@ -229,9 +264,7 @@ class PolygonImportService
         ?int $defaultProducerId,
         bool $createMissing
     ): ?int {
-        if ($producerId) {
-            return $producerId;
-        }
+        if ($producerId) return $producerId;
 
         if ($producerName !== '') {
             $producer = Producer::whereRaw(
@@ -239,9 +272,7 @@ class PolygonImportService
                 [strtolower($producerName)]
             )->first();
 
-            if ($producer) {
-                return $producer->id;
-            }
+            if ($producer) return $producer->id;
 
             if ($createMissing) {
                 [$firstName, $lastName] = array_pad(explode(' ', $producerName, 2), 2, '');
@@ -268,94 +299,11 @@ class PolygonImportService
     public function buildImportSummary(array $result): string
     {
         $parts = [];
-
-        if ($result['imported'] > 0) {
-            $parts[] = "<strong>{$result['imported']}</strong> importado" . ($result['imported'] === 1 ? '' : 's');
-        }
-        if (!empty($result['analyzed'])) {
-            $parts[] = "<strong>{$result['analyzed']}</strong> analizado" . ($result['analyzed'] === 1 ? '' : 's');
-        }
-        if ($result['skipped'] > 0) {
-            $parts[] = "<strong>{$result['skipped']}</strong> omitido" . ($result['skipped'] === 1 ? '' : 's');
-        }
-        if (!empty($result['duplicated'])) {
-            $n = count($result['duplicated']);
-            $parts[] = "<strong>{$n}</strong> duplicado" . ($n === 1 ? '' : 's');
-        }
-        if (!empty($result['errors'])) {
-            $n = count($result['errors']);
-            $parts[] = "<strong>{$n}</strong> error" . ($n === 1 ? '' : 'es');
-        }
-
+        if ($result['imported'])         $parts[] = "<strong>{$result['imported']}</strong> importado(s)";
+        if (!empty($result['analyzed'])) $parts[] = "<strong>{$result['analyzed']}</strong> analizado(s)";
+        if ($result['skipped'])          $parts[] = "<strong>{$result['skipped']}</strong> omitido(s)";
+        if (!empty($result['duplicated'])) $parts[] = "<strong>" . count($result['duplicated']) . "</strong> duplicado(s)";
+        if (!empty($result['errors']))     $parts[] = "<strong>" . count($result['errors']) . "</strong> error(es)";
         return empty($parts) ? 'Sin cambios.' : implode(' · ', $parts);
-    }
-
-    // =====================================================================
-    // Progreso en cache
-    // =====================================================================
-
-    public function initImportProgress(?string $importId, int $total): void
-    {
-        if (!$importId) return;
-
-        Cache::put("import_progress:{$importId}", [
-            'total'            => $total,
-            'current'          => 0,
-            'status'           => 'processing',
-            'feature_statuses' => [],
-            'summary'          => [
-                'imported'   => 0,
-                'skipped'    => 0,
-                'duplicated' => [],
-                'errors'     => [],
-                'analyzed'   => 0,
-            ],
-            'started_at'       => now()->toISOString(),
-        ], now()->addHour());
-    }
-
-    public function updateImportProgress(
-        ?string $importId,
-        int $featureIndex,
-        string $featureName,
-        string $status,
-        ?float $deforestedHa = null
-    ): void {
-        if (!$importId) return;
-
-        $key   = "import_progress:{$importId}";
-        $state = Cache::get($key);
-        if (!$state) return;
-
-        $state['current'] = $featureIndex + 1;
-        $state['feature_statuses'][$featureIndex] = [
-            'name'          => $featureName,
-            'status'        => $status,
-            'deforested_ha' => $deforestedHa,
-        ];
-
-        match ($status) {
-            'success'    => $state['summary']['imported']++,
-            'analyzed'   => $state['summary']['analyzed']++,
-            'skipped'    => $state['summary']['skipped']++,
-            'duplicated' => $state['summary']['duplicated'][] = $featureName,
-            'error'      => $state['summary']['errors'][]     = $featureName,
-            default      => null,
-        };
-
-        Cache::put($key, $state, now()->addHour());
-    }
-
-    public function finishImportProgress(?string $importId, string $status = 'done'): void
-    {
-        if (!$importId) return;
-
-        $key   = "import_progress:{$importId}";
-        $state = Cache::get($key);
-        if ($state) {
-            $state['status']      = $status;
-            $state['finished_at'] = now()->toISOString();
-            Cache::put($key, $state, now()->addHour());
-        }
     }
 }

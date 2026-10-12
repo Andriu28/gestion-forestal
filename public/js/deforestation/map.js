@@ -372,7 +372,7 @@ class DeforestationMap {
     setupEventListeners() {
         document.getElementById('draw-polygon').addEventListener('click', () => this.activateDrawing());
         document.getElementById('clear-map').addEventListener('click', () => this.clearMap());
-        document.getElementById('analysis-form').addEventListener('submit', (e) => this.handleFormSubmit(e));
+        /* document.getElementById('analysis-form').addEventListener('submit', (e) => this.handleFormSubmit(e)); */
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
     }
 
