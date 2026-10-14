@@ -928,9 +928,9 @@ async function showPolygonDetails(polygonId) {
         }
         
         if (data.success) {
-            console.log('✅ Éxito en la respuesta, formateando detalles...');
+            console.log('  Éxito en la respuesta, formateando detalles...');
             modalContent.innerHTML = formatPolygonDetails(data.polygon);
-            console.log('✅ Detalles renderizados correctamente');
+            console.log('  Detalles renderizados correctamente');
         } else {
             console.error('❌ Respuesta indicó error:', data.message);
             throw new Error(data.message || 'Error loading details');

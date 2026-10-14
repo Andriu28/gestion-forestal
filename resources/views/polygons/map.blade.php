@@ -1165,7 +1165,7 @@
                     // su posición en pantalla ya con la vista final aplicada
                     this.updateMarkerStacking();
 
-                    console.log(`✅ Polígonos cargados: ${features.length}`);
+                    console.log(`  Polígonos cargados: ${features.length}`);
                 } catch (error) {
                     console.error('Error loading polygons:', error);
                 }

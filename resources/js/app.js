@@ -327,7 +327,7 @@ window.handleRoleChange = async function(selectElement, userId, userName, isSelf
             const data = await response.json();
             
             if (data.success) {
-                // ✅ ACTUALIZAR EL ATRIBUTO data-original-role con el nuevo valor
+                //   ACTUALIZAR EL ATRIBUTO data-original-role con el nuevo valor
                 selectElement.setAttribute('data-original-role', newRole);
                 
                 showCustomAlert('success', '¡Éxito!', data.message);

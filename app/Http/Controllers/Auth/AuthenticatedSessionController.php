@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // ✅ REGISTRAR INICIO DE SESIÓN
+        //  REGISTRAR INICIO DE SESIÓN
         activity()
             ->causedBy(Auth::user())
             ->log('ha iniciado sesión');
@@ -41,7 +41,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        // ✅ REGISTRAR CIERRE DE SESIÓN (ANTES de logout)
+        //   REGISTRAR CIERRE DE SESIÓN (ANTES de logout)
         if (Auth::check()) {
             activity()
                 ->causedBy(Auth::user())

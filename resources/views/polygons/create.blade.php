@@ -1557,7 +1557,7 @@ function validatePolygonForm() {
         return false;
     }
     
-    // ✅ VALIDAR NOMBRE (NUEVO)
+    //   VALIDAR NOMBRE (NUEVO)
     if (!validatePolygonName()) {
         const nameInput = document.getElementById('name');
         if (nameInput) {

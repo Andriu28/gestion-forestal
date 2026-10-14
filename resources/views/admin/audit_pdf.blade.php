@@ -349,7 +349,7 @@
         $footerRightWidth = $fontMetrics->getTextWidth($footerRight, $fontRegular, 8);
         $pdf->page_text($pageWidth - $footerRightWidth - $margin, $bottomY, $footerRight, $fontRegular, 8, $grayColor);
 
-        // ✅ LÍNEA ELIMINADA - YA NO ESTÁ AQUÍ
+        //   LÍNEA ELIMINADA - YA NO ESTÁ AQUÍ
     }
 </script>
 </body>

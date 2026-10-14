@@ -102,7 +102,7 @@
                         @endif
                      </div>
                 </form>
-
+                
                 @if($producers->count() > 0)
                     <div class="overflow-x-auto">
                         <table id="producers-table" class="min-w-full divide-y divide-gray-200">

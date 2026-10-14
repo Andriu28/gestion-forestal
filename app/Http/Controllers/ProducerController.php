@@ -36,7 +36,7 @@ class ProducerController extends Controller
             'active'   => $query->where('is_active', true),
             'inactive' => $query->where('is_active', false),
             'deleted'  => $query->onlyTrashed(),
-            'all'      => $query, // ¡CORREGIDO! No usar withTrashed()
+            'all'      => $query, 
             default    => $query->where('is_active', true), // Por defecto solo activos
         };
 
@@ -59,6 +59,22 @@ class ProducerController extends Controller
     public function create()
     {
         return view('producers.create');
+    }
+
+    /**
+     * Muestra los detalles de un productor.
+     */
+    public function show(Producer $producer)
+    {
+        return view('producers.show', compact('producer'));
+    }
+
+    /**
+     * Muestra el formulario para editar un productor.
+     */
+    public function edit(Producer $producer)
+    {
+        return view('producers.edit', compact('producer'));
     }
 
      /**
@@ -108,21 +124,7 @@ class ProducerController extends Controller
         }
     }
 
-    /**
-     * Muestra los detalles de un productor.
-     */
-    public function show(Producer $producer)
-    {
-        return view('producers.show', compact('producer'));
-    }
-
-    /**
-     * Muestra el formulario para editar un productor.
-     */
-    public function edit(Producer $producer)
-    {
-        return view('producers.edit', compact('producer'));
-    }
+    
 
     /**
      * Actualiza un productor existente.

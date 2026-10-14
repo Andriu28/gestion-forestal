@@ -45,7 +45,7 @@ return [
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => 15, // ✅ Reducido de 30 a 15 para Railway
+            'timeout' => 15, //   Reducido de 30 a 15 para Railway
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
             // ⚠️ NO incluir 'stream' => []
         ],

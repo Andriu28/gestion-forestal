@@ -44,7 +44,7 @@ class ActivityRecordsSeeder extends Seeder
                 $id = DB::table('producers')->insertGetId([
                     'name' => "Productor $i",
                     'lastname' => "Apellido $i",
-                    'cedula' => 'V-' . str_pad((string)(10000000 + $i), 8, '0', STR_PAD_LEFT),  // ✅ AGREGADO
+                    'cedula' => 'V-' . str_pad((string)(10000000 + $i), 8, '0', STR_PAD_LEFT),  //   AGREGADO
                     'description' => "Productor de prueba $i",
                     'is_active' => true,
                     'created_at' => now(),

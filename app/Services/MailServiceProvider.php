@@ -50,7 +50,7 @@ class MailServiceProvider extends ServiceProvider
         });
         
         Event::listen(MessageSent::class, function ($event) {
-            Log::channel('mail')->info('✅ Email enviado', [
+            Log::channel('mail')->info('  Email enviado', [
                 'to' => $this->formatAddresses($event->message->getTo()),
                 'subject' => $event->message->getSubject(),
             ]);
