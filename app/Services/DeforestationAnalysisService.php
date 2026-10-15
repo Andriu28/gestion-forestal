@@ -319,19 +319,19 @@ class DeforestationAnalysisService
 
     private function buildRedirectUrl(array $state, string $analysisId): string
     {
-        $polygonIds = $state['summary']['polygon_ids'] ?? [];
+        $polygonIds = array_values(array_unique($state['summary']['polygon_ids'] ?? []));
         $hasSave    = $state['meta']['has_save'] ?? false;
         $count      = count($polygonIds);
 
         if ($hasSave && $count === 1) {
-            return route('deforestation.results', $polygonIds[0]);
+            return route('deforestation.results', $polygonIds[0], false);
         }
         if ($hasSave && $count > 1) {
             return route('deforestation.multiple-results', [
                 'polygon_ids' => implode(',', $polygonIds),
-            ]);
+            ], false);
         }
-        // Sin save: vista async efímera
+
         return route('deforestation.view-async', $analysisId, false);
     }
 }
