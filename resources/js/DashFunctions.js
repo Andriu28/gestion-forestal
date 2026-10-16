@@ -1,44 +1,57 @@
-// =======================
-// 1. Importaciones/dependencias
-// =======================
-// (No hay imports en este archivo, pero aquí irían si usas módulos ES6)
+// ====================================================================================================
+// CONTROLADOR DE INTERFAZ DEL DASHBOARD: DashFunctions.js
+// ====================================================================================================
+// 
+// Gestiona la interactividad visual de la plantilla principal (Dashboard Layout):
+// 1. Barra lateral (Sidebar):
+//    - Modo colapsado/expandido en pantallas de escritorio con persistencia en localStorage.
+//    - Menú deslizable (Drawer) para pantallas móviles con capa de bloqueo (Overlay).
+//    - Reajuste dinámico del lienzo del mapa (updateSize) tras animaciones para evitar distorsiones.
+// 2. Modo Oscuro / Claro (Dark Mode):
+//    - Detección automática de preferencias del sistema operativo (prefers-color-scheme).
+//    - Alternancia manual y almacenamiento de la preferencia del usuario en localStorage.
+// 3. Menús contextuales y animaciones escalonadas de entrada en tarjetas.
+// ====================================================================================================
 
-// =======================
-// 2. Constantes y configuraciones
-// =======================
-const sidebarToggle = document.getElementById('sidebarToggle');
-const sidebar = document.getElementById('sidebar');
-const sidebarOverlay = document.getElementById('sidebarOverlay');
-const userMenuToggle = document.getElementById('userMenuToggle');
-const userMenu = document.getElementById('userMenu');
-const darkModeToggle = document.getElementById('darkModeToggle');
+// =========================================================================
+// 1. Captura de Elementos del DOM y Variables de Estado
+// =========================================================================
+const sidebarToggle   = document.getElementById('sidebarToggle');
+const sidebar         = document.getElementById('sidebar');
+const sidebarOverlay  = document.getElementById('sidebarOverlay');
+const userMenuToggle  = document.getElementById('userMenuToggle');
+const userMenu        = document.getElementById('userMenu');
+const darkModeToggle  = document.getElementById('darkModeToggle');
 const mobileDarkToggle = document.getElementById('mobileDarkToggle');
-const mobileDarkIcon = document.getElementById('mobileDarkIcon');
-const htmlElement = document.documentElement;
-let sidebarCollapsed = false;
+const mobileDarkIcon  = document.getElementById('mobileDarkIcon');
+const htmlElement     = document.documentElement;
+let sidebarCollapsed  = false;
 
-// =======================
-// 3. Definiciones de funciones
-// =======================
+// =========================================================================
+// 2. Funciones de Persistencia y Control del Sidebar
+// =========================================================================
 
 /**
- * Guarda el estado del sidebar en localStorage
- * @param {boolean} collapsed - Si el sidebar está colapsado
+ * Guarda el estado del sidebar en el almacenamiento local del navegador (localStorage).
+ * Permite que al recargar la página o navegar a otra sección se conserve el estado elegido.
+ * 
+ * @param {boolean} collapsed Verdadero si el sidebar está minimizado a solo iconos
  */
 function saveSidebarState(collapsed) {
     localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
 }
 
 /**
- * Recupera el estado del sidebar desde localStorage
- * @returns {boolean} Estado colapsado
+ * Consulta en localStorage si el usuario tenía el menú lateral colapsado.
+ * @returns {boolean}
  */
 function getSidebarState() {
     return localStorage.getItem('sidebarCollapsed') === '1';
 }
 
 /**
- * Aplica el estado guardado del sidebar al cargar la página (solo escritorio)
+ * Aplica el estado recordado del sidebar al cargar la página:
+ * Solo aplica para pantallas de escritorio (ancho > 768px); en móviles siempre inicia cerrado.
  */
 function initializeSidebarState() {
     if (window.innerWidth > 768) {
@@ -49,9 +62,16 @@ function initializeSidebarState() {
     }
 }
 
+// =========================================================================
+// 3. Control del Tema Visual (Modo Oscuro / Claro)
+// =========================================================================
+
 /**
- * Actualiza el icono del modo oscuro en móvil
- * @param {boolean} isDark - Si el modo oscuro está activo
+ * Modifica el icono SVG del interruptor móvil según el tema actual:
+ * - Sol con rayos cuando el modo oscuro está activo (para sugerir cambio a día).
+ * - Luna creciente cuando el modo claro está activo (para sugerir cambio a noche).
+ * 
+ * @param {boolean} isDark Estado activo del modo oscuro
  */
 function updateMobileIcon(isDark) {
     if (!mobileDarkIcon) return;
@@ -67,7 +87,9 @@ function updateMobileIcon(isDark) {
 }
 
 /**
- * Alterna el modo oscuro/claro y actualiza el estado en localStorage
+ * Alterna la clase CSS `.dark` en el elemento raíz `<html>`,
+ * guarda la preferencia en `localStorage.setItem('theme', ...)`
+ * y sincroniza interruptores de escritorio y móvil.
  */
 function toggleDarkMode() {
     const isDark = htmlElement.classList.contains('dark');
@@ -77,8 +99,14 @@ function toggleDarkMode() {
     updateMobileIcon(!isDark);
 }
 
+// =========================================================================
+// 4. Sincronización Cartográfica
+// =========================================================================
+
 /**
- * Actualiza el tamaño del mapa tras cambios visuales
+ * Notifica a OpenLayers que debe recalcular las dimensiones de su contenedor (`map.updateSize()`):
+ * Crítico en interfaces con barras laterales colapsables, ya que cuando el menú se encoge o agranda,
+ * el ancho del canvas HTML cambia. Sin esta llamada, el mapa quedaría cortado o deformado.
  */
 function updateMapSize() {
     if (window.deforestationMapInstance && window.deforestationMapInstance.map) {
@@ -86,9 +114,12 @@ function updateMapSize() {
     }
 }
 
+// =========================================================================
+// 5. Menú de Usuario y Navegación
+// =========================================================================
+
 /**
- * Muestra/oculta el menú de usuario
- * @param {Event} e - Evento de click
+ * Despliega o repliega el menú emergente del perfil de usuario en la barra superior.
  */
 function toggleUserMenu(e) {
     e.stopPropagation();
@@ -96,8 +127,7 @@ function toggleUserMenu(e) {
 }
 
 /**
- * Cierra el menú de usuario si se hace click fuera
- * @param {Event} e - Evento de click
+ * Detecta clics fuera del contenedor del menú de usuario para cerrarlo automáticamente.
  */
 function closeUserMenuOnClickOutside(e) {
     if (!userMenuToggle.contains(e.target) && !userMenu.contains(e.target)) {
@@ -106,8 +136,7 @@ function closeUserMenuOnClickOutside(e) {
 }
 
 /**
- * Marca el ítem de navegación activo y cierra el sidebar móvil si corresponde
- * @param {Element} item - Elemento de navegación clickeado
+ * Resalta visualmente el enlace de navegación seleccionado y repliega el menú móvil.
  */
 function setActiveNavItem(item) {
     document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
@@ -119,19 +148,19 @@ function setActiveNavItem(item) {
 }
 
 /**
- * Aplica animación de entrada a las tarjetas
+ * Aplica una animación de entrada suave (fade-in + desplazamiento vertical hacia arriba)
+ * escalonada con retraso proporcional (stagger effect) a las tarjetas informativas del panel.
  */
 function animateCardsOnLoad() {
     document.querySelectorAll('.bg-white.rounded-xl').forEach((card, idx) => {
-        // EXCLUIR el modal explícitamente
+        // Excluir ventanas modales de la animación
         if (card.closest('#manual-polygon-modal')) {
             return;
         }
         
-        // Usar transiciones MÁS ESPECÍFICAS, no "all"
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
-        card.style.transition = 'opacity 0.6s ease, transform 0.6s ease'; // ← Solo estas propiedades
+        card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         
         setTimeout(() => {
             card.style.opacity = '1';
@@ -140,23 +169,22 @@ function animateCardsOnLoad() {
     });
 }
 
+// =========================================================================
+// 6. Registro de Escuchadores de Eventos (Event Listeners)
+// =========================================================================
 
-
-// =======================
-// 4. Event listeners
-// =======================
-
-// Sidebar toggle (responsive y escritorio)
+// Botón de colapso/apertura del sidebar (comportamiento adaptativo responsive)
 sidebarToggle.addEventListener('click', () => {
     if (window.innerWidth <= 768) {
+        // En móviles: abre/cierra como panel lateral flotante con cortina de fondo
         sidebar.classList.toggle('mobile-open');
         sidebarOverlay.classList.toggle('show');
     } else {
+        // En escritorio: colapsa el ancho para dejar ver solo los iconos
         sidebarCollapsed = !sidebarCollapsed;
         saveSidebarState(sidebarCollapsed);
         sidebar.classList.toggle('collapsed', sidebarCollapsed);
 
-        // Animación de iconos y textos
         const icons = sidebar.querySelectorAll('.nav-item i, .sidebar-header i');
         const texts = sidebar.querySelectorAll('.sidebar-text');
         icons.forEach(icon => {
@@ -180,17 +208,18 @@ sidebarToggle.addEventListener('click', () => {
             });
         }, 400);
 
+        // Espera a que termine la transición CSS del sidebar (400ms) para recalcular el tamaño del mapa
         setTimeout(updateMapSize, 400);
     }
 });
 
-// Cierra el sidebar móvil al hacer click en el overlay
+// Cerrar el sidebar móvil tocando el fondo oscuro
 sidebarOverlay.addEventListener('click', () => {
     sidebar.classList.remove('mobile-open');
     sidebarOverlay.classList.remove('show');
 });
 
-// Ajusta el sidebar al cambiar el tamaño de la ventana
+// Ajuste automático ante cambios de orientación o tamaño de pantalla
 window.addEventListener('resize', () => {
     if (window.innerWidth > 768) {
         sidebar.classList.remove('mobile-open');
@@ -200,25 +229,25 @@ window.addEventListener('resize', () => {
     }
 });
 
-// Dropdown de usuario
+// Eventos del desplegable de usuario
 userMenuToggle.addEventListener('click', toggleUserMenu);
 document.addEventListener('click', closeUserMenuOnClickOutside);
 
-// Estado activo de navegación
+// Eventos de selección de menú
 document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => setActiveNavItem(item));
 });
 
-// Animación de tarjetas al cargar
+// Disparo de la animación inicial de tarjetas
 animateCardsOnLoad();
 
-// Modo oscuro
+// Inicialización de interruptores de modo oscuro
 document.addEventListener('DOMContentLoaded', function() {
     if (darkModeToggle) darkModeToggle.addEventListener('change', toggleDarkMode);
     if (mobileDarkToggle) mobileDarkToggle.addEventListener('click', toggleDarkMode);
 });
 
-// Detecta cambios en la preferencia del sistema
+// Sincronización automática con la preferencia del sistema operativo del usuario si no hay selección manual
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
     if (!localStorage.getItem('theme')) {
         htmlElement.classList.toggle('dark', e.matches);
@@ -227,9 +256,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
     }
 });
 
-// =======================
-// 5. Inicialización
-// =======================
-
+// =========================================================================
+// 7. Arranque Inicial
+// =========================================================================
 initializeSidebarState();
-

@@ -6,15 +6,36 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Servicio de Integración con Global Forest Watch (GFW API)
+ * 
+ * Se encarga de la comunicación satelital externa con la plataforma de monitoreo forestal de
+ * World Resources Institute (WRI) y la Universidad de Maryland (UMD).
+ * 
+ * Funcionalidad técnica:
+ * - Envía la geometría vectorial (GeoJSON) de las parcelas hacia los servidores de GFW.
+ * - Ejecuta consultas de análisis geoespacial tipo SQL contra el dataset de pérdida de cobertura arbórea (`umd_tree_cover_loss`).
+ * - Agrupa y totaliza el área deforestada (en hectáreas) año por año mediante procesamiento en la nube satelital.
+ */
 class GFWService
 {
+    /** Cliente HTTP configurado para interactuar con los endpoints REST de GFW. */
     protected Client $client;
 
+    /** Tiempos máximos de espera (en segundos) para evitar bloqueos del sistema. */
     protected int $timeout;
     protected int $connectTimeout;
+
+    /** Dataset satelital por defecto (UMD Tree Cover Loss de Hansen et al.). */
     protected string $defaultDataset;
+
+    /** Versión del dataset (generalmente 'latest' o una versión específica como 'v1.10'). */
     protected string $defaultVersion;
 
+    /**
+     * Inicializa el cliente HTTP con los parámetros de configuración y credenciales API.
+     * Carga el api-key obligatorio, headers de identificación y timeouts de red.
+     */
     public function __construct()
     {
         $cfg = config('services.gfw');
@@ -37,8 +58,20 @@ class GFWService
     }
 
     /**
-     * Ejecuta una consulta SQL sincrónica contra un dataset.
-     * Devuelve siempre: ['status' => ..., 'data' => [...], 'message' => ...?]
+     * Ejecuta una consulta SQL sincrónica contra el motor analítico de GFW pasando una geometría arbitraria.
+     * 
+     * Flujo:
+     * 1. Envía un POST al endpoint `dataset/{dataset}/{version}/query` con el cuerpo JSON:
+     *    `{ geometry: {...}, sql: "SELECT ... FROM results WHERE ..." }`
+     * 2. El servidor satelital rasteriza la geometría contra sus capas globales de píxeles (30m de resolución)
+     *    y totaliza la pérdida de biomasa o área boscosa.
+     * 3. Procesa respuestas exitosas y captura excepciones de cliente (ej. polígonos inválidos, auto-intersecciones).
+     * 
+     * @param string $dataset   Identificador del dataset (ej. 'umd_tree_cover_loss')
+     * @param string $version   Versión del dataset (ej. 'latest')
+     * @param array  $geometry  Geometría GeoJSON del polígono
+     * @param string $sql       Sentencia SQL espacial compatible con la API de GFW
+     * @return array            Estructura estandarizada ['status' => 'success'|'error', 'data' => [...], 'message' => ...]
      */
     public function executeQuery(
         string $dataset,
@@ -58,12 +91,14 @@ class GFWService
                 'data'   => $data['data'] ?? [],
             ];
         } catch (ClientException $e) {
+            // Errores HTTP 4xx (polígono deformado, clave API inválida, sintaxis SQL errónea)
             $errorData = json_decode($e->getResponse()->getBody()->getContents(), true);
             $message   = $errorData['message'] ?? 'Error de validación de la API.';
             Log::error("GFW API Error (HTTP {$e->getCode()}): {$message}");
 
             return ['status' => 'error', 'message' => $message, 'data' => []];
         } catch (\Throwable $e) {
+            // Errores imprevistos de conexión, caída de red o timeouts
             Log::error('GFW API Error inesperado: ' . $e->getMessage());
 
             return [
@@ -75,7 +110,14 @@ class GFWService
     }
 
     /**
-     * Suma de área de pérdida de cobertura arbórea para un polígono y un año.
+     * Consulta el área deforestada exclusivamente para un solo año específico.
+     * 
+     * Genera la consulta SQL espacial:
+     * `SELECT SUM(area__ha) FROM results WHERE umd_tree_cover_loss__year = YYYY`
+     * 
+     * @param array $geometry Geometría GeoJSON del polígono a evaluar
+     * @param int   $year     Año que se desea consultar
+     * @return array
      */
     public function getZonalStats(array $geometry, int $year): array
     {
@@ -93,18 +135,27 @@ class GFWService
         );
     }
 
-        /**
-     * Consulta las estadísticas anuales de pérdida de cobertura en UNA sola
-     * llamada a GFW, usando GROUP BY por año.
+    /**
+     * Obtiene estadísticas anuales de deforestación para un rango o lista de años en UNA SOLA llamada HTTP:
+     * 
+     * Optimización de rendimiento y cuota de red:
+     * - En lugar de hacer una petición HTTP por cada año (lo que saturaría la conexión si se analizan 20 años),
+     *   se agrupan los años mediante una sentencia SQL con `GROUP BY umd_tree_cover_loss__year`.
+     * 
+     * Manejo de años sin pérdida de bosque (Zero-filling):
+     * - La API de GFW solo retorna filas para aquellos años donde el satélite detectó pérdida arbórea en algún píxel.
+     * - Si en un año no hubo tala (pérdida = 0 ha), GFW omite la fila por completo.
+     * - Este método inicializa previamente todos los años solicitados en 0.0 ha para asegurar que el consumidor
+     *   siempre reciba un reporte cronológico continuo sin huecos.
      *
-     * @param  array  $geometry  GeoJSON geometry
-     * @param  int[]  $years     Lista de años (se normalizan y deduplican)
+     * @param  array  $geometry  Geometría GeoJSON {'type': 'Polygon', 'coordinates': [...]}
+     * @param  int[]  $years     Lista de años a consultar (ej. [2018, 2019, 2020, 2021])
      * @return array<int, array{area__ha: float, status: string, year: int, error?: string}>
-     *         Mapa [year => datos]. Los años solicitados que GFW no devuelva
-     *         (porque no hubo pérdida) se rellenan con area__ha = 0.
+     *         Diccionario indexado por año con el resultado de cada periodo.
      */
     public function getYearlyStatsForRange(array $geometry, array $years): array
     {
+        // Normalizar y ordenar la lista de años eliminando duplicados
         $years = array_values(array_unique(array_map('intval', $years)));
 
         if (empty($years)) {
@@ -115,6 +166,7 @@ class GFWService
         $minYear = $years[0];
         $maxYear = $years[count($years) - 1];
 
+        // Construcción de la sentencia SQL satelital agrupada por año
         $sql = sprintf(
             "SELECT %s__year, SUM(area__ha) AS area__ha FROM results " .
             "WHERE %s__year >= %d AND %s__year <= %d " .
@@ -126,9 +178,7 @@ class GFWService
             $this->defaultDataset
         );
 
-        // Pre-inicializamos TODOS los años solicitados con cero.
-        // Así si GFW no devuelve un año (no hubo pérdida) queda en 0 y el
-        // contrato de retorno es consistente para los consumidores.
+        // Pre-inicializar todos los años con 0.0 ha para evitar valores vacíos si no hubo deforestación
         $results = [];
         foreach ($years as $year) {
             $results[$year] = [
@@ -155,6 +205,7 @@ class GFWService
 
             $yearColumn = "{$this->defaultDataset}__year";
 
+            // Asignar los valores reales devueltos por el satélite
             foreach ($payload['data'] ?? [] as $row) {
                 $year = (int) ($row[$yearColumn] ?? 0);
 
@@ -178,8 +229,14 @@ class GFWService
     }
 
     /**
-     * Rellena el mapa de años con el mismo error, manteniendo el shape
-     * consistente para los consumidores.
+     * Helper de recuperación ante fallos de red:
+     * Cuando la petición satelital falla por completo, marca todos los años solicitados
+     * con estado 'error' y el mensaje correspondiente, permitiendo que la interfaz de usuario
+     * informe con precisión cuál fue el fallo sin romper la ejecución del sistema.
+     * 
+     * @param array  $years   Años que se intentaron consultar
+     * @param string $message Motivo o detalle del error
+     * @return array
      */
     private function fillYearsWithError(array $years, string $message): array
     {

@@ -1,43 +1,51 @@
 /**
- * CLASE PRINCIPAL - POLYGON MAP
- * Mapa interactivo para creación de polígonos con funcionalidades similares
- * al sistema de deforestación pero simplificado para polígonos.
- * Utiliza: OpenLayers 6, Turf.js (para cálculos), Proj4 (para transformaciones)
+ * CLASE PRINCIPAL: PolygonMap (Utilidades y Motor Cartográfico para Polígonos)
+ * 
+ * Controla el visor cartográfico interactivo para la digitalización, captura y edición de parcelas forestales:
+ * 1. Librerías GIS utilizadas:
+ *    - OpenLayers 6: Renderizado de capas raster y vectoriales en proyección Web Mercator (EPSG:3857).
+ *    - Proj4js: Reproyección matemática al vuelo de coordenadas geodésicas (WGS84) a cartesianas UTM (zonas venezolanas).
+ *    - Turf.js: Algoritmos espaciales en el navegador para cálculo de superficie geodésica esferoidal en hectáreas.
+ * 2. Funcionalidades del cliente:
+ *    - Alternancia de capas base (satélite Esri, MapTiler, OpenStreetMap, relieve topográfico, modo oscuro).
+ *    - Dibujo vectorial interactivo de polígonos con detección de vértices.
+ *    - Visualizador en tiempo real de coordenadas UTM (Huso, Hemisferio, Coordenada Este, Coordenada Norte).
+ *    - Carga e interpretación de vértices introducidos manualmente en coordenadas UTM.
+ *    - Exportación y sincronización automática del trazo en el campo oculto GeoJSON del formulario web.
  */
 class PolygonMap {
     constructor() {
-        // =============================================
-        // 1. INICIALIZACIÓN DE PROPIEDADES
-        // =============================================
-        this.map = null;              // Instancia principal del mapa OpenLayers
-        this.draw = null;             // Interacción de dibujo actual
-        this.source = null;           // Fuente de datos vectoriales
-        this.polygonStyle = null;     // Estilo base para polígonos
-        this.coordinateDisplay = null;// Elemento DOM para mostrar coordenadas
-        this.baseLayers = {};         // Capas base disponibles
-        this.currentBaseLayer = null; // Capa base activa
-        this.drawingFeature = null;   // Feature en proceso de dibujo
+        // =========================================================================
+        // 1. Inicialización de Propiedades Internas
+        // =========================================================================
+        this.map = null;               // Instancia principal del visor OpenLayers
+        this.draw = null;              // Controlador de interacción de digitalización activa (Draw Interaction)
+        this.source = null;            // Fuente de datos en memoria para las geometrías dibujadas (Vector Source)
+        this.polygonStyle = null;      // Estilo gráfico predeterminado para el polígono
+        this.coordinateDisplay = null; // Elemento del DOM donde se imprimen las coordenadas UTM
+        this.baseLayers = {};          // Catálogo de proveedores de teselas base
+        this.currentBaseLayer = null;  // Capa base seleccionada actualmente
+        this.drawingFeature = null;    // Elemento espacial mientras el usuario agrega vértices
 
-        // Constantes de configuración
-        this.INITIAL_CENTER = [-63.172905251869125, 10.555594747510682]; // Venezuela (lon, lat)
-        this.INITIAL_ZOOM = 15;
-        this.MINZOOM = 5;
-        this.MAXZOOM = 18;
+        // Coordenadas geográficas iniciales (centrado en territorio venezolano)
+        this.INITIAL_CENTER = [-63.172905251869125, 10.555594747510682]; // Longitud, Latitud (WGS84)
+        this.INITIAL_ZOOM = 15;        // Nivel de aumento predeterminado
+        this.MINZOOM = 5;              // Zoom mínimo (visión de país)
+        this.MAXZOOM = 18;             // Zoom máximo (visión de detalle a nivel de parcela)
 
-        // =============================================
-        // 2. CONFIGURACIÓN INICIAL
-        // =============================================
-        this.defineCustomProjections(); // Definir proyecciones EPSG personalizadas
-        this.initializeMap();           // Configurar mapa y capas
-        this.setupEventListeners();     // Configurar listeners de eventos
-        this.setupCoordinateDisplay();  // Configurar display de coordenadas
+        // =========================================================================
+        // 2. Secuencia de Arranque del Entorno Cartográfico
+        // =========================================================================
+        this.defineCustomProjections(); // Registrar parámetros geodésicos en Proj4
+        this.initializeMap();           // Construir capas y montar OpenLayers en el DOM
+        this.setupEventListeners();     // Registrar teclas rápidas (Escape para cancelar dibujo)
+        this.setupCoordinateDisplay();  // Activar visor de coordenadas con el movimiento del ratón
 
-        // Verificación de dependencias críticas
-        this.verifyDependencies();
+        this.verifyDependencies();      // Diagnóstico en consola de librerías externas
     }
 
     /**
-     * VERIFICA DEPENDENCIAS EXTERNAS
+     * Comprueba que las librerías OpenLayers y Turf.js se encuentren disponibles globalmente en window.
      */
     verifyDependencies() {
         console.log('=== VERIFICACIÓN DE LIBRERÍAS PARA POLÍGONOS ===');
@@ -51,21 +59,24 @@ class PolygonMap {
     }
 
     /**
-     * DEFINE PROYECCIONES PERSONALIZADAS
+     * Registra proyecciones cartográficas específicas para la cartografía en Venezuela:
+     * - EPSG:2203: UTM Zona 20 Sur (Sistema La Canoa / Internacional 1924).
+     * - EPSG:32620: UTM Zona 20 Norte (Elipsoide WGS84, estándar en el oriente de Venezuela).
+     * 
+     * Registra las cadenas PROJ.4 en el motor de proyecciones de OpenLayers.
      */
     defineCustomProjections() {
         if (typeof proj4 !== 'undefined') {
-            // EPSG:2203 - UTM Zone 20S (Venezuela)
+            // EPSG:2203 - UTM Zone 20S (Venezuela histórico)
             proj4.defs('EPSG:2203', 
                 '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs'
             );
             
-            // EPSG:32620 - UTM Zone 20N (WGS84)
+            // EPSG:32620 - UTM Zone 20N (WGS84 estándar)
             proj4.defs('EPSG:32620',
                 '+proj=utm +zone=20 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
             );
             
-            // Registrar definiciones en OpenLayers
             if (typeof ol !== 'undefined') {
                 ol.proj.proj4.register(proj4);
             }
@@ -73,16 +84,21 @@ class PolygonMap {
     }
 
     /**
-     * INICIALIZA TODOS LOS COMPONENTES DEL MAPA
+     * Orquesta la inicialización de las capas ráster, el lienzo vectorial y la cámara de visualización.
      */
     initializeMap() {
-        this.setupBaseLayers();    // Capas base (OSM, Satélite, etc.)
-        this.setupVectorLayer();   // Capa vectorial para dibujos
-        this.setupMapInstance();   // Crear instancia del mapa
+        this.setupBaseLayers();    // Capas satelitales y de mapa callejero
+        this.setupVectorLayer();   // Capa dinámica para el trazo de parcelas
+        this.setupMapInstance();   // Creación del canvas de OpenLayers
     }
 
     /**
-     * CONFIGURA CAPAS BASE (igual que deforestación)
+     * Configura el conjunto de mapas base en formato XYZ Tiles:
+     * 1. OSM Voyager (CARTO): Mapa vectorial claro para ubicación de vías y asentamientos.
+     * 2. Satélite Esri World Imagery: Ortoimágenes satelitales de alta resolución para distinguir la vegetación.
+     * 3. Relieve Esri Shaded Relief: Modelo digital de sombras topográficas.
+     * 4. CartoDB Dark Matter: Mapa nocturno/oscuro de alto contraste.
+     * 5. MapTiler Satellite: Proveedor satelital secundario.
      */
     setupBaseLayers() {
         this.baseLayers = {
@@ -132,7 +148,7 @@ class PolygonMap {
     }
 
     /**
-     * CONFIGURA CAPA VECTORIAL Y ESTILOS
+     * Instancia la capa vectorial de dibujo y asigna la función de renderizado de estilos dinámicos.
      */
     setupVectorLayer() {
         this.source = new ol.source.Vector();
@@ -145,7 +161,9 @@ class PolygonMap {
     }
 
     /**
-     * CREA INSTANCIA PRINCIPAL DEL MAPA
+     * Construye la instancia de `ol.Map`:
+     * - Agrupa las capas base.
+     * - Configura la vista (View) transformando el centro desde longitud/latitud (EPSG:4326) a Web Mercator (EPSG:3857).
      */
     setupMapInstance() {
         const baseLayerGroup = new ol.layer.Group({
@@ -170,14 +188,21 @@ class PolygonMap {
     }
 
     /**
-     * CONFIGURA TODOS LOS ESTILOS VISUALES
+     * Define los estilos gráficos iniciales.
      */
     setupStyles() {
         this.polygonStyle = this.getPolygonStyle('default');
     }
 
     /**
-     * OBTIENE ESTILO DE POLÍGONO POR ESTADO
+     * Fábrica de estilos visuales según el ciclo del polígono:
+     * - 'drawing': Borde azul discontinuo (dash) con vértices marcados en blanco mientras se dibuja.
+     * - 'finished': Borde verde sólido con relleno esmeralda semitransparente y etiqueta centrada
+     *   que exhibe la superficie total calculada en hectáreas (ha).
+     * - 'default': Estilo pasivo verde esmeralda.
+     *
+     * @param string state  Estado del polígono ('drawing', 'finished', 'default')
+     * @param number areaHa Superficie calculada en hectáreas para mostrar en la etiqueta central
      */
     getPolygonStyle(state = 'default', areaHa = 0) {
         const styles = {
@@ -228,19 +253,17 @@ class PolygonMap {
     }
 
     /**
-     * OBTIENE ESTILO PARA UNA FEATURE ESPECÍFICA
+     * Aplica el estilo correspondiente a cada objeto espacial de la capa vectorial.
      */
     getFeatureStyle(feature) {
         const geometry = feature.getGeometry();
         const styles = [];
         const areaHa = feature.get('area') || 0;
         
-        // Usar estilo personalizado si existe
         const customStyle = feature.getStyle();
         if (customStyle) {
             styles.push(customStyle);
         } else {
-            // Para polígonos finalizados, mostrar área
             if (geometry.getType() === 'Polygon' && areaHa > 0) {
                 styles.push(this.getPolygonStyle('finished', areaHa));
             } else {
@@ -252,17 +275,16 @@ class PolygonMap {
     }
 
     /**
-     * CONFIGURA LISTENERS DE EVENTOS
+     * Registra eventos globales del teclado (ej. tecla Escape para cancelar trazo).
      */
     setupEventListeners() {
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
     }
 
     /**
-     * MANEJA EVENTOS DE TECLADO
+     * Atajo de teclado: si se presiona 'Escape' durante un trazo, aborta el dibujo actual.
      */
     handleKeyDown(event) {
-        // Cancelar dibujo con Escape
         if (event.key === 'Escape' && this.draw && this.drawingFeature) {
             this.cancelDrawing();
             event.preventDefault();
@@ -270,7 +292,7 @@ class PolygonMap {
     }
 
     /**
-     * CANCELA DIBUJO ACTUAL
+     * Aborta el dibujo en curso, retira el interactuador de OpenLayers y restablece contadores.
      */
     cancelDrawing() {
         if (this.draw) {
@@ -282,7 +304,8 @@ class PolygonMap {
     }
 
     /**
-     * CONFIGURA DISPLAY DE COORDENADAS UTM
+     * Escucha el evento `pointermove` del ratón sobre el mapa para calcular y proyectar
+     * las coordenadas UTM en el panel inferior en tiempo real.
      */
     setupCoordinateDisplay() {
         this.createCoordinateDisplayElement();
@@ -294,7 +317,7 @@ class PolygonMap {
     }
 
     /**
-     * CREA ELEMENTO DOM PARA MOSTRAR COORDENADAS
+     * Conecta o rescata el contenedor HTML donde se muestran las coordenadas.
      */
     createCoordinateDisplayElement() {
         const existingDisplays = document.querySelectorAll('#coordinate-display');
@@ -308,7 +331,14 @@ class PolygonMap {
     }
 
     /**
-     * ACTUALIZA DISPLAY CON COORDENADAS UTM
+     * Algoritmo de cálculo dinámico de coordenadas UTM a partir del cursor:
+     * 1. Convierte la posición de Web Mercator (EPSG:3857) a WGS84 Geográfico (longitud, latitud).
+     * 2. Calcula automáticamente el huso o Zona UTM según la fórmula matemática:
+     *    `Zona = floor((longitud + 180) / 6) + 1`
+     * 3. Determina el hemisferio (Norte si latitud >= 0, Sur si latitud < 0).
+     * 4. Registra dinámicamente la proyección correspondiente (ej. EPSG:32619 o EPSG:32620).
+     * 5. Ejecuta Proj4 para obtener las coordenadas métricas cartesianas Este (X) y Norte (Y).
+     * 6. Imprime los valores formateados con 3 decimales en la interfaz.
      */
     updateCoordinateDisplay(coordinate) {
         if (!this.coordinateDisplay) return;
@@ -340,7 +370,8 @@ class PolygonMap {
     }
 
     /**
-     * CONFIGURA PROYECCIÓN UTM DINÁMICAMENTE
+     * Genera al vuelo la definición PROJ4 para cualquier huso UTM solicitado:
+     * Código EPSG 326XX para el hemisferio Norte y 327XX para el hemisferio Sur.
      */
     setupUTMProjection(zone, hemisphere) {
         const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
@@ -354,7 +385,9 @@ class PolygonMap {
     }
 
     /**
-     * VALIDA COORDENADAS UTM
+     * Valida que las coordenadas UTM se encuentren dentro de los límites matemáticos del plano cartesiano:
+     * - Coordenada Este (Easting): Típicamente entre 100,000m y 900,000m (falso este central de 500,000m).
+     * - Coordenada Norte (Northing): Entre 0m y 10,000,000m.
      */
     isValidUTM(easting, northing, zone, hemisphere) {
         if (easting < 0 || easting > 1000000) return false;
@@ -367,7 +400,8 @@ class PolygonMap {
     }
 
     /**
-     * ACTIVA HERRAMIENTA DE DIBUJO DE POLÍGONOS
+     * Activa el modo de digitalización interactiva de polígonos:
+     * Monta una interacción `ol.interaction.Draw` sobre la fuente vectorial.
      */
     activateDrawing() {
         this.removeExistingDrawInteraction();
@@ -383,7 +417,11 @@ class PolygonMap {
     }
 
     /**
-     * CONFIGURA EVENTOS DE DIBUJO
+     * Suscribe las funciones controladoras a los eventos de dibujo:
+     * - `drawstart`: Limpia dibujos previos y bloquea botones de detección geográfica.
+     * - `drawadd`: Recalcula el área conforme el usuario añade cada nuevo vértice.
+     * - `drawabort`: Cancela el proceso si el trazo es interrumpido.
+     * - `drawend`: Concluye el polígono, calcula el área final y convierte a GeoJSON.
      */
     setupDrawEvents() {
         this.draw.on('drawstart', (evt) => {
@@ -399,7 +437,12 @@ class PolygonMap {
     }
 
     /**
-     * FINALIZA PROCESO DE DIBUJO
+     * Concluye la digitalización del predio:
+     * 1. Calcula la superficie total en hectáreas con precisión geodésica.
+     * 2. Aplica el estilo visual de polígono finalizado con etiqueta de área.
+     * 3. Exporta la geometría en formato GeoJSON al campo `#geometry` del formulario.
+     * 4. Habilita el botón de autodetección territorial (`#detect-location`).
+     * 5. Desactiva la interacción de dibujo para evitar trazos involuntarios.
      */
     finalizeDrawing(feature) {
         const areaHa = this.refreshArea(feature);
@@ -418,7 +461,7 @@ class PolygonMap {
     }
 
     /**
-     * ELIMINA INTERACCIÓN DE DIBUJO EXISTENTE
+     * Remueve cualquier interacción de dibujo activa del mapa.
      */
     removeExistingDrawInteraction() {
         if (this.draw) {
@@ -427,7 +470,7 @@ class PolygonMap {
     }
 
     /**
-     * LIMPIA ESTADO INTERNO DE DIBUJO
+     * Restaura los estados de control de dibujo.
      */
     resetDrawingState() {
         this.drawingFeature = null;
@@ -435,7 +478,15 @@ class PolygonMap {
     }
 
     /**
-     * CALCULA ÁREA DE UN POLÍGONO USANDO TURF.JS
+     * Cálculo geodésico de superficie mediante Turf.js:
+     * 
+     * Procedimiento matemático:
+     * 1. Clona la geometría de OpenLayers y la proyecta de Web Mercator (EPSG:3857) a WGS84 Geográfico (EPSG:4326).
+     * 2. Construye un Feature GeoJSON compatible con Turf.js (`turf.polygon`).
+     * 3. Ejecuta `turf.area(turfFeature)`, que utiliza el algoritmo de Karney sobre el esferoide terrestre WGS84
+     *    para calcular el área real en metros cuadrados (m²).
+     * 4. Convierte metros cuadrados a hectáreas dividiendo entre 10,000 (`areaM2 / 10000`).
+     * 5. Retorna el valor en punto flotante con 6 decimales de precisión.
      */
     calculateArea(feature) {
         if (!feature || !feature.getGeometry) {
@@ -459,6 +510,7 @@ class PolygonMap {
         }
         
         try {
+            // Proyección al elipsoide geodésico WGS84
             const wgs84Geometry = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
             const coordinates = wgs84Geometry.getCoordinates();
             
@@ -474,12 +526,14 @@ class PolygonMap {
                     return 0;
             }
             
+            // Área geodésica en metros cuadrados
             const areaM2 = turf.area(turfFeature);
             
             if (isNaN(areaM2) || areaM2 <= 0) {
                 return 0;
             }
             
+            // Conversión m² a hectáreas
             const areaHa = areaM2 / 10000;
             
             return parseFloat(areaHa.toFixed(6));
@@ -492,7 +546,7 @@ class PolygonMap {
     }
 
     /**
-     * REFRESCA VISUALIZACIÓN DEL ÁREA
+     * Actualiza el cálculo del área sobre la geometría que está siendo trazada en ese instante.
      */
     refreshArea(feature = this.drawingFeature) {
         if (feature) {
@@ -504,7 +558,7 @@ class PolygonMap {
     }
 
     /**
-     * ACTUALIZA DISPLAY DE ÁREA EN INTERFAZ
+     * Escribe la cifra calculada de hectáreas en la caja de texto del formulario web (`#area_ha`).
      */
     updateAreaDisplay(areaHa) {
         const areaInput = document.getElementById('area_ha');
@@ -514,7 +568,8 @@ class PolygonMap {
     }
 
     /**
-     * CONVIERTE FEATURE A GEOJSON
+     * Serializa la geometría a formato GeoJSON estándar en coordenadas WGS84 (EPSG:4326):
+     * Asigna la cadena JSON resultante en el input oculto `#geometry` para ser enviada en el POST HTTP al servidor.
      */
     convertToGeoJSON(feature, existingArea = null) {
         try {
@@ -541,7 +596,7 @@ class PolygonMap {
     }
 
     /**
-     * CAMBIA LA CAPA BASE ACTIVA
+     * Alterna la capa base visible (OSM, satélite, relieve, etc.) ocultando las restantes.
      */
     changeBaseLayer(layerKey) {
         if (!this.baseLayers[layerKey]) {
@@ -549,18 +604,17 @@ class PolygonMap {
             return;
         }
         
-        // Ocultar todas las capas base
         Object.values(this.baseLayers).forEach(layer => {
             layer.setVisible(false);
         });
         
-        // Mostrar la nueva capa base
         this.baseLayers[layerKey].setVisible(true);
         this.currentBaseLayer = this.baseLayers[layerKey];
     }
 
     /**
-     * LIMPIA MAPA COMPLETAMENTE
+     * Limpia completamente el mapa: borra geometrías, vacía los campos de texto del formulario
+     * y oculta los paneles de información geográfica.
      */
     clearMap() {
         this.source.clear();
@@ -575,7 +629,13 @@ class PolygonMap {
     }
 
     /**
-     * DIBUJA POLÍGONO DESDE COORDENADAS UTM
+     * Construye y dibuja un polígono a partir de una lista de coordenadas UTM ingresadas por teclado:
+     * 1. Convierte cada vértice [Este, Norte, Zona, Hemisferio] a coordenadas WGS84 (EPSG:4326) con Proj4.
+     * 2. Verifica la validez de rango geográfico de las coordenadas resultantes.
+     * 3. Garantiza que el polígono sea cerrado (primer vértice idéntico al último).
+     * 4. Genera el Feature en el mapa y enfoca la vista (Fit View) con animación suave.
+     *
+     * @param array utmCoordinates Matriz de vértices [[Easting, Northing, Zone, Hemisphere], ...]
      */
     drawFromUTMCoordinates(utmCoordinates) {
         try {
@@ -585,6 +645,7 @@ class PolygonMap {
                 return proj4(sourceEpsg, 'EPSG:4326', [easting, northing]);
             });
 
+            // Validar que las coordenadas resultantes pertenezcan a la esfera terrestre (-180 a 180, -90 a 90)
             const invalidCoords = wgs84Coordinates.filter(coord => 
                 isNaN(coord[0]) || isNaN(coord[1]) || 
                 Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90
@@ -605,7 +666,8 @@ class PolygonMap {
     }
 
     /**
-     * CIERRA POLÍGONO SI NO ESTÁ CERRADO
+     * Regla topológica cartográfica: asegura que el anillo exterior del polígono sea un circuito cerrado.
+     * Si el último vértice no coincide exactamente con el primero, lo duplica al final del arreglo.
      */
     closePolygonIfNeeded(coordinates) {
         const firstCoord = coordinates[0];
@@ -617,7 +679,11 @@ class PolygonMap {
     }
 
     /**
-     * CREA POLÍGONO DESDE COORDENADAS WGS84
+     * Dibuja en la capa vectorial el polígono generado por coordenadas WGS84:
+     * - Transforma las coordenadas de EPSG:4326 a EPSG:3857 para representación visual.
+     * - Calcula su superficie con Turf.js.
+     * - Ajusta el encuadre del mapa para centrar el predio con un margen (padding) de 50px.
+     * - Notifica al usuario las zonas UTM involucradas.
      */
     createPolygonFromCoordinates(wgs84Coordinates, utmCoordinates) {
         const feature = new ol.Feature({
@@ -634,6 +700,7 @@ class PolygonMap {
         this.updateAreaDisplay(areaHa);
         document.getElementById('detect-location').disabled = false;
         
+        // Enfocar la cámara sobre el polígono con animación de 1 segundo
         this.map.getView().fit(
             feature.getGeometry().getExtent(),
             { padding: [50, 50, 50, 50], duration: 1000 }
@@ -641,6 +708,7 @@ class PolygonMap {
         
         this.convertToGeoJSON(feature, areaHa);
         
+        // Identificar zonas UTM utilizadas para reporte en el mensaje
         const zonesUsed = [...new Set(utmCoordinates.map(coord => 
             `Zona ${coord[2]}${coord[3]}`
         ))];
@@ -653,7 +721,7 @@ class PolygonMap {
     }
 
     /**
-     * MUESTRA ALERTA AL USUARIO
+     * Despliega mensajes toast al usuario mediante SweetAlert2 o alert nativo como fallback.
      */
     showAlert(message, icon = 'info') {
         if (window.Swal) {
@@ -673,13 +741,10 @@ class PolygonMap {
 
 }
 
-// =============================================
-// INICIALIZACIÓN GLOBAL
-// =============================================
+// =========================================================================
+// Inicialización del Motor Cartográfico al Cargar el DOM
+// =========================================================================
 
-/**
- * INICIALIZA MAPA CUANDO EL DOCUMENTO ESTÉ LISTO
- */
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('map')) {
         window.polygonMapInstance = new PolygonMap();

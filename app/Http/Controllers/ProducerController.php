@@ -10,26 +10,39 @@ use App\Traits\Filterable;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Controlador de Gestión de Productores Agroforestales
+ * 
+ * Administra el padrón de productores del sistema:
+ * 1. Operaciones CRUD con soporte dual (respuestas HTML tradicionales con redirección y JSON para peticiones AJAX).
+ * 2. Filtrado y conteo de estadísticas (activos, inactivos y en papelera/soft-deleted).
+ * 3. Papelera de reciclaje con restauración (`restore`) y eliminación física definitiva (`forceDelete`).
+ * 4. Alternancia rápida de estado activo/inactivo (`toggleStatus`) sin recargar la página.
+ * 5. Generación de informes impresos en PDF con resolución institucional de logos (PNG/JPG/SVG en Base64).
+ */
 class ProducerController extends Controller
 {
     use Filterable;
 
     /**
-     * Muestra la lista de productores con filtros.
+     * Muestra el padrón de productores aplicando filtros:
+     * - Búsqueda por texto (nombre, apellido, descripción, código interno).
+     * - Estado operativo ('active', 'inactive', 'deleted', 'all').
+     * - Calcula contadores agregados para los badges de la cabecera.
      */
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $status = $request->input('status', 'all');  // Cambia 'all' por 'active'
+        $status = $request->input('status', 'all');
 
-        $query = Producer::query();  // Esto ya excluye los eliminados por defecto
+        $query = Producer::query();
 
-        // busqueda flexible con el trait
+        // Búsqueda flexible en columnas del productor
         $query = $this->applySearchFilter(
             $query,
             $search,
-            ['name', 'lastname', 'description', 'code'], // columnas de la tabla producers
-            [] // sin relaciones por ahora
+            ['name', 'lastname', 'description', 'code'],
+            []
         );
 
         match ($status) {
@@ -37,7 +50,7 @@ class ProducerController extends Controller
             'inactive' => $query->where('is_active', false),
             'deleted'  => $query->onlyTrashed(),
             'all'      => $query, 
-            default    => $query->where('is_active', true), // Por defecto solo activos
+            default    => $query->where('is_active', true),
         };
 
         $producers = $query
@@ -45,16 +58,16 @@ class ProducerController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        // Agregar contadores para estadísticas
-        $deletedCount = Producer::onlyTrashed()->count();
-        $activeCount = Producer::where('is_active', true)->count();
+        // Métricas agregadas para visualización en las tarjetas del panel
+        $deletedCount  = Producer::onlyTrashed()->count();
+        $activeCount   = Producer::where('is_active', true)->count();
         $inactiveCount = Producer::where('is_active', false)->count();
 
         return view('producers.index', compact('producers', 'search', 'status', 'deletedCount', 'activeCount', 'inactiveCount'));
     }
 
     /**
-     * Muestra el formulario para crear un nuevo productor.
+     * Muestra la vista para registrar un nuevo productor.
      */
     public function create()
     {
@@ -62,7 +75,7 @@ class ProducerController extends Controller
     }
 
     /**
-     * Muestra los detalles de un productor.
+     * Muestra la ficha técnica detallada del productor y sus parcelas asociadas.
      */
     public function show(Producer $producer)
     {
@@ -70,15 +83,15 @@ class ProducerController extends Controller
     }
 
     /**
-     * Muestra el formulario para editar un productor.
+     * Muestra el formulario para modificar la información de un productor.
      */
     public function edit(Producer $producer)
     {
         return view('producers.edit', compact('producer'));
     }
 
-     /**
-     * Muestra solo los productores eliminados (soft deleted).
+    /**
+     * Muestra exclusivamente la lista de productores eliminados lógicamente (papelera de reciclaje).
      */
     public function deleted(Request $request)
     {
@@ -98,88 +111,81 @@ class ProducerController extends Controller
     }
 
     /**
-     * Guarda un nuevo productor en la base de datos.
+     * Almacena un nuevo productor validado mediante `StoreProducerRequest`.
      */
     public function store(StoreProducerRequest $request)
     {
         try {
             Producer::create($request->validated());
 
-            // Alerta de éxito con SweetAlert2
             return redirect()->route('producers.index')
                 ->with('swal', [
-                    'icon' => 'success',
+                    'icon'  => 'success',
                     'title' => 'Éxito',
-                    'text' => 'Productor creado exitosamente.'
+                    'text'  => 'Productor creado exitosamente.'
                 ]);
         } catch (\Exception $e) {
-            // Alerta de error con SweetAlert2
             return redirect()->back()
                 ->withInput()
                 ->with('swal', [
-                    'icon' => 'error',
+                    'icon'  => 'error',
                     'title' => 'Error',
-                    'text' => 'Error al crear el productor: ' . $e->getMessage()
+                    'text'  => 'Error al crear el productor: ' . $e->getMessage()
                 ]);
         }
     }
 
-    
-
     /**
-     * Actualiza un productor existente.
+     * Actualiza los datos de un productor validado con `UpdateProducerRequest`.
      */
     public function update(UpdateProducerRequest $request, Producer $producer)
     {
         try {
             $producer->update($request->validated());
 
-            // Alerta de éxito con SweetAlert2
             return redirect()->route('producers.index')
                 ->with('swal', [
-                    'icon' => 'success',
+                    'icon'  => 'success',
                     'title' => 'Éxito',
-                    'text' => 'Productor actualizado exitosamente.'
+                    'text'  => 'Productor actualizado exitosamente.'
                 ]);
         } catch (\Exception $e) {
-            // Alerta de error con SweetAlert2
             return redirect()->back()
                 ->withInput()
                 ->with('swal', [
-                    'icon' => 'error',
+                    'icon'  => 'error',
                     'title' => 'Error',
-                    'text' => 'Error al actualizar el productor: ' . $e->getMessage()
+                    'text'  => 'Error al actualizar el productor: ' . $e->getMessage()
                 ]);
         }
     }
 
     /**
-    * Elimina (soft delete) un productor - MEJORADO para AJAX
-    */
+     * Envía un productor a la papelera (SoftDelete):
+     * - Responde con JSON si la petición proviene de un fetch/AJAX en el navegador.
+     * - Responde con redirección tradicional con mensaje flash en caso contrario.
+     */
     public function destroy(Request $request, Producer $producer)
     {
         try {
             $producer->delete();
 
-            // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Productor deshabilitado exitosamente.',
+                    'success'     => true,
+                    'message'     => 'Productor deshabilitado exitosamente.',
                     'producer_id' => $producer->id,
-                    'redirect' => route('producers.deleted') // Opcional: redirección si se necesita
+                    'redirect'    => route('producers.deleted')
                 ]);
             }
 
-            // Respuesta tradicional
             return redirect()->route('producers.index')
                 ->with('swal', [
-                    'icon' => 'success',
+                    'icon'  => 'success',
                     'title' => 'Éxito',
-                    'text' => 'Productor deshabilitado exitosamente.'
+                    'text'  => 'Productor deshabilitado exitosamente.'
                 ]);
         } catch (\Exception $e) {
-            // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -187,18 +193,17 @@ class ProducerController extends Controller
                 ], 500);
             }
 
-            // Respuesta tradicional
             return redirect()->back()
                 ->with('swal', [
-                    'icon' => 'error',
+                    'icon'  => 'error',
                     'title' => 'Error',
-                    'text' => 'Error al eliminar el productor: ' . $e->getMessage()
+                    'text'  => 'Error al eliminar el productor: ' . $e->getMessage()
                 ]);
         }
     }
 
     /**
-     * Restaura un productor eliminado - MEJORADO para AJAX
+     * Recupera un productor de la papelera de reciclaje restaurando su disponibilidad.
      */
     public function restore(Request $request, $id)
     {
@@ -206,25 +211,22 @@ class ProducerController extends Controller
             $producer = Producer::withTrashed()->findOrFail($id);
             $producer->restore();
 
-            // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Productor habilitado exitosamente.',
+                    'success'     => true,
+                    'message'     => 'Productor habilitado exitosamente.',
                     'producer_id' => $producer->id,
-                    'redirect' => route('producers.index') // Opcional: redirección si se necesita
+                    'redirect'    => route('producers.index')
                 ]);
             }
 
-            // Respuesta tradicional
             return redirect()->route('producers.index')
                 ->with('swal', [
-                    'icon' => 'success',
+                    'icon'  => 'success',
                     'title' => 'Éxito',
-                    'text' => 'Productor habilitado exitosamente.'
+                    'text'  => 'Productor habilitado exitosamente.'
                 ]);
         } catch (\Exception $e) {
-            // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -232,18 +234,17 @@ class ProducerController extends Controller
                 ], 500);
             }
 
-            // Respuesta tradicional
             return redirect()->back()
                 ->with('swal', [
-                    'icon' => 'error',
+                    'icon'  => 'error',
                     'title' => 'Error',
-                    'text' => 'Error al restaurar el productor: ' . $e->getMessage()
+                    'text'  => 'Error al restaurar el productor: ' . $e->getMessage()
                 ]);
         }
     }
 
     /**
-     * Elimina permanentemente un productor - MEJORADO para AJAX
+     * Elimina físicamente el registro de la base de datos sin posibilidad de recuperación.
      */
     public function forceDelete(Request $request, $id)
     {
@@ -251,24 +252,21 @@ class ProducerController extends Controller
             $producer = Producer::withTrashed()->findOrFail($id);
             $producer->forceDelete();
 
-            // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Productor eliminado permanentemente.',
+                    'success'     => true,
+                    'message'     => 'Productor eliminado permanentemente.',
                     'producer_id' => $producer->id
                 ]);
             }
 
-            // Respuesta tradicional
             return redirect()->route('producers.index')
                 ->with('swal', [
-                    'icon' => 'success',
+                    'icon'  => 'success',
                     'title' => 'Éxito',
-                    'text' => 'Productor eliminado permanentemente.'
+                    'text'  => 'Productor eliminado permanentemente.'
                 ]);
         } catch (\Exception $e) {
-            // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -276,49 +274,42 @@ class ProducerController extends Controller
                 ], 500);
             }
 
-            // Respuesta tradicional
             return redirect()->back()
                 ->with('swal', [
-                    'icon' => 'error',
+                    'icon'  => 'error',
                     'title' => 'Error',
-                    'text' => 'Error al eliminar permanentemente el productor: ' . $e->getMessage()
+                    'text'  => 'Error al eliminar permanentemente el productor: ' . $e->getMessage()
                 ]);
         }
     }
 
     /**
-     * Cambia el estado (activo/inactivo) de un productor.
+     * Alterna el estado operativo (is_active) entre Activo e Inactivo.
      */
     public function toggleStatus(Request $request, Producer $producer)
     {
         try {
-            $oldStatus = $producer->is_active;
             $producer->update(['is_active' => !$producer->is_active]);
-            
-            $newStatus = $producer->is_active;
             $statusText = $producer->is_active ? 'activado' : 'desactivado';
 
-            // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
-                    'success' => true,
-                    'message' => "Productor {$statusText} exitosamente.",
-                    'is_active' => $newStatus,
+                    'success'     => true,
+                    'message'     => "Productor {$statusText} exitosamente.",
+                    'is_active'   => $producer->is_active,
                     'status_text' => $producer->is_active ? 'Activo' : 'Inactivo',
                     'producer_id' => $producer->id
                 ]);
             }
 
-            // Respuesta tradicional
             return redirect()->back()
                 ->with('swal', [
-                    'icon' => 'success',
+                    'icon'  => 'success',
                     'title' => 'Éxito',
-                    'text' => "Productor {$statusText} exitosamente."
+                    'text'  => "Productor {$statusText} exitosamente."
                 ]); 
 
         } catch (\Exception $e) {
-            // Respuesta para AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -326,48 +317,47 @@ class ProducerController extends Controller
                 ], 500);
             }
 
-            // Respuesta tradicional
             return redirect()->back()
                 ->with('swal', [
-                    'icon' => 'error',
+                    'icon'  => 'error',
                     'title' => 'Error',
-                    'text' => 'Error al cambiar el estado del productor: ' . $e->getMessage()
+                    'text'  => 'Error al cambiar el estado del productor: ' . $e->getMessage()
                 ]); 
         }
     }
 
     /**
-     * Obtiene los detalles de un productor para mostrar en modal.
+     * Retorna la información serializada del productor para cargar ventanas modales vía AJAX:
+     * Incluye conteo de parcelas asignadas (`polygons_count`) y cédula formateada.
      */
     public function details(Request $request, $id)
     {
         try {
             $producer = Producer::withTrashed()->findOrFail($id);
             
-            // Contar polígonos asociados (si tienes la relación)
             $polygonsCount = 0;
             if (method_exists($producer, 'polygons')) {
                 $polygonsCount = $producer->polygons()->count();
             }
             
             $producerData = [
-                'id'          => $producer->id,
-                'code'        => $producer->code,        // <-- nuevo
-                'name'        => $producer->name,
-                'lastname'    => $producer->lastname,
-                'cedula_type' => $producer->cedula_type, // <-- opcional, útil
-                'cedula'      => $producer->cedula,      // <-- opcional
+                'id'                => $producer->id,
+                'code'              => $producer->code,
+                'name'              => $producer->name,
+                'lastname'          => $producer->lastname,
+                'cedula_type'       => $producer->cedula_type,
+                'cedula'            => $producer->cedula,
                 'cedula_formatted'  => $producer->cedula_formatted, 
-                'description' => $producer->description,
-                'is_active'   => $producer->is_active,
-                'deleted_at'  => $producer->deleted_at,
-                'created_at'  => $producer->created_at,
-                'updated_at'  => $producer->updated_at,
-                'polygons_count' => $polygonsCount,
+                'description'       => $producer->description,
+                'is_active'         => $producer->is_active,
+                'deleted_at'        => $producer->deleted_at,
+                'created_at'        => $producer->created_at,
+                'updated_at'        => $producer->updated_at,
+                'polygons_count'    => $polygonsCount,
             ];
             
             return response()->json([
-                'success' => true,
+                'success'  => true,
                 'producer' => $producerData
             ]);
             
@@ -380,11 +370,13 @@ class ProducerController extends Controller
     }
 
     /**
-     * Localiza el logo institucional (PNG/JPG primero, SVG como respaldo) y
-     * lo prepara para incrustarlo en el PDF. Misma lógica que
-     * AuditLogController::getLogoImage(), copiada aquí directamente (sin
-     * trait) para que ambos controladores no dependan de un archivo
-     * compartido.
+     * Algoritmo de resolución de isotipo/logo corporativo para impresión en PDF:
+     * 1. Busca en orden de precedencia imágenes ráster (PNG/JPG) en la carpeta pública.
+     * 2. Si encuentra un archivo ráster, lo codifica en un Data-URI Base64 para incrustarlo
+     *    directamente en el HTML sin depender de rutas HTTP relativas que puedan fallar en DomPDF.
+     * 3. Si no hay ráster, busca el vector SVG (`favicon.svg`), le remueve cabeceras XML y ajusta
+     *    sus dimensiones width/height para inyección inline.
+     * 4. Si ningún archivo existe, retorna null para utilizar el monograma CSS de respaldo.
      *
      * @return array{type: string, src?: string, content?: string}|null
      */
@@ -412,11 +404,11 @@ class ProducerController extends Controller
 
                 return [
                     'type' => 'image',
-                    'src' => 'data:' . $mime . ';base64,' . base64_encode($data),
+                    'src'  => 'data:' . $mime . ';base64,' . base64_encode($data),
                 ];
             } catch (\Throwable $e) {
                 Log::warning('Producers PDF: no se pudo leer el logo raster', [
-                    'path' => $path,
+                    'path'  => $path,
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -434,92 +426,80 @@ class ProducerController extends Controller
                 }
 
                 return [
-                    'type' => 'svg',
+                    'type'    => 'svg',
                     'content' => trim($svg),
                 ];
             } catch (\Throwable $e) {
                 Log::warning('Producers PDF: no se pudo leer el logo SVG', [
-                    'path' => $svgPath,
+                    'path'  => $svgPath,
                     'error' => $e->getMessage(),
                 ]);
             }
         }
 
-        Log::warning('Producers PDF: no se encontró ningún logo institucional; se usará el monograma de respaldo.', [
-            'buscado_en' => array_merge($rasterCandidates, ['favicon.svg']),
-        ]);
-
+        Log::warning('Producers PDF: no se encontró ningún logo institucional; se usará el monograma de respaldo.');
         return null;
     }
 
     /**
- * Genera un PDF con la lista de productores aplicando los mismos filtros.
- */
-public function generatePdf(Request $request)
-{
-    $search = $request->input('search');
-    $status = $request->input('status', 'all');
+     * Genera y descarga el padrón de productores en formato PDF aplicando los mismos filtros de búsqueda:
+     * - Configuración de hoja en formato A4 vertical (portrait).
+     * - Habilita `isPhpEnabled` para permitir la numeración dinámica de páginas en el pie del documento.
+     * - Incluye estadísticas de cabecera (totales, activos, inactivos y eliminados).
+     */
+    public function generatePdf(Request $request)
+    {
+        $search = $request->input('search');
+        $status = $request->input('status', 'all');
 
-    $query = Producer::query();
+        $query = Producer::query();
 
-    // Búsqueda flexible con el trait
-    $query = $this->applySearchFilter(
-        $query,
-        $search,
-        ['name', 'lastname', 'description', 'code'],
-        []
-    );
+        $query = $this->applySearchFilter(
+            $query,
+            $search,
+            ['name', 'lastname', 'description', 'code'],
+            []
+        );
 
-    // Filtro de estado
-    match ($status) {
-        'active'   => $query->where('is_active', true),
-        'inactive' => $query->where('is_active', false),
-        'deleted'  => $query->onlyTrashed(),
-        'all'      => $query->withTrashed(),
-        default    => $query,
-    };
+        match ($status) {
+            'active'   => $query->where('is_active', true),
+            'inactive' => $query->where('is_active', false),
+            'deleted'  => $query->onlyTrashed(),
+            'all'      => $query->withTrashed(),
+            default    => $query,
+        };
 
-    $producers = $query->orderBy('name')->get();
+        $producers = $query->orderBy('name')->get();
 
-    // Contadores para estadísticas
-    $activeCount = Producer::where('is_active', true)->count();
-    $inactiveCount = Producer::where('is_active', false)->count();
-    $deletedCount = Producer::onlyTrashed()->count();
+        $activeCount   = Producer::where('is_active', true)->count();
+        $inactiveCount = Producer::where('is_active', false)->count();
+        $deletedCount  = Producer::onlyTrashed()->count();
 
-    $filters = [
-        'search' => $search,
-        'status' => $status,
-        'total' => $producers->count(),
-        'active_count' => $activeCount,
-        'inactive_count' => $inactiveCount,
-        'deleted_count' => $deletedCount,
-        'generated_at' => now()->format('d/m/Y H:i:s'),
-        'generated_by' => auth()->user()->name ?? 'Sistema',
-        'company_name' => 'Cacao San José',
-        'rif' => 'J-12345678-9',
-    ];
+        $filters = [
+            'search'         => $search,
+            'status'         => $status,
+            'total'          => $producers->count(),
+            'active_count'   => $activeCount,
+            'inactive_count' => $inactiveCount,
+            'deleted_count'  => $deletedCount,
+            'generated_at'   => now()->format('d/m/Y H:i:s'),
+            'generated_by'   => auth()->user()->name ?? 'Sistema',
+            'company_name'   => 'Cacao San José',
+            'rif'            => 'J-12345678-9',
+        ];
 
-   // Logo institucional: mismo método que AuditLogController::getLogoImage(),
-    // prioriza el logo raster real (PNG/JPG) antes de caer a SVG, y usa el
-    // mismo fallback visual (.logo-fallback del Blade).
-    $logo = $this->getLogoImage();
+        $logo = $this->getLogoImage();
 
-    $pdf = Pdf::loadView('producers.pdf', [
-        'producers' => $producers,
-        'filters' => $filters,
-        'logo' => $logo,
-    ]);
+        $pdf = Pdf::loadView('producers.pdf', [
+            'producers' => $producers,
+            'filters'   => $filters,
+            'logo'      => $logo,
+        ]);
 
-    // Mismas opciones de DomPDF que en AuditLogController::generatePdf().
-    // Antes esto pasaba por PdfService con dpi=>72 y sin isPhpEnabled
-    // explícito, lo que probablemente impedía que el <script type="text/php">
-    // del encabezado/pie de página del Blade se ejecutara, y cambiaba el
-    // escalado de todo el documento respecto al de auditoría.
-    $pdf->setPaper('A4', 'portrait');
-    $pdf->setOption('isPhpEnabled', true);          // Habilita el script embebido de encabezado/pie de página
-    $pdf->setOption('isHtml5ParserEnabled', true);   // Habilita HTML5
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->setOption('isPhpEnabled', true);          // Habilita script embebido para pie de página y conteo de hojas
+        $pdf->setOption('isHtml5ParserEnabled', true);
 
-    return $pdf->download('productores_' . now()->format('Y-m-d_H-i') . '.pdf');
-}
-
+        return $pdf->download('productores_' . now()->format('Y-m-d_H-i') . '.pdf');
+    }
 }

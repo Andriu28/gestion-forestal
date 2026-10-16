@@ -8,33 +8,56 @@ use App\Models\Municipality;
 use App\Models\Parish;
 use Illuminate\Support\Str;
 
+/**
+ * Servicio de Resolución y Normalización Político-Territorial
+ * 
+ * Se encarga de traducir las respuestas de geocodificación inversa (por ejemplo de OpenStreetMap / Nominatim)
+ * en la jerarquía territorial formal de Venezuela:
+ * Estado (1er nivel) → Municipio (2do nivel) → Parroquia (3er nivel).
+ * 
+ * Desafíos que resuelve:
+ * 1. Heterogeneidad en los nombres devueltos por los satélites y mapas ("Edo. Barinas" vs "Barinas", "Municipio Sucre" vs "Sucre").
+ * 2. Eliminación de prefijos administrativos ("Parroquia", "Municipio", "Sector", "Urb").
+ * 3. Búsqueda por similitud fonética o textual antes de insertar duplicados.
+ * 4. Creación jerárquica en cascada para no interrumpir el flujo cuando se registran nuevas demarcaciones.
+ */
 class LocationService
 {
     /**
-     * Busca o crea una ubicación completa (Estado → Municipio → Parroquia)
+     * Resuelve y vincula la jerarquía territorial completa (Estado → Municipio → Parroquia).
+     * 
+     * Flujo en cascada:
+     * 1. Localiza o crea el Estado por su nombre.
+     * 2. Localiza o crea el Municipio subordinado a ese Estado (`state_id`).
+     * 3. Localiza o crea la Parroquia subordinada a ese Municipio (`municipality_id`).
+     * 4. Retorna el identificador numérico de la Parroquia (`parish_id`) para relacionarlo con la parcela.
+     *
+     * @param string $parishName       Nombre de la parroquia detectada
+     * @param string $municipalityName Nombre del municipio detectado
+     * @param string $stateName        Nombre del estado detectado
+     * @return int|null Identificador de la parroquia encontrada o creada, o null si falló
      */
-    // En LocationService.php - agregar este método
     public static function createOrUpdateLocation(
         string $parishName,
         string $municipalityName,
         string $stateName
     ): ?int {
         try {
-            // 1. Buscar o crear Estado
+            // 1. Buscar o crear el Estado (Nivel 1)
             $state = self::findOrCreateState($stateName);
             
             if (!$state) {
                 return null;
             }
             
-            // 2. Buscar o crear Municipio (dentro del estado)
+            // 2. Buscar o crear el Municipio acotado a ese estado (Nivel 2)
             $municipality = self::findOrCreateMunicipality($municipalityName, $state->id);
             
             if (!$municipality) {
                 return null;
             }
             
-            // 3. Buscar o crear Parroquia (dentro del municipio)
+            // 3. Buscar o crear la Parroquia acotada a ese municipio (Nivel 3)
             $parish = self::findOrCreateParish($parishName, $municipality->id);
             
             return $parish ? $parish->id : null;
@@ -45,18 +68,21 @@ class LocationService
         }
     }
 
-    // En LocationService.php - agregar este método
+    /**
+     * Alias semántico de createOrUpdateLocation para mayor legibilidad en el código cliente.
+     */
     public static function findOrCreateLocation(
         string $parishName,
         string $municipalityName,
         string $stateName
     ): ?int {
-        // Este método es un alias para createOrUpdateLocation
         return self::createOrUpdateLocation($parishName, $municipalityName, $stateName);
     }
     
     /**
-     * Busca o crea un estado
+     * Localiza un Estado en la base de datos o lo crea si no existe:
+     * - Aplica normalización textual para evitar discrepancias por mayúsculas o acentos.
+     * - Realiza una búsqueda por similitud usando LIKE para resolver variantes (ej. "Zulia" vs "Estado Zulia").
      */
     private static function findOrCreateState(string $stateName): ?State
     {
@@ -66,14 +92,14 @@ class LocationService
         
         $normalized = self::normalizeName($stateName);
         
-        // Buscar primero por coincidencia exacta (normalizada)
+        // 1. Búsqueda exacta insensible a mayúsculas
         $state = State::whereRaw('LOWER(name) = ?', [strtolower($normalized)])->first();
         
         if ($state) {
             return $state;
         }
         
-        // Si no existe, buscar por similitud (para evitar "Zulia" vs "Estado Zulia")
+        // 2. Búsqueda parcial por similitud
         $state = State::where('name', 'like', "%{$normalized}%")
                      ->orWhere('name', 'like', "%{$stateName}%")
                      ->first();
@@ -82,14 +108,17 @@ class LocationService
             return $state;
         }
         
-        // Crear nuevo estado
+        // 3. Creación si no existe previamente
         return State::create([
             'name' => self::cleanName($stateName)
         ]);
     }
     
     /**
-     * Busca o crea un municipio (dentro de un estado)
+     * Localiza un Municipio dentro de un Estado específico o lo crea si es nuevo:
+     * Evita mezclar municipios homónimos que pertenecen a estados distintos
+     * (por ejemplo, "Libertador" en Mérida vs "Libertador" en Distrito Capital)
+     * condicionando la consulta a `state_id`.
      */
     private static function findOrCreateMunicipality(string $municipalityName, int $stateId): ?Municipality
     {
@@ -99,7 +128,7 @@ class LocationService
         
         $normalized = self::normalizeName($municipalityName);
         
-        // Buscar municipio dentro del estado específico
+        // Búsqueda condicionada estrictamente al ID del Estado padre
         $municipality = Municipality::where('state_id', $stateId)
             ->where(function($query) use ($normalized, $municipalityName) {
                 $query->whereRaw('LOWER(name) = ?', [strtolower($normalized)])
@@ -112,7 +141,7 @@ class LocationService
             return $municipality;
         }
         
-        // Crear nuevo municipio
+        // Registrar el nuevo municipio asociado al estado correspondiente
         return Municipality::create([
             'name' => self::cleanName($municipalityName),
             'state_id' => $stateId
@@ -120,7 +149,9 @@ class LocationService
     }
     
     /**
-     * Busca o crea una parroquia (dentro de un municipio)
+     * Localiza una Parroquia dentro de un Municipio específico o la crea si es nueva:
+     * Condiciona la búsqueda a `municipality_id` para garantizar que la delimitación
+     * pertenezca al término municipal exacto.
      */
     private static function findOrCreateParish(string $parishName, int $municipalityId): ?Parish
     {
@@ -130,7 +161,6 @@ class LocationService
         
         $normalized = self::normalizeName($parishName);
         
-        // Buscar parroquia dentro del municipio específico
         $parish = Parish::where('municipality_id', $municipalityId)
             ->where(function($query) use ($normalized, $parishName) {
                 $query->whereRaw('LOWER(name) = ?', [strtolower($normalized)])
@@ -143,7 +173,6 @@ class LocationService
             return $parish;
         }
         
-        // Crear nueva parroquia
         return Parish::create([
             'name' => self::cleanName($parishName),
             'municipality_id' => $municipalityId
@@ -151,7 +180,12 @@ class LocationService
     }
     
     /**
-     * Normaliza nombres para búsqueda (elimina acentos, palabras comunes)
+     * Algoritmo de normalización léxica y geográfica:
+     * 1. Convierte a minúsculas en codificación UTF-8.
+     * 2. Elimina prefijos burocráticos y administrativos comunes ("Parroquia", "Municipio", "Estado", "Sector", "Urb.", etc.)
+     *    tanto al principio de la cadena como en su interior mediante expresiones regulares.
+     * 3. Remueve caracteres de puntuación o signos especiales preservando letras con acentos y números.
+     * 4. Colapsa espacios en blanco repetidos a un solo espacio.
      */
     private static function normalizeName(string $name): string
     {
@@ -159,10 +193,8 @@ class LocationService
             return '';
         }
         
-        // Convertir a minúsculas
         $name = mb_strtolower(trim($name), 'UTF-8');
         
-        // Eliminar prefijos comunes (MEJORADO)
         $commonPrefixes = [
             'Parroquia', 'Municipio', 'municipal', 'Estado', 
             'sector', 'zona', 'urb', 'urb.', 'urbano', 
@@ -170,15 +202,15 @@ class LocationService
             'provincia', 'región', 'comuna', 'aldea'
         ];
         
-        // Patrón para eliminar prefijos al inicio
+        // Eliminar prefijos al comienzo del texto
         $pattern = '/^(' . implode('|', array_map('preg_quote', $commonPrefixes)) . ')\s+/i';
         $name = preg_replace($pattern, '', $name);
         
-        // También eliminar si están en cualquier parte (pero cuidado con nombres como "Parroquia" como parte del nombre)
+        // Eliminar si están rodeados de espacios
         $pattern2 = '/\s+(' . implode('|', array_map('preg_quote', $commonPrefixes)) . ')\s+/i';
         $name = preg_replace($pattern2, ' ', $name);
         
-        // Eliminar caracteres especiales y múltiples espacios
+        // Filtrar signos de puntuación extraños manteniendo caracteres alfanuméricos unicode
         $name = preg_replace('/[^\p{L}\p{N}\s]/u', '', $name);
         $name = preg_replace('/\s+/', ' ', $name);
         
@@ -186,28 +218,25 @@ class LocationService
     }
     
     /**
-     * Limpia el nombre para almacenamiento
+     * Limpia y estandariza la capitalización de nombres propios para almacenamiento en base de datos:
+     * Convierte a formato título (primera letra de cada palabra en mayúscula), pero respetando
+     * acrónimos o nombres mixtos (como "McDonald" o siglas) sin corromperlos.
      */
     private static function cleanName(string $name): string
     {
         $name = trim($name);
         
-        // Solo capitalizar la primera letra de cada palabra
-        // pero NO alterar las palabras que ya tienen mayúsculas
         $words = explode(' ', $name);
         
         $cleaned = array_map(function($word) {
-            // Si la palabra ya comienza con mayúscula, dejarla tal cual
             if (mb_strlen($word) > 0 && ctype_upper(mb_substr($word, 0, 1))) {
                 return $word;
             }
             
-            // Si es completamente minúscula, capitalizar
-            if (mb_strtolower($word) === $word) {
+            if ($word !== '' && mb_strtolower($word) === $word) {
                 return mb_convert_case($word, MB_CASE_TITLE, 'UTF-8');
             }
             
-            // Dejar palabras mixtas como están (ej: "McDonald")
             return $word;
         }, $words);
         
@@ -215,38 +244,46 @@ class LocationService
     }
     
     /**
-     * Procesa datos de OpenStreetMap y devuelve ID de parroquia
+     * Procesa la carga útil (payload) devuelta por el API de OpenStreetMap / Nominatim:
+     * - Analiza los atributos del objeto 'address'.
+     * - Extrae los nombres de parroquia, municipio y estado mediante orden de precedencia.
+     * - Inserta o recupera la entidad en la base de datos devolviendo el ID de parroquia.
+     * - Retorna un paquete completo con los nombres limpios y la dirección cruda original.
+     *
+     * @param array $osmData Respuesta JSON de OSM Nominatim
+     * @return array
      */
     public static function processOSMData(array $osmData): array
     {
         $address = $osmData['address'] ?? [];
         
-        // Extraer componentes jerárquicos de OSM
-        $parishName = self::extractOSMParish($address);
+        // Extraer los 3 niveles jerárquicos
+        $parishName       = self::extractOSMParish($address);
         $municipalityName = self::extractOSMMunicipality($address);
-        $stateName = self::extractOSMState($address);
+        $stateName        = self::extractOSMState($address);
         
-        // Intentar encontrar/crear la ubicación
+        // Resolver o registrar en base de datos
         $parishId = self::findOrCreateLocation($parishName, $municipalityName, $stateName);
         
         return [
-            'parish_id' => $parishId,
-            'detected_parish' => $parishName,
+            'parish_id'             => $parishId,
+            'detected_parish'       => $parishName,
             'detected_municipality' => $municipalityName,
-            'detected_state' => $stateName,
-            'parish_name' => $parishName,
-            'municipality_name' => $municipalityName,
-            'state_name' => $stateName,
-            'full_address' => $address
+            'detected_state'        => $stateName,
+            'parish_name'           => $parishName,
+            'municipality_name'     => $municipalityName,
+            'state_name'            => $stateName,
+            'full_address'          => $address
         ];
     }
     
     /**
-     * Extrae nombre de parroquia de datos OSM
+     * Extrae el nombre más cercano a nivel de Parroquia a partir de las etiquetas de OpenStreetMap:
+     * Revisa en orden de prioridad de lo más específico a lo más amplio
+     * ('county', 'municipality', 'city_district', 'district', 'suburb', 'village', 'town', 'city').
      */
     private static function extractOSMParish(array $address): string
     {
-        // Prioridad de campos OSM para parroquia
         $fields = [
             'county', 'municipality', 'city_district', 'district',
             'suburb', 'village', 'town', 'city'
@@ -262,7 +299,8 @@ class LocationService
     }
     
     /**
-     * Extrae nombre de municipio de datos OSM
+     * Extrae el nombre del Municipio a partir de las etiquetas de OpenStreetMap:
+     * Prioriza etiquetas como 'municipality', 'county', 'state_district', etc.
      */
     private static function extractOSMMunicipality(array $address): string
     {
@@ -281,7 +319,8 @@ class LocationService
     }
     
     /**
-     * Extrae nombre de estado de datos OSM
+     * Extrae el nombre del Estado o Entidad Federal a partir de las etiquetas de OpenStreetMap:
+     * Lee directamente 'state' o 'region'.
      */
     private static function extractOSMState(array $address): string
     {

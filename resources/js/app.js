@@ -1,25 +1,33 @@
 import './bootstrap';
-
-
-/* import Alpine from 'alpinejs';
-
-window.Alpine = Alpine;
-
-Alpine.start();
- */
-
-/* import $ from 'jquery';   ESTA IMPLE
-import 'datatables.net';
-import 'datatables.net-dt/css/dataTables.dataTables.css';
-
-// Opcional: Si quieres los estilos por defecto de DataTables
-import 'datatables.net-dt/js/dataTables.dataTables'; */
-
 import Swal from 'sweetalert2';
 
-window.Swal = Swal; // Así puedes usarlo en scripts inline
+// Exportación global de SweetAlert2 para habilitar su uso en scripts inline de las vistas Blade
+window.Swal = Swal;
 
-// Función para mostrar alertas personalizadas (como las de app.blade.php)
+/**
+ * ====================================================================================================
+ * UTILIDADES DE INTERFAZ Y MODALES: app.js
+ * ====================================================================================================
+ * 
+ * Centraliza la capa de interacción dinámica con el usuario:
+ * 1. Notificaciones flotantes (Toast) y confirmaciones modales con SweetAlert2 adaptadas a Modo Oscuro/Claro.
+ * 2. Diálogo interactivo de configuración y lanzamiento de análisis satelital de deforestación.
+ * 3. Operaciones asíncronas (AJAX / Fetch API) para gestión de usuarios y roles sin recarga de página:
+ *    - Deshabilitación y habilitación de usuarios con eliminación visual de filas de tabla en tiempo real.
+ *    - Cambio de roles con doble confirmación preventiva cuando un administrador reduce sus propios privilegios.
+ * ====================================================================================================
+ */
+
+/**
+ * Despliega una alerta tipo Toast (notificación emergente compacta en la esquina superior derecha):
+ * - Temporizador automático de 1.6 segundos con barra de progreso animada.
+ * - Soporta pausa del temporizador al pasar el puntero del ratón por encima (mouseenter/mouseleave).
+ * - Integrado con clases de Tailwind CSS para compatibilidad completa con temas claro y oscuro.
+ * 
+ * @param {string} icon  Tipo de icono ('success', 'error', 'warning', 'info')
+ * @param {string} title Título principal de la notificación
+ * @param {string} text  Mensaje descriptivo secundario
+ */
 window.showCustomAlert = function(icon, title, text) {
     Swal.fire({
         position: "top-end",
@@ -53,7 +61,15 @@ window.showCustomAlert = function(icon, title, text) {
     });
 };
 
-// Hacer la función de confirmación disponible globalmente
+/**
+ * Muestra una ventana modal de confirmación previa para acciones críticas:
+ * - Evita ejecuciones accidentales (ej. eliminación o deshabilitación de cuentas).
+ * - Devuelve una Promesa para encadenar la lógica con `.then()` o `await`.
+ * 
+ * @param {boolean} isEnable      Indica si la acción es positiva (verde) o destructiva (amarillo/rojo)
+ * @param {string|null} customMessage Mensaje personalizado para el cuerpo de la ventana
+ * @returns {Promise<SweetAlertResult>}
+ */
 window.showCustomConfirmation = function(isEnable = false, customMessage = null) {
     const title = '¿Estás seguro?';
     const message = customMessage || (isEnable 
@@ -91,14 +107,28 @@ window.showCustomConfirmation = function(isEnable = false, customMessage = null)
     });
 };
 
-/* funcion agregadas por geral */
-
+/**
+ * Modal Interactivo de Configuración de Análisis de Deforestación:
+ * 
+ * Flujo de ejecución:
+ * 1. Genera dinámicamente un rango de opciones de años (desde 2001 hasta 2024 según el dataset de GFW).
+ * 2. Renderiza dos desplegables en pantalla: Año de Inicio y Año de Fin.
+ * 3. Incluye un interruptor (checkbox) para que el usuario elija si desea guardar los resultados en base de datos.
+ * 4. Valida en el cliente (`preConfirm`) que el año de inicio no sea superior al año de fin.
+ * 5. Si se confirma:
+ *    - Escribe los valores en los inputs ocultos del formulario (`start-{id}`, `end-{id}`, `save-{id}`).
+ *    - Activa una pantalla de carga (overlay) con barra de progreso simulada para dar retroalimentación visual inmediata.
+ *    - Envía el formulario POST para su procesamiento en el servidor.
+ * 
+ * @param {number|string} polygonId   ID del polígono a evaluar
+ * @param {string}        polygonName Nombre visible de la parcela
+ */
 window.confirmAnalysis = function(polygonId, polygonName) {
-    const startYear = 2001; // Definimos el inicio fijo
-    const endYear = 2024;   // Definimos el fin fijo
+    const startYear = 2001; // Primer año disponible en el dataset UMD Hansen de GFW
+    const endYear   = 2024; // Último año procesado
     const iconColor = '#f59f0bea';
 
-    // Generamos el array de años una sola vez para reutilizarlo
+    // Generar arreglo secuencial de años para los selectores HTML
     const yearOptions = Array.from(
         { length: endYear - startYear + 1 }, 
         (_, i) => startYear + i
@@ -150,8 +180,10 @@ window.confirmAnalysis = function(polygonId, polygonName) {
         },
         preConfirm: () => {
             const start = document.getElementById('swal-start').value;
-            const end = document.getElementById('swal-end').value;
-            const save = document.getElementById('swal-save').checked;
+            const end   = document.getElementById('swal-end').value;
+            const save  = document.getElementById('swal-save').checked;
+            
+            // Validación lógica de fechas
             if (parseInt(start) > parseInt(end)) {
                 Swal.showValidationMessage('El año de inicio no puede ser mayor al de fin');
                 return false;
@@ -161,14 +193,15 @@ window.confirmAnalysis = function(polygonId, polygonName) {
     }).then((result) => {
         if (result.isConfirmed) {
             document.getElementById(`start-${polygonId}`).value = result.value.start;
-            document.getElementById(`end-${polygonId}`).value = result.value.end;
-            document.getElementById(`save-${polygonId}`).value = result.value.save ? '1' : '0';
+            document.getElementById(`end-${polygonId}`).value   = result.value.end;
+            document.getElementById(`save-${polygonId}`).value  = result.value.save ? '1' : '0';
 
-            const loaderOverlay = document.getElementById('loader-overlay');
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
+            const loaderOverlay      = document.getElementById('loader-overlay');
+            const progressBar        = document.getElementById('progress-bar');
+            const progressText       = document.getElementById('progress-text');
             const progressPercentage = document.getElementById('progress-percentage');
 
+            // Feedback visual: simulación de avance de consulta satelital mientras responde el backend
             if (loaderOverlay) {
                 loaderOverlay.classList.remove('hidden');
                 let progress = 0;
@@ -189,19 +222,19 @@ window.confirmAnalysis = function(polygonId, polygonName) {
     });
 };
 
-// Ocultar loader si regresamos a la página (por errores de validación, por ejemplo)
+// Asegurar que la cortina de carga se oculte si el usuario presiona "Atrás" en el navegador
 window.addEventListener('pageshow', function (event) {
     const loader = document.getElementById('loader-overlay');
     if (loader) loader.classList.add('hidden');
 });
 
-// Mantener el código existente para formularios (pero usar la nueva función)
+// Interceptor para formularios con confirmación previa vía clases CSS
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.sweet-confirm-form').forEach(function(form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const action = form.getAttribute('data-action');
+            const action   = form.getAttribute('data-action');
             const isEnable = action === 'habilitar';
             
             showCustomConfirmation(isEnable).then((result) => {
@@ -213,7 +246,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// FUNCIÓN PARA DESHABILITAR USUARIOS
+/**
+ * Deshabilita un usuario mediante petición HTTP DELETE asíncrona:
+ * - Solicita confirmación previa.
+ * - Envía la petición con el encabezado de protección CSRF (`X-CSRF-TOKEN`).
+ * - Al responder exitosamente, elimina la fila de la tabla del DOM (`row.remove()`)
+ *   sin requerir recarga total de la página web.
+ * 
+ * @param {number|string} userId   ID del usuario
+ * @param {string}        userName Nombre del usuario a deshabilitar
+ */
 window.handleUserDisable = async function(userId, userName) {
     const result = await window.showCustomConfirmation(false, `Vas a deshabilitar al usuario: ${userName}`);
     
@@ -231,7 +273,6 @@ window.handleUserDisable = async function(userId, userName) {
             const data = await response.json();
             
             if (data.success) {
-                // Eliminar la fila de la tabla
                 const row = document.getElementById(`user-row-${userId}`);
                 if (row) {
                     row.remove();
@@ -247,14 +288,30 @@ window.handleUserDisable = async function(userId, userName) {
     }
 };
 
-// FUNCIÓN CORREGIDA PARA MANEJAR CAMBIOS DE ROL CON AJAX
+/**
+ * Modifica el rol de un usuario en el sistema mediante petición AJAX PATCH:
+ * 
+ * Medidas de seguridad y prevención:
+ * 1. Comprueba si el rol seleccionado es idéntico al actual para evitar peticiones redundantes.
+ * 2. Si el usuario actual está modificando SU PROPIO ROL degradándose de 'Administrador' a 'Básico':
+ *    - Presenta un primer aviso de riesgo.
+ *    - Presenta un SEGUNDO diálogo modal obligatorio detallando la pérdida de acceso y permisos.
+ *    - Si cancela en cualquier paso, restablece el desplegable al valor original.
+ * 3. En caso de éxito, actualiza el atributo `data-original-role` con el nuevo estado.
+ * 4. En caso de fallo de red, revierte el desplegable visualmente al valor original.
+ * 
+ * @param {HTMLSelectElement} selectElement Elemento <select> que disparó el evento
+ * @param {number|string}    userId        ID del usuario modificado
+ * @param {string}           userName      Nombre del usuario
+ * @param {boolean}          isSelf        Verdadero si el usuario autenticado se está editando a sí mismo
+ * @param {string|null}      originalRole  Rol anterior antes del cambio
+ */
 window.handleRoleChange = async function(selectElement, userId, userName, isSelf, originalRole = null) {
-    // Obtener el rol original del atributo data-original-role (más confiable)
     const currentOriginalRole = originalRole || selectElement.getAttribute('data-original-role');
-    const newRole = selectElement.value;
-    const roleText = (newRole === 'administrador') ? 'Administrador' : 'Básico';
+    const newRole             = selectElement.value;
+    const roleText            = (newRole === 'administrador') ? 'Administrador' : 'Básico';
     
-    // Si el nuevo rol es igual al original, no hacer nada
+    // Si no hubo cambio real, salir
     if (newRole === currentOriginalRole) {
         return;
     }
@@ -274,6 +331,7 @@ window.handleRoleChange = async function(selectElement, userId, userName, isSelf
     const result = await window.showCustomConfirmation(false, customMessage, customConfirmText);
 
     if (result.isConfirmed) {
+        // Salvaguarda especial: autodemoción de administrador a básico
         if (isSelf && newRole === 'basico' && currentOriginalRole === 'administrador') {
             const permissions = {
                 'administrador': 'Acceso total a la administración de usuarios, auditoría, y gestión completa de datos.',
@@ -296,13 +354,12 @@ window.handleRoleChange = async function(selectElement, userId, userName, isSelf
             const secondResult = await window.showCustomConfirmation(true, secondMessage, 'Cambiar');
             
             if (!secondResult.isConfirmed) {
-                // Restablecer al valor original
                 selectElement.value = currentOriginalRole;
                 return;
             }
         }
         
-        // ENVÍO CON AJAX PARA EVITAR RECARGA - USANDO MÉTODO PATCH
+        // Petición HTTP PATCH asíncrona
         try {
             const url = `/admin/users/${userId}/update-role`;
             
@@ -327,9 +384,8 @@ window.handleRoleChange = async function(selectElement, userId, userName, isSelf
             const data = await response.json();
             
             if (data.success) {
-                //   ACTUALIZAR EL ATRIBUTO data-original-role con el nuevo valor
+                // Actualizar el atributo de respaldo para futuras modificaciones
                 selectElement.setAttribute('data-original-role', newRole);
-                
                 showCustomAlert('success', '¡Éxito!', data.message);
             } else {
                 throw new Error(data.message || 'Error al actualizar el rol');
@@ -337,18 +393,21 @@ window.handleRoleChange = async function(selectElement, userId, userName, isSelf
             
         } catch (error) {
             console.error('Error en la petición:', error);
-            // Revertir el select al valor original en caso de error
+            // Revertir en la interfaz si ocurrió un fallo
             selectElement.value = currentOriginalRole;
             showCustomAlert('error', 'Error', error.message || 'Ocurrió un error al actualizar el rol.');
         }
         
     } else {
-        // Si cancela la primera modal, restablece el valor del select al original
+        // Revertir si el usuario canceló la ventana de confirmación
         selectElement.value = currentOriginalRole;
     }
 };
 
-// FUNCIÓN PARA HABILITAR USUARIOS DESHABILITADOS
+/**
+ * Rehabilita un usuario previamente dado de baja mediante petición HTTP POST asíncrona:
+ * Remueve la fila de la vista de usuarios deshabilitados tras la respuesta positiva.
+ */
 window.handleUserEnable = async function(userId, userName) {
     const result = await window.showCustomConfirmation(true, `Vas a habilitar al usuario: ${userName}`);
     
@@ -366,7 +425,6 @@ window.handleUserEnable = async function(userId, userName) {
             const data = await response.json();
             
             if (data.success) {
-                // Eliminar la fila de la tabla
                 const row = document.getElementById(`disabled-user-row-${userId}`);
                 if (row) {
                     row.remove();
@@ -380,4 +438,70 @@ window.handleUserEnable = async function(userId, userName) {
             showCustomAlert('error', 'Error', 'Ocurrió un error al habilitar el usuario.');
         }
     }
+};
+
+/**
+ * ====================================================================================================
+ * UTILIDADES DE SANITIZACIÓN DE INPUTS
+ * ====================================================================================================
+ * Funciones que mutan `input.value` preservando la posición del cursor.
+ * Se exponen en `window` para poder usarlas desde atributos `oninput` inline
+ * en los componentes Blade (`<x-text-input>`, `<textarea>`, etc.).
+ * ====================================================================================================
+ */
+
+/**
+ * Helper interno: aplica una transformación al value del input y restaura el cursor.
+ * Evita repetir lógica en cada función.
+ *
+ * @param {HTMLInputElement|HTMLTextAreaElement} input
+ * @param {(value: string) => string} transform
+ */
+function applyTransformPreservingCursor(input, transform) {
+    const original = input.value;
+    const start = input.selectionStart;
+    const end   = input.selectionEnd;
+    const transformed = transform(original);
+
+    if (transformed === original) return; // sin cambios, no tocamos el DOM
+
+    input.value = transformed;
+
+    // setSelectionRange falla en inputs de tipo number/email/etc.
+    try {
+        // Ajustamos el cursor si el texto se acortó por el filtro
+        const delta = original.length - transformed.length;
+        const newStart = Math.max(0, start - delta);
+        const newEnd   = Math.max(0, end - delta);
+        input.setSelectionRange(newStart, newEnd);
+    } catch (_) {
+        // Silencioso: algunos tipos de input no soportan setSelectionRange
+    }
+}
+
+/**
+ * Convierte todo el valor a MAYÚSCULAS preservando el cursor.
+ * @param {HTMLInputElement|HTMLTextAreaElement} input
+ */
+window.toUppercasePreservingCursor = function(input) {
+    applyTransformPreservingCursor(input, v => v.toUpperCase());
+};
+
+/**
+ * Filtra el valor para dejar solo letras (con acentos), espacios y apóstrofes.
+ * No convierte a mayúsculas; combínala con `toUppercasePreservingCursor` si quieres ambas.
+ * @param {HTMLInputElement|HTMLTextAreaElement} input
+ */
+window.toLettersPreservingCursor = function(input) {
+    applyTransformPreservingCursor(input, v =>
+        v.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ\s']/g, '')
+    );
+};
+
+/**
+ * Filtra el valor para dejar solo dígitos.
+ * @param {HTMLInputElement|HTMLTextAreaElement} input
+ */
+window.toDigitsPreservingCursor = function(input) {
+    applyTransformPreservingCursor(input, v => v.replace(/\D/g, ''));
 };

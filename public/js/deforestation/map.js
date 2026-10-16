@@ -1,8 +1,24 @@
 /**
- * CLASE PRINCIPAL - DEFORESTATION MAP
- * Mapa interactivo para análisis de deforestación con funcionalidades de dibujo,
- * importación de datos, cálculo de áreas y visualización de capas.
- * Utiliza: OpenLayers 6, Turf.js (para cálculos), Proj4 (para transformaciones)
+ * ====================================================================================================
+ * CLASE PRINCIPAL: DeforestationMap (Visor y Analizador Espacial de Deforestación)
+ * ====================================================================================================
+ * 
+ * Este módulo JavaScript es el núcleo del cliente web para la detección y monitoreo de pérdida forestal:
+ * 1. Stack Tecnológico Geoespacial en Frontend:
+ *    - OpenLayers 6: Motor principal para renderizar mapas dinámicos en proyección Web Mercator (EPSG:3857).
+ *    - Proj4js: Conversor de coordenadas para transformar entre sistemas geodésicos (WGS84 EPSG:4326)
+ *      y proyecciones cartográficas locales de Venezuela (UTM Zonas 19N, 20N y 20S).
+ *    - Turf.js: Biblioteca de análisis geoespacial para calcular superficies geodésicas en tiempo real.
+ *    - Global Forest Watch (GFW XYZ Tiles): Capa dinámica ráster (`umd_tree_cover_loss`) servida por los satélites
+ *      de la Universidad de Maryland (Hansen et al.), permitiendo superponer los píxeles rojos de tala reciente.
+ * 
+ * 2. Capacidades Funcionales:
+ *    - Digitalización manual interactiva de predios con lápiz sobre el mapa.
+ *    - Carga e importación automática de archivos vectoriales en formato GeoJSON y KML.
+ *    - Detección inteligente de sistemas de coordenadas erróneos o en metros UTM para corregirlos a WGS84.
+ *    - Sincronización bidireccional con el formulario HTML (`#geometry`, `#area_ha`).
+ *    - Control de estados en segundo plano y visualización de múltiples parcelas con tablas de productores.
+ * ====================================================================================================
  */
 class DeforestationMap {
     constructor() {
@@ -1619,16 +1635,15 @@ getGeoJSONInWGS84() {
     }
 }
 
-function capitalizarPrimeraLetra(input) {
-    // Obtenemos el valor actual del input
-    let valor = input.value;
-
-    if (valor.length > 0) {
-        // Convertimos la primera letra a Mayúscula y sumamos el resto del texto
-        input.value = valor.charAt(0).toUpperCase() + valor.slice(1);
+/* function toUppercasePreservingCursor(input) {
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const upper = input.value.toUpperCase();
+    if (upper !== input.value) {
+        input.value = upper;
+        input.setSelectionRange(start, end);
     }
-}
-
+} */
 // =============================================
 // 15. INICIALIZACIÓN GLOBAL
 // =============================================

@@ -296,7 +296,7 @@
                                     class="block w-full" 
                                     type="text" 
                                     name="name" 
-                                    oninput="capitalizarPrimeraLetra(this)"
+                                    :uppercase="true"
                                     placeholder="Ej: Reserva Natural XYZ"
                                     data-required-when-saving="true" />
                                 <x-input-error :messages="$errors->get('name')" class="mt-2" />
@@ -323,7 +323,11 @@
                         
                         <div class="mt-4">
                             <x-input-label for="description" :value="__('Descripción:')" />
-                            <textarea id="description" name="description" oninput="capitalizarPrimeraLetra(this)" rows="2" class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70" placeholder="Descripción del área de estudio..."></textarea>
+                            <x-textarea-input
+                                id="description"
+                                rows="3"
+                                :uppercase="true"
+                                placeholder="Descripción..." />
                             <x-input-error :messages="$errors->get('address')" class="mt-2" />
                         </div>
                         

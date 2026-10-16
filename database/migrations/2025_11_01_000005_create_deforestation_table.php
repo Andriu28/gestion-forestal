@@ -4,6 +4,14 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Migración: Creación de la Tabla de Deforestación (deforestation)
+ * 
+ * Almacena la serie temporal de pérdida de biomasa boscosa por polígono y año:
+ * - Vinculación en cascada con el polígono (si se elimina definitivamente el polígono, se purgan sus registros).
+ * - Restricción de unicidad compuesta [polygon_id, year] que impide tener duplicados para un mismo año en un lote.
+ * - Registro métrico exacto: superficie talada en hectáreas (4 decimales) y tasa porcentual de pérdida (2 decimales).
+ */
 return new class extends Migration
 {
     /**
@@ -13,22 +21,28 @@ return new class extends Migration
     {
         Schema::create('deforestation', function (Blueprint $table) {
             $table->id();
-            // Relación con el polígono
+            
+            // Relación foránea: si el polígono es eliminado físicamente de la base de datos,
+            // se eliminan en cascada sus análisis satelitales asociados.
             $table->foreignId('polygon_id')->constrained()->onDelete('cascade');
             
-            // Regresamos al campo único 'year'
+            // Año calendario de la observación satelital (ej. 2018, 2021, etc.)
             $table->integer('year');
             
-            // Mantenemos la alta precisión para el área (4 decimales)
+            // Superficie arbórea talada o perdida en hectáreas (precisión de 4 decimales)
             $table->decimal('deforested_area_ha', 12, 4);
+            
+            // Porcentaje que representa la pérdida sobre la superficie total del lote (0.00% a 100.00%)
             $table->decimal('percentage_loss', 5, 2);
             
             $table->timestamps();
             $table->softDeletes();
             
-            // Ajustamos los índices para el campo 'year'
-            // unique: evita que un mismo polígono tenga dos registros para el mismo año
+            // Restricción UNIQUE: garantiza a nivel de motor de base de datos que no existan
+            // dos lecturas para el mismo año y la misma parcela
             $table->unique(['polygon_id', 'year'], 'deforestation_polygon_year_unique');
+            
+            // Índice compuesto para acelerar consultas analíticas y gráficas cronológicas
             $table->index(['polygon_id', 'year'], 'deforestation_year_index');
         });
     }

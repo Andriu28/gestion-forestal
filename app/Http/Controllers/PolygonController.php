@@ -23,62 +23,87 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Bus;
 use App\Jobs\ImportPolygonJob;
 
+/**
+ * Controlador de Gestión de Polígonos y Parcelas Geoespaciales
+ * 
+ * Centraliza la administración de los predios geográficos del sistema:
+ * 1. Filtrado multidimensional (territorial, productivo, deforestación y rangos de superficie).
+ * 2. Operaciones CRUD con almacenamiento espacial PostGIS en estándar EPSG:4326 (WGS84).
+ * 3. Detección automática y geocodificación inversa de parroquias a partir del trazo en el mapa.
+ * 4. Generación de capas GeoJSON FeatureCollection para visualización en Leaflet.
+ * 5. Importación masiva distribuida por lotes (Queue Batching) de archivos Shapefile / GeoJSON.
+ */
 class PolygonController extends Controller
 {
     use Filterable;
 
+    /**
+     * Inyecta los servicios de resolución territorial y de importación masiva.
+     */
     public function __construct(
         private readonly LocationService $locationService,
         private readonly PolygonImportService $importService,
     ) {}
 
     // =========================================================================
-    // Listados
+    // Listados y Filtros Avanzados
     // =========================================================================
 
+    /**
+     * Muestra la tabla principal de polígonos aplicando filtros combinados:
+     * - Búsqueda por texto (nombre de parcela).
+     * - Rango de fechas de registro.
+     * - Estado operativo (activo, inactivo, eliminado).
+     * - Tenencia de la tierra (con productor asignado vs sin productor).
+     * - Jerarquía territorial (Parroquia, Municipio, Estado).
+     * - Superficie en hectáreas (rango mínimo y máximo).
+     * - Productor específico.
+     * - Criterios de deforestación (con/sin alertas, año de pérdida, porcentaje de afectación).
+     */
     public function index(Request $request): View
     {
-        // Obtener todos los filtros
-        $search = $request->get('search');
+        // Parámetros de filtrado convencionales
+        $search   = $request->get('search');
         $dateFrom = $request->get('date_from');
-        $dateTo = $request->get('date_to');
-        $status = $request->get('status', 'all');
-        $type = $request->get('type', 'all');
+        $dateTo   = $request->get('date_to');
+        $status   = $request->get('status', 'all');
+        $type     = $request->get('type', 'all');
 
-        // Nuevos filtros
-        $parishId = $request->get('parish_id');
-        $municipalityId = $request->get('municipality_id');
-        $stateId = $request->get('state_id');
-        $areaMin = $request->get('area_min');
-        $areaMax = $request->get('area_max');
-        $producerId = $request->get('producer_id');
-        $hasDeforestation = $request->get('has_deforestation'); // 'yes', 'no', 'all'
+        // Filtros espaciales y de cobertura forestal
+        $parishId          = $request->get('parish_id');
+        $municipalityId    = $request->get('municipality_id');
+        $stateId           = $request->get('state_id');
+        $areaMin           = $request->get('area_min');
+        $areaMax           = $request->get('area_max');
+        $producerId        = $request->get('producer_id');
+        $hasDeforestation  = $request->get('has_deforestation'); // 'yes', 'no', 'all'
         $deforestationYear = $request->get('deforestation_year');
-        $lossMin = $request->get('loss_min');
-        $lossMax = $request->get('loss_max');
+        $lossMin           = $request->get('loss_min');
+        $lossMax           = $request->get('loss_max');
 
-        // Validaciones
+        // Validar coherencia del rango cronológico
         $validationError = $this->validateDateRange($dateFrom, $dateTo);
         if ($validationError) {
             return $validationError;
         }
 
-        // Validar rango de área
+        // Validar que el área máxima no sea inferior al área mínima
         if ($areaMin !== null && $areaMax !== null && $areaMax < $areaMin) {
             return redirect()->back()->withErrors(['area_max' => 'El área máxima no puede ser menor que el área mínima.'])->withInput();
         }
 
-        // Validar rango de pérdida
+        // Validar que el porcentaje máximo de pérdida no sea menor al mínimo
         if ($lossMin !== null && $lossMax !== null && $lossMax < $lossMin) {
             return redirect()->back()->withErrors(['loss_max' => 'La pérdida máxima no puede ser menor que la pérdida mínima.'])->withInput();
         }
 
+        // Eager loading para evitar N+1 en las relaciones territoriales y de productores
         $query = Polygon::with(['producer', 'parish.municipality.state']);
 
-        // Filtros de fecha
+        // Aplicar filtro de fecha sobre created_at
         $query = $this->applyDateFilters($query, $dateFrom, $dateTo, 'created_at');
 
-        // Búsqueda flexible
+        // Aplicar búsqueda de texto libre sobre el nombre
         $query = $this->applySearchFilter(
             $query,
             $search,
@@ -86,7 +111,7 @@ class PolygonController extends Controller
             []
         );
 
-        // Filtros específicos de estado y tipo
+        // Filtros de estado operativo
         match ($status) {
             'active'   => $query->where('is_active', true),
             'inactive' => $query->where('is_active', false),
@@ -94,30 +119,29 @@ class PolygonController extends Controller
             default    => null,
         };
 
+        // Filtros por asignación de productor
         match ($type) {
             'with_producer'    => $query->withProducer(),
             'without_producer' => $query->withoutProducer(),
             default            => null,
         };
 
-        // ----- NUEVOS FILTROS -----
-
-        // 1. Parroquia
+        // 1. Filtro territorial por Parroquia directa
         if ($parishId) {
             $query->where('parish_id', $parishId);
         }
 
-        // 2. Municipio (a través de parish)
+        // 2. Filtro territorial por Municipio (subconsulta en la parroquia)
         if ($municipalityId) {
             $query->whereHas('parish', fn($q) => $q->where('municipality_id', $municipalityId));
         }
 
-        // 3. Estado (a través de parish.municipality)
+        // 3. Filtro territorial por Estado (subconsulta anidada parroquia -> municipio -> estado)
         if ($stateId) {
             $query->whereHas('parish.municipality', fn($q) => $q->where('state_id', $stateId));
         }
 
-        // 4. Área mín/máx
+        // 4. Filtro por superficie en hectáreas (rango numérico)
         if ($areaMin !== null) {
             $query->where('area_ha', '>=', $areaMin);
         }
@@ -125,25 +149,24 @@ class PolygonController extends Controller
             $query->where('area_ha', '<=', $areaMax);
         }
 
-        // 5. Productor específico
+        // 5. Filtro por productor titular
         if ($producerId) {
             $query->where('producer_id', $producerId);
         }
 
-        // 6. Deforestación (con o sin)
+        // 6. Filtro rápido por bandera booleana de deforestación
         if ($hasDeforestation === 'yes') {
             $query->where('deforested', true);
         } elseif ($hasDeforestation === 'no') {
             $query->where('deforested', false);
         }
 
-        // 7. Rango de años (polígonos que tienen deforestación en ese año)
+        // 7. Filtro por año específico con eventos de deforestación registrados
         if ($deforestationYear) {
             $query->whereHas('deforestations', fn($q) => $q->where('year', $deforestationYear));
         }
 
-        // 8. Pérdida mín/máx (usando subconsulta para obtener el último registro o el máximo)
-        // Opción: pérdida máxima en cualquier registro
+        // 8. Filtro por rango de porcentaje de pérdida arbórea histórica
         if ($lossMin !== null || $lossMax !== null) {
             $query->whereHas('deforestations', function ($q) use ($lossMin, $lossMax) {
                 if ($lossMin !== null) {
@@ -155,34 +178,33 @@ class PolygonController extends Controller
             });
         }
 
-        // Paginar
+        // Paginación con persistencia de variables en los links
         $polygons = $query->latest()->paginate(10);
 
-        // Mantener filtros en la paginación
         $polygons->appends([
-            'search' => $search,
-            'date_from' => $dateFrom,
-            'date_to' => $dateTo,
-            'status' => $status,
-            'type' => $type,
-            'parish_id' => $parishId,
-            'municipality_id' => $municipalityId,
-            'state_id' => $stateId,
-            'area_min' => $areaMin,
-            'area_max' => $areaMax,
-            'producer_id' => $producerId,
-            'has_deforestation' => $hasDeforestation,
+            'search'             => $search,
+            'date_from'          => $dateFrom,
+            'date_to'            => $dateTo,
+            'status'             => $status,
+            'type'               => $type,
+            'parish_id'          => $parishId,
+            'municipality_id'    => $municipalityId,
+            'state_id'           => $stateId,
+            'area_min'           => $areaMin,
+            'area_max'           => $areaMax,
+            'producer_id'        => $producerId,
+            'has_deforestation'  => $hasDeforestation,
             'deforestation_year' => $deforestationYear,
-            'loss_min' => $lossMin,
-            'loss_max' => $lossMax,
+            'loss_min'           => $lossMin,
+            'loss_max'           => $lossMax,
         ]);
 
-        // Obtener listas para los selects (parroquias, municipios, estados, productores, años)
-        $parishes = Parish::orderBy('name')->get(['id', 'name']);
+        // Cargar listas maestras para alimentar los desplegables de filtrado
+        $parishes       = Parish::orderBy('name')->get(['id', 'name']);
         $municipalities = Municipality::orderBy('name')->get(['id', 'name']);
-        $states = State::orderBy('name')->get(['id', 'name']);
-        $producers = Producer::orderBy('name')->get(['id', 'name', 'lastname']);
-        $years = range(2020, now()->year); // rango de años para deforestación
+        $states         = State::orderBy('name')->get(['id', 'name']);
+        $producers      = Producer::orderBy('name')->get(['id', 'name', 'lastname']);
+        $years          = range(2020, now()->year);
         
         return view('polygons.index', compact(
             'polygons',
@@ -196,6 +218,9 @@ class PolygonController extends Controller
         ));
     }
 
+    /**
+     * Muestra la papelera de polígonos eliminados lógicamente (SoftDeletes).
+     */
     public function deleted(Request $request): View
     {
         $search = $request->get('search');
@@ -211,15 +236,21 @@ class PolygonController extends Controller
         return view('polygons.deleted', compact('polygons', 'search'));
     }
 
+    /**
+     * Vista general del mapa interactivo con todos los polígonos cargados en capas Leaflet.
+     */
     public function map(): View
     {
         return view('polygons.map');
     }
 
     // =========================================================================
-    // CRUD
+    // Operaciones CRUD
     // =========================================================================
 
+    /**
+     * Muestra el formulario interactivo para dibujar o ingresar un polígono nuevo.
+     */
     public function create(): View
     {
         $producers = Producer::active()->get();
@@ -228,6 +259,18 @@ class PolygonController extends Controller
         return view('polygons.create', compact('producers', 'parishes'));
     }
 
+    /**
+     * Almacena una nueva parcela en la base de datos geográfica:
+     * 
+     * Secuencia técnica:
+     * 1. Valida reglas alfanuméricas y la presencia de la cadena GeoJSON.
+     * 2. Resuelve la parroquia (`resolveParishId`): evalúa si el usuario seleccionó una manualmente
+     *    o si debe autodetectarse a través de geocodificación inversa según las coordenadas del mapa.
+     * 3. Normaliza el GeoJSON asegurando que sea un Polygon o MultiPolygon válido.
+     * 4. Construye el paquete de auditoría y metadatos en `location_data`.
+     * 5. Inserta en PostGIS mediante `Polygon::createWithGeometry` proyectando a SRID 4326.
+     * 6. Recalcula el área en hectáreas y el centroide de forma esferoidal (`recalculateGeometryStats`).
+     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate($this->validationRules());
@@ -237,16 +280,13 @@ class PolygonController extends Controller
             $geoJson  = $this->normalizeGeoJson($validated['geometry']);
             $detected = $this->extractDetected($validated);
 
-            // Construir location_data (lógica en el modelo)
             $rawLocation  = ! empty($validated['location_data'])
                 ? (json_decode($validated['location_data'], true) ?? [])
                 : [];
 
-            // Crear un polígono temporal para acceder al método del modelo
             $temp         = new Polygon();
             $locationData = $temp->buildLocationDataForCreate($rawLocation, $detected, $parishId);
 
-            // Delegar creación con geometría al modelo
             $polygon = Polygon::createWithGeometry(
                 [
                     'name'          => $validated['name'],
@@ -262,10 +302,8 @@ class PolygonController extends Controller
                 $geoJson
             );
 
-            // Recalcular área y centroide desde PostGIS (lógica en el modelo)
+            // Calcular superficie geodésica real y centroide en PostGIS
             $polygon->recalculateGeometryStats();
-
-            
 
             Log::info('Polígono creado', ['id' => $polygon->id, 'parish_id' => $polygon->parish_id]);
 
@@ -273,12 +311,14 @@ class PolygonController extends Controller
                 ->with('success', "Polígono '{$polygon->name}' creado exitosamente.");
 
         } catch (\Throwable $e) {
-            
             Log::error('Error al crear polígono', ['error' => $e->getMessage()]);
             return back()->withInput()->with('error', 'Error al crear el polígono: ' . $e->getMessage());
         }
     }
 
+    /**
+     * Muestra la ficha técnica detallada del polígono, su productor y su ubicación.
+     */
     public function show(Polygon $polygon): View
     {
         $polygon->load(['producer', 'parish.municipality.state']);
@@ -286,6 +326,9 @@ class PolygonController extends Controller
         return view('polygons.show', compact('polygon'));
     }
 
+    /**
+     * Muestra el formulario de edición con el visor cartográfico cargado con la geometría actual.
+     */
     public function edit(Polygon $polygon): View
     {
         $polygon->load('parish.municipality.state');
@@ -295,6 +338,15 @@ class PolygonController extends Controller
         return view('polygons.edit', compact('polygon', 'producers', 'parishes'));
     }
 
+    /**
+     * Actualiza la información alfanumérica y/o la geometría espacial del polígono:
+     * 
+     * Detección de cambios espaciales:
+     * - Compara la cadena GeoJSON previa normalizada con la nueva cadena enviada desde el mapa.
+     * - Si la geometría fue alterada (vértices movidos, redibujado): ejecuta la actualización en PostGIS
+     *   y llama a `recalculateGeometryStats` para recalcular el área en hectáreas y el nuevo centroide.
+     * - Si solo cambiaron datos de texto (nombre, notas, productor): actualiza sin recalcular la geometría.
+     */
     public function update(Request $request, Polygon $polygon): RedirectResponse
     {
         $validated = $request->validate($this->validationRules(isUpdate: true));
@@ -304,13 +356,10 @@ class PolygonController extends Controller
             Log::info('Iniciando update de polígono', ['id' => $polygon->id]);
 
             $parishId = $this->resolveParishId($validated, $polygon->parish_id);
-            $geoJson = $this->normalizeGeoJson($validated['geometry']);
+            $geoJson  = $this->normalizeGeoJson($validated['geometry']);
             $detected = $this->extractDetected($validated);
 
-            Log::info('GeoJson recibido', ['geoJson' => substr($geoJson, 0, 200)]);
-
             $oldGeoJson = $polygon->getGeometryGeoJson();
-            Log::info('GeoJson actual', ['oldGeoJson' => substr($oldGeoJson, 0, 200)]);
 
             $rawLocation = !empty($validated['location_data'])
                 ? (json_decode($validated['location_data'], true) ?? [])
@@ -322,38 +371,31 @@ class PolygonController extends Controller
                 auth()->id()
             );
 
-            Log::info('Preparando updateWithGeometry...');
+            // Actualizar registro y geometría PostGIS
             $updated = $polygon->updateWithGeometry(
                 [
                     'name'          => $validated['name'],
                     'description'   => $validated['description'] ?? null,
                     'producer_id'   => $validated['producer_id'] ?? null,
                     'parish_id'     => $parishId,
-                    //'area_ha'       => $validated['area_ha'] ?? null,
                     'is_active'     => $validated['is_active'] ?? true,
-                    //'centroid_lat'  => $validated['centroid_lat'] ?? null,
-                    //'centroid_lng'  => $validated['centroid_lng'] ?? null,
                     'location_data' => $locationData,
                 ],
                 $geoJson
             );
 
-            Log::info('updateWithGeometry resultó', ['result' => $updated]);
-
-            // Comparación normalizada
+            // Comprobar si la forma geométrica cambió sustancialmente para recalcular métricas
             $normalizedOld = $polygon->normalizeGeoJsonString($oldGeoJson);
             $normalizedNew = $polygon->normalizeGeoJsonString($geoJson);
 
             if ($normalizedOld !== $normalizedNew) {
                 Log::info('La geometría cambió, recalculando stats...');
                 $polygon->recalculateGeometryStats();
-                Log::info('recalculateGeometryStats ejecutado');
             } else {
                 Log::info('La geometría no cambió, no se recalcula');
             }
 
             DB::commit();
-            Log::info('Transacción commit exitosa');
 
             return redirect()->route('polygons.index')
                 ->with('success', "Polígono '{$polygon->name}' actualizado exitosamente.");
@@ -361,7 +403,7 @@ class PolygonController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Error al actualizar polígono', [
-                'id' => $polygon->id,
+                'id'    => $polygon->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -369,6 +411,9 @@ class PolygonController extends Controller
         }
     }
 
+    /**
+     * Elimina lógicamente un polígono (SoftDelete). Responde tanto en JSON (vía AJAX) como en redirección web.
+     */
     public function destroy(Request $request, Polygon $polygon): JsonResponse|RedirectResponse
     {
         try {
@@ -393,9 +438,12 @@ class PolygonController extends Controller
     }
 
     // =========================================================================
-    // Acciones de estado
+    // Acciones de Cambio de Estado y Restauración
     // =========================================================================
 
+    /**
+     * Restaura un polígono que había sido enviado a la papelera.
+     */
     public function restore(Request $request, int $id): JsonResponse|RedirectResponse
     {
         try {
@@ -421,6 +469,9 @@ class PolygonController extends Controller
         }
     }
 
+    /**
+     * Alterna el estado operativo del polígono entre Activo e Inactivo.
+     */
     public function toggleStatus(Request $request, Polygon $polygon): JsonResponse|RedirectResponse
     {
         try {
@@ -447,14 +498,15 @@ class PolygonController extends Controller
     }
 
     // =========================================================================
-    // Endpoints JSON
+    // Endpoints API y Servicios Geoespaciales
     // =========================================================================
 
     /**
-     * Devuelve todos los polígonos activos como GeoJSON FeatureCollection.
-     */
-    /**
-     * Devuelve todos los polígonos activos como GeoJSON FeatureCollection.
+     * Genera una colección estándar GeoJSON (FeatureCollection) con todos los polígonos activos:
+     * - Extrae la columna geométrica PostGIS convirtiéndola a JSON nativo mediante `ST_AsGeoJSON(geometry)`.
+     * - Adjunta propiedades alfanuméricas (nombre, productor, área, clasificación de deforestación).
+     * - Clasifica el polígono en 'has_deforestation', 'no_deforestation' o 'no_data' para que Leaflet
+     *   pueda pintar los bordes de color verde o rojo dinámicamente en el mapa.
      */
     public function geojson(): JsonResponse
     {
@@ -469,15 +521,15 @@ class PolygonController extends Controller
                     [$polygon->id]
                 )?->geojson ?? '{}';
 
-                // Obtener datos de deforestación
+                // Compilar el historial anual de deforestación
                 $deforestations = $polygon->deforestations->map(function ($d) {
                     return [
-                        'year' => $d->year,
+                        'year'            => $d->year,
                         'percentage_loss' => $d->percentage_loss,
                     ];
                 })->toArray();
 
-                // Determinar el estado de deforestación
+                // Evaluar si existen pérdidas mayores a cero para colorear la capa en el visor
                 $deforestationStatus = 'no_data';
                 if ($deforestations) {
                     $hasLoss = collect($deforestations)->contains(function ($d) {
@@ -489,14 +541,14 @@ class PolygonController extends Controller
                 return [
                     'type'       => 'Feature',
                     'properties' => [
-                        'id'          => $polygon->id,
-                        'name'        => $polygon->name,
-                        'producer'    => $polygon->producer_name,
-                        'area_ha'     => $polygon->area_ha,
-                        'description' => $polygon->description,
-                        'type'        => $polygon->type,
+                        'id'                   => $polygon->id,
+                        'name'                 => $polygon->name,
+                        'producer'             => $polygon->producer_name,
+                        'area_ha'              => $polygon->area_ha,
+                        'description'          => $polygon->description,
+                        'type'                 => $polygon->type,
                         'deforestation_status' => $deforestationStatus,
-                        'deforestations' => $deforestations,
+                        'deforestations'       => $deforestations,
                     ],
                     'geometry' => json_decode($geojsonStr, true),
                 ];
@@ -513,7 +565,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Detalles de un polígono para modal (incluye soft-deleted).
+     * Retorna la información completa de una parcela en formato JSON para el modal emergente de Leaflet.
      */
     public function details(int $id): JsonResponse
     {
@@ -543,7 +595,8 @@ class PolygonController extends Controller
     }
 
     /**
-     * Busca o crea una parroquia a partir de datos OSM enviados por el frontend.
+     * Endpoint API para resolver o autocompletar una parroquia desde el mapa interactivo:
+     * Si no se encuentra una coincidencia exacta en la base de datos, devuelve sugerencias por similitud.
      */
     public function findParishApi(Request $request): JsonResponse
     {
@@ -581,11 +634,11 @@ class PolygonController extends Controller
     }
 
     // =========================================================================
-    // Helpers privados — solo coordinación, sin lógica de negocio
+    // Métodos Auxiliares de Validación y Normalización
     // =========================================================================
 
     /**
-     * Reglas de validación compartidas entre store y update.
+     * Reglas de validación para la creación y edición de polígonos.
      */
     private function validationRules(bool $isUpdate = false): array
     {
@@ -607,7 +660,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Extrae los campos detectados del request en un array uniforme.
+     * Extrae los nombres de demarcación territorial detectados en el cliente.
      */
     private function extractDetected(array $validated): array
     {
@@ -619,11 +672,11 @@ class PolygonController extends Controller
     }
 
     /**
-     * Resuelve el parish_id final siguiendo esta cadena de prioridad:
-     *   1. Selección manual en el formulario
-     *   2. Datos detectados por el frontend (OSM)
-     *   3. location_data completo con address
-     *   4. Valor previo del modelo (solo en update)
+     * Resuelve el ID final de la Parroquia aplicando una jerarquía de prioridades:
+     * 1. Selección manual directa del usuario en el desplegable.
+     * 2. Datos detectados por geocodificación inversa desde el mapa (OSM).
+     * 3. Metadatos incluidos dentro del JSON de ubicación.
+     * 4. En actualizaciones, conserva el valor previo si no hubo cambios.
      */
     private function resolveParishId(array $validated, ?int $currentParishId): ?int
     {
@@ -632,7 +685,7 @@ class PolygonController extends Controller
             return (int) $validated['parish_id'];
         }
 
-        // 2. Detectado por el frontend
+        // 2. Detección automática por mapa
         if (
             ! empty($validated['detected_parish']) &&
             ! empty($validated['detected_municipality']) &&
@@ -649,7 +702,7 @@ class PolygonController extends Controller
             }
         }
 
-        // 3. Desde location_data OSM
+        // 3. Extracción desde dirección OSM en location_data
         if (! empty($validated['location_data'])) {
             $locationData = json_decode($validated['location_data'], true);
 
@@ -678,13 +731,13 @@ class PolygonController extends Controller
             }
         }
 
-        // 4. Conservar valor previo (update)
+        // 4. Mantener valor preexistente
         return $currentParishId;
     }
 
     /**
-     * Parsea y normaliza el GeoJSON del frontend.
-     * Acepta Feature o Geometry directamente.
+     * Valida y normaliza la cadena GeoJSON asegurando que contenga una geometría Polygon o MultiPolygon válida.
+     * Extrae la propiedad 'geometry' si se recibió un objeto completo tipo 'Feature'.
      *
      * @throws \RuntimeException
      */
@@ -712,7 +765,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Serializa un Polygon para respuestas JSON (modal de detalles).
+     * Prepara el arreglo estructurado del polígono para devolverlo a ventanas modales o visores AJAX.
      */
     private function serializePolygon(Polygon $polygon): array
     {
@@ -751,7 +804,8 @@ class PolygonController extends Controller
     }
 
     /**
-     * Busca sugerencias de ubicación por similitud de nombre.
+     * Genera sugerencias de ubicación jerárquicas buscando coincidencias parciales de nombres
+     * en estados, municipios y parroquias para ayudar al usuario cuando falla la geocodificación automática.
      */
     private function getLocationSuggestions(
         ?string $parishName,
@@ -799,7 +853,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Detecta si la request espera una respuesta JSON.
+     * Evalúa si la petición entrante espera respuesta en formato JSON.
      */
     private function wantsJson(Request $request): bool
     {
@@ -807,7 +861,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Respuesta de error uniforme: JSON o redirect según el tipo de request.
+     * Construye una respuesta de error homogénea según el tipo de cliente (JSON o redirección con flash message).
      */
     private function errorResponse(
         Request $request,
@@ -822,7 +876,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Muestra el formulario de importación de GeoJSON.
+     * Muestra la interfaz para la carga de capas de polígonos mediante archivos cartográficos (Shapefile/GeoJSON).
      */
     public function showImportForm(): View
     {
@@ -833,11 +887,20 @@ class PolygonController extends Controller
     }
 
     // =========================================================================
-    // Importación (archivo GeoJSON y JSON del frontend)
+    // Procesamiento Masivo de Importación por Lotes (Queue Batches)
     // =========================================================================
 
     /**
-     * Importa polígonos desde un JSON enviado por el frontend.
+     * Inicia la importación de polígonos desde una capa vectorial procesada en el cliente web:
+     * 
+     * Arquitectura de colas en lote (Bus Batching):
+     * 1. Valida los atributos de la lista de entidades y el sistema de referencia espacial (SRID).
+     * 2. Inicializa la sesión de seguimiento en la memoria caché con el total de elementos.
+     * 3. Crea una instancia de `ImportPolygonJob` por cada polígono del archivo.
+     * 4. Despacha el lote (`Bus::batch`) permitiendo fallos individuales (`allowFailures`) de modo
+     *    que si un polígono tiene una geometría rota, no interrumpa la importación de las demás parcelas válidas.
+     * 5. Retorna inmediatamente una respuesta HTTP 202 (Accepted) con el UUID del lote
+     *    para que la interfaz inicie el sondeo (polling) de la barra de progreso en tiempo real.
      */
     public function processImport(Request $request): JsonResponse
     {
@@ -861,6 +924,7 @@ class PolygonController extends Controller
         $srid     = (int) $request->input('srid');
         $causerId = auth()->id();
 
+        // Normalizar los elementos de la capa
         $normalized = array_map(
             fn($f) => $this->importService->normalizeFrontendFeature($f),
             $request->input('features')
@@ -868,10 +932,10 @@ class PolygonController extends Controller
 
         $total = count($normalized);
 
-        // Crear el cache entry ANTES de encolar para que el polling lo vea
+        // Inicializar el tracking en caché antes del despacho para que el sondeo del frontend no devuelva 404
         $this->importService->initImportProgress($importId, $total);
 
-        // Un job por feature
+        // Generar un trabajo por cada entidad cartográfica
         $jobs = [];
         foreach ($normalized as $index => $feature) {
             $jobs[] = new ImportPolygonJob(
@@ -885,19 +949,17 @@ class PolygonController extends Controller
             );
         }
 
+        // Ejecutar el procesamiento asíncrono en segundo plano
         Bus::batch($jobs)
             ->name("import:{$importId}")
-            ->allowFailures() // que un polígono malo no cancele el batch
+            ->allowFailures()
             ->then(function () use ($importId) {
-                // Todos los jobs terminaron OK
                 app(\App\Services\PolygonImportService::class)->finalizeImport($importId, 'done');
             })
             ->catch(function () use ($importId) {
-                // Hubo al menos un fallo
                 app(\App\Services\PolygonImportService::class)->finalizeImport($importId, 'done');
             })
             ->finally(function () use ($importId) {
-                // Se ejecuta siempre (éxito o fallo) — idempotente por si acaso
                 app(\App\Services\PolygonImportService::class)->finalizeImport($importId, 'done');
             })
             ->dispatch();
@@ -909,14 +971,9 @@ class PolygonController extends Controller
         ], 202);
     }
 
-
-    // =========================================================================
-    // Helpers de importación (compartidos por import() y processImport())
-    // =========================================================================
-
     /**
-     * Devuelve el estado de progreso de una importación en curso.
-     * Se consulta vía polling desde el widget.
+     * Consulta el estado de avance de una importación por lotes en segundo plano.
+     * Es consultado periódicamente por el componente JavaScript de la barra de progreso.
      */
     public function importProgress(string $importId): JsonResponse
     {
@@ -934,5 +991,4 @@ class PolygonController extends Controller
             'state'   => $state,
         ]);
     }
-
 }

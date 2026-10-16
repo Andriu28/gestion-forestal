@@ -8,17 +8,26 @@ use App\Services\LocationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
+/**
+ * Controlador de Endpoints API para Geocodificación y Ubicaciones
+ * 
+ * Expone servicios REST consumidos por los visores cartográficos (Leaflet / OpenLayers):
+ * 1. `findOrCreate`: Homologa y registra en base de datos la parroquia, municipio y estado enviados desde el cliente.
+ * 2. `processOSM`: Procesa objetos de respuesta crudos de OpenStreetMap Nominatim extrayendo la jerarquía territorial.
+ * 3. `search`: Motor de autocompletado rápido (Autocomplete) que busca simultáneamente en parroquias, municipios y estados.
+ */
 class LocationApiController extends Controller
 {
     /**
-     * API para buscar/crear ubicación desde frontend
+     * Busca o crea la jerarquía territorial completa y retorna los datos estructurados en formato JSON.
+     * Invocado cuando el usuario hace clic en el mapa y se detecta una nueva coordenada.
      */
     public function findOrCreate(Request $request): JsonResponse
     {
         $request->validate([
-            'parish_name' => 'required|string|max:255',
+            'parish_name'       => 'required|string|max:255',
             'municipality_name' => 'required|string|max:255',
-            'state_name' => 'required|string|max:255',
+            'state_name'        => 'required|string|max:255',
         ]);
         
         try {
@@ -30,18 +39,18 @@ class LocationApiController extends Controller
             );
             
             if ($parishId) {
-                // Cargar información completa para mostrar al usuario
+                // Cargar relaciones anidadas para devolver la jerarquía formal completa
                 $parish = \App\Models\Parish::with(['municipality.state'])->find($parishId);
                 
                 return response()->json([
                     'success' => true,
                     'message' => 'Ubicación encontrada/creada exitosamente',
-                    'data' => [
-                        'parish_id' => $parishId,
-                        'parish_name' => $parish->name,
+                    'data'    => [
+                        'parish_id'         => $parishId,
+                        'parish_name'       => $parish->name,
                         'municipality_name' => $parish->municipality->name,
-                        'state_name' => $parish->municipality->state->name,
-                        'is_new' => false, // Podrías agregar lógica para detectar si fue creado nuevo
+                        'state_name'        => $parish->municipality->state->name,
+                        'is_new'            => false,
                     ]
                 ]);
             }
@@ -60,7 +69,8 @@ class LocationApiController extends Controller
     }
     
     /**
-     * API para procesar datos crudos de OpenStreetMap
+     * Analiza el objeto JSON crudo proveniente de la API de OpenStreetMap Nominatim:
+     * Extrae las etiquetas cartográficas, limpia nombres y devuelve la parroquia resuelta.
      */
     public function processOSM(Request $request): JsonResponse
     {
@@ -75,7 +85,7 @@ class LocationApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Datos OSM procesados',
-                'data' => $result
+                'data'    => $result
             ]);
             
         } catch (\Exception $e) {
@@ -87,7 +97,10 @@ class LocationApiController extends Controller
     }
     
     /**
-     * API para buscar ubicaciones existentes (autocomplete)
+     * Endpoint para cajas de texto con autocompletado en vivo (Select2 / Typeahead):
+     * - Se activa con un mínimo de 2 caracteres (`strlen($search) >= 2`).
+     * - Consulta en paralelo hasta 10 parroquias, 5 municipios y 5 estados.
+     * - Devuelve una colección unificada con identificador y etiqueta compuesta ('Texto - Municipio - Estado').
      */
     public function search(Request $request): JsonResponse
     {
@@ -96,44 +109,45 @@ class LocationApiController extends Controller
         $results = [];
         
         if (strlen($search) >= 2) {
-            // Buscar parroquias
+            // 1. Coincidencias en Parroquias
             $parishes = \App\Models\Parish::with(['municipality.state'])
                 ->where('name', 'like', "%{$search}%")
                 ->limit(10)
                 ->get()
                 ->map(function($parish) {
                     return [
-                        'id' => $parish->id,
+                        'id'   => $parish->id,
                         'text' => "{$parish->name} - {$parish->municipality->name} - {$parish->municipality->state->name}",
                         'type' => 'parish'
                     ];
                 });
             
-            // Buscar municipios
+            // 2. Coincidencias en Municipios
             $municipalities = \App\Models\Municipality::with(['state'])
                 ->where('name', 'like', "%{$search}%")
                 ->limit(5)
                 ->get()
                 ->map(function($municipality) {
                     return [
-                        'id' => $municipality->id,
+                        'id'   => $municipality->id,
                         'text' => "{$municipality->name} - {$municipality->state->name}",
                         'type' => 'municipality'
                     ];
                 });
             
-            // Buscar estados
+            // 3. Coincidencias en Estados
             $states = \App\Models\State::where('name', 'like', "%{$search}%")
                 ->limit(5)
                 ->get()
                 ->map(function($state) {
                     return [
-                        'id' => $state->id,
+                        'id'   => $state->id,
                         'text' => $state->name,
                         'type' => 'state'
                     ];
                 });
             
+            // Fusión jerárquica de resultados
             $results = $parishes->merge($municipalities)->merge($states);
         }
         

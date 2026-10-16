@@ -1,15 +1,22 @@
-// polygon-map-utils.js
 /**
- * Utilidades para manejo de mapas y polígonos
+ * SCRIPT CARTOGRÁFICO DE EDICIÓN Y CAPTURA: polygon-map-edit.js
+ * 
+ * Implementación basada en Leaflet y Leaflet.Draw para el formulario de edición y creación de parcelas:
+ * 1. PolygonMapManager: Gestor del visor Leaflet, digitalización vectorial y edición de vértices.
+ * 2. LocationDetector: Cliente HTTP para geocodificación inversa con OSM Nominatim y sincronización con el backend.
+ * 3. UTMCoordinates: Validador y conversor matemático de coordenadas UTM a geográficas WGS84 mediante Proj4js.
+ * 4. UTMModalManager: Controlador de la interfaz modal para la carga manual de vértices por teclado.
  */
 
-// Configuración de capas base
+// =========================================================================
+// 1. Configuración de Teselas y Capas Base (TileLayers)
+// =========================================================================
 const BaseLayers = {
     osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+        attribution: '© Colaboradores de OpenStreetMap'
     }),
     satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '© Esri'
+        attribution: '© Esri World Imagery'
     }),
     maptiler_satellite: L.tileLayer('https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key={key}', {
         attribution: '© MapTiler',
@@ -19,22 +26,25 @@ const BaseLayers = {
         attribution: '© OpenTopoMap'
     }),
     dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© CARTO'
+        attribution: '© CARTO Dark Matter'
     })
 };
 
-// Configuración de dibujo
+// =========================================================================
+// 2. Parámetros de la Herramienta de Trazo Vectorial (Leaflet.Draw)
+// =========================================================================
 const DrawConfig = {
     polygon: {
-        allowIntersection: false,
-        showArea: true,
+        allowIntersection: false, // Regla topológica: prohíbe auto-intersecciones de bordes
+        showArea: true,           // Exhibir cálculo dinámico de área en pantalla
         shapeOptions: {
-            color: '#2b6cb0',
+            color: '#2b6cb0',     // Color perimetral azul oscuro
             fillColor: '#2b6cb0',
             fillOpacity: 0.25,
             weight: 3
         }
     },
+    // Desactivar figuras no admitidas para parcelas agrarias
     polyline: false,
     rectangle: false,
     circle: false,
@@ -43,28 +53,34 @@ const DrawConfig = {
 };
 
 /**
- * Clase para manejar mapas de polígonos
+ * CLASE: PolygonMapManager
+ * Controla la instancia de Leaflet, la digitalización de nuevos polígonos
+ * y la manipulación de vértices existentes.
  */
 class PolygonMapManager {
     constructor(mapId, options = {}) {
+        // Inicializar mapa centrado en Venezuela [8.0° N, -66.0° O] con zoom general de 6
         this.map = L.map(mapId).setView([8.0, -66.0], 6);
-        this.drawnItems = new L.FeatureGroup().addTo(this.map);
+        this.drawnItems = new L.FeatureGroup().addTo(this.map); // Capa que aloja los polígonos dibujados
         this.currentPolygonLayer = null;
-        this.geometryInput = options.geometryInput || null;
-        this.coordsDisplay = options.coordsDisplay || null;
-        this.detectBtn = options.detectBtn || null;
-        this.areaInput = options.areaInput || null;
+        this.geometryInput = options.geometryInput || null;     // Input oculto donde se guarda el GeoJSON
+        this.coordsDisplay = options.coordsDisplay || null;     // Elemento DOM para feedback al usuario
+        this.detectBtn = options.detectBtn || null;             // Botón de detección territorial
+        this.areaInput = options.areaInput || null;             // Campo de entrada de superficie en hectáreas
         
-        // Inicializar capa base
+        // Agregar mapa base callejero inicial
         BaseLayers.osm.addTo(this.map);
         
-        // Configurar controles de dibujo
+        // Configurar barra de herramientas Leaflet.Draw
         this.setupDrawingControls();
         
-        // Configurar eventos del mapa
+        // Registrar escuchadores de eventos espaciales
         this.setupMapEvents();
     }
     
+    /**
+     * Instala los botones de dibujar polígono y modificar vértices en el mapa.
+     */
     setupDrawingControls() {
         this.drawControl = new L.Control.Draw({
             draw: DrawConfig,
@@ -81,17 +97,25 @@ class PolygonMapManager {
         this.map.addControl(this.drawControl);
     }
     
+    /**
+     * Vincula los eventos de creación, edición y movimiento del cursor.
+     */
     setupMapEvents() {
-        // Evento de creación de polígono
+        // Disparado al cerrar el trazo de un polígono nuevo
         this.map.on(L.Draw.Event.CREATED, (e) => this.onPolygonCreated(e));
         
-        // Evento de edición de polígono
+        // Disparado al mover vértices o transformar el polígono existente
         this.map.on(L.Draw.Event.EDITED, (e) => this.onPolygonEdited(e));
         
-        // Evento de movimiento del mouse
+        // Disparado con el movimiento del ratón para reportar latitud y longitud
         this.map.on('mousemove', (e) => this.onMouseMove(e));
     }
     
+    /**
+     * Manejador de evento al finalizar un nuevo polígono:
+     * - Reemplaza capas previas para mantener una sola parcela en edición.
+     * - Actualiza campos ocultos de geometría y cálculo de hectáreas.
+     */
     onPolygonCreated(e) {
         const layer = e.layer;
         this.drawnItems.clearLayers();
@@ -103,6 +127,10 @@ class PolygonMapManager {
         this.showMessage('Polígono dibujado', 'success');
     }
     
+    /**
+     * Manejador de evento al modificar o estirar vértices de la parcela:
+     * Recalcula inmediatamente el área y el centroide.
+     */
     onPolygonEdited(e) {
         const layers = e.layers;
         layers.eachLayer((layer) => {
@@ -113,29 +141,36 @@ class PolygonMapManager {
         this.showMessage('Polígono editado', 'success');
     }
     
+    /**
+     * Muestra las coordenadas del cursor si no hay un centroide fijado.
+     */
     onMouseMove(e) {
         if (!this.geometryInput?.value) {
             this.updateCoordsDisplay(e.latlng.lat, e.latlng.lng);
         }
     }
     
+    /**
+     * Sincroniza la capa gráfica de Leaflet con los campos del formulario HTML:
+     * 1. Convierte la capa a objeto GeoJSON mediante `layer.toGeoJSON()`.
+     * 2. Escribe la geometría serializada en el input `#geometry`.
+     * 3. Recalcula el área en hectáreas y la estampa en `#area_ha`.
+     * 4. Habilita el botón de autodetección territorial.
+     * 5. Calcula el centroide y actualiza el indicador visual de coordenadas.
+     */
     updatePolygonData(layer) {
         const feature = layer.toGeoJSON();
         
-        // Actualizar campo de geometría
         if (this.geometryInput) {
             this.geometryInput.value = JSON.stringify(feature);
         }
         
-        // Actualizar área
         this.updateArea(feature);
         
-        // Habilitar detección
         if (this.detectBtn) {
             this.detectBtn.disabled = false;
         }
         
-        // Actualizar coordenadas del centroide
         const centroid = this.calculateCentroid(feature);
         if (centroid && this.coordsDisplay) {
             this.updateCoordsDisplay(centroid.lat, centroid.lng);
@@ -144,6 +179,13 @@ class PolygonMapManager {
         return feature;
     }
     
+    /**
+     * Calcula el centroide baricéntrico (punto medio geométrico) del polígono:
+     * Promedia la sumatoria de latitudes y longitudes de todos los vértices del anillo exterior.
+     * 
+     * @param object feature Entidad GeoJSON conteniendo coordinates
+     * @return object|null  { lat, lng }
+     */
     calculateCentroid(feature) {
         try {
             const coords = feature.geometry.coordinates;
@@ -156,8 +198,8 @@ class PolygonMapManager {
             
             let latSum = 0, lngSum = 0;
             ring.forEach(pt => {
-                lngSum += pt[0];
-                latSum += pt[1];
+                lngSum += pt[0]; // Coordenada X (Longitud)
+                latSum += pt[1]; // Coordenada Y (Latitud)
             });
             
             return {
@@ -170,6 +212,22 @@ class PolygonMapManager {
         }
     }
     
+    /**
+     * Algoritmo de cálculo de superficie mediante la Fórmula de Gauss / Shoelace con corrección de escala:
+     * 
+     * Procedimiento:
+     * 1. Aplica el determinante de Gauss sobre los vértices en grados decimales:
+     *    `área_grados = 0.5 * sum(xi * yj - xj * yi)`
+     * 2. Calcula la latitud promedio (`avgLat`) del predio.
+     * 3. Aplica los factores de conversión de grados a kilómetros considerando la convergencia de meridianos:
+     *    - 1 grado de latitud = aprox. 111.32 km.
+     *    - 1 grado de longitud = 111.32 * cos(latitud_promedio_en_radianes) km.
+     * 4. Multiplica por los factores para obtener kilómetros cuadrados (km²).
+     * 5. Convierte km² a hectáreas (1 km² = 100 hectáreas).
+     * 
+     * @param object feature Objeto GeoJSON
+     * @return number Superficie en hectáreas redondeada a 2 decimales
+     */
     calculateArea(feature) {
         if (!feature || !feature.geometry) return 0;
         
@@ -179,10 +237,11 @@ class PolygonMapManager {
         let area = 0;
         const n = coords.length;
         
+        // Sumatoria Shoelace
         for (let i = 0; i < n; i++) {
             const j = (i + 1) % n;
-            const xi = coords[i][1]; // latitud
-            const yi = coords[i][0]; // longitud
+            const xi = coords[i][1]; // Latitud
+            const yi = coords[i][0]; // Longitud
             const xj = coords[j][1];
             const yj = coords[j][0];
             
@@ -191,6 +250,7 @@ class PolygonMapManager {
         
         area = Math.abs(area) / 2;
         
+        // Factores de corrección geodésica según la latitud media
         const avgLat = coords.reduce((sum, coord) => sum + coord[1], 0) / n;
         const kmPerDegreeLat = 111.32;
         const kmPerDegreeLon = 111.32 * Math.cos(avgLat * Math.PI / 180);
@@ -201,6 +261,9 @@ class PolygonMapManager {
         return Math.round(areaHa * 100) / 100;
     }
     
+    /**
+     * Escribe el valor calculado de superficie en la caja de texto `#area_ha`.
+     */
     updateArea(feature) {
         if (!this.areaInput) return;
         
@@ -212,22 +275,26 @@ class PolygonMapManager {
         }
     }
     
+    /**
+     * Actualiza la etiqueta de coordenadas del centroide o cursor en pantalla.
+     */
     updateCoordsDisplay(lat, lng) {
         if (this.coordsDisplay) {
             this.coordsDisplay.textContent = `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
         }
     }
     
+    /**
+     * Muestra notificaciones temporales en el panel de coordenadas con código de color.
+     */
     showMessage(text, type = 'info') {
         if (!this.coordsDisplay) return;
         
         const el = this.coordsDisplay;
         el.textContent = text;
         
-        // Reset classes
         el.classList.remove('text-red-600', 'text-green-700', 'text-yellow-600');
         
-        // Add appropriate class
         switch(type) {
             case 'error':
                 el.classList.add('text-red-600');
@@ -240,7 +307,6 @@ class PolygonMapManager {
                 break;
         }
         
-        // Auto-clear message
         setTimeout(() => {
             if (!this.geometryInput?.value) {
                 this.updateCoordsDisplay(0, 0);
@@ -249,6 +315,9 @@ class PolygonMapManager {
         }, 3000);
     }
     
+    /**
+     * Restablece el mapa eliminando capas vectoriales y borrando los campos de formulario.
+     */
     clearMap() {
         this.drawnItems.clearLayers();
         
@@ -270,6 +339,12 @@ class PolygonMapManager {
         this.showMessage('Mapa limpiado', 'info');
     }
     
+    /**
+     * Carga y dibuja en pantalla una geometría GeoJSON preexistente (utilizado en la vista de edición):
+     * - Añade la capa al grupo de entidades editables (`drawnItems`).
+     * - Centra la cámara automáticamente sobre los límites de la parcela (`fitBounds`).
+     * - Calcula las hectáreas y el centroide inicial.
+     */
     loadExistingPolygon(geoJSON) {
         if (!geoJSON) return false;
         
@@ -283,10 +358,10 @@ class PolygonMapManager {
                 }
             }).addTo(this.drawnItems);
             
+            // Ajustar encuadre cartográfico al tamaño del polígono
             this.map.fitBounds(geoJsonLayer.getBounds());
             this.currentPolygonLayer = geoJsonLayer;
             
-            const feature = geoJsonLayer.toGeoJSON();
             this.updatePolygonData(geoJsonLayer);
             
             return true;
@@ -297,15 +372,16 @@ class PolygonMapManager {
         }
     }
     
+    /**
+     * Cambia la capa base activa del mapa Leaflet (satélite, OSM, etc.).
+     */
     changeBaseLayer(layerKey) {
-        // Remover todas las capas base
         Object.values(BaseLayers).forEach(layer => {
             if (this.map.hasLayer(layer)) {
                 this.map.removeLayer(layer);
             }
         });
         
-        // Añadir nueva capa
         if (BaseLayers[layerKey]) {
             BaseLayers[layerKey].addTo(this.map);
             return true;
@@ -316,7 +392,9 @@ class PolygonMapManager {
 }
 
 /**
- * Utilidades para detección de ubicación
+ * CLASE: LocationDetector
+ * Administra la geocodificación inversa mediante peticiones HTTP a OpenStreetMap Nominatim
+ * y la posterior homologación con las tablas de parroquias en el servidor Laravel.
  */
 class LocationDetector {
     constructor(options = {}) {
@@ -324,6 +402,10 @@ class LocationDetector {
         this.findParishUrl = options.findParishUrl || '';
     }
     
+    /**
+     * Consulta al API pública de OpenStreetMap Nominatim por coordenadas geográficas:
+     * Devuelve el desglose administrativo (país, estado, municipio, parroquia, localidad).
+     */
     async detectLocation(lat, lng) {
         try {
             const response = await fetch(
@@ -347,6 +429,9 @@ class LocationDetector {
         }
     }
     
+    /**
+     * Elimina prefijos comunes de la cadena geográfica devuelta por OSM.
+     */
     cleanLocationString(str) {
         if (!str) return '';
         return str.toString()
@@ -356,6 +441,10 @@ class LocationDetector {
             .trim();
     }
     
+    /**
+     * Envía una petición POST al endpoint de Laravel (`polygons.find-parish`)
+     * para buscar o crear la parroquia en la base de datos según la jerarquía territorial.
+     */
     async findAndAssignParish(parishName, municipalityName, stateName) {
         try {
             const response = await fetch(this.findParishUrl, {
@@ -380,9 +469,17 @@ class LocationDetector {
 }
 
 /**
- * Utilidades para coordenadas UTM
+ * CLASE: UTMCoordinates
+ * Utilidades matemáticas para la validación y transformación de coordenadas métricas UTM.
  */
 class UTMCoordinates {
+    /**
+     * Valida que los parámetros UTM cumplan con las restricciones del sistema Universal Transversa de Mercator:
+     * - Zona entre 1 y 60.
+     * - Hemisferio N o S.
+     * - Coordenada Este (Easting) entre 0m y 1,000,000m.
+     * - Coordenada Norte (Northing) entre 0m y 10,000,000m.
+     */
     static validate(zone, hemisphere, easting, northing) {
         if (zone < 1 || zone > 60) {
             return 'Zona UTM debe estar entre 1 y 60';
@@ -409,6 +506,9 @@ class UTMCoordinates {
         return null;
     }
     
+    /**
+     * Registra dinámicamente la definición PROJ4 para la zona y hemisferio indicados.
+     */
     static setupProjection(zone, hemisphere) {
         const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
         
@@ -420,6 +520,10 @@ class UTMCoordinates {
         return epsgCode;
     }
     
+    /**
+     * Convierte una lista de vértices UTM `[Easting, Northing, Zone, Hemisphere]`
+     * a pares de coordenadas geográficas WGS84 `[Longitud, Latitud]` mediante Proj4.
+     */
     static convertToWGS84(utmCoords) {
         return utmCoords.map(coord => {
             const [easting, northing, zone, hemisphere] = coord;
@@ -429,13 +533,15 @@ class UTMCoordinates {
             const utm = proj4(epsgCode);
             const point = proj4(utm, wgs84, [easting, northing]);
             
-            return [point[0], point[1]]; // [lng, lat]
+            return [point[0], point[1]]; // [longitud, latitud]
         });
     }
 }
 
 /**
- * Clase para manejar el modal de coordenadas manuales
+ * CLASE: UTMModalManager
+ * Controla el ciclo de apertura, cierre y captura de vértices en la ventana modal
+ * de coordenadas manuales.
  */
 class UTMModalManager {
     constructor(options = {}) {
@@ -495,7 +601,9 @@ class UTMModalManager {
     }
 }
 
-// Exportar clases y utilidades
+// =========================================================================
+// Exportación al Ámbito Global del Navegador
+// =========================================================================
 window.PolygonMapManager = PolygonMapManager;
 window.LocationDetector = LocationDetector;
 window.UTMCoordinates = UTMCoordinates;

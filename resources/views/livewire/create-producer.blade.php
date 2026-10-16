@@ -8,8 +8,9 @@
                 <x-input-label for="name" :value="__('Nombre del productor *')" />
                 <x-text-input id="name" class="block mt-1 w-full" type="text"
                     wire:model.live.debounce.800ms="name"
-                    autofocus
-                    oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
+                    :uppercase="true"
+                    :letters-only="true"
+                    autofocus />
                 <x-input-error :messages="$errors->first('name')" class="mt-2" />
             </div>
 
@@ -18,7 +19,8 @@
                 <x-input-label for="lastname" :value="__('Apellido *')" />
                 <x-text-input id="lastname" class="block mt-1 w-full" type="text"
                     wire:model.live.debounce.800ms="lastname"
-                    oninput="this.value = this.value.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ]/g, ''); if(this.value.length === 1) this.value = this.value.toUpperCase();" />
+                    :uppercase="true"
+                    :letters-only="true" />
                 <x-input-error :messages="$errors->first('lastname')" class="mt-2" />
             </div>
 
@@ -48,8 +50,8 @@
                         inputmode="numeric"
                         wire:model.live.debounce.600ms="cedula"
                         maxlength="10"
-                        placeholder="Ej: 12345678"
-                        oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10);" />
+                        :digits-only="true"
+                        placeholder="Ej: 12345678" />
                     <span wire:loading wire:target="cedula"
                         class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
                         ⏳
@@ -81,12 +83,11 @@
 
         <div class="mt-4">
             <x-input-label for="description" :value="__('Descripción *')" />
-            <textarea id="description"
+            <x-textarea-input id="description"
                 wire:model.live.debounce.800ms="description"
+                :uppercase="true"
                 rows="3"
-                class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/50 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70"
-                placeholder="Descripción del productor..."
-                oninput="if(this.value.length === 1) this.value = this.value.toUpperCase();"></textarea>
+                placeholder="Descripción del productor..." />
             <x-input-error :messages="$errors->first('description')" class="mt-2" />
         </div>
 

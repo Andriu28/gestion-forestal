@@ -185,6 +185,6 @@
     <x-background-progress-widget />
 </body>
 
-<!-- Script que contiene el js para las animaciones del menu de perfin de usuario -->
+<!-- Script que contiene el js para las animaciones del menu de perfil de usuario -->
 <script src="{{ asset('js/menuUser.js') }}"></script>
 </html>

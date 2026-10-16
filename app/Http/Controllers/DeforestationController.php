@@ -18,9 +18,22 @@ use Spatie\Activitylog\Models\Activity;
 use App\Services\DeforestationAnalysisService;
 use App\Jobs\AnalyzeDeforestationJob;
 
+/**
+ * Controlador de Análisis y Reportes de Deforestación Satelital
+ * 
+ * Gestiona el flujo analítico de pérdida de cobertura boscosa mediante satélites (Global Forest Watch):
+ * 1. Recepción y conversión de formatos geométricos espaciales (GeoJSON y WKB Hexadecimal).
+ * 2. Ejecución asíncrona de análisis por lotes en segundo plano con colas (Jobs).
+ * 3. Consultas en tiempo real contra los sensores satelitales de UMD Hansen / GFW.
+ * 4. Presentación de resultados individuales y comparativas multi-predio.
+ * 5. Generación de informes técnicos de deforestación exportables en formato PDF.
+ */
 class DeforestationController extends Controller
 {
+    /** Servicio de conexión con la API satelital de Global Forest Watch. */
     protected $gfwService;
+
+    /** Servicio de renderizado y configuración de documentos PDF. */
     protected $pdfService;
     
     public function __construct(GFWService $gfwService, PdfService $pdfService)
@@ -30,7 +43,8 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Muestra el formulario para crear nuevo análisis
+     * Muestra la interfaz para trazar o subir parcelas y configurar los parámetros del análisis
+     * (rango de años satelitales, productor, y si los resultados se guardarán permanentemente en inventario).
      */
     public function create(): View
     {
@@ -46,12 +60,15 @@ class DeforestationController extends Controller
         return view('deforestation.create', compact('saveByDefault', 'producers'));
     }
 
+    /**
+     * Reconstruye y visualiza un análisis efímero o simulación previa a partir de los metadatos
+     * guardados en el registro de auditoría de actividad (Spatie Activitylog).
+     */
     public function viewUnsaved($activityId)
     {
         $activity = Activity::findOrFail($activityId);
-        $data = $activity->properties;
+        $data     = $activity->properties;
 
-        // Construir $dataToPass a partir de $data
         $dataToPass = [
             'polygon_name'     => $data['polygon_name'] ?? 'Área sin nombre',
             'start_year'       => $data['start_year'],
@@ -64,90 +81,108 @@ class DeforestationController extends Controller
         return view('deforestation.results-unsaved', compact('dataToPass'));
     }
     
-        public function analyze(Request $request)
-        {
-            Log::info('=== INICIO DE ANÁLISIS (async) ===');
+    /**
+     * Punto de entrada principal para el análisis satelital asíncrono:
+     * 
+     * Pipeline de procesamiento:
+     * 1. Detección de formato geométrico: si la geometría viene en formato binario WKB (hexadecimal de PostGIS),
+     *    la convierte al vuelo a GeoJSON mediante la función espacial `ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex')))`.
+     * 2. Valida los rangos de años permitidos en la configuración y las reglas de obligatoriedad.
+     * 3. Descompone el GeoJSON en entidades individuales (Features) si se envió una FeatureCollection.
+     * 4. Inicializa el seguimiento en la memoria caché mediante `DeforestationAnalysisService::initProgress`.
+     * 5. Encola un `AnalyzeDeforestationJob` por cada polígono dentro de un lote (`Bus::batch`).
+     * 6. Devuelve un código HTTP 202 con el UUID del análisis para que el cliente inicie el polling.
+     */
+    public function analyze(Request $request)
+    {
+        Log::info('=== INICIO DE ANÁLISIS (async) ===');
 
-            $geometryString = $request->input('geometry');
+        $geometryString = $request->input('geometry');
 
-            if (preg_match('/^[0-9A-Fa-f]+$/', $geometryString)) {
-                Log::info('Geometría recibida como WKB hex, convirtiendo a GeoJSON');
-                $geoJsonRes = DB::selectOne(
-                    "SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson",
-                    [$geometryString]
-                );
-                $geometryString = $geoJsonRes->geojson;
-            }
-
-            $saveAnalysis = $request->boolean('save_analysis');
-
-            $this->validateAnalyzeRequest($request, $saveAnalysis);
-
-            $globalParams = [
-                'start_year'    => (int) $request->input('start_year'),
-                'end_year'      => (int) $request->input('end_year'),
-                'save_analysis' => $saveAnalysis,
-                'polygon_name'  => $request->input('name', 'Área de Estudio'),
-                'description'   => $request->input('description', ''),
-                'producer_id'   => $request->input('producer_id'),
-            ];
-
-            session(['save_analysis_by_default' => $saveAnalysis]);
-
-            $geojson = json_decode($geometryString, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
-            }
-
-            $features = $this->buildFeaturesFromGeojson($geojson);
-            if (empty($features)) {
-                return back()->withErrors([
-                    'geometry' => 'Tipo de geometría no soportado: ' . ($geojson['type'] ?? 'null'),
-                ]);
-            }
-
-            /** @var DeforestationAnalysisService $service */
-            $service    = app(DeforestationAnalysisService::class);
-            $analysisId = (string) \Illuminate\Support\Str::uuid();
-            $total      = count($features);
-
-            $service->initProgress($analysisId, $total, [
-                'has_save'      => $saveAnalysis,
-                'feature_count' => $total,
-            ]);
-
-            $causerId = auth()->id();
-            $jobs     = [];
-
-            foreach ($features as $index => $feature) {
-                $jobs[] = new \App\Jobs\AnalyzeDeforestationJob(
-                    feature:       $feature,
-                    index:         $index,
-                    globalParams:  $globalParams,
-                    analysisId:    $analysisId,
-                    totalFeatures: $total,
-                    causerId:      $causerId,
-                );
-            }
-
-            \Illuminate\Support\Facades\Bus::batch($jobs)
-                ->name("analysis:{$analysisId}")
-                ->allowFailures()
-                ->finally(function () use ($analysisId) {
-                    app(DeforestationAnalysisService::class)->finalizeProgress($analysisId);
-                })
-                ->dispatch();
-
-            return response()->json([
-                'success'     => true,
-                'analysis_id' => $analysisId,
-                'total'       => $total,
-                'has_save'    => $saveAnalysis,
-            ], 202);
+        // Conversión transparente de binario Well-Known Binary (WKB) a estándar GeoJSON
+        if (preg_match('/^[0-9A-Fa-f]+$/', $geometryString)) {
+            Log::info('Geometría recibida como WKB hex, convirtiendo a GeoJSON');
+            $geoJsonRes = DB::selectOne(
+                "SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson",
+                [$geometryString]
+            );
+            $geometryString = $geoJsonRes->geojson;
         }
 
-        /**
-     * Normaliza el GeoJSON de entrada a un array de features homogéneo.
+        $saveAnalysis = $request->boolean('save_analysis');
+
+        $this->validateAnalyzeRequest($request, $saveAnalysis);
+
+        $globalParams = [
+            'start_year'    => (int) $request->input('start_year'),
+            'end_year'      => (int) $request->input('end_year'),
+            'save_analysis' => $saveAnalysis,
+            'polygon_name'  => $request->input('name', 'Área de Estudio'),
+            'description'   => $request->input('description', ''),
+            'producer_id'   => $request->input('producer_id'),
+        ];
+
+        session(['save_analysis_by_default' => $saveAnalysis]);
+
+        $geojson = json_decode($geometryString, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return back()->withErrors(['geometry' => 'Formato GeoJSON inválido']);
+        }
+
+        // Descomponer en lista plana de geometrías
+        $features = $this->buildFeaturesFromGeojson($geojson);
+        if (empty($features)) {
+            return back()->withErrors([
+                'geometry' => 'Tipo de geometría no soportado: ' . ($geojson['type'] ?? 'null'),
+            ]);
+        }
+
+        /** @var DeforestationAnalysisService $service */
+        $service    = app(DeforestationAnalysisService::class);
+        $analysisId = (string) \Illuminate\Support\Str::uuid();
+        $total      = count($features);
+
+        // Inicializar el monitor de progreso en caché
+        $service->initProgress($analysisId, $total, [
+            'has_save'      => $saveAnalysis,
+            'feature_count' => $total,
+        ]);
+
+        $causerId = auth()->id();
+        $jobs     = [];
+
+        // Generar un trabajo por cada parcela a evaluar contra los satélites
+        foreach ($features as $index => $feature) {
+            $jobs[] = new \App\Jobs\AnalyzeDeforestationJob(
+                feature:       $feature,
+                index:         $index,
+                globalParams:  $globalParams,
+                analysisId:    $analysisId,
+                totalFeatures: $total,
+                causerId:      $causerId,
+            );
+        }
+
+        // Despachar el lote a la cola con tolerancia a fallos parciales
+        \Illuminate\Support\Facades\Bus::batch($jobs)
+            ->name("analysis:{$analysisId}")
+            ->allowFailures()
+            ->finally(function () use ($analysisId) {
+                app(DeforestationAnalysisService::class)->finalizeProgress($analysisId);
+            })
+            ->dispatch();
+
+        return response()->json([
+            'success'     => true,
+            'analysis_id' => $analysisId,
+            'total'       => $total,
+            'has_save'    => $saveAnalysis,
+        ], 202);
+    }
+
+    /**
+     * Convierte cualquier estructura GeoJSON admitida (FeatureCollection, Feature simple o Geometría directa)
+     * en un arreglo estructurado uniforme de Features.
      */
     private function buildFeaturesFromGeojson(array $geojson): array
     {
@@ -170,7 +205,7 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Endpoint de polling para el widget BackgroundProgress.
+     * Endpoint consultado por AJAX para conocer el estado y porcentaje de la barra de progreso en vivo.
      */
     public function analysisProgress(string $analysisId): JsonResponse
     {
@@ -190,7 +225,8 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Renderiza results o multi-results desde el cache (para análisis sin guardar).
+     * Muestra la pantalla de resultados para análisis efímeros o no persistidos,
+     * recuperando la información directamente desde la caché según el UUID de sesión.
      */
     public function viewAsync(string $analysisId)
     {
@@ -209,6 +245,7 @@ class DeforestationController extends Controller
                 ->withErrors(['error' => 'No se encontraron resultados para este análisis.']);
         }
 
+        // Si fue una sola parcela, ir a la vista individual; si fueron varias, a la comparativa
         if (count($results) === 1) {
             $dataToPass = $results[0];
             return view('deforestation.results', compact('dataToPass'));
@@ -219,35 +256,34 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Procesa un único polígono (Feature GeoJSON) y devuelve sus datos.
+     * Procesa un único polígono de forma sincrónica:
+     * Comprueba si la forma ya existe con `ST_Equals`, calcula su área geodésica si falta,
+     * y obtiene las alertas anuales contra GFW.
      */
     private function processSinglePolygon(array $feature, array $globalParams, bool $skipActivity = false): array
     {
         $geometryGeoJson = $feature['geometry'];
-        $properties = $feature['properties'] ?? [];
+        $properties      = $feature['properties'] ?? [];
 
-        // Datos del polígono desde propiedades
-        $externalId = $properties['id'] ?? null;
+        $externalId    = $properties['id'] ?? null;
         $productorName = $properties['Productor'] ?? $properties['productor'] ?? 'Sin productor';
         $areaFromProps = $properties['Area_Ha'] ?? $properties['area'] ?? 0;
 
-        // Buscar productor en BD por nombre
-        $producer = Producer::where('name', $productorName)->first();
-        
-        $producerId = $producer ? $producer->id : $globalParams['producer_id']; // Usar el global si no se encontró
+        $producer   = Producer::where('name', $productorName)->first();
+        $producerId = $producer ? $producer->id : $globalParams['producer_id'];
 
         $geometryString = json_encode($geometryGeoJson);
 
-        // Buscar si ya existe un polígono con esta geometría
+        // Búsqueda espacial de polígono preexistente idéntico
         $existingPolygon = DB::table('polygons')
             ->select('id', 'area_ha', 'name', 'description')
             ->whereRaw("ST_Equals(geometry, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326))", [$geometryString])
             ->first();
 
         $polygonId = $existingPolygon ? $existingPolygon->id : null;
-        $areaHa = $areaFromProps > 0 ? $areaFromProps : ($existingPolygon ? $existingPolygon->area_ha : 0);
+        $areaHa    = $areaFromProps > 0 ? $areaFromProps : ($existingPolygon ? $existingPolygon->area_ha : 0);
 
-        // Calcular área si no tenemos
+        // Calcular área física en PostGIS sobre el esferoide si no vino en propiedades
         if ($areaHa <= 0 && $geometryString) {
             $areaCalculated = DB::selectOne("
                 SELECT ST_Area(ST_SetSRID(ST_GeomFromGeoJSON(?), 4326)::geography) / 10000 as area
@@ -258,15 +294,9 @@ class DeforestationController extends Controller
         $startYear = $globalParams['start_year'];
         $endYear   = $globalParams['end_year'];
 
-        // Delegamos el análisis al modelo cuando el polígono ya existe:
-        // lee años persistidos, consulta GFW solo por los faltantes y, si
-        // save_analysis está activo, persiste los nuevos.
-        // Para polígonos nuevos, consultamos GFW directamente (sin persistir);
-        // la persistencia se hace después al crear el polígono.
         if ($polygonId) {
             $polygon = Polygon::findOrFail($polygonId);
 
-            // Asegurar que el área en BD coincide con la que vamos a usar
             if ((float) $polygon->area_ha !== (float) $areaHa) {
                 $polygon->updateQuietly(['area_ha' => $areaHa]);
                 $polygon->refresh();
@@ -278,8 +308,6 @@ class DeforestationController extends Controller
                 $globalParams['save_analysis']
             );
         } else {
-            // Instancia "en memoria" para reutilizar Polygon::buildTotalLossStats()
-            // sin necesidad de persistir. Solo necesita el área para calcular %.
             $polygon = new Polygon(['area_ha' => $areaHa]);
 
             $yearlyResults = $this->gfwService->getYearlyStatsForRange(
@@ -289,10 +317,8 @@ class DeforestationController extends Controller
             ksort($yearlyResults);
         }
 
-        // Calcular pérdida total (método del modelo, no del controller)
         $totalLossResults = $polygon->buildTotalLossStats($yearlyResults, $startYear, $endYear);
 
-        // Preparar datos para la vista / guardado
         $dataToPass = [
             'polygon_id'       => $polygonId,
             'producer_id'      => $producerId,
@@ -313,7 +339,6 @@ class DeforestationController extends Controller
             'productor_name'   => $productorName,
         ];
 
-        // Guardar si se solicitó
         if ($globalParams['save_analysis']) {
             $this->saveSinglePolygonData($dataToPass, $polygonId, $skipActivity);
         }
@@ -321,6 +346,9 @@ class DeforestationController extends Controller
         return $dataToPass;
     }
 
+    /**
+     * Guarda dentro de una transacción el polígono y sus registros de deforestación anuales.
+     */
     private function saveSinglePolygonData(array &$dataToPass, $existingId, bool $skipActivity = false)
     {
         try {
@@ -328,7 +356,6 @@ class DeforestationController extends Controller
                 $polygon = null;
 
                 if ($existingId) {
-                    // Actualizar polígono existente (SIN LOG)
                     $polygon = Polygon::withTrashed()->findOrFail($existingId);
                     $polygon->updateQuietly([
                         'name'        => $dataToPass['polygon_name'],
@@ -337,9 +364,7 @@ class DeforestationController extends Controller
                         'area_ha'     => $dataToPass['polygon_area_ha'],
                     ]);
                 } else {
-                    // Crear nuevo polígono (SIN LOG)
                     $geoJson = $dataToPass['original_geojson'];
-                    /* dd($dataToPass['polygon_name']); */
                     $polygon = Polygon::createWithGeometry(
                         [
                             'name'          => $dataToPass['polygon_name'],
@@ -352,21 +377,17 @@ class DeforestationController extends Controller
                                 'detected_municipality' => null,
                                 'detected_state'        => null,
                                 'created_info' => [
-                                    'source' => 'deforestation_analysis',
+                                    'source'     => 'deforestation_analysis',
                                     'created_at' => now()->toISOString(),
                                 ],
                             ],
                         ],
                         $geoJson,
-                        4326,   // SRID correcto (WGS84)
-                        false   // Desactivar log
+                        4326,
+                        false
                     );
                 }
 
-                // Guardar/actualizar registros de deforestación (SIN LOG)
-                                // Si el polígono ya existía, Polygon::analyzeDeforestationFromGFW()
-                // ya persistió los años y refrescó el flag.
-                // Si es nuevo, persistimos ahora con los datos ya consultados.
                 if (!$existingId) {
                     $polygon->persistYearlyResultsFromBreakdown(
                         $dataToPass['total_loss']['yearlyBreakdown']
@@ -375,13 +396,13 @@ class DeforestationController extends Controller
 
                 $dataToPass['polygon_id'] = $polygon->id;
 
-                    if (!$skipActivity) {
+                if (!$skipActivity) {
                     activity()
                         ->causedBy(auth()->user())
                         ->performedOn($polygon)
                         ->withProperties([
-                            'start_year'      => $dataToPass['start_year'],
-                            'end_year'        => $dataToPass['end_year'],
+                            'start_year'       => $dataToPass['start_year'],
+                            'end_year'         => $dataToPass['end_year'],
                             'total_deforested' => $dataToPass['total_loss']['totalDeforestedArea'],
                             'total_percentage' => $dataToPass['total_loss']['totalPercentage'],
                             'polygon_updated'  => $existingId !== null,
@@ -390,19 +411,19 @@ class DeforestationController extends Controller
                         ->event('analyzed')
                         ->log("Poligono '{$polygon->name}' analizado");
                 }
-                
             });
             session()->flash('save_success', 'Análisis guardado correctamente.');
         } catch (\Exception $e) {
             Log::error('Error guardando polígono: ' . $e->getMessage());
             $dataToPass['save_error'] = 'Error al guardar: ' . $e->getMessage();
         }
-        
     }
-    
 
     /**
-     * Valida la petición del análisis de deforestación (con soporte para múltiples polígonos)
+     * Valida los parámetros del formulario de análisis asegurando coherencia temporal y espacial:
+     * - Rango de años dentro de los límites de datos satelitales disponibles.
+     * - Geometría obligatoria.
+     * - Superficie mínima mayor a 0 ha.
      */
     private function validateAnalyzeRequest(Request $request, bool $saveAnalysis)
     {
@@ -419,11 +440,10 @@ class DeforestationController extends Controller
         ];
 
         if ($saveAnalysis) {
-            // Verificar si es una FeatureCollection (múltiples polígonos)
             $geojson = json_decode($request->input('geometry'), true);
             $isMulti = ($geojson['type'] ?? '') === 'FeatureCollection';
             if (!$isMulti) {
-                $rules['name'] = 'required|string|min:3|max:255';
+                $rules['name']        = 'required|string|min:3|max:255';
                 $rules['producer_id'] = 'required|integer|exists:producers,id';
             }
         } else {
@@ -431,20 +451,21 @@ class DeforestationController extends Controller
         }
 
         $messages = [
-            'name.required'      => 'El nombre del área es obligatorio cuando se guarda el análisis.',
-            'name.min'           => 'El nombre debe tener al menos 3 caracteres.',
+            'name.required'        => 'El nombre del área es obligatorio cuando se guarda el análisis.',
+            'name.min'             => 'El nombre debe tener al menos 3 caracteres.',
             'producer_id.required' => 'Debe seleccionar un productor para guardar el análisis.',
-            'producer_id.exists' => 'El productor seleccionado no es válido.',
-            'geometry.required'  => 'Debe dibujar un polígono en el mapa.',
-            'area_ha.min'        => 'El área debe ser mayor a 0 hectáreas.',
-            'end_year.gte'       => 'El año de fin debe ser mayor o igual al año de inicio.'
+            'producer_id.exists'   => 'El productor seleccionado no es válido.',
+            'geometry.required'    => 'Debe dibujar un polígono en el mapa.',
+            'area_ha.min'          => 'El área debe ser mayor a 0 hectáreas.',
+            'end_year.gte'         => 'El año de fin debe ser mayor o igual al año de inicio.'
         ];
 
         $request->validate($rules, $messages);
     }
 
-    // ==================== OTROS MÉTODOS EXISTENTES (sin cambios) ====================
-
+    /**
+     * Muestra la vista comparativa multi-predio a partir de una lista de IDs separados por coma.
+     */
     public function multipleResults(Request $request): View
     {
         $polygonIds = explode(',', $request->input('polygon_ids', ''));
@@ -480,6 +501,9 @@ class DeforestationController extends Controller
         return view('deforestation.multi-results', compact('multiResults'));
     }
     
+    /**
+     * Muestra la vista del reporte final de deforestación para un polígono persistido individual.
+     */
     public function results($polygonId): View
     {
         $polygon = Polygon::with(['analyses', 'producer'])->findOrFail($polygonId);
@@ -494,6 +518,9 @@ class DeforestationController extends Controller
         return view('deforestation.results', compact('dataToPass'));
     }
 
+    /**
+     * Retorna en formato JSON los análisis anuales de un polígono indexados por año (usado por gráficas Chart.js).
+     */
     public function getAnalysisData($polygonId): JsonResponse
     {
         $polygon = Polygon::findOrFail($polygonId);
@@ -512,13 +539,24 @@ class DeforestationController extends Controller
         return response()->json(['message' => 'Export functionality to be implemented']);
     }
     
+    /**
+     * Genera y descarga el informe técnico en PDF:
+     * 
+     * Métricas calculadas para la emisión del informe:
+     * - Superficie total de la parcela ($polygonArea).
+     * - Superficie total deforestada acumulada ($totalDeforestedArea).
+     * - Superficie conservada o bosque remanente:
+     *   `conservedArea = polygonArea - totalDeforestedArea`
+     * - Desglose cronológico anual con porcentaje de pérdida por año.
+     * - Formato de hoja A4 vertical renderizado mediante DomPDF.
+     */
     public function report(Request $request)
     {
         \Log::info('Datos recibidos para PDF:', ['data' => $request->all()]);
         
         try {
-            $rawData = $request->input('report_data');
-            $decoded = is_string($rawData) ? json_decode($rawData, true) : $rawData;
+            $rawData    = $request->input('report_data');
+            $decoded    = is_string($rawData) ? json_decode($rawData, true) : $rawData;
             $dataToPass = $decoded['dataToPass'] ?? $decoded; 
 
             if (!$dataToPass || !isset($dataToPass['yearly_results'])) {
@@ -527,41 +565,43 @@ class DeforestationController extends Controller
                     ->withErrors(['error' => 'La estructura de los datos no es válida para generar el reporte.']);
             }
 
-            $polygonArea = (float) ($dataToPass['polygon_area_ha'] ?? 0);
+            $polygonArea   = (float) ($dataToPass['polygon_area_ha'] ?? 0);
             $totalLossData = $dataToPass['total_loss'] ?? [];
 
+            // Compilar desglose cronológico para la tabla del informe
             $analyses = collect($dataToPass['yearly_results'] ?? [])->map(function($item) use ($polygonArea) {
                 $area = (float) ($item['area__ha'] ?? 0);
                 return (object)[
-                    'year' => $item['year'],
+                    'year'               => $item['year'],
                     'deforested_area_ha' => $area,
-                    'percentage_loss' => $polygonArea > 0 ? ($area / $polygonArea) * 100 : 0
+                    'percentage_loss'    => $polygonArea > 0 ? ($area / $polygonArea) * 100 : 0
                 ];
             })->sortBy('year')->values();
 
+            // Balance forestal (Área conservada vs Área deforestada)
             $data = [
                 'polygon' => (object)[
-                    'name' => $dataToPass['polygon_name'] ?? 'Área sin nombre',
-                    'area_ha' => $polygonArea,
+                    'name'        => $dataToPass['polygon_name'] ?? 'Área sin nombre',
+                    'area_ha'     => $polygonArea,
                     'description' => $dataToPass['description'] ?? '',
                 ],
-                'analyses' => $analyses,
-                'start_year' => $dataToPass['start_year'] ?? null,
-                'end_year' => $dataToPass['end_year'] ?? null,
+                'analyses'            => $analyses,
+                'start_year'          => $dataToPass['start_year'] ?? null,
+                'end_year'            => $dataToPass['end_year'] ?? null,
                 'totalDeforestedArea' => (float) ($totalLossData['totalDeforestedArea'] ?? 0),
-                'totalPercentage' => (float) ($totalLossData['totalPercentage'] ?? 0),
-                'conservedArea' => $polygonArea - (float) ($totalLossData['totalDeforestedArea'] ?? 0),
-                'report_date' => now()->format('d/m/Y H:i:s'),
-                'isFromSaved' => false,
+                'totalPercentage'     => (float) ($totalLossData['totalPercentage'] ?? 0),
+                'conservedArea'       => $polygonArea - (float) ($totalLossData['totalDeforestedArea'] ?? 0),
+                'report_date'         => now()->format('d/m/Y H:i:s'),
+                'isFromSaved'         => false,
             ];
 
             $pdf = \PDF::loadView('deforestation.report-pdf', $data)
                 ->setPaper('a4', 'portrait')
                 ->setOptions([
-                    'defaultFont' => 'sans-serif',
+                    'defaultFont'          => 'sans-serif',
                     'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => true,
-                    'chroot' => public_path(),
+                    'isRemoteEnabled'      => true,
+                    'chroot'               => public_path(),
                 ]);
 
             if (ob_get_length()) ob_end_clean();
@@ -574,6 +614,9 @@ class DeforestationController extends Controller
         }
     }
 
+    /**
+     * Ejecuta una reevaluación sincrónica de deforestación para un polígono específico ya existente.
+     */
     public function polygon(Request $request)
     {
         $geometryString = $request->input('geometry');
@@ -583,7 +626,6 @@ class DeforestationController extends Controller
         $polygonName    = $request->input('name', 'Área de Estudio');
         $saveAnalysis   = $request->boolean('save_analysis');
 
-        // Convertir WKB hex a GeoJSON si hace falta
         if (preg_match('/^[0-9A-Fa-f]+$/', (string) $geometryString)) {
             $geoJsonRes     = DB::selectOne(
                 "SELECT ST_AsGeoJSON(ST_GeomFromWKB(decode(?, 'hex'))) as geojson",
@@ -601,13 +643,11 @@ class DeforestationController extends Controller
         $polygon = Polygon::withTrashed()->findOrFail($polygonId);
         $areaHa  = (float) $polygon->area_ha;
 
-        // Años ya guardados ANTES de analizar (para saber cuáles son nuevos)
         $beforeYears = $polygon->deforestations()->pluck('year')->all();
 
-        // Analizar y persistir si se pidió guardar
+        // Consulta contra GFW reutilizando años locales
         $yearlyResults = $polygon->analyzeDeforestationFromGFW($startYear, $endYear, $saveAnalysis);
 
-        // Calcular totales UNA sola vez y reutilizar
         $totalLossResults = $polygon->buildTotalLossStats(
             $yearlyResults, $startYear, $endYear
         );
@@ -638,9 +678,6 @@ class DeforestationController extends Controller
             session()->flash('save_success', 'Los nuevos datos del análisis han sido guardados.');
         }
 
-        // Necesitamos una instancia de Polygon para calcular los totales.
-        // Si ya existe en BD, la usamos; si no, creamos una instancia "en memoria"
-        // con el área calculada para que el cálculo funcione igual.
         $polygonForStats = $polygonId
             ? Polygon::findOrFail($polygonId)
             : (new Polygon(['area_ha' => $areaHa]));
@@ -670,7 +707,8 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Construye el array dataToPass para un polígono con sus análisis.
+     * Compila y estructura los registros históricos guardados en base de datos
+     * en el formato requerido por la interfaz de resultados y los gráficos.
      */
     private function buildDataFromPolygon(Polygon $polygon): array
     {
@@ -680,16 +718,16 @@ class DeforestationController extends Controller
             throw new \Exception("El polígono '{$polygon->name}' no tiene análisis guardados.");
         }
 
-        $yearlyResults = [];
+        $yearlyResults       = [];
         $totalDeforestedArea = 0;
-        $startYear = $analyses->first()->year;
-        $endYear = $analyses->last()->year;
+        $startYear           = $analyses->first()->year;
+        $endYear             = $analyses->last()->year;
 
         foreach ($analyses as $analysis) {
             $yearlyResults[$analysis->year] = [
                 'area__ha' => $analysis->deforested_area_ha,
-                'status' => 'success',
-                'year' => $analysis->year,
+                'status'   => 'success',
+                'year'     => $analysis->year,
             ];
             $totalDeforestedArea += $analysis->deforested_area_ha;
         }
@@ -699,41 +737,41 @@ class DeforestationController extends Controller
         $yearlyBreakdown = [];
         foreach ($analyses as $analysis) {
             $yearlyBreakdown[$analysis->year] = [
-                'year' => $analysis->year,
-                'area_ha' => $analysis->deforested_area_ha,
+                'year'       => $analysis->year,
+                'area_ha'    => $analysis->deforested_area_ha,
                 'percentage' => $polygon->area_ha > 0 ? ($analysis->deforested_area_ha / $polygon->area_ha) * 100 : 0,
             ];
         }
 
         return [
-            'polygon_id' => $polygon->id,
-            'producer_id' => $polygon->producer_id,
-            'analysis_year' => $endYear,
-            'start_year' => $startYear,
-            'end_year' => $endYear,
+            'polygon_id'       => $polygon->id,
+            'producer_id'      => $polygon->producer_id,
+            'analysis_year'    => $endYear,
+            'start_year'       => $startYear,
+            'end_year'         => $endYear,
             'original_geojson' => $polygon->getGeometryGeoJson(),
-            'type' => 'Polygon',
-            'geometry' => [],
-            'area__ha' => $totalDeforestedArea,
-            'polygon_area_ha' => $polygon->area_ha,
-            'status' => 'success',
-            'polygon_name' => $polygon->name,
-            'description' => $polygon->description ?? '',
-            'yearly_results' => $yearlyResults,
-            'total_loss' => [
+            'type'             => 'Polygon',
+            'geometry'         => [],
+            'area__ha'         => $totalDeforestedArea,
+            'polygon_area_ha'  => $polygon->area_ha,
+            'status'           => 'success',
+            'polygon_name'     => $polygon->name,
+            'description'      => $polygon->description ?? '',
+            'yearly_results'   => $yearlyResults,
+            'total_loss'       => [
                 'totalDeforestedArea' => $totalDeforestedArea,
-                'totalPercentage' => $totalPercentage,
-                'validYears' => $analyses->count(),
-                'totalYearsInRange' => $endYear - $startYear + 1,
-                'yearlyBreakdown' => $yearlyBreakdown,
+                'totalPercentage'     => $totalPercentage,
+                'validYears'          => $analyses->count(),
+                'totalYearsInRange'   => $endYear - $startYear + 1,
+                'yearlyBreakdown'     => $yearlyBreakdown,
             ],
-            'external_id' => null,
-            'productor_name' => $polygon->producer ? $polygon->producer->name : 'Sin productor',
+            'external_id'      => null,
+            'productor_name'   => $polygon->producer ? $polygon->producer->name : 'Sin productor',
         ];
     }
 
     /**
-     * Registra un evento agrupado para múltiples polígonos analizados.
+     * Registra un evento de auditoría agrupado cuando se analizan múltiples predios en simultáneo.
      */
     private function registerMultiAnalysisEvent(array $polygonIds, array $globalParams, array $multiResults): void
     {
@@ -746,11 +784,11 @@ class DeforestationController extends Controller
         activity()
             ->causedBy(auth()->user())
             ->withProperties([
-                'polygon_ids' => $polygonIds,
-                'count' => count($polygonIds),
-                'start_year' => $globalParams['start_year'],
-                'end_year' => $globalParams['end_year'],
-                'total_area' => $totalArea,
+                'polygon_ids'      => $polygonIds,
+                'count'            => count($polygonIds),
+                'start_year'       => $globalParams['start_year'],
+                'end_year'         => $globalParams['end_year'],
+                'total_area'       => $totalArea,
                 'total_deforested' => $totalDeforested,
                 'total_percentage' => $totalPercentage,
             ])
@@ -759,7 +797,7 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Registra un evento de análisis no guardado (individual).
+     * Registra en la bitácora un análisis individual no guardado en base de datos (simulación).
      */
     private function registerUnsavedAnalysisEvent(array $dataToPass, array $globalParams): void
     {
@@ -772,7 +810,7 @@ class DeforestationController extends Controller
                 'total_percentage' => $dataToPass['total_loss']['totalPercentage'],
                 'start_year'       => $dataToPass['start_year'],
                 'end_year'         => $dataToPass['end_year'],
-                'original_geojson'  => $dataToPass['original_geojson'],
+                'original_geojson' => $dataToPass['original_geojson'],
                 'saved'            => false,
             ])
             ->event('analyzed')
@@ -780,7 +818,7 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Registra un evento de análisis múltiple no guardado.
+     * Registra en la bitácora un análisis múltiple no guardado.
      */
     private function registerUnsavedMultiAnalysisEvent(array $multiResults, array $globalParams): void
     {
@@ -806,14 +844,7 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Recalcula y persiste el flag `deforested` del polígono.
-     *
-     * Se llama después de operaciones que modifican la tabla `deforestation`
-     * dentro de bloques `withoutEvents`, donde los listeners del modelo
-     * Deforestation están desactivados y el flag no se actualiza solo.
-     *
-     * Si en el futuro se agregan más campos derivados, la lógica debe vivir
-     * dentro de Polygon::refreshDeforestedFlag().
+     * Sincroniza la bandera booleana `deforested` del polígono.
      */
     private function syncDeforestationDerivedFields(Polygon $polygon): void
     {
