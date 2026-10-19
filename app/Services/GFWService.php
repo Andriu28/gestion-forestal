@@ -65,11 +65,11 @@ class GFWService
      *    `{ geometry: {...}, sql: "SELECT ... FROM results WHERE ..." }`
      * 2. El servidor satelital rasteriza la geometría contra sus capas globales de píxeles (30m de resolución)
      *    y totaliza la pérdida de biomasa o área boscosa.
-     * 3. Procesa respuestas exitosas y captura excepciones de cliente (ej. polígonos inválidos, auto-intersecciones).
+     * 3. Procesa respuestas exitosas y captura excepciones de cliente (ej. Parcelas inválidos, auto-intersecciones).
      * 
      * @param string $dataset   Identificador del dataset (ej. 'umd_tree_cover_loss')
      * @param string $version   Versión del dataset (ej. 'latest')
-     * @param array  $geometry  Geometría GeoJSON del polígono
+     * @param array  $geometry  Geometría GeoJSON de la Parcela
      * @param string $sql       Sentencia SQL espacial compatible con la API de GFW
      * @return array            Estructura estandarizada ['status' => 'success'|'error', 'data' => [...], 'message' => ...]
      */
@@ -91,7 +91,7 @@ class GFWService
                 'data'   => $data['data'] ?? [],
             ];
         } catch (ClientException $e) {
-            // Errores HTTP 4xx (polígono deformado, clave API inválida, sintaxis SQL errónea)
+            // Errores HTTP 4xx (Parcela deformado, clave API inválida, sintaxis SQL errónea)
             $errorData = json_decode($e->getResponse()->getBody()->getContents(), true);
             $message   = $errorData['message'] ?? 'Error de validación de la API.';
             Log::error("GFW API Error (HTTP {$e->getCode()}): {$message}");
@@ -115,7 +115,7 @@ class GFWService
      * Genera la consulta SQL espacial:
      * `SELECT SUM(area__ha) FROM results WHERE umd_tree_cover_loss__year = YYYY`
      * 
-     * @param array $geometry Geometría GeoJSON del polígono a evaluar
+     * @param array $geometry Geometría GeoJSON de la Parcela a evaluar
      * @param int   $year     Año que se desea consultar
      * @return array
      */

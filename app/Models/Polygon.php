@@ -15,7 +15,7 @@ use App\Traits\LogsActivityWithDescriptions;
 /**
  * Modelo Polygon
  * 
- * Representa un polígono o parcela geográfica delimitada en el sistema de gestión forestal.
+ * Representa un Parcela o parcela geográfica delimitada en el sistema de gestión forestal.
  * Esta entidad es el núcleo del sistema, ya que almacena:
  * 1. La geometría espacial (mediante la extensión PostGIS en PostgreSQL).
  * 2. El área física calculada en hectáreas.
@@ -31,13 +31,13 @@ class Polygon extends Model
      * Atributos asignables de forma masiva:
      * - name: Nombre identificativo de la parcela o lote.
      * - description: Detalles adicionales o notas de campo.
-     * - producer_id: Clave foránea al productor responsable (puede ser nulo si es un polígono comunitario o no asignado).
+     * - producer_id: Clave foránea al productor responsable (puede ser nulo si es un Parcela comunitario o no asignado).
      * - parish_id: Parroquia asignada formalmente en la división político-territorial venezolana.
-     * - area_ha: Área total de la superficie del polígono medida en hectáreas.
+     * - area_ha: Área total de la superficie de la Parcela medida en hectáreas.
      * - is_active: Estado operativo (activo/inactivo) para control de inventario.
-     * - deforested: Bandera rápida (booleana) que indica si este polígono presenta alertas de deforestación registradas.
-     * - centroid_lat: Latitud del centro geográfico del polígono (usada para centrar la vista en Leaflet/mapas).
-     * - centroid_lng: Longitud del centro geográfico del polígono.
+     * - deforested: Bandera rápida (booleana) que indica si este Parcela presenta alertas de deforestación registradas.
+     * - centroid_lat: Latitud del centro geográfico de la Parcela (usada para centrar la vista en Leaflet/mapas).
+     * - centroid_lng: Longitud del centro geográfico de la Parcela.
      * - location_data: Estructura JSON que guarda metadatos de geocodificación inversa detectada y auditoría de importación.
      * - external_id: Identificador alfanumérico asignado por sistemas externos (ej. códigos catastrales o IDs de shapefiles).
      */
@@ -76,7 +76,7 @@ class Polygon extends Model
     // =========================================================================
 
     /**
-     * Define qué campos del polígono deben ser monitoreados para registrar cambios en el log de auditoría.
+     * Define qué campos de la Parcela deben ser monitoreados para registrar cambios en el log de auditoría.
      */
     protected function getActivitylogAttributes(): array
     {
@@ -107,7 +107,7 @@ class Polygon extends Model
     }
 
     /**
-     * Texto descriptivo principal del registro en el log de auditoría (utiliza el nombre del polígono).
+     * Texto descriptivo principal del registro en el log de auditoría (utiliza el nombre de la Parcela).
      */
     protected function getActivityLabel(): ?string
     {
@@ -120,7 +120,7 @@ class Polygon extends Model
 
     /**
      * Productor propietario o responsable del predio.
-     * Es una relación opcional; existen polígonos que pueden importarse sin productor inicial.
+     * Es una relación opcional; existen Parcelas que pueden importarse sin productor inicial.
      */
     public function producer()
     {
@@ -137,7 +137,7 @@ class Polygon extends Model
     }
 
     /**
-     * Historial de análisis anuales de deforestación asociados a este polígono.
+     * Historial de análisis anuales de deforestación asociados a este Parcela.
      */
     public function deforestationAnalyses()
     {
@@ -165,7 +165,7 @@ class Polygon extends Model
     // =========================================================================
 
     /**
-     * Filtra únicamente los polígonos marcados como activos en el sistema.
+     * Filtra únicamente los Parcelas marcados como activos en el sistema.
      */
     public function scopeActive(Builder $query): Builder
     {
@@ -173,7 +173,7 @@ class Polygon extends Model
     }
 
     /**
-     * Filtra los polígonos que ya tienen un productor asignado.
+     * Filtra los Parcelas que ya tienen un productor asignado.
      */
     public function scopeWithProducer(Builder $query): Builder
     {
@@ -181,7 +181,7 @@ class Polygon extends Model
     }
 
     /**
-     * Filtra los polígonos huérfanos o que aún no tienen productor asignado.
+     * Filtra los Parcelas huérfanos o que aún no tienen productor asignado.
      */
     public function scopeWithoutProducer(Builder $query): Builder
     {
@@ -189,7 +189,7 @@ class Polygon extends Model
     }
 
     /**
-     * Filtra polígonos que tienen alertas o registros de deforestación confirmados.
+     * Filtra Parcelas que tienen alertas o registros de deforestación confirmados.
      */
     public function scopeDeforested(Builder $query): Builder
     {
@@ -197,7 +197,7 @@ class Polygon extends Model
     }
 
     /**
-     * Filtra polígonos limpios de deforestación (área deforestada igual a 0).
+     * Filtra Parcelas limpios de deforestación (área deforestada igual a 0).
      */
     public function scopeWithoutDeforestation(Builder $query): Builder
     {
@@ -207,7 +207,7 @@ class Polygon extends Model
     /**
      * Búsqueda global por texto:
      * Busca coincidencias parciales en:
-     * - Nombre del polígono
+     * - Nombre de la Parcela
      * - Descripción de la parcela
      * - Nombre o apellido del productor asignado
      * - Nombre de la parroquia, municipio o estado (jerarquía geográfica completa)
@@ -253,7 +253,7 @@ class Polygon extends Model
     }
 
     /**
-     * Clasifica el polígono según si cuenta con productor o no ('with_producer' / 'without_producer').
+     * Clasifica el Parcela según si cuenta con productor o no ('with_producer' / 'without_producer').
      * Se utiliza para filtros y badges en la interfaz de usuario.
      */
     public function getTypeAttribute(): string
@@ -272,7 +272,7 @@ class Polygon extends Model
     }
 
     /**
-     * Genera una píldora visual en HTML con el estado del polígono:
+     * Genera una píldora visual en HTML con el estado de la Parcela:
      * - Rojo: Eliminado lógicamente (soft deleted).
      * - Verde: Activo.
      * - Amarillo: Inactivo.
@@ -349,7 +349,7 @@ class Polygon extends Model
     // =========================================================================
 
     /**
-     * Inserta un nuevo polígono en la base de datos transformando la geometría GeoJSON en un objeto PostGIS nativo.
+     * Inserta un nuevo Parcela en la base de datos transformando la geometría GeoJSON en un objeto PostGIS nativo.
      *
      * Flujo espacial:
      * 1. `ST_GeomFromGeoJSON(?)`: Convierte la cadena GeoJSON recibida del mapa Leaflet en una geometría PostGIS binaria.
@@ -404,7 +404,7 @@ class Polygon extends Model
         );
 
         if (! isset($row->id)) {
-            throw new \RuntimeException('No se pudo insertar el polígono (RETURNING id vacío).');
+            throw new \RuntimeException('No se pudo insertar el Parcela (RETURNING id vacío).');
         }
 
         $polygon = static::with('parish.municipality.state')->findOrFail($row->id);
@@ -431,7 +431,7 @@ class Polygon extends Model
     }
 
     /**
-     * Actualiza tanto los campos alfanuméricos como la columna geométrica PostGIS del polígono.
+     * Actualiza tanto los campos alfanuméricos como la columna geométrica PostGIS de la Parcela.
      *
      * Ejecuta una sentencia SQL directa para convertir y guardar la nueva geometría GeoJSON en el SRID 4326,
      * y luego actualiza los atributos del modelo en memoria.
@@ -459,13 +459,13 @@ class Polygon extends Model
     }
 
     /**
-     * Recalcula con precisión geográfica matemática el área en hectáreas y el centroide del polígono:
+     * Recalcula con precisión geográfica matemática el área en hectáreas y el centroide de la Parcela:
      * 
      * Funciones espaciales empleadas:
      * - `ST_Transform(geometry, 4326)::geography`: Hace un casting de la geometría a tipo GEOGRAPHY esferoidal.
      * - `ST_Area(...) / 10000`: Calcula el área en metros cuadrados considerando la curvatura de la Tierra (elipsoide WGS84)
      *   y la divide entre 10,000 para convertir metros cuadrados (m²) a hectáreas (ha).
-     * - `ST_Centroid(geometry)`: Calcula el punto baricéntrico o centroide del polígono.
+     * - `ST_Centroid(geometry)`: Calcula el punto baricéntrico o centroide de la Parcela.
      * - `ST_X(...)` y `ST_Y(...)`: Extrae la longitud (eje X) y la latitud (eje Y) respectivamente.
      * 
      * Guarda estos valores directamente en el registro sin disparar eventos de auditoría innecesarios (`updateQuietly`).
@@ -521,7 +521,7 @@ class Polygon extends Model
     }
 
     /**
-     * Prepara el campo JSON `location_data` al crear un polígono:
+     * Prepara el campo JSON `location_data` al crear un Parcela:
      * Combina la información cruda con los datos territoriales detectados automáticamente por coordenadas
      * (parroquia, municipio, estado detectados) y agrega una marca de tiempo con la parroquia asignada formalmente.
      */
@@ -589,7 +589,7 @@ class Polygon extends Model
     }
     
     /**
-     * Crea e inicializa un polígono en la base de datos a partir de una entidad individual (Feature) de un GeoJSON o Shapefile importado:
+     * Crea e inicializa un Parcela en la base de datos a partir de una entidad individual (Feature) de un GeoJSON o Shapefile importado:
      * 
      * 1. Valida que el tipo de geometría sea compatible ('Polygon' o 'MultiPolygon').
      * 2. Extrae atributos comunes del estándar cartográfico (id externo, nombre, área calculada 'Area_Ha', descripción).
@@ -617,7 +617,7 @@ class Polygon extends Model
         // Extraer atributos estándar o personalizados del archivo cartográfico
         $externalId = $properties['id'] ?? null;
         $areaHa = $properties['Area_Ha'] ?? null;
-        $name = $properties['name'] ?? ($extra['producer_name'] ?? 'Polígono importado');
+        $name = $properties['name'] ?? ($extra['producer_name'] ?? 'Parcela importado');
         $description = $properties['description'] ?? null;
         $producerId = $extra['producer_id'] ?? null;
         $parishId = $extra['parish_id'] ?? null;
@@ -672,7 +672,7 @@ class Polygon extends Model
      * Realiza el análisis de deforestación histórico consultando la API satelital de Global Forest Watch (GFW):
      * 
      * Algoritmo de optimización por caché en base de datos:
-     * 1. Extrae la geometría del polígono en formato GeoJSON.
+     * 1. Extrae la geometría de la Parcela en formato GeoJSON.
      * 2. Revisa qué años dentro del rango solicitado [$startYear, $endYear] ya han sido analizados y guardados en la base de datos local.
      * 3. Calcula la diferencia (`array_diff`) para determinar exactamente qué años faltan.
      * 4. Consulta a la API de GFW ÚNICAMENTE por los años faltantes, ahorrando ancho de banda y cuota de peticiones satelitales.
@@ -689,7 +689,7 @@ class Polygon extends Model
         $geometry = json_decode($this->getGeometryGeoJson(), true);
 
         if (empty($geometry) || empty($geometry['type']) || empty($geometry['coordinates'])) {
-            Log::warning("Polígono {$this->id} sin geometría; análisis omitido.");
+            Log::warning("Parcela {$this->id} sin geometría; análisis omitido.");
             return [];
         }
 
@@ -738,7 +738,7 @@ class Polygon extends Model
      * 
      * Regla de negocio matemática:
      * - Calcula el porcentaje de pérdida del año con respecto al área total de la parcela:
-     *   `porcentaje = min(100, (área_deforestada / área_total_polígono) * 100)`
+     *   `porcentaje = min(100, (área_deforestada / área_total_Parcela) * 100)`
      * - Se ejecuta dentro de `withoutEvents` para evitar sobrecargar el sistema con múltiples disparos de eventos
      *   y listeners por cada año individual; al finalizar, se actualiza la bandera global una sola vez.
      *
@@ -771,7 +771,7 @@ class Polygon extends Model
     /**
      * Guarda resultados anuales calculados previamente en el cliente o formulario interactivo:
      * Se utiliza en la creación de parcelas donde el usuario prueba la deforestación en el mapa interactivo
-     * ANTES de guardar el polígono; una vez que confirma el guardado, los datos calculados en pantalla
+     * ANTES de guardar el Parcela; una vez que confirma el guardado, los datos calculados en pantalla
      * se insertan directamente sin repetir la llamada HTTP al satélite de GFW.
      *
      * @param array<int, array{year: int, area_ha: float, percentage: float}> $yearlyBreakdown
@@ -856,7 +856,7 @@ class Polygon extends Model
             }
         }
 
-        // Si la suma anual sobrepasa el área del polígono, usamos el total acumulado como tope base
+        // Si la suma anual sobrepasa el área de la Parcela, usamos el total acumulado como tope base
         // para garantizar que la proporción se mantenga matemáticamente coherente entre 0 y 100 %
         $denominator     = max($areaHa, $totalDeforestedArea);
         $totalPercentage = $denominator > 0

@@ -25,7 +25,7 @@
                         Resultados del Análisis Múltiple
                     </h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Comparación de {{ count($multiResults) }} {{ count($multiResults) === 1 ? 'polígono analizado' : 'polígonos analizados' }}
+                        Comparación de {{ count($multiResults) }} {{ count($multiResults) === 1 ? 'Parcela analizado' : 'Parcelas analizados' }}
                     </p>
                 </div>
 
@@ -84,7 +84,7 @@
                 <!-- Ribbon de indicadores generales -->
                 <div class="flex flex-wrap items-center gap-x-8 gap-y-3 px-5 py-4 mb-6 bg-white border border-gray-200 dark:bg-gray-800/30 dark:border-gray-700 rounded-xl">
                     <div>
-                        <p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">Polígonos</p>
+                        <p class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">Parcelas</p>
                         <p class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ $totalPolygons }}</p>
                     </div>
                     <div class="hidden w-px h-10 bg-gray-200 dark:bg-gray-700 sm:block"></div>
@@ -107,7 +107,7 @@
                 <!-- Layout maestro-detalle: lista a la izquierda, detalle siempre visible a la derecha -->
                 <div class="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr] lg:items-start">
 
-                    <!-- Columna izquierda: lista de polígonos -->
+                    <!-- Columna izquierda: lista de Parcelas -->
                     <div class="lg:sticky lg:top-6">
                         <div class="mb-3 space-y-2">
                             <div class="relative">
@@ -129,7 +129,7 @@
                                 </select>
                             </div>
                             <p class="text-xs text-gray-500 dark:text-gray-400">
-                                Mostrando <span id="visible-count" class="font-semibold text-gray-700 dark:text-gray-300">{{ $totalPolygons }}</span> de {{ $totalPolygons }} polígonos
+                                Mostrando <span id="visible-count" class="font-semibold text-gray-700 dark:text-gray-300">{{ $totalPolygons }}</span> de {{ $totalPolygons }} Parcelas
                             </p>
                         </div>
 
@@ -184,7 +184,7 @@
                         </p>
                     </div>
 
-                    <!-- Columna derecha: detalle del polígono seleccionado -->
+                    <!-- Columna derecha: detalle de la Parcela seleccionado -->
                     <div class="min-w-0 p-4 bg-white border border-gray-200 dark:bg-gray-800/20 dark:border-gray-700 rounded-xl md:p-6">
                         <div id="detail-content"></div>
                     </div>
@@ -207,7 +207,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        // Datos completos de todos los polígonos (convertidos a JSON seguro)
+        // Datos completos de todos los Parcelas (convertidos a JSON seguro)
         const polygonsData = @json($multiResults);
         let currentMap = null;
         let currentGfwLayer = null;
@@ -272,7 +272,7 @@
 
                 <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
                     <div class="p-4 text-center rounded-lg bg-green-50 dark:bg-green-900/20">
-                        <p class="text-sm font-bold text-green-600 uppercase dark:text-green-400">Área Total del Polígono</p>
+                        <p class="text-sm font-bold text-green-600 uppercase dark:text-green-400">Área Total de la Parcela</p>
                         <p class="text-2xl font-bold text-green-700 dark:text-green-300">${formatNumber(totalArea)} <span class="text-sm">ha</span></p>
                     </div>
                     <div class="p-4 text-center rounded-lg bg-red-50 dark:bg-red-900/20">
@@ -467,7 +467,7 @@
             document.body.removeChild(form);f400
         }
 
-        // Buscador de la lista de polígonos
+        // Buscador de la lista de Parcelas
         const searchInput = document.getElementById('polygon-search');
         if (searchInput) {
             searchInput.addEventListener('input', function() {
@@ -488,7 +488,7 @@
             });
         }
 
-        // Orden de la lista de polígonos
+        // Orden de la lista de Parcelas
         const sortSelect = document.getElementById('sort-select');
         if (sortSelect) {
             sortSelect.addEventListener('change', function() {
@@ -514,7 +514,7 @@
             });
         }
 
-        // Seleccionar automáticamente el primer polígono al cargar la página
+        // Seleccionar automáticamente el primer Parcela al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
             if (polygonsData.length > 0) {
                 selectPolygon(0);

@@ -33,7 +33,7 @@ class ActivityRecordsSeeder extends Seeder
             $users = [$userId];
         }
 
-        // Obtener productores y polígonos existentes
+        // Obtener productores y Parcelas existentes
         $producers = DB::table('producers')->whereNull('deleted_at')->pluck('id', 'name')->toArray();
         $polygons = DB::table('polygons')->whereNull('deleted_at')->pluck('id', 'name')->toArray();
 
@@ -55,12 +55,12 @@ class ActivityRecordsSeeder extends Seeder
         }
 
         if (empty($polygons)) {
-            $this->command->warn('No hay polígonos disponibles. Creando polígonos de prueba...');
+            $this->command->warn('No hay Parcelas disponibles. Creando Parcelas de prueba...');
             for ($i = 1; $i <= 5; $i++) {
                 $producerId = !empty($producers) ? array_values($producers)[array_rand($producers)] : null;
                 $id = DB::table('polygons')->insertGetId([
-                    'name' => "Polígono $i",
-                    'description' => "Polígono de prueba $i",
+                    'name' => "Parcela $i",
+                    'description' => "Parcela de prueba $i",
                     'geometry' => DB::raw("ST_GeomFromText('POLYGON((-64.7718 9.7623, -64.7715 9.7620, -64.7713 9.7618, -64.7708 9.7615, -64.7710 9.7612, -64.7713 9.7614, -64.7713 9.7611, -64.7714 9.7611, -64.7715 9.7613, -64.7716 9.7619, -64.7716 9.7620, -64.7718 9.7623))', 4326)"),
                     'producer_id' => $producerId,
                     'parish_id' => null,
@@ -69,7 +69,7 @@ class ActivityRecordsSeeder extends Seeder
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                $polygons["Polígono $i"] = $id;
+                $polygons["Parcela $i"] = $id;
             }
         }
 

@@ -130,7 +130,7 @@
                                             {{ Str::limit($producer->description, 50) ?? 'Sin descripción' }}
                                         </td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap">
-                                            {{-- ESTILO DE ESTADO IGUAL QUE POLÍGONOS --}}
+                                            {{-- ESTILO DE ESTADO IGUAL QUE Parcelas --}}
                                             <span class="inline-block px-3 py-1 text-xs font-semibold {{ $producer->is_active ? 'bg-green-500/70 dark:bg-green-400/50 text-white' : 'bg-yellow-400/60 dark:bg-yellow-400/70 text-white' }} rounded-full">
                                                 {{ $producer->is_active ? 'Activo' : 'Inactivo' }}
                                             </span>
@@ -148,7 +148,7 @@
                                                     </svg>
                                                 </button>
 
-                                                <!-- Botón Editar - IGUAL QUE POLÍGONOS -->
+                                                <!-- Botón Editar - IGUAL QUE Parcelas -->
                                                 <a href="{{ route('producers.edit', $producer) }}" 
                                                 class="inline-flex items-center text-indigo-800/50 hover:text-indigo-600 dark:text-indigo-400/60 dark:hover:text-indigo-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110"
                                                 title="Editar">
@@ -157,20 +157,20 @@
                                                     </svg>
                                                 </a>
                                         
-                                                <!-- Botón Cambiar Estado - IGUAL QUE POLÍGONOS -->
+                                                <!-- Botón Cambiar Estado - IGUAL QUE Parcelas -->
                                                 <button type="button" 
                                                         class="inline-flex items-center transition-colors p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                         title="{{ $producer->is_active ? 'Desactivar' : 'Activar' }}"
                                                         onclick="handleToggleStatus({{ $producer->id }}, '{{ addslashes($producer->name) }}', {{ $producer->is_active ? 'true' : 'false' }})">
                                                     @if($producer->is_active)
-                                                        {{-- ICONO DE DESACTIVAR - IGUAL QUE POLÍGONOS --}}
+                                                        {{-- ICONO DE DESACTIVAR - IGUAL QUE Parcelas --}}
                                                         <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-700/40 hover:text-yellow-500/80 dark:text-yellow-400/60 dark:hover:text-yellow-300 w-7 h-7">
                                                             <circle cx="12" cy="12" r="10" class="fill-none"/>
                                                             <line x1="15" y1="9" x2="9" y2="15"/>
                                                             <line x1="9" y1="9" x2="15" y2="15"/>
                                                         </svg>
                                                     @else
-                                                        {{-- ICONO DE ACTIVAR - IGUAL QUE POLÍGONOS --}}
+                                                        {{-- ICONO DE ACTIVAR - IGUAL QUE Parcelas --}}
                                                         <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-700/40 hover:text-green-500/80 dark:text-green-400/60 dark:hover:text-green-300 w-7 h-7">
                                                             <circle cx="12" cy="12" r="10" class="fill-none"/>
                                                             <path d="m8 12 2.5 2.5L16 9"/>
@@ -178,7 +178,7 @@
                                                     @endif
                                                 </button>
 
-                                                <!-- Botón Deshabilitar - CON COLORES IGUAL QUE EL BOTÓN ELIMINAR DE POLÍGONOS -->
+                                                <!-- Botón Deshabilitar - CON COLORES IGUAL QUE EL BOTÓN ELIMINAR DE Parcelas -->
                                                 <button type="button" 
                                                         class="inline-flex items-center text-red-700/30 hover:text-red-600 dark:text-red-500/60 dark:hover:text-red-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                         title="Deshabilitar"
@@ -312,7 +312,7 @@ async function handleToggleStatus(producerId, producerName, isCurrentlyActive) {
     }
 }
 
-// Función para actualizar la UI del estado - ACTUALIZADA CON ESTILOS DE POLÍGONOS
+// Función para actualizar la UI del estado - ACTUALIZADA CON ESTILOS DE Parcelas
 function updateProducerStatusUI(producerId, producerName, isActive) {
     const row = document.getElementById(`producer-row-${producerId}`);
     if (!row) return;
@@ -321,7 +321,7 @@ function updateProducerStatusUI(producerId, producerName, isActive) {
     const statusCell = row.querySelector('td:nth-child(4)');
     const toggleButton = row.querySelector('button[onclick*="handleToggleStatus"]');
     
-    // Actualizar badge de estado - ESTILO IGUAL QUE POLÍGONOS
+    // Actualizar badge de estado - ESTILO IGUAL QUE Parcelas
     if (statusCell) {
         if (isActive) {
             statusCell.innerHTML = '<span class="inline-block px-3 py-1 text-xs font-semibold bg-green-500/70 dark:bg-green-400/50 text-white rounded-full">Activo</span>';
@@ -330,7 +330,7 @@ function updateProducerStatusUI(producerId, producerName, isActive) {
         }
     }
     
-    // Actualizar botón de toggle - ESTILO IGUAL QUE POLÍGONOS
+    // Actualizar botón de toggle - ESTILO IGUAL QUE Parcelas
     if (toggleButton) {
         const escapedName = producerName.replace(/'/g, "\\'");
         
@@ -359,7 +359,7 @@ function updateProducerStatusUI(producerId, producerName, isActive) {
     }
 }
 
-// Función para deshabilitar productor (AJAX) - CON ESTILOS DE POLÍGONOS
+// Función para deshabilitar productor (AJAX) - CON ESTILOS DE Parcelas
 async function handleDisableProducer(producerId, producerName) {
     const result = await showCustomConfirmation(
         false,
@@ -536,7 +536,7 @@ function formatProducerDetails(producer) {
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="font-semibold text-gray-700 dark:text-gray-300">Polígonos</h4>
+                                <h4 class="font-semibold text-gray-700 dark:text-gray-300">Parcelas</h4>
                                 <div class="text-center mt-3">
                                     <div class="text-3xl font-bold text-gray-900 dark:text-white">${producer.polygons_count || 0}</div>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">Total asignados</p>

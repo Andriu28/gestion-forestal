@@ -5,11 +5,11 @@
             <div class="text-gray-900 dark:text-gray-100">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
-                        {{ __('Mapa de Polígonos') }}
+                        {{ __('Mapa de Parcelas') }}
                     </h2>
 
                     <a href="{{ route('polygons.index') }}"
-                    title="Ver lista de polígonos" 
+                    title="Ver lista de Parcelas" 
                     class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-blue-600/70 dark:hover:bg-blue-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
                         <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
                             <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map w-6 h-6 text-blue-700/70 group-hover:text-white dark:text-blue-400/70">
@@ -848,7 +848,7 @@
             }
 
             // =============================================
-            // CARGA DE POLÍGONOS CON TARJETAS FLOTANTES
+            // CARGA DE Parcelas CON TARJETAS FLOTANTES
             // =============================================
 
             clearMarkerOverlays() {
@@ -868,7 +868,7 @@
                 }
 
                 const properties = feature.getProperties();
-                const name = properties.name || 'Polígono sin nombre';
+                const name = properties.name || 'Parcela sin nombre';
                 const producer = properties.producer || 'Sin productor asignado';
                 const hasProducer = properties.type === 'with_producer';
                 
@@ -1133,7 +1133,7 @@
 
             async loadPolygons() {
                 try {
-                    console.log('Cargando polígonos...');
+                    console.log('Cargando Parcelas...');
                     const response = await fetch('{{ route("polygons.geojson") }}');
                     const data = await response.json();
                     
@@ -1165,7 +1165,7 @@
                     // su posición en pantalla ya con la vista final aplicada
                     this.updateMarkerStacking();
 
-                    console.log(`  Polígonos cargados: ${features.length}`);
+                    console.log(`  Parcelas cargados: ${features.length}`);
                 } catch (error) {
                     console.error('Error loading polygons:', error);
                 }

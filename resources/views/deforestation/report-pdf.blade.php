@@ -295,7 +295,7 @@
                 <p style="font-size: 10px; margin: 0;">
                     <strong>Nota Interpretativa:</strong><br>
                     Las barras superiores representan la relación proporcional de pérdida entre los años analizados. 
-                    El gráfico de distribución muestra el estado crítico del polígono frente a su superficie total original.
+                    El gráfico de distribución muestra el estado crítico de la Parcela frente a su superficie total original.
                 </p>
             </td>
         </tr>
@@ -305,7 +305,7 @@
 
     <div class="section-title">ANÁLISIS DE IMPACTO</div>
     <p>
-        El análisis realizado sobre el polígono <strong>{{ $polygon->name }}</strong> mediante sensores remotos 
+        El análisis realizado sobre el Parcela <strong>{{ $polygon->name }}</strong> mediante sensores remotos 
         indica que se ha perdido un total de <strong>{{ number_format($totalDeforestedArea, 4) }} hectáreas</strong> 
         en un lapso de {{ $end_year - $start_year + 1 }} años.
     </p>

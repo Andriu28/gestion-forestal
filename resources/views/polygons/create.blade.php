@@ -5,7 +5,7 @@
         <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
-                   Crear Nuevo Polígono
+                   Crear Nuevo Parcela
                 </h2>
 
                 <form action="{{ route('polygons.store') }}" method="POST" id="polygon-form" novalidate>
@@ -101,11 +101,11 @@
                         <div class="lg:col-span-1">
                             <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl p-4 md:p-6 lg:p-8 h-full">
                                 <div class="text-gray-900 dark:text-gray-100">
-                                    <h2 class="text-lg font-semibold mb-4">Datos del Polígono</h2>
+                                    <h2 class="text-lg font-semibold mb-4">Datos de la Parcela</h2>
                                     
                                     <div class="space-y-6">
                                         <div>
-                                            <x-input-label for="name" :value="__('Nombre del Polígono *')" />
+                                            <x-input-label for="name" :value="__('Nombre de la Parcela *')" />
                                             <x-text-input 
                                                 id="name" 
                                                 name="name" 
@@ -135,12 +135,12 @@
                                             <x-input-label for="description" :value="__('Descripción')" />
                                             <textarea id="description" name="description" rows="3"
                                                 class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                placeholder="Descripción del polígono...">{{ old('description') }}</textarea>
+                                                placeholder="Descripción de la Parcela...">{{ old('description') }}</textarea>
                                             <x-input-error class="mt-2" :messages="$errors->get('description')" />
                                         </div>
 
                                         <div>
-                                            <x-input-label for="producer_id" :value="__('Productor (Opcional)')" />
+                                            <x-input-label for="producer_id" :value="__('Productor ')" />
                                             <select id="producer_id" name="producer_id"
                                                 class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                                                 <option value="">Seleccione un productor</option>
@@ -203,7 +203,7 @@
                                                 <span id="detect-button-text">Detectar Ubicación</span>
                                             </button>
                                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                Dibuja un polígono primero para habilitar la detección automática
+                                                Dibuja un Parcela primero para habilitar la detección automática
                                             </p>
                                         </div>
 
@@ -211,7 +211,7 @@
                                         <div class="flex items-center justify-end space-x-4 pt-6">
                                             <x-go-back-button />
                                             <x-primary-button type="submit" id="submit-btn">
-                                                Crear Polígono
+                                                Crear Parcela
                                             </x-primary-button>
                                         </div>
                                     </div>
@@ -421,7 +421,7 @@ class PolygonMap {
             setTimeout(() => {
                 this.map.updateSize();
                 
-                // Si hay un polígono dibujado, ajustar la vista
+                // Si hay un Parcela dibujado, ajustar la vista
                 if (this.source && this.source.getFeatures().length > 0) {
                     const extent = this.source.getExtent();
                     if (extent && extent[0] !== Infinity) {
@@ -763,7 +763,7 @@ class PolygonMap {
     // =============================================
 
     activateDrawing() {
-        console.log('Activando dibujo de polígonos...');
+        console.log('Activando dibujo de Parcelas...');
         
         if (this.draw) {
             this.map.removeInteraction(this.draw);
@@ -778,7 +778,7 @@ class PolygonMap {
         this.setupDrawEvents();
         this.map.addInteraction(this.draw);
         
-        this.showAlert('Modo dibujo activado. Haz clic en el mapa para dibujar el polígono.', 'info');
+        this.showAlert('Modo dibujo activado. Haz clic en el mapa para dibujar el Parcela.', 'info');
     }
 
     setupDrawEvents() {
@@ -807,7 +807,7 @@ class PolygonMap {
         feature.setStyle(this.getPolygonStyle('finished', areaHa));
         
         this.convertToGeoJSON(feature, areaHa);
-        this.showAlert(`Polígono completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
+        this.showAlert(`Parcela completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
         
         const detectBtn = document.getElementById('detect-location');
         if (detectBtn) detectBtn.disabled = false;
@@ -895,7 +895,7 @@ class PolygonMap {
             const geojsonObj = JSON.parse(geojson);
             
             if (!geojsonObj.geometry) {
-                throw new Error('El polígono no tiene geometría válida');
+                throw new Error('El Parcela no tiene geometría válida');
             }
             
             document.getElementById('geometry').value = JSON.stringify(geojsonObj.geometry);
@@ -905,7 +905,7 @@ class PolygonMap {
             
         } catch (error) {
             console.error('Error al convertir GeoJSON:', error);
-            this.showAlert('Error al guardar el polígono: ' + error.message, 'error');
+            this.showAlert('Error al guardar el Parcela: ' + error.message, 'error');
         }
     }
 
@@ -1028,7 +1028,7 @@ class PolygonMap {
         const zonesText = zonesUsed.sort().join(', ');
         
         this.showAlert(
-            `Polígono dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`, 
+            `Parcela dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`, 
             'success'
         );
     }
@@ -1088,13 +1088,13 @@ class PolygonMap {
         
         const geometryInput = document.getElementById('geometry');
         if (!geometryInput || !geometryInput.value) {
-            this.showAlert('Debes dibujar un polígono primero', 'error');
+            this.showAlert('Debes dibujar un Parcela primero', 'error');
             return;
         }
         
         const centroid = this.calculateCentroidFromGeoJSON(geometryInput.value);
         if (!centroid) {
-            this.showAlert('No se pudo calcular el centroide del polígono', 'error');
+            this.showAlert('No se pudo calcular el centroide de la Parcela', 'error');
             return;
         }
         
@@ -1330,7 +1330,7 @@ function validatePolygonName() {
     
     // Validaciones
     if (name.length === 0) {
-        showError('name', 'El nombre del polígono es obligatorio.');
+        showError('name', 'El nombre de la Parcela es obligatorio.');
         return false;
     }
     
@@ -1540,11 +1540,11 @@ function logFormData() {
 }
 
 function validatePolygonForm() {
-    console.log('Validando formulario de polígono...');
+    console.log('Validando formulario de Parcela...');
     
     const geometry = document.getElementById('geometry');
     if (!geometry || !geometry.value) {
-        showAlert('Debe dibujar un polígono en el mapa antes de enviar', 'warning');
+        showAlert('Debe dibujar un Parcela en el mapa antes de enviar', 'warning');
         
         const mapContainer = document.getElementById('map');
         if (mapContainer) {

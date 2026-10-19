@@ -176,7 +176,7 @@ $roleTranslations = [
                                             <select name="subject_type" class="form-select w-full text-xs py-1.5 px-2 rounded-md bg-gray-200 border-gray-300 focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 {{ ($subjectType ?? 'all') !== 'all' ? $hl : '' }}">
                                                 <option value="all" {{ ($subjectType ?? 'all') == 'all' ? 'selected' : '' }}>Todos</option>
                                                 <option value="User" {{ ($subjectType ?? '') == 'User' ? 'selected' : '' }}>Usuario</option>
-                                                <option value="Polygon" {{ ($subjectType ?? '') == 'Polygon' ? 'selected' : '' }}>Polígono</option>
+                                                <option value="Polygon" {{ ($subjectType ?? '') == 'Polygon' ? 'selected' : '' }}>Parcela</option>
                                                 <option value="Producer" {{ ($subjectType ?? '') == 'Producer' ? 'selected' : '' }}>Productor</option>
                                             </select>
                                         </div>
@@ -318,7 +318,7 @@ $roleTranslations = [
                                                     $modelName = $activity->subject_type ? class_basename($activity->subject_type) : null;
                                                     $modelTranslations = [
                                                         'User'     => 'Usuario',
-                                                        'Polygon'  => 'Polígono',
+                                                        'Polygon'  => 'Parcela',
                                                         'Producer' => 'Productor',
                                                     ];
                                                     $modelTranslation = $modelTranslations[$modelName] ?? $modelName ?? '';
@@ -365,7 +365,7 @@ $roleTranslations = [
                                                             {{-- Análisis guardado con enlace --}}
                                                             <a href="{{ route('deforestation.results', $activity->subject_id) }}"
                                                             class="hover:underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                                                            title="Ver análisis del polígono">
+                                                            title="Ver análisis de la Parcela">
                                                                 {{ Str::limit($translated, 30) }}
                                                             </a>
                                                         @elseif($activity->event === 'analyzed' && isset($activity->properties['saved']) && !$activity->properties['saved'])
@@ -381,7 +381,7 @@ $roleTranslations = [
                                                                 $count = $activity->properties['count'] ?? 0;
                                                             @endphp
                                                             <span class="text-gray-500 italic">
-                                                                Análisis múltiple de {{ $count }} polígonos
+                                                                Análisis múltiple de {{ $count }} Parcelas
                                                                 <span class="text-xs text-gray-400">(no guardado)</span>
                                                             </span>
                                                         @elseif($activity->event === 'analyzed_multiple' && isset($activity->properties['polygon_ids']))
@@ -392,7 +392,7 @@ $roleTranslations = [
                                                             <a href="{{ route('deforestation.multiple-results', ['polygon_ids' => $ids]) }}"
                                                             class="hover:underline text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
                                                             title="Ver análisis múltiple">
-                                                                Análisis múltiple de {{ $count }} polígonos
+                                                                Análisis múltiple de {{ $count }} Parcelas
                                                             </a>
                                                         @else
                                                             {{-- Otros eventos --}}
@@ -500,7 +500,7 @@ $roleTranslations = [
                 'latitude'         => 'Latitud',
                 'longitude'        => 'Longitud',
                 'producer_id'      => 'Productor',
-                'polygon_id'       => 'Polígono',
+                'polygon_id'       => 'Parcela',
                 'user_id'          => 'Usuario',
                 'email'            => 'Correo',
                 'role'             => 'Rol',
@@ -573,14 +573,14 @@ $roleTranslations = [
                                                 @php
                                                     // Traducciones de claves
                                                     $keyTranslations = [
-                                                        'polygon_name' => 'Polígono',
+                                                        'polygon_name' => 'Parcela',
                                                         'polygon_area_ha' => 'Área (ha)',
                                                         'total_deforested' => 'Área deforestada (ha)',
                                                         'total_percentage' => 'Porcentaje de pérdida',
                                                         'start_year' => 'Año inicio',
                                                         'end_year' => 'Año fin',
                                                         'years_analyzed' => 'Años analizados',
-                                                        'count' => 'Polígonos',
+                                                        'count' => 'Parcelas',
                                                     ];
                                                     // Claves que NO queremos mostrar
                                                     $hiddenKeys = ['polygon_updated', 'original_geojson', 'saved', 'polygon_ids', 'years_analyzed'];

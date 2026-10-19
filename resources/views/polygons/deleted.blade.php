@@ -4,14 +4,14 @@
         <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-4 md:mb-4">
-                    {{ __('Polígonos Eliminados') }}
+                    {{ __('Parcelas Eliminados') }}
                 </h2>
 
                 <div class="flex justify-end mb-6">
 
-                    <!-- Botón para ver polígonos habilitados -->
+                    <!-- Botón para ver Parcelas habilitados -->
                     <a href="{{ route('polygons.index') }}" 
-                    title="Ver polígonos habilitados" 
+                    title="Ver Parcelas habilitados" 
                     class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-lime-600/70 dark:hover:bg-lime-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
                         
                         <!-- Contenedor del ícono - se contrae en hover -->
@@ -123,14 +123,14 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <p class="text-gray-600 dark:text-gray-400">No hay polígonos eliminados.</p>
+                        <p class="text-gray-600 dark:text-gray-400">No hay Parcelas eliminados.</p>
                     </div>
                 @endif
             </div>
         </div>
     </div>
 
-    <!-- Modal para ver detalles del polígono (reutilizado) -->
+    <!-- Modal para ver detalles de la Parcela (reutilizado) -->
     <x-modal name="view-polygon-details" maxWidth="2xl" :showClose="true">
         <div class="p-0 overflow-hidden">
             <div class="bg-gradient-to-br from-[#884722e8] to-[#1d0e04da] dark:bg-gradient-to-br dark:from-[#2b231e8c] dark:to-[#99521f57] px-6 py-4">
@@ -143,7 +143,7 @@
                         </div>
                         <div>
                             <h2 class="text-xl font-bold text-white">
-                                Detalles del Polígono
+                                Detalles de la Parcela
                             </h2>
                             <p class="text-blue-100 text-sm">Información completa y detallada</p>
                         </div>
@@ -164,7 +164,7 @@
                             <div class="animate-ping h-8 w-8 rounded-full bg-blue-400"></div>
                         </div>
                     </div>
-                    <p class="mt-4 text-gray-600 dark:text-gray-400 font-medium">Cargando información del polígono...</p>
+                    <p class="mt-4 text-gray-600 dark:text-gray-400 font-medium">Cargando información de la Parcela...</p>
                 </div>
             </div>
         </div>
@@ -197,12 +197,12 @@ async function makePolygonRequest(url, method = 'POST', data = null) {
     }
 }
 
-// Función para eliminar polígono (AJAX)
+// Función para eliminar Parcela (AJAX)
 async function handleDeletePolygon(polygonId, polygonName) {
     const result = await showCustomConfirmation(
         false,
-        `¿Estás seguro de que deseas eliminar el polígono <b>${polygonName}</b>?<br><br>
-         <small>El polígono será movido a la lista de deshabilitados.</small>`
+        `¿Estás seguro de que deseas eliminar el Parcela <b>${polygonName}</b>?<br><br>
+         <small>El Parcela será movido a la lista de deshabilitados.</small>`
     );
     
     if (result.isConfirmed) {
@@ -214,7 +214,7 @@ async function handleDeletePolygon(polygonId, polygonName) {
                 row.remove();
             }
             
-            showCustomAlert('success', 'Éxito', 'Polígono eliminado exitosamente.');
+            showCustomAlert('success', 'Éxito', 'Parcela eliminado exitosamente.');
             
             const tableBody = document.querySelector('table tbody');
             if (tableBody && tableBody.children.length === 0) {
@@ -224,7 +224,7 @@ async function handleDeletePolygon(polygonId, polygonName) {
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p class="text-gray-600 dark:text-gray-400">No se encontraron polígonos.</p>
+                            <p class="text-gray-600 dark:text-gray-400">No se encontraron Parcelas.</p>
                         </td>
                     </tr>
                 `;
@@ -235,11 +235,11 @@ async function handleDeletePolygon(polygonId, polygonName) {
     }
 }
 
-// Función para restaurar polígono (AJAX)
+// Función para restaurar Parcela (AJAX)
 async function handleRestorePolygon(polygonId, polygonName) {
     const result = await showCustomConfirmation(
         true,
-        `¿Estás seguro de que deseas restaurar el polígono <b>${polygonName}</b>?`
+        `¿Estás seguro de que deseas restaurar el Parcela <b>${polygonName}</b>?`
     );
     
     if (result.isConfirmed) {
@@ -251,7 +251,7 @@ async function handleRestorePolygon(polygonId, polygonName) {
                 row.remove();
             }
             
-            showCustomAlert('success', 'Éxito', 'Polígono restaurado exitosamente.');
+            showCustomAlert('success', 'Éxito', 'Parcela restaurado exitosamente.');
             
             const tableBody = document.querySelector('table tbody');
             if (tableBody && tableBody.children.length === 0) {
@@ -261,7 +261,7 @@ async function handleRestorePolygon(polygonId, polygonName) {
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p class="text-gray-600 dark:text-gray-400">No hay polígonos eliminados.</p>
+                            <p class="text-gray-600 dark:text-gray-400">No hay Parcelas eliminados.</p>
                         </td>
                     </tr>
                 `;
@@ -278,7 +278,7 @@ async function handleTogglePolygonStatus(polygonId, polygonName, isCurrentlyActi
     
     const result = await showCustomConfirmation(
         !isCurrentlyActive,
-        `¿Estás seguro de que deseas ${action} el polígono <b>${polygonName}</b>?`
+        `¿Estás seguro de que deseas ${action} el Parcela <b>${polygonName}</b>?`
     );
     
     if (result.isConfirmed) {
@@ -286,7 +286,7 @@ async function handleTogglePolygonStatus(polygonId, polygonName, isCurrentlyActi
         
         if (data.success) {
             updatePolygonStatusUI(polygonId, polygonName, data.is_active);
-            showCustomAlert('success', 'Éxito', `Polígono ${action} exitosamente.`);
+            showCustomAlert('success', 'Éxito', `Parcela ${action} exitosamente.`);
         } else {
             showCustomAlert('error', 'Error', data.message);
         }
@@ -341,11 +341,11 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive) {
 // FUNCIONES PRINCIPALES - COPIADAS DE index.blade.php
 // ============================================================
 
-// Función para mostrar detalles del polígono en modal - VERSIÓN CON DEPURACIÓN
+// Función para mostrar detalles de la Parcela en modal - VERSIÓN CON DEPURACIÓN
 async function showPolygonDetails(polygonId) {
     try {
         console.log('🔍 ===== INICIO showPolygonDetails (deleted.blade.php) =====');
-        console.log('📌 ID del polígono:', polygonId);
+        console.log('📌 ID de la Parcela:', polygonId);
         
         // Mostrar loader en el modal
         const modalContent = document.getElementById('polygon-details-content');
@@ -367,7 +367,7 @@ async function showPolygonDetails(polygonId) {
         window.dispatchEvent(event);
         console.log('  Modal abierto');
         
-        // Obtener datos del polígono
+        // Obtener datos de la Parcela
         const url = `/polygons/${polygonId}/details`;
         console.log('🌐 Haciendo fetch a:', url);
         
@@ -460,7 +460,7 @@ async function showPolygonDetails(polygonId) {
                         <svg class="w-6 h-6 text-red-600 dark:text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        <span class="text-red-700 dark:text-red-300 font-semibold">Error al cargar los detalles del polígono</span>
+                        <span class="text-red-700 dark:text-red-300 font-semibold">Error al cargar los detalles de la Parcela</span>
                     </div>
                     <p class="text-sm text-red-600 dark:text-red-400 mt-2">${error.message}</p>
                     <button onclick="showPolygonDetails(${polygonId})" 
@@ -477,7 +477,7 @@ async function showPolygonDetails(polygonId) {
     }
 }
 
-// Función para formatear los detalles del polígono - CON MANEJO DE NULL
+// Función para formatear los detalles de la Parcela - CON MANEJO DE NULL
 function formatPolygonDetails(polygon) {
     console.log('🎨 Formateando polygon:', polygon);
     

@@ -28,7 +28,7 @@ window.Swal = Swal;
  * @param {string} title Título principal de la notificación
  * @param {string} text  Mensaje descriptivo secundario
  */
-window.showCustomAlert = function(icon, title, text) {
+window.showCustomAlert = function (icon, title, text) {
     Swal.fire({
         position: "top-end",
         icon: icon,
@@ -70,14 +70,14 @@ window.showCustomAlert = function(icon, title, text) {
  * @param {string|null} customMessage Mensaje personalizado para el cuerpo de la ventana
  * @returns {Promise<SweetAlertResult>}
  */
-window.showCustomConfirmation = function(isEnable = false, customMessage = null) {
+window.showCustomConfirmation = function (isEnable = false, customMessage = null) {
     const title = '¿Estás seguro?';
-    const message = customMessage || (isEnable 
-        ? '¡Esta acción habilitará al usuario!' 
+    const message = customMessage || (isEnable
+        ? '¡Esta acción habilitará al usuario!'
         : '¡Esta acción deshabilitará al usuario!');
     const confirmText = isEnable ? 'Sí, habilitar' : 'Sí, deshabilitar';
     const iconColor = '#f59f0bea';
-    
+
     return Swal.fire({
         title: title,
         html: `<div class="text-center">
@@ -93,7 +93,7 @@ window.showCustomConfirmation = function(isEnable = false, customMessage = null)
             title: 'text-2xl font-bold text-gray-900 dark:text-white',
             htmlContainer: 'text-gray-600 dark:text-gray-300',
             actions: 'gap-4 mt-6',
-            confirmButton: isEnable 
+            confirmButton: isEnable
                 ? 'px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 ease-out border border-green-400/30'
                 : 'px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 ease-out border border-emerald-400/30',
             cancelButton: 'px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 ease-out border border-rose-400/30'
@@ -120,17 +120,17 @@ window.showCustomConfirmation = function(isEnable = false, customMessage = null)
  *    - Activa una pantalla de carga (overlay) con barra de progreso simulada para dar retroalimentación visual inmediata.
  *    - Envía el formulario POST para su procesamiento en el servidor.
  * 
- * @param {number|string} polygonId   ID del polígono a evaluar
+ * @param {number|string} polygonId   ID de la Parcela a evaluar
  * @param {string}        polygonName Nombre visible de la parcela
  */
-window.confirmAnalysis = function(polygonId, polygonName) {
+window.confirmAnalysis = function (polygonId, polygonName) {
     const startYear = 2001; // Primer año disponible en el dataset UMD Hansen de GFW
-    const endYear   = 2024; // Último año procesado
+    const endYear = 2024; // Último año procesado
     const iconColor = '#f59f0bea';
 
     // Generar arreglo secuencial de años para los selectores HTML
     const yearOptions = Array.from(
-        { length: endYear - startYear + 1 }, 
+        { length: endYear - startYear + 1 },
         (_, i) => startYear + i
     );
 
@@ -139,7 +139,7 @@ window.confirmAnalysis = function(polygonId, polygonName) {
         html: `
             <div class="text-left px-4">
                 <p class="text-gray-700 dark:text-gray-300 mb-6 text-center">
-                    Configura los parámetros para el polígono: <br>
+                    Configura los parámetros para el Parcela: <br>
                     <strong class="text-emerald-600 dark:text-emerald-400">${polygonName}</strong>
                 </p>
                 
@@ -153,9 +153,9 @@ window.confirmAnalysis = function(polygonId, polygonName) {
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Año Fin</label>
                         <select id="swal-end" class="w-full p-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500">
-                            ${yearOptions.map(y => 
-                                `<option value="${y}" ${y === endYear ? 'selected' : ''}>${y}</option>`
-                            ).join('')}
+                            ${yearOptions.map(y =>
+            `<option value="${y}" ${y === endYear ? 'selected' : ''}>${y}</option>`
+        ).join('')}
                         </select>
                     </div>
                 </div>
@@ -180,9 +180,9 @@ window.confirmAnalysis = function(polygonId, polygonName) {
         },
         preConfirm: () => {
             const start = document.getElementById('swal-start').value;
-            const end   = document.getElementById('swal-end').value;
-            const save  = document.getElementById('swal-save').checked;
-            
+            const end = document.getElementById('swal-end').value;
+            const save = document.getElementById('swal-save').checked;
+
             // Validación lógica de fechas
             if (parseInt(start) > parseInt(end)) {
                 Swal.showValidationMessage('El año de inicio no puede ser mayor al de fin');
@@ -193,12 +193,12 @@ window.confirmAnalysis = function(polygonId, polygonName) {
     }).then((result) => {
         if (result.isConfirmed) {
             document.getElementById(`start-${polygonId}`).value = result.value.start;
-            document.getElementById(`end-${polygonId}`).value   = result.value.end;
-            document.getElementById(`save-${polygonId}`).value  = result.value.save ? '1' : '0';
+            document.getElementById(`end-${polygonId}`).value = result.value.end;
+            document.getElementById(`save-${polygonId}`).value = result.value.save ? '1' : '0';
 
-            const loaderOverlay      = document.getElementById('loader-overlay');
-            const progressBar        = document.getElementById('progress-bar');
-            const progressText       = document.getElementById('progress-text');
+            const loaderOverlay = document.getElementById('loader-overlay');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
             const progressPercentage = document.getElementById('progress-percentage');
 
             // Feedback visual: simulación de avance de consulta satelital mientras responde el backend
@@ -230,13 +230,13 @@ window.addEventListener('pageshow', function (event) {
 
 // Interceptor para formularios con confirmación previa vía clases CSS
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.sweet-confirm-form').forEach(function(form) {
-        form.addEventListener('submit', function(e) {
+    document.querySelectorAll('.sweet-confirm-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
-            
-            const action   = form.getAttribute('data-action');
+
+            const action = form.getAttribute('data-action');
             const isEnable = action === 'habilitar';
-            
+
             showCustomConfirmation(isEnable).then((result) => {
                 if (result.isConfirmed) {
                     form.submit();
@@ -256,9 +256,9 @@ document.addEventListener('DOMContentLoaded', function () {
  * @param {number|string} userId   ID del usuario
  * @param {string}        userName Nombre del usuario a deshabilitar
  */
-window.handleUserDisable = async function(userId, userName) {
+window.handleUserDisable = async function (userId, userName) {
     const result = await window.showCustomConfirmation(false, `Vas a deshabilitar al usuario: ${userName}`);
-    
+
     if (result.isConfirmed) {
         try {
             const response = await fetch(`/admin/users/${userId}`, {
@@ -269,9 +269,9 @@ window.handleUserDisable = async function(userId, userName) {
                     'Accept': 'application/json'
                 }
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 const row = document.getElementById(`user-row-${userId}`);
                 if (row) {
@@ -306,11 +306,11 @@ window.handleUserDisable = async function(userId, userName) {
  * @param {boolean}          isSelf        Verdadero si el usuario autenticado se está editando a sí mismo
  * @param {string|null}      originalRole  Rol anterior antes del cambio
  */
-window.handleRoleChange = async function(selectElement, userId, userName, isSelf, originalRole = null) {
+window.handleRoleChange = async function (selectElement, userId, userName, isSelf, originalRole = null) {
     const currentOriginalRole = originalRole || selectElement.getAttribute('data-original-role');
-    const newRole             = selectElement.value;
-    const roleText            = (newRole === 'administrador') ? 'Administrador' : 'Básico';
-    
+    const newRole = selectElement.value;
+    const roleText = (newRole === 'administrador') ? 'Administrador' : 'Básico';
+
     // Si no hubo cambio real, salir
     if (newRole === currentOriginalRole) {
         return;
@@ -337,9 +337,9 @@ window.handleRoleChange = async function(selectElement, userId, userName, isSelf
                 'administrador': 'Acceso total a la administración de usuarios, auditoría, y gestión completa de datos.',
                 'basico': 'Acceso restringido a la visualización de datos y reportes personales.'
             };
-            
+
             const lostAccess = permissions['administrador'];
-            
+
             const secondMessage = `
                 <b>ADVERTENCIA FINAL:</b> Estás cambiando tu rol de <b>Administrador</b> a <b>Básico</b>.
                 Estás a punto de <b>perder el siguiente acceso</b>:
@@ -350,19 +350,19 @@ window.handleRoleChange = async function(selectElement, userId, userName, isSelf
                 
                 <b>¿CONFIRMAS BAJAR TUS PROPIOS PERMISOS?</b>
             `;
-            
+
             const secondResult = await window.showCustomConfirmation(true, secondMessage, 'Cambiar');
-            
+
             if (!secondResult.isConfirmed) {
                 selectElement.value = currentOriginalRole;
                 return;
             }
         }
-        
+
         // Petición HTTP PATCH asíncrona
         try {
             const url = `/admin/users/${userId}/update-role`;
-            
+
             const response = await fetch(url, {
                 method: 'PATCH',
                 headers: {
@@ -375,14 +375,14 @@ window.handleRoleChange = async function(selectElement, userId, userName, isSelf
                     role: newRole
                 })
             });
-            
+
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`Error ${response.status}: ${response.statusText}. ${errorText}`);
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 // Actualizar el atributo de respaldo para futuras modificaciones
                 selectElement.setAttribute('data-original-role', newRole);
@@ -390,14 +390,14 @@ window.handleRoleChange = async function(selectElement, userId, userName, isSelf
             } else {
                 throw new Error(data.message || 'Error al actualizar el rol');
             }
-            
+
         } catch (error) {
             console.error('Error en la petición:', error);
             // Revertir en la interfaz si ocurrió un fallo
             selectElement.value = currentOriginalRole;
             showCustomAlert('error', 'Error', error.message || 'Ocurrió un error al actualizar el rol.');
         }
-        
+
     } else {
         // Revertir si el usuario canceló la ventana de confirmación
         selectElement.value = currentOriginalRole;
@@ -408,9 +408,9 @@ window.handleRoleChange = async function(selectElement, userId, userName, isSelf
  * Rehabilita un usuario previamente dado de baja mediante petición HTTP POST asíncrona:
  * Remueve la fila de la vista de usuarios deshabilitados tras la respuesta positiva.
  */
-window.handleUserEnable = async function(userId, userName) {
+window.handleUserEnable = async function (userId, userName) {
     const result = await window.showCustomConfirmation(true, `Vas a habilitar al usuario: ${userName}`);
-    
+
     if (result.isConfirmed) {
         try {
             const response = await fetch(`/admin/users/${userId}/enable`, {
@@ -421,9 +421,9 @@ window.handleUserEnable = async function(userId, userName) {
                     'Accept': 'application/json'
                 }
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 const row = document.getElementById(`disabled-user-row-${userId}`);
                 if (row) {
@@ -460,7 +460,7 @@ window.handleUserEnable = async function(userId, userName) {
 function applyTransformPreservingCursor(input, transform) {
     const original = input.value;
     const start = input.selectionStart;
-    const end   = input.selectionEnd;
+    const end = input.selectionEnd;
     const transformed = transform(original);
 
     if (transformed === original) return; // sin cambios, no tocamos el DOM
@@ -472,7 +472,7 @@ function applyTransformPreservingCursor(input, transform) {
         // Ajustamos el cursor si el texto se acortó por el filtro
         const delta = original.length - transformed.length;
         const newStart = Math.max(0, start - delta);
-        const newEnd   = Math.max(0, end - delta);
+        const newEnd = Math.max(0, end - delta);
         input.setSelectionRange(newStart, newEnd);
     } catch (_) {
         // Silencioso: algunos tipos de input no soportan setSelectionRange
@@ -483,7 +483,7 @@ function applyTransformPreservingCursor(input, transform) {
  * Convierte todo el valor a MAYÚSCULAS preservando el cursor.
  * @param {HTMLInputElement|HTMLTextAreaElement} input
  */
-window.toUppercasePreservingCursor = function(input) {
+window.toUppercasePreservingCursor = function (input) {
     applyTransformPreservingCursor(input, v => v.toUpperCase());
 };
 
@@ -492,7 +492,7 @@ window.toUppercasePreservingCursor = function(input) {
  * No convierte a mayúsculas; combínala con `toUppercasePreservingCursor` si quieres ambas.
  * @param {HTMLInputElement|HTMLTextAreaElement} input
  */
-window.toLettersPreservingCursor = function(input) {
+window.toLettersPreservingCursor = function (input) {
     applyTransformPreservingCursor(input, v =>
         v.replace(/[^A-Za-záéíóúÁÉÍÓÚüÜñÑ\s']/g, '')
     );
@@ -502,6 +502,6 @@ window.toLettersPreservingCursor = function(input) {
  * Filtra el valor para dejar solo dígitos.
  * @param {HTMLInputElement|HTMLTextAreaElement} input
  */
-window.toDigitsPreservingCursor = function(input) {
+window.toDigitsPreservingCursor = function (input) {
     applyTransformPreservingCursor(input, v => v.replace(/\D/g, ''));
 };

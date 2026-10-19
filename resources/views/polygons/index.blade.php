@@ -5,15 +5,15 @@
             <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
                 <div class="text-gray-900 dark:text-gray-100">
                     <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
-                        {{ __('Gestión de Polígonos') }}
+                        {{ __('Gestión de Parcelas') }}
                     </h2>
                     
                     <div class="flex justify-end mb-4 space-x-4">
                         <div class="flex space-x-4">
 
-                             <!-- Botón para crear nuevo polígono -->
+                             <!-- Botón para crear nuevo Parcela -->
                             <a href="{{ route('polygons.create') }}" 
-                            title="Crear nuevo polígono" 
+                            title="Crear nuevo Parcela" 
                             class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-green-600/70 dark:hover:bg-green-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
                             
                                 <!-- Contenedor del ícono - se contrae en hover -->
@@ -29,9 +29,9 @@
                                 </span>
                             </a>
 
-                            <!-- Botón para ver el mapa de polígonos -->
+                            <!-- Botón para ver el mapa de Parcelas -->
                             <a href="{{ route('polygons.map') }}" 
-                            title="Ver mapa de polígonos" 
+                            title="Ver mapa de Parcelas" 
                             class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-blue-600/70 dark:hover:bg-blue-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
                             
                                 <!-- Contenedor del ícono - se contrae en hover -->
@@ -49,7 +49,7 @@
 
                             <!-- Botón para importar GeoJSON -->
                             <a href="{{ route('polygons.import.form') }}" 
-                            title="Importar polígonos desde GeoJSON" 
+                            title="Importar Parcelas desde GeoJSON" 
                             class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-yellow-600/70 dark:hover:bg-yellow-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
                                 <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
                                     <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-yellow-700/70 group-hover:text-white dark:text-yellow-500/70">
@@ -65,7 +65,7 @@
 
                             <!-- Botón para ver eliminados -->
                             <a href="{{ route('polygons.deleted') }}" 
-                            title="Ver polígonos eliminados" 
+                            title="Ver Parcelas eliminados" 
                             class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-red-600/70 dark:hover:bg-red-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
                                 
                                 <!-- Contenedor del ícono - se contrae en hover -->
@@ -486,7 +486,7 @@
                             <svg xmlns="http://www.w3.org/2002/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p class="text-gray-600 dark:text-gray-400">No se encontraron polígonos.</p>
+                            <p class="text-gray-600 dark:text-gray-400">No se encontraron Parcelas.</p>
                         </div>
                     @endif
                 </div>
@@ -508,7 +508,7 @@
                     </div>
                     <div>
                         <h2 class="text-xl font-bold text-white">
-                            Detalles del Polígono
+                            Detalles de la Parcela
                         </h2>
                         <p class="text-blue-100 text-sm">Información completa y detallada</p>
                     </div>
@@ -531,7 +531,7 @@
                         <div class="animate-ping h-8 w-8 rounded-full bg-blue-400"></div>
                     </div>
                 </div>
-                <p class="mt-4 text-gray-600 dark:text-gray-400 font-medium">Cargando información del polígono...</p>
+                <p class="mt-4 text-gray-600 dark:text-gray-400 font-medium">Cargando información de la Parcela...</p>
             </div>
         </div>
     </div>
@@ -617,13 +617,13 @@ async function makePolygonRequest(url, method = 'POST', data = null) {
     }
 }
 
-// Función para cambiar estado de polígono
+// Función para cambiar estado de Parcela
 async function handleTogglePolygonStatus(polygonId, polygonName, isCurrentlyActive) {
     const action = isCurrentlyActive ? 'desactivar' : 'activar';
     
     const result = await showCustomConfirmation(
         !isCurrentlyActive,
-        `¿Estás seguro de que deseas ${action} el polígono <b>${polygonName}</b>?`
+        `¿Estás seguro de que deseas ${action} el Parcela <b>${polygonName}</b>?`
     );
     
     if (result.isConfirmed) {
@@ -631,14 +631,14 @@ async function handleTogglePolygonStatus(polygonId, polygonName, isCurrentlyActi
         
         if (data.success) {
             updatePolygonStatusUI(polygonId, polygonName, data.is_active, data.status_text);
-            showCustomAlert('success', 'Éxito', `Polígono ${action} exitosamente.`);
+            showCustomAlert('success', 'Éxito', `Parcela ${action} exitosamente.`);
         } else {
             showCustomAlert('error', 'Error', data.message);
         }
     }
 }
 
-// Función para actualizar la UI del estado del polígono
+// Función para actualizar la UI del estado de la Parcela
 function updatePolygonStatusUI(polygonId, polygonName, isActive, statusText = null) {
     const row = document.getElementById(`polygon-row-${polygonId}`);
     if (!row) {
@@ -692,12 +692,12 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive, statusText = nu
     }
 }
 
-// Función para eliminar polígono
+// Función para eliminar Parcela
 async function handleDeletePolygon(polygonId, polygonName) {
     const result = await showCustomConfirmation(
         false,
-        `¿Estás seguro de que deseas eliminar el polígono <b>${polygonName}</b>?<br><br>
-         <small>El polígono será movido a la lista de eliminados.</small>`
+        `¿Estás seguro de que deseas eliminar el Parcela <b>${polygonName}</b>?<br><br>
+         <small>El Parcela será movido a la lista de eliminados.</small>`
     );
     
     if (result.isConfirmed) {
@@ -705,18 +705,18 @@ async function handleDeletePolygon(polygonId, polygonName) {
         
         if (data.success) {
             updatePolygonRowForDeleted(polygonId, polygonName);
-            showCustomAlert('success', 'Éxito', 'Polígono eliminado exitosamente.');
+            showCustomAlert('success', 'Éxito', 'Parcela eliminado exitosamente.');
         } else {
             showCustomAlert('error', 'Error', data.message);
         }
     }
 }
 
-// Función para restaurar polígono
+// Función para restaurar Parcela
 async function handleRestorePolygon(polygonId, polygonName) {
     const result = await showCustomConfirmation(
         true,
-        `¿Estás seguro de que deseas restaurar el polígono <b>${polygonName}</b>?`
+        `¿Estás seguro de que deseas restaurar el Parcela <b>${polygonName}</b>?`
     );
     
     if (result.isConfirmed) {
@@ -724,7 +724,7 @@ async function handleRestorePolygon(polygonId, polygonName) {
         
         if (data.success) {
             updatePolygonRowForRestored(polygonId, polygonName, data.is_active);
-            showCustomAlert('success', 'Éxito', 'Polígono restaurado exitosamente.');
+            showCustomAlert('success', 'Éxito', 'Parcela restaurado exitosamente.');
         } else {
             showCustomAlert('error', 'Error', data.message);
         }
@@ -751,7 +751,7 @@ function updatePolygonRowForDeleted(polygonId, polygonName) {
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p class="text-gray-600 dark:text-gray-400">No se encontraron polígonos.</p>
+                    <p class="text-gray-600 dark:text-gray-400">No se encontraron Parcelas.</p>
                 </td>
             </tr>
         `;
@@ -832,11 +832,11 @@ function updatePolygonRowForRestored(polygonId, polygonName, isActive = true) {
     }
 }
 
-// Función para mostrar detalles del polígono en modal - VERSIÓN CON DEPURACIÓN
+// Función para mostrar detalles de la Parcela en modal - VERSIÓN CON DEPURACIÓN
 async function showPolygonDetails(polygonId) {
     try {
         console.log(' ===== INICIO showPolygonDetails =====');
-        console.log(' ID del polígono:', polygonId);
+        console.log(' ID de la Parcela:', polygonId);
         
         // Mostrar loader en el modal
         const modalContent = document.getElementById('polygon-details-content');
@@ -858,7 +858,7 @@ async function showPolygonDetails(polygonId) {
         window.dispatchEvent(event);
         console.log(' Modal abierto');
         
-        // Obtener datos del polígono
+        // Obtener datos de la Parcela
         const url = `/polygons/${polygonId}/details`;
         console.log(' Haciendo fetch a:', url);
         
@@ -950,7 +950,7 @@ async function showPolygonDetails(polygonId) {
                         <svg class="w-6 h-6 text-red-600 dark:text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        <span class="text-red-700 dark:text-red-300 font-semibold">Error al cargar los detalles del polígono</span>
+                        <span class="text-red-700 dark:text-red-300 font-semibold">Error al cargar los detalles de la Parcela</span>
                     </div>
                     <p class="text-sm text-red-600 dark:text-red-400 mt-2">${error.message}</p>
                     <button onclick="showPolygonDetails(${polygonId})" 
@@ -967,7 +967,7 @@ async function showPolygonDetails(polygonId) {
     }
 }
 
-// Función para formatear los detalles del polígono - CON MANEJO DE NULL
+// Función para formatear los detalles de la Parcela - CON MANEJO DE NULL
 function formatPolygonDetails(polygon) {
     console.log('🎨 Formateando polygon:', polygon);
     
@@ -1247,9 +1247,9 @@ function formatPolygonDetails(polygon) {
 
              <div class="flex flex-wrap gap-3 justify-between items-center">
                 <div class="space-x-2">
-                    <!-- Botón para editar el polígono -->
+                    <!-- Botón para editar el Parcela -->
                     <a href="/polygons/${polygon.id}/edit" 
-                    title="Editar polígono" 
+                    title="Editar Parcela" 
                     class="group px-2.5 py-1.5 bg-stone-200/80 hover:bg-indigo-600/70 dark:hover:bg-indigo-500/60 text-stone-700 hover:text-white border border-stone-300/70 hover:border-transparent dark:bg-gray-700/40 dark:text-gray-300 dark:hover:text-white dark:border-gray-600/50 rounded-md flex items-center hover:shadow-md hover:-translate-y-0.5 overflow-hidden inline-flex">
                         <span class="flex items-center justify-center w-6 h-6 transition-all duration-300 group-hover:w-6 group-hover:h-6 flex-shrink-0">
                             <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-indigo-600 dark:text-indigo-400 group-hover:text-white">

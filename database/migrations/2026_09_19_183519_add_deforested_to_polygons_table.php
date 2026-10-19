@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\DB;
  * Optimización de rendimiento para el filtrado en listados y vistas del mapa:
  * 1. Agrega la columna booleana `deforested` (por defecto false) con su índice B-Tree.
  * 2. Evita tener que realizar costosas subconsultas `EXISTS (SELECT 1 FROM deforestation...)`
- *    cada vez que se solicita el listado o las capas del mapa de polígonos.
+ *    cada vez que se solicita el listado o las capas del mapa de Parcelas.
  * 3. Ejecuta una sentencia SQL de actualización retroactiva inmediata:
- *    Marca como `deforested = true` a todos aquellos polígonos que ya tenían registros históricos
+ *    Marca como `deforested = true` a todos aquellos Parcelas que ya tenían registros históricos
  *    con pérdida de bosque mayor a 0 hectáreas en la tabla `deforestation`.
  */
 return new class extends Migration
@@ -27,7 +27,7 @@ return new class extends Migration
         });
 
         // Actualización retroactiva de datos existentes:
-        // Identifica polígonos con deforestación activa comprobada y actualiza su bandera
+        // Identifica Parcelas con deforestación activa comprobada y actualiza su bandera
         DB::statement("
             UPDATE polygons
             SET deforested = true

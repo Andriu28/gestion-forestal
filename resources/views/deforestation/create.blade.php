@@ -733,7 +733,7 @@ document.getElementById('manual-polygon-form').addEventListener('submit', functi
         }
     }
     
-    // Dibujar el polígono universal
+    // Dibujar el Parcela universal
     drawUniversalUTMPolygon(utmCoords);
     closeCoordinateModal();
 });
@@ -808,7 +808,7 @@ function removeCoordinate(index) {
     updateCoordinatesList();
 }
 
-// FUNCIÓN CLAVE: Dibujar polígono UTM universal
+// FUNCIÓN CLAVE: Dibujar Parcela UTM universal
 
 function drawUniversalUTMPolygon(utmCoordinates) {
     if (window.deforestationMapInstance) {
@@ -1085,7 +1085,7 @@ document.getElementById('import-area').addEventListener('change', async function
             try {
                 const geojson = JSON.parse(event.target.result);
                 
-                // --- DETECCIÓN DE MÚLTIPLES POLÍGONOS ---
+                // --- DETECCIÓN DE MÚLTIPLES Parcelas ---
                 const isMulti = geojson.type === 'FeatureCollection' && geojson.features.length > 1;
                 
                 const producerContainer = document.getElementById('producer-container');
@@ -1327,7 +1327,7 @@ document.getElementById('analysis-form').addEventListener('submit', async functi
     // --- Validaciones cliente (idénticas a antes) ---
     const geometry = document.getElementById('geometry').value;
     if (!geometry) {
-        showAlert('Debe dibujar un polígono en el mapa antes de analizar.', 'warning');
+        showAlert('Debe dibujar un Parcela en el mapa antes de analizar.', 'warning');
         return;
     }
 
@@ -1496,7 +1496,7 @@ function calculateAreaHectares(coordinates) {
     }
 }
 
-// Función para calcular área desde un polígono OpenLayers
+// Función para calcular área desde un Parcela OpenLayers
 function calculatePolygonArea(feature) {
     if (!feature || !feature.getGeometry()) return 0;
     
@@ -1510,7 +1510,7 @@ function calculatePolygonArea(feature) {
         
         return calculateAreaHectares(coordinates);
     } catch (error) {
-        console.error('Error calculando área del polígono:', error);
+        console.error('Error calculando área de la Parcela:', error);
         return 0;
     }
 }
@@ -1575,7 +1575,7 @@ function calculatePolygonArea(feature) {
     --tw-gradient-stops: var(--tw-gradient-from), rgba(255, 255, 255, 0.3), var(--tw-gradient-to, rgba(255, 255, 255, 0.3));
 }
 
-/* Mejorar la legibilidad del texto en polígonos */
+/* Mejorar la legibilidad del texto en Parcelas */
 .ol-layer canvas {
     font-smooth: always;
     -webkit-font-smoothing: antialiased;

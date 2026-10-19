@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Servicio de Importación Masiva de Polígonos y Archivos GIS
+ * Servicio de Importación Masiva de Parcelas y Archivos GIS
  * 
  * Se encarga de procesar capas cartográficas provenientes de archivos Shapefile (.zip), GeoJSON o KML:
  * 1. Normaliza las propiedades alfanuméricas heterogéneas que vienen dentro de los archivos GIS.
  * 2. Asocia o crea automáticamente los productores agrícolas/forestales vinculados a cada predio.
- * 3. Valida la topología de las geometrías (solo admite Polígonos y MultiPolígonos).
+ * 3. Valida la topología de las geometrías (solo admite Parcelas y MultiParcelas).
  * 4. Inserta las parcelas en PostGIS gestionando transformaciones de proyección espacial (SRID).
  * 5. Dispara opcionalmente el análisis satelital automático de deforestación post-importación.
  * 6. Reporta el avance en tiempo real de manera concurrente (thread-safe) mediante bloqueos de caché.
@@ -30,7 +30,7 @@ class PolygonImportService
      * - parish_id: Parroquia asignada por defecto si el archivo cartográfico no la especifica.
      * - default_producer_id: Productor asignado por defecto para parcelas que vengan sin dueño.
      * - create_missing_producers: Si es verdadero, crea registros nuevos en la tabla `producers` cuando el nombre no exista.
-     * - skip_existing: Si es verdadero, omite polígonos cuyo `external_id` ya exista en la base de datos para evitar duplicados.
+     * - skip_existing: Si es verdadero, omite Parcelas cuyo `external_id` ya exista en la base de datos para evitar duplicados.
      * - producer_field: Nombre de la columna en la tabla de atributos del Shapefile que contiene el nombre del productor (ej. 'Productor', 'OWNER').
      * - analyze_deforestation: Si es verdadero, ejecuta de inmediato la consulta satelital a GFW para cada parcela importada.
      */
@@ -210,7 +210,7 @@ class PolygonImportService
                     $deforestedHa = array_sum(array_column($yearly, 'area__ha'));
                     $status       = 'analyzed';
                 } catch (\Throwable $e) {
-                    Log::warning("Análisis post-importación falló para polígono {$polygon->id}", [
+                    Log::warning("Análisis post-importación falló para Parcela {$polygon->id}", [
                         'error' => $e->getMessage(),
                     ]);
                 }
@@ -270,7 +270,7 @@ class PolygonImportService
      * Actualiza el progreso de forma atómica mediante `Cache::lock`.
      * 
      * Razón de diseño:
-     * Si múltiples subprocesos o colas trabajan en paralelo importando polígonos del mismo archivo,
+     * Si múltiples subprocesos o colas trabajan en paralelo importando Parcelas del mismo archivo,
      * un incremento convencional de lectura-modificación-escritura perdería datos por condiciones de carrera.
      * El bloqueo temporal garantiza la integridad de los contadores y listas de errores.
      *
@@ -390,7 +390,7 @@ class PolygonImportService
 
     /**
      * Construye un resumen en texto enriquecido con formato HTML para notificar al usuario
-     * cuántos polígonos fueron importados, analizados, omitidos o si ocurrieron duplicados.
+     * cuántos Parcelas fueron importados, analizados, omitidos o si ocurrieron duplicados.
      */
     public function buildImportSummary(array $result): string
     {

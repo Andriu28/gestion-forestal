@@ -192,7 +192,7 @@ if (!window.BackgroundProgress) {
                 return; // No auto-ocultar
             }
 
-            // Flujo antiguo (importación de polígonos): sin redirect_url
+            // Flujo antiguo (importación de Parcelas): sin redirect_url
             if (!s.errors?.length) setTimeout(hide, 8000);
         }
 
@@ -273,7 +273,7 @@ if (!window.BackgroundProgress) {
                 const { taskId, progressUrl, lastState } = JSON.parse(stored);
                 if (!taskId) return;
 
-                setTitle('Importando polígonos');
+                setTitle('Importando Parcelas');
                 show();
 
                 // Rehidratar UI con el último estado conocido para evitar el "flash"
@@ -290,7 +290,7 @@ if (!window.BackgroundProgress) {
 
                 start(taskId, {
                     progressUrl,
-                    title: 'Importando polígonos',
+                    title: 'Importando Parcelas',
                     skipReset: true, // no borrar lo que acabamos de pintar
                 });
             } catch (e) {

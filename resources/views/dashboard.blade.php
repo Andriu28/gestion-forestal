@@ -68,7 +68,7 @@
         <p class="text-xs text-gray-400 mt-2">{{ $activeProducers }} activos · {{ $inactiveProducers }} inactivos</p>
     </div>
 
-    {{-- Polígonos --}}
+    {{-- Parcelas --}}
     <div class="bg-stone-100/90 dark:bg-custom-gray rounded-2xl shadow p-5 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
         <div class="flex items-center justify-between mb-4">
             <div class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
@@ -81,7 +81,7 @@
             </span>
         </div>
         <p class="text-2xl font-black text-gray-900 dark:text-white">{{ $totalPolygons }}</p>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Polígonos registrados</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Parcelas registrados</p>
         <p class="text-xs text-gray-400 mt-2">{{ $activePolygons }} activos · {{ $polygonsWithProducer }} con productor</p>
     </div>
 
@@ -114,7 +114,7 @@
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Actividad últimos 6 meses</h3>
             <div class="flex items-center gap-4 text-xs text-gray-400">
                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-purple-400 inline-block"></span>Actividades</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-emerald-400 inline-block"></span>Polígonos</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-emerald-400 inline-block"></span>Parcelas</span>
             </div>
         </div>
         <div class="h-52">
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         borderSkipped: false,
                     },
                     {
-                        label: 'Polígonos',
+                        label: 'Parcelas',
                         data: labels.map(m => polyData.find(d => d.month === m)?.count ?? 0),
                         backgroundColor: isDark ? 'rgba(52,211,153,0.6)' : 'rgba(16,185,129,0.55)',
                         borderRadius: 5,

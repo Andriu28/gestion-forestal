@@ -63,7 +63,7 @@ class DashboardController extends Controller
         $lastWeekProducers    = Producer::whereBetween('created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()])->count();
         $activeProducersPercentage  = $totalProducers > 0 ? round(($activeProducers / $totalProducers) * 100, 1) : 0;
 
-        // ----- Polígonos ------------------------------------------------------
+        // ----- Parcelas ------------------------------------------------------
         $totalPolygons         = Polygon::count();
         $activePolygons        = Polygon::where('is_active', true)->count();
         $polygonsWithProducer  = Polygon::whereNotNull('producer_id')->count();
@@ -145,7 +145,7 @@ class DashboardController extends Controller
             'activeUsersCount', 'newUsersToday', 'userGrowthPercentage',
             // Productores
             'totalProducers', 'activeProducers', 'inactiveProducers', 'activeProducersPercentage',
-            // Polígonos
+            // Parcelas
             'totalPolygons', 'activePolygons', 'polygonsWithProducer', 'totalAreaHa',
             // Actividades
             'activitiesToday', 'activitiesThisWeek', 'activitiesThisMonth', 'activityGrowthPercentage',

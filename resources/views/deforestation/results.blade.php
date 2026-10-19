@@ -89,11 +89,11 @@
 
                 <!-- Información del Área de Estudio -->
                 <div class="mb-8 p-4 bg-gray-50 dark:bg-gray-600/10 rounded-lg">
-                    <h3 class="font-semibold text-xl text-grey-800 dark:text-grey-100 mb-2">Nombre del Polígono:
+                    <h3 class="font-semibold text-xl text-grey-800 dark:text-grey-100 mb-2">Nombre de la Parcela:
                         {{ $dataToPass['polygon_name'] }}
                     </h3>
                     @if($dataToPass['description'])
-                        <p class="text-grey-800 dark:text-grey-100">Descripción del Polígono: {{ $dataToPass['description'] }}</p>
+                        <p class="text-grey-800 dark:text-grey-100">Descripción de la Parcela: {{ $dataToPass['description'] }}</p>
                     @endif
                 </div>
 
@@ -106,7 +106,7 @@
                     />
 
                     <x-cards.stats-card 
-                        title="Área Total del Polígono" 
+                        title="Área Total de la Parcela" 
                         color="green" 
                         value="{{ number_format($dataToPass['polygon_area_ha'], 4, ',', '.') }}" 
                         unit="ha" 
@@ -345,7 +345,7 @@ function initResultMap() {
         })
     });
 
-    // Añadir el polígono al mapa
+    // Añadir el Parcela al mapa
     const format = new ol.format.GeoJSON();
     let features = format.readFeatures(polygonGeojson, {
         dataProjection: 'EPSG:4326',
@@ -375,7 +375,7 @@ function initResultMap() {
         
         resultMap.addLayer(vectorLayer);
         
-        // Ajustar zoom al polígono
+        // Ajustar zoom al Parcela
         resultMap.getView().fit(vectorLayer.getSource().getExtent(), {
             padding: [50, 50, 50, 50],
             duration: 1000

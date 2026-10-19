@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * Representa el tercer nivel y la unidad territorial mínima de división político-administrativa
  * en Venezuela (ej. 'San José de Areocual', 'Río Caribe', etc.).
  * 
- * Es la entidad de enlace fundamental para los predios forestales: cada polígono y cada productor
+ * Es la entidad de enlace fundamental para los predios forestales: cada Parcela y cada productor
  * se vincula directamente a una parroquia, desde la cual se infiere automáticamente el municipio y el estado.
  */
 class Parish extends Model
@@ -42,7 +42,7 @@ class Parish extends Model
     }
 
     /**
-     * Polígonos o parcelas ubicadas dentro de los límites territoriales de esta Parroquia.
+     * Parcelas o parcelas ubicadas dentro de los límites territoriales de esta Parroquia.
      */
     public function polygons()
     {

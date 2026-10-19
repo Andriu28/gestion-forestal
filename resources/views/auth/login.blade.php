@@ -41,7 +41,9 @@
                     </svg>
             </div>
             <h1 class="text-2xl sm:text-4xl md:text-4xl lg:text-5xl font-bold text-custom-dark dark:text-amber-100 mb-1 transition-colors">Cacao San José</h1>
-            <p class="text-ms sm:text-base md:text-lg text-amber-600 dark:text-custom-gold-light transition-colors">Gestion Forestal</p>
+            <p class="text-ms sm:text-base md:text-lg text-amber-600 dark:text-custom-gold-light transition-colors">
+  Sistema de Información Gerencial para el Cumplimiento de la <strong class="font-bold">EUDR</strong> en la Cadena de Suministro de Cacao
+</p>
         </div>
 
         <div class="card-glow shadow-2xl hover:shadow-3xl dark:shadow-gray-900/50 bg-stone-200/90 dark:bg-custom-gray rounded-2xl transition-all duration-300">
@@ -101,7 +103,7 @@
                                 </svg>
                             </button>
                         </div>
-                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
                     </div>
 
                     <!-- Recordarme y olvidé contraseña -->

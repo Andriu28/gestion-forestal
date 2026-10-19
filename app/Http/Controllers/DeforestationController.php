@@ -90,7 +90,7 @@ class DeforestationController extends Controller
      * 2. Valida los rangos de años permitidos en la configuración y las reglas de obligatoriedad.
      * 3. Descompone el GeoJSON en entidades individuales (Features) si se envió una FeatureCollection.
      * 4. Inicializa el seguimiento en la memoria caché mediante `DeforestationAnalysisService::initProgress`.
-     * 5. Encola un `AnalyzeDeforestationJob` por cada polígono dentro de un lote (`Bus::batch`).
+     * 5. Encola un `AnalyzeDeforestationJob` por cada Parcela dentro de un lote (`Bus::batch`).
      * 6. Devuelve un código HTTP 202 con el UUID del análisis para que el cliente inicie el polling.
      */
     public function analyze(Request $request)
@@ -256,7 +256,7 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Procesa un único polígono de forma sincrónica:
+     * Procesa una única Parcela de forma sincrónica:
      * Comprueba si la forma ya existe con `ST_Equals`, calcula su área geodésica si falta,
      * y obtiene las alertas anuales contra GFW.
      */
@@ -274,7 +274,7 @@ class DeforestationController extends Controller
 
         $geometryString = json_encode($geometryGeoJson);
 
-        // Búsqueda espacial de polígono preexistente idéntico
+        // Búsqueda espacial de Parcela preexistente idéntico
         $existingPolygon = DB::table('polygons')
             ->select('id', 'area_ha', 'name', 'description')
             ->whereRaw("ST_Equals(geometry, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326))", [$geometryString])
@@ -331,7 +331,7 @@ class DeforestationController extends Controller
             'area__ha'         => $yearlyResults[$endYear]['area__ha'] ?? 0,
             'polygon_area_ha'  => max($areaHa, $totalLossResults['totalDeforestedArea']),
             'status'           => $yearlyResults[$endYear]['status'] ?? 'success',
-            'polygon_name'     => $globalParams['polygon_name'] ?? ('Polígono ' . ($externalId ?: uniqid())),
+            'polygon_name'     => $globalParams['polygon_name'] ?? ('Parcela ' . ($externalId ?: uniqid())),
             'description'      => $globalParams['description'] ?? '',
             'yearly_results'   => $yearlyResults,
             'total_loss'       => $totalLossResults,
@@ -347,7 +347,7 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Guarda dentro de una transacción el polígono y sus registros de deforestación anuales.
+     * Guarda dentro de una transacción la Parcela y sus registros de deforestación anuales.
      */
     private function saveSinglePolygonData(array &$dataToPass, $existingId, bool $skipActivity = false)
     {
@@ -414,7 +414,7 @@ class DeforestationController extends Controller
             });
             session()->flash('save_success', 'Análisis guardado correctamente.');
         } catch (\Exception $e) {
-            Log::error('Error guardando polígono: ' . $e->getMessage());
+            Log::error('Error guardando Parcela: ' . $e->getMessage());
             $dataToPass['save_error'] = 'Error al guardar: ' . $e->getMessage();
         }
     }
@@ -455,7 +455,7 @@ class DeforestationController extends Controller
             'name.min'             => 'El nombre debe tener al menos 3 caracteres.',
             'producer_id.required' => 'Debe seleccionar un productor para guardar el análisis.',
             'producer_id.exists'   => 'El productor seleccionado no es válido.',
-            'geometry.required'    => 'Debe dibujar un polígono en el mapa.',
+            'geometry.required'    => 'Debe dibujar una Parcela en el mapa.',
             'area_ha.min'          => 'El área debe ser mayor a 0 hectáreas.',
             'end_year.gte'         => 'El año de fin debe ser mayor o igual al año de inicio.'
         ];
@@ -472,7 +472,7 @@ class DeforestationController extends Controller
         
         if (empty($polygonIds)) {
             return redirect()->route('deforestation.create')
-                ->withErrors(['error' => 'No se especificaron polígonos para mostrar.']);
+                ->withErrors(['error' => 'No se especificaron Parcelas para mostrar.']);
         }
 
         $polygons = Polygon::with(['analyses', 'producer'])
@@ -481,7 +481,7 @@ class DeforestationController extends Controller
 
         if ($polygons->isEmpty()) {
             return redirect()->route('deforestation.create')
-                ->withErrors(['error' => 'No se encontraron polígonos con los IDs proporcionados.']);
+                ->withErrors(['error' => 'No se encontraron Parcelas con los IDs proporcionados.']);
         }
 
         $multiResults = [];
@@ -495,14 +495,14 @@ class DeforestationController extends Controller
 
         if (empty($multiResults)) {
             return redirect()->route('deforestation.create')
-                ->withErrors(['error' => 'Los polígonos seleccionados no tienen análisis guardados.']);
+                ->withErrors(['error' => 'Las Parcelas seleccionadas no tienen análisis guardados.']);
         }
 
         return view('deforestation.multi-results', compact('multiResults'));
     }
     
     /**
-     * Muestra la vista del reporte final de deforestación para un polígono persistido individual.
+     * Muestra la vista del reporte final de deforestación para una Parcela persistida individual.
      */
     public function results($polygonId): View
     {
@@ -519,7 +519,7 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Retorna en formato JSON los análisis anuales de un polígono indexados por año (usado por gráficas Chart.js).
+     * Retorna en formato JSON los análisis anuales de una Parcela indexados por año (usado por gráficas Chart.js).
      */
     public function getAnalysisData($polygonId): JsonResponse
     {
@@ -615,7 +615,7 @@ class DeforestationController extends Controller
     }
 
     /**
-     * Ejecuta una reevaluación sincrónica de deforestación para un polígono específico ya existente.
+     * Ejecuta una reevaluación sincrónica de deforestación para una Parcela específico ya existente.
      */
     public function polygon(Request $request)
     {
@@ -672,7 +672,7 @@ class DeforestationController extends Controller
                         ),
                     ])
                     ->event('analyzed')
-                    ->log("Nuevo análisis de deforestación completado para el polígono '{$polygon->name}'");
+                    ->log("Nuevo análisis de deforestación completado para la Parcela '{$polygon->name}'");
             }
 
             session()->flash('save_success', 'Los nuevos datos del análisis han sido guardados.');
@@ -715,7 +715,7 @@ class DeforestationController extends Controller
         $analyses = $polygon->analyses->sortBy('year');
 
         if ($analyses->isEmpty()) {
-            throw new \Exception("El polígono '{$polygon->name}' no tiene análisis guardados.");
+            throw new \Exception("La Parcela '{$polygon->name}' no tiene análisis guardados.");
         }
 
         $yearlyResults       = [];
@@ -793,7 +793,7 @@ class DeforestationController extends Controller
                 'total_percentage' => $totalPercentage,
             ])
             ->event('analyzed_multiple')
-            ->log("Análisis de deforestación completado para " . count($polygonIds) . " polígonos");
+            ->log("Análisis de deforestación completado para " . count($polygonIds) . " Parcelas");
     }
 
     /**
@@ -840,11 +840,11 @@ class DeforestationController extends Controller
                 'saved'            => false,
             ])
             ->event('analyzed_multiple')
-            ->log("Análisis múltiple de " . count($multiResults) . " polígonos (no guardado)");
+            ->log("Análisis múltiple de " . count($multiResults) . " Parcelas (no guardado)");
     }
 
     /**
-     * Sincroniza la bandera booleana `deforested` del polígono.
+     * Sincroniza la bandera booleana `deforested` de la Parcela.
      */
     private function syncDeforestationDerivedFields(Polygon $polygon): void
     {

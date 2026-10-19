@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Bus;
 use App\Jobs\ImportPolygonJob;
 
 /**
- * Controlador de Gestión de Polígonos y Parcelas Geoespaciales
+ * Controlador de Gestión de Parcelas y Parcelas Geoespaciales
  * 
  * Centraliza la administración de los predios geográficos del sistema:
  * 1. Filtrado multidimensional (territorial, productivo, deforestación y rangos de superficie).
@@ -50,7 +50,7 @@ class PolygonController extends Controller
     // =========================================================================
 
     /**
-     * Muestra la tabla principal de polígonos aplicando filtros combinados:
+     * Muestra la tabla principal de las Parcelas aplicando filtros combinados:
      * - Búsqueda por texto (nombre de parcela).
      * - Rango de fechas de registro.
      * - Estado operativo (activo, inactivo, eliminado).
@@ -219,7 +219,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Muestra la papelera de polígonos eliminados lógicamente (SoftDeletes).
+     * Muestra la papelera de Parcelas eliminadas lógicamente (SoftDeletes).
      */
     public function deleted(Request $request): View
     {
@@ -237,7 +237,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Vista general del mapa interactivo con todos los polígonos cargados en capas Leaflet.
+     * Vista general del mapa interactivo con todas las Parcelas cargadas en capas Leaflet.
      */
     public function map(): View
     {
@@ -249,7 +249,7 @@ class PolygonController extends Controller
     // =========================================================================
 
     /**
-     * Muestra el formulario interactivo para dibujar o ingresar un polígono nuevo.
+     * Muestra el formulario interactivo para dibujar o ingresar una Parcela nueva.
      */
     public function create(): View
     {
@@ -305,19 +305,19 @@ class PolygonController extends Controller
             // Calcular superficie geodésica real y centroide en PostGIS
             $polygon->recalculateGeometryStats();
 
-            Log::info('Polígono creado', ['id' => $polygon->id, 'parish_id' => $polygon->parish_id]);
+            Log::info('Parcela creada', ['id' => $polygon->id, 'parish_id' => $polygon->parish_id]);
 
             return redirect()->route('polygons.index')
-                ->with('success', "Polígono '{$polygon->name}' creado exitosamente.");
+                ->with('success', "Parcela '{$polygon->name}' creada exitosamente.");
 
         } catch (\Throwable $e) {
-            Log::error('Error al crear polígono', ['error' => $e->getMessage()]);
-            return back()->withInput()->with('error', 'Error al crear el polígono: ' . $e->getMessage());
+            Log::error('Error al crear Parcela', ['error' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Error al crear la Parcela: ' . $e->getMessage());
         }
     }
 
     /**
-     * Muestra la ficha técnica detallada del polígono, su productor y su ubicación.
+     * Muestra la ficha técnica detallada de la Parcela, su productor y su ubicación.
      */
     public function show(Polygon $polygon): View
     {
@@ -339,7 +339,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Actualiza la información alfanumérica y/o la geometría espacial del polígono:
+     * Actualiza la información alfanumérica y/o la geometría espacial de la Parcela:
      * 
      * Detección de cambios espaciales:
      * - Compara la cadena GeoJSON previa normalizada con la nueva cadena enviada desde el mapa.
@@ -353,7 +353,7 @@ class PolygonController extends Controller
 
         DB::beginTransaction();
         try {
-            Log::info('Iniciando update de polígono', ['id' => $polygon->id]);
+            Log::info('Iniciando update de Parcela', ['id' => $polygon->id]);
 
             $parishId = $this->resolveParishId($validated, $polygon->parish_id);
             $geoJson  = $this->normalizeGeoJson($validated['geometry']);
@@ -398,21 +398,21 @@ class PolygonController extends Controller
             DB::commit();
 
             return redirect()->route('polygons.index')
-                ->with('success', "Polígono '{$polygon->name}' actualizado exitosamente.");
+                ->with('success', "Parcela '{$polygon->name}' actualizado exitosamente.");
 
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error al actualizar polígono', [
+            Log::error('Error al actualizar Parcela', [
                 'id'    => $polygon->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return back()->withInput()->with('error', 'Error al actualizar el polígono: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Error al actualizar el Parcela: ' . $e->getMessage());
         }
     }
 
     /**
-     * Elimina lógicamente un polígono (SoftDelete). Responde tanto en JSON (vía AJAX) como en redirección web.
+     * Elimina lógicamente un Parcela (SoftDelete). Responde tanto en JSON (vía AJAX) como en redirección web.
      */
     public function destroy(Request $request, Polygon $polygon): JsonResponse|RedirectResponse
     {
@@ -422,18 +422,18 @@ class PolygonController extends Controller
             if ($this->wantsJson($request)) {
                 return response()->json([
                     'success'    => true,
-                    'message'    => 'Polígono eliminado exitosamente.',
+                    'message'    => 'Parcela eliminado exitosamente.',
                     'polygon_id' => $polygon->id,
                     'redirect'   => route('polygons.deleted'),
                 ]);
             }
 
             return redirect()->route('polygons.index')
-                ->with('success', 'Polígono eliminado exitosamente.');
+                ->with('success', 'Parcela eliminado exitosamente.');
 
         } catch (\Throwable $e) {
-            Log::error('Error al eliminar polígono', ['id' => $polygon->id, 'error' => $e->getMessage()]);
-            return $this->errorResponse($request, 'Error al eliminar el polígono: ' . $e->getMessage());
+            Log::error('Error al eliminar Parcela', ['id' => $polygon->id, 'error' => $e->getMessage()]);
+            return $this->errorResponse($request, 'Error al eliminar el Parcela: ' . $e->getMessage());
         }
     }
 
@@ -442,7 +442,7 @@ class PolygonController extends Controller
     // =========================================================================
 
     /**
-     * Restaura un polígono que había sido enviado a la papelera.
+     * Restaura un Parcela que había sido enviado a la papelera.
      */
     public function restore(Request $request, int $id): JsonResponse|RedirectResponse
     {
@@ -453,7 +453,7 @@ class PolygonController extends Controller
             if ($this->wantsJson($request)) {
                 return response()->json([
                     'success'    => true,
-                    'message'    => 'Polígono restaurado exitosamente.',
+                    'message'    => 'Parcela restaurado exitosamente.',
                     'polygon_id' => $polygon->id,
                     'is_active'  => $polygon->is_active,
                     'redirect'   => route('polygons.index'),
@@ -461,16 +461,16 @@ class PolygonController extends Controller
             }
 
             return redirect()->route('polygons.index')
-                ->with('success', 'Polígono restaurado exitosamente.');
+                ->with('success', 'Parcela restaurado exitosamente.');
 
         } catch (\Throwable $e) {
-            Log::error('Error al restaurar polígono', ['id' => $id, 'error' => $e->getMessage()]);
-            return $this->errorResponse($request, 'Error al restaurar el polígono: ' . $e->getMessage());
+            Log::error('Error al restaurar Parcela', ['id' => $id, 'error' => $e->getMessage()]);
+            return $this->errorResponse($request, 'Error al restaurar el Parcela: ' . $e->getMessage());
         }
     }
 
     /**
-     * Alterna el estado operativo del polígono entre Activo e Inactivo.
+     * Alterna el estado operativo de la Parcela entre Activo e Inactivo.
      */
     public function toggleStatus(Request $request, Polygon $polygon): JsonResponse|RedirectResponse
     {
@@ -481,7 +481,7 @@ class PolygonController extends Controller
             if ($this->wantsJson($request)) {
                 return response()->json([
                     'success'     => true,
-                    'message'     => "Polígono {$verb} exitosamente.",
+                    'message'     => "Parcela {$verb} exitosamente.",
                     'is_active'   => $polygon->is_active,
                     'status_text' => $polygon->is_active ? 'Activo' : 'Inactivo',
                     'polygon_id'  => $polygon->id,
@@ -489,11 +489,11 @@ class PolygonController extends Controller
             }
 
             return redirect()->route('polygons.index')
-                ->with('success', "Polígono {$verb} exitosamente.");
+                ->with('success', "Parcela {$verb} exitosamente.");
 
         } catch (\Throwable $e) {
-            Log::error('Error al cambiar estado del polígono', ['id' => $polygon->id, 'error' => $e->getMessage()]);
-            return $this->errorResponse($request, 'Error al cambiar el estado del polígono: ' . $e->getMessage());
+            Log::error('Error al cambiar estado de la Parcela', ['id' => $polygon->id, 'error' => $e->getMessage()]);
+            return $this->errorResponse($request, 'Error al cambiar el estado de la Parcela: ' . $e->getMessage());
         }
     }
 
@@ -502,10 +502,10 @@ class PolygonController extends Controller
     // =========================================================================
 
     /**
-     * Genera una colección estándar GeoJSON (FeatureCollection) con todos los polígonos activos:
+     * Genera una colección estándar GeoJSON (FeatureCollection) con todos los Parcelas activos:
      * - Extrae la columna geométrica PostGIS convirtiéndola a JSON nativo mediante `ST_AsGeoJSON(geometry)`.
      * - Adjunta propiedades alfanuméricas (nombre, productor, área, clasificación de deforestación).
-     * - Clasifica el polígono en 'has_deforestation', 'no_deforestation' o 'no_data' para que Leaflet
+     * - Clasifica el Parcela en 'has_deforestation', 'no_deforestation' o 'no_data' para que Leaflet
      *   pueda pintar los bordes de color verde o rojo dinámicamente en el mapa.
      */
     public function geojson(): JsonResponse
@@ -553,7 +553,7 @@ class PolygonController extends Controller
                     'geometry' => json_decode($geojsonStr, true),
                 ];
             } catch (\Throwable $e) {
-                Log::error('Error al procesar polígono para GeoJSON', [
+                Log::error('Error al procesar Parcela para GeoJSON', [
                     'polygon_id' => $polygon->id,
                     'error'      => $e->getMessage(),
                 ]);
@@ -582,14 +582,14 @@ class PolygonController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
             return response()->json([
                 'success' => false,
-                'message' => 'El polígono no existe o fue eliminado permanentemente.',
+                'message' => 'El Parcela no existe o fue eliminado permanentemente.',
             ], 404);
 
         } catch (\Throwable $e) {
-            Log::error('Error al cargar detalles del polígono', ['id' => $id, 'error' => $e->getMessage()]);
+            Log::error('Error al cargar detalles de la Parcela', ['id' => $id, 'error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error al cargar los detalles del polígono.',
+                'message' => 'Error al cargar los detalles de la Parcela.',
             ], 500);
         }
     }
@@ -638,7 +638,7 @@ class PolygonController extends Controller
     // =========================================================================
 
     /**
-     * Reglas de validación para la creación y edición de polígonos.
+     * Reglas de validación para la creación y edición de Parcelas.
      */
     private function validationRules(bool $isUpdate = false): array
     {
@@ -765,7 +765,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Prepara el arreglo estructurado del polígono para devolverlo a ventanas modales o visores AJAX.
+     * Prepara el arreglo estructurado de la Parcela para devolverlo a ventanas modales o visores AJAX.
      */
     private function serializePolygon(Polygon $polygon): array
     {
@@ -876,7 +876,7 @@ class PolygonController extends Controller
     }
 
     /**
-     * Muestra la interfaz para la carga de capas de polígonos mediante archivos cartográficos (Shapefile/GeoJSON).
+     * Muestra la interfaz para la carga de capas de Parcelas mediante archivos cartográficos (Shapefile/GeoJSON).
      */
     public function showImportForm(): View
     {
@@ -891,14 +891,14 @@ class PolygonController extends Controller
     // =========================================================================
 
     /**
-     * Inicia la importación de polígonos desde una capa vectorial procesada en el cliente web:
+     * Inicia la importación de Parcelas desde una capa vectorial procesada en el cliente web:
      * 
      * Arquitectura de colas en lote (Bus Batching):
      * 1. Valida los atributos de la lista de entidades y el sistema de referencia espacial (SRID).
      * 2. Inicializa la sesión de seguimiento en la memoria caché con el total de elementos.
-     * 3. Crea una instancia de `ImportPolygonJob` por cada polígono del archivo.
+     * 3. Crea una instancia de `ImportPolygonJob` por cada Parcela del archivo.
      * 4. Despacha el lote (`Bus::batch`) permitiendo fallos individuales (`allowFailures`) de modo
-     *    que si un polígono tiene una geometría rota, no interrumpa la importación de las demás parcelas válidas.
+     *    que si un Parcela tiene una geometría rota, no interrumpa la importación de las demás parcelas válidas.
      * 5. Retorna inmediatamente una respuesta HTTP 202 (Accepted) con el UUID del lote
      *    para que la interfaz inicie el sondeo (polling) de la barra de progreso en tiempo real.
      */

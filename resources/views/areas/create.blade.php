@@ -17,7 +17,7 @@
                             <div id="message-display" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 px-4 py-2 rounded-lg bg-gray-900 text-white font-semibold shadow-lg hidden"></div>
                             <div class="map-overlay">
                                 <button type="button" id="draw-polygon" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100 px-3 py-2 rounded-lg shadow-md hover:bg-gray-200 flex items-center">
-                                    <i class="fas fa-draw-polygon mr-2"></i> Dibujar Polígono
+                                    <i class="fas fa-draw-polygon mr-2"></i> Dibujar Parcela
                                 </button>
                                 <button type="button" id="draw-marker" class="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100 px-3 py-2 rounded-lg shadow-md hover:bg-gray-200 flex items-center mt-2">
                                     <i class="fas fa-map-marker-alt mr-2"></i> Colocar Marcador
@@ -96,7 +96,7 @@
         }),
     });
 
-    // Fuente y capa para dibujar los elementos (marcadores y polígonos)
+    // Fuente y capa para dibujar los elementos (marcadores y Parcelas)
     const vectorSource = new VectorSource({ features: [] });
     const vectorLayer = new VectorLayer({ source: vectorSource });
     map.addLayer(vectorLayer);
@@ -167,7 +167,7 @@
             const geometry = e.feature.getGeometry();
             const coordsOl = geometry.getCoordinates();
             
-            // Si es un polígono, las coordenadas son un array de arrays
+            // Si es un Parcela, las coordenadas son un array de arrays
             if (type === 'Polygon') {
                 coordsOl[0].forEach(c => {
                     const lonLat = transform(c, 'EPSG:3857', 'EPSG:4326');
@@ -196,7 +196,7 @@
         updateCoordinatesDisplay(e.coordinate);
     });
 
-    // Maneja el clic en el botón 'Dibujar Polígono'
+    // Maneja el clic en el botón 'Dibujar Parcela'
     document.getElementById('draw-polygon').addEventListener('click', function() {
         vectorSource.clear();
         setInteraction('Polygon');
@@ -225,7 +225,7 @@
         try {
             const initialCoords = JSON.parse(initialCoordsJson);
             if (Array.isArray(initialCoords) && initialCoords.length > 0) {
-                // Determinar si son coordenadas de polígono o marcador
+                // Determinar si son coordenadas de Parcela o marcador
                 const isPolygon = Array.isArray(initialCoords[0]);
                 
                 if (isPolygon) {

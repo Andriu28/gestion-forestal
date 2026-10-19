@@ -37,8 +37,8 @@
                             <span class="mr-2">0{{ $i++ }}.</span> Analisis
                         </a>
 
-                        <a href="#gestion-poligonos" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-emerald-600 hover:text-white transition-all group">
-                            <span class="mr-2">0{{ $i++ }}.</span> Gestión de Polígonos
+                        <a href="#gestion-Parcelas" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-emerald-600 hover:text-white transition-all group">
+                            <span class="mr-2">0{{ $i++ }}.</span> Gestión de Parcelas
                         </a>
 
                         <a href="#gestion-productores" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-emerald-600 hover:text-white transition-all group">

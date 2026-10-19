@@ -12,12 +12,12 @@ class PolygonsSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->command->info('Iniciando importación de polígonos...');
+        $this->command->info('Iniciando importación de Parcelas...');
 
         $polygons = [
          
             // ============================================
-            // POLÍGONOS DEL ESTADO BOLÍVAR
+            // Parcelas DEL ESTADO BOLÍVAR
             // ============================================
             [
                 'name' => 'Parcela El Criollo - Lote A',
@@ -181,7 +181,7 @@ class PolygonsSeeder extends Seeder
             ],
         ];
 
-        $this->command->info('Procesando ' . count($polygons) . ' polígonos...');
+        $this->command->info('Procesando ' . count($polygons) . ' Parcelas...');
 
         $count = 0;
         $errors = 0;
@@ -246,7 +246,7 @@ class PolygonsSeeder extends Seeder
                     ]
                 ];
 
-                // 5. Insertar el polígono
+                // 5. Insertar el Parcela
                 $id = DB::table('polygons')->insertGetId([
                     'name' => $polygonData['name'],
                     'description' => $polygonData['description'],
@@ -265,12 +265,12 @@ class PolygonsSeeder extends Seeder
                 DB::commit();
                 $count++;
                 
-                $this->command->info("  ✓ Polígono {$polygonData['name']} insertado con ID: {$id}");
+                $this->command->info("  ✓ Parcela {$polygonData['name']} insertado con ID: {$id}");
 
             } catch (\Exception $e) {
                 DB::rollBack();
                 $errors++;
-                $this->command->error("  ✗ Error en polígono {$polygonData['name']}: " . $e->getMessage());
+                $this->command->error("  ✗ Error en Parcela {$polygonData['name']}: " . $e->getMessage());
                 Log::error('Error en seeder', [
                     'polygon' => $polygonData['name'],
                     'error' => $e->getMessage()
@@ -281,7 +281,7 @@ class PolygonsSeeder extends Seeder
         $this->command->info('');
         $this->command->info('====================================');
         $this->command->info("RESUMEN DE IMPORTACIÓN:");
-        $this->command->info("  ✓ Polígonos insertados: {$count}");
+        $this->command->info("  ✓ Parcelas insertados: {$count}");
         $this->command->info("  ✗ Errores: {$errors}");
         $this->command->info('====================================');
     }

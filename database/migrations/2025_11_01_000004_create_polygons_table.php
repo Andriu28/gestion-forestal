@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Migración: Creación de la Tabla de Polígonos (polygons)
+ * Migración: Creación de la Tabla de Parcelas (polygons)
  * 
  * Define la estructura de datos espacial y alfanumérica de las parcelas o predios:
  * - Soporte geográfico nativo mediante PostGIS en el sistema de referencia espacial WGS84 (SRID 4326).

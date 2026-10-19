@@ -1,5 +1,5 @@
 /**
- * CLASE PRINCIPAL: PolygonMap (Utilidades y Motor Cartográfico para Polígonos)
+ * CLASE PRINCIPAL: PolygonMap (Utilidades y Motor Cartográfico para Parcelas)
  * 
  * Controla el visor cartográfico interactivo para la digitalización, captura y edición de parcelas forestales:
  * 1. Librerías GIS utilizadas:
@@ -8,7 +8,7 @@
  *    - Turf.js: Algoritmos espaciales en el navegador para cálculo de superficie geodésica esferoidal en hectáreas.
  * 2. Funcionalidades del cliente:
  *    - Alternancia de capas base (satélite Esri, MapTiler, OpenStreetMap, relieve topográfico, modo oscuro).
- *    - Dibujo vectorial interactivo de polígonos con detección de vértices.
+ *    - Dibujo vectorial interactivo de Parcelas con detección de vértices.
  *    - Visualizador en tiempo real de coordenadas UTM (Huso, Hemisferio, Coordenada Este, Coordenada Norte).
  *    - Carga e interpretación de vértices introducidos manualmente en coordenadas UTM.
  *    - Exportación y sincronización automática del trazo en el campo oculto GeoJSON del formulario web.
@@ -21,7 +21,7 @@ class PolygonMap {
         this.map = null;               // Instancia principal del visor OpenLayers
         this.draw = null;              // Controlador de interacción de digitalización activa (Draw Interaction)
         this.source = null;            // Fuente de datos en memoria para las geometrías dibujadas (Vector Source)
-        this.polygonStyle = null;      // Estilo gráfico predeterminado para el polígono
+        this.polygonStyle = null;      // Estilo gráfico predeterminado para el Parcela
         this.coordinateDisplay = null; // Elemento del DOM donde se imprimen las coordenadas UTM
         this.baseLayers = {};          // Catálogo de proveedores de teselas base
         this.currentBaseLayer = null;  // Capa base seleccionada actualmente
@@ -48,10 +48,10 @@ class PolygonMap {
      * Comprueba que las librerías OpenLayers y Turf.js se encuentren disponibles globalmente en window.
      */
     verifyDependencies() {
-        console.log('=== VERIFICACIÓN DE LIBRERÍAS PARA POLÍGONOS ===');
+        console.log('=== VERIFICACIÓN DE LIBRERÍAS PARA Parcelas ===');
         console.log('OpenLayers cargado:', typeof ol !== 'undefined');
         console.log('Turf.js cargado:', typeof turf !== 'undefined');
-        
+
         if (typeof turf === 'undefined') {
             console.error('ERROR: Turf.js no está cargado');
             console.info('Agrega: <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>');
@@ -68,15 +68,15 @@ class PolygonMap {
     defineCustomProjections() {
         if (typeof proj4 !== 'undefined') {
             // EPSG:2203 - UTM Zone 20S (Venezuela histórico)
-            proj4.defs('EPSG:2203', 
+            proj4.defs('EPSG:2203',
                 '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs'
             );
-            
+
             // EPSG:32620 - UTM Zone 20N (WGS84 estándar)
             proj4.defs('EPSG:32620',
                 '+proj=utm +zone=20 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
             );
-            
+
             if (typeof ol !== 'undefined') {
                 ol.proj.proj4.register(proj4);
             }
@@ -195,13 +195,13 @@ class PolygonMap {
     }
 
     /**
-     * Fábrica de estilos visuales según el ciclo del polígono:
+     * Fábrica de estilos visuales según el ciclo de la Parcela:
      * - 'drawing': Borde azul discontinuo (dash) con vértices marcados en blanco mientras se dibuja.
      * - 'finished': Borde verde sólido con relleno esmeralda semitransparente y etiqueta centrada
      *   que exhibe la superficie total calculada en hectáreas (ha).
      * - 'default': Estilo pasivo verde esmeralda.
      *
-     * @param string state  Estado del polígono ('drawing', 'finished', 'default')
+     * @param string state  Estado de la Parcela ('drawing', 'finished', 'default')
      * @param number areaHa Superficie calculada en hectáreas para mostrar en la etiqueta central
      */
     getPolygonStyle(state = 'default', areaHa = 0) {
@@ -217,7 +217,7 @@ class PolygonMap {
                     stroke: new ol.style.Stroke({ color: '#3b82f6', width: 2 })
                 })
             }),
-            
+
             finished: new ol.style.Style({
                 stroke: new ol.style.Stroke({
                     color: '#10b981', width: 3, lineDash: null, lineCap: 'round'
@@ -240,7 +240,7 @@ class PolygonMap {
                     offsetY: 0
                 })
             }),
-            
+
             default: new ol.style.Style({
                 stroke: new ol.style.Stroke({
                     color: '#10b981', width: 3, lineDash: [8, 4], lineCap: 'round'
@@ -259,7 +259,7 @@ class PolygonMap {
         const geometry = feature.getGeometry();
         const styles = [];
         const areaHa = feature.get('area') || 0;
-        
+
         const customStyle = feature.getStyle();
         if (customStyle) {
             styles.push(customStyle);
@@ -309,7 +309,7 @@ class PolygonMap {
      */
     setupCoordinateDisplay() {
         this.createCoordinateDisplayElement();
-        
+
         this.map.on('pointermove', (evt) => {
             if (evt.dragging) return;
             this.updateCoordinateDisplay(evt.coordinate);
@@ -322,9 +322,9 @@ class PolygonMap {
     createCoordinateDisplayElement() {
         const existingDisplays = document.querySelectorAll('#coordinate-display');
         existingDisplays.forEach(display => display.remove());
-        
+
         this.coordinateDisplay = document.getElementById('coordinate-display');
-        
+
         if (this.coordinateDisplay) {
             this.coordinateDisplay.classList.remove('hidden');
         }
@@ -342,20 +342,20 @@ class PolygonMap {
      */
     updateCoordinateDisplay(coordinate) {
         if (!this.coordinateDisplay) return;
-        
+
         const lonLat = ol.proj.toLonLat(coordinate);
         const lon = lonLat[0];
         const lat = lonLat[1];
-        
+
         const zone = Math.floor((lon + 180) / 6) + 1;
         const hemisphere = lat >= 0 ? 'N' : 'S';
-        
+
         try {
             const epsgCode = this.setupUTMProjection(zone, hemisphere);
             const [easting, northing] = proj4('EPSG:4326', epsgCode, [lon, lat]);
-            
+
             if (this.isValidUTM(easting, northing, zone, hemisphere)) {
-                this.coordinateDisplay.textContent = 
+                this.coordinateDisplay.textContent =
                     `Zona ${zone}${hemisphere} | ` +
                     `Este: ${easting.toFixed(3)} | ` +
                     `Norte: ${northing.toFixed(3)}`;
@@ -375,12 +375,12 @@ class PolygonMap {
      */
     setupUTMProjection(zone, hemisphere) {
         const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
-        
+
         if (!proj4.defs(epsgCode)) {
             const proj4String = `+proj=utm +zone=${zone} +${hemisphere === 'S' ? '+south ' : ''}datum=WGS84 +units=m +no_defs`;
             proj4.defs(epsgCode, proj4String);
         }
-        
+
         return epsgCode;
     }
 
@@ -391,7 +391,7 @@ class PolygonMap {
      */
     isValidUTM(easting, northing, zone, hemisphere) {
         if (easting < 0 || easting > 1000000) return false;
-        
+
         if (hemisphere === 'N') {
             return northing >= 0 && northing <= 10000000;
         } else {
@@ -400,7 +400,7 @@ class PolygonMap {
     }
 
     /**
-     * Activa el modo de digitalización interactiva de polígonos:
+     * Activa el modo de digitalización interactiva de Parcelas:
      * Monta una interacción `ol.interaction.Draw` sobre la fuente vectorial.
      */
     activateDrawing() {
@@ -421,7 +421,7 @@ class PolygonMap {
      * - `drawstart`: Limpia dibujos previos y bloquea botones de detección geográfica.
      * - `drawadd`: Recalcula el área conforme el usuario añade cada nuevo vértice.
      * - `drawabort`: Cancela el proceso si el trazo es interrumpido.
-     * - `drawend`: Concluye el polígono, calcula el área final y convierte a GeoJSON.
+     * - `drawend`: Concluye el Parcela, calcula el área final y convierte a GeoJSON.
      */
     setupDrawEvents() {
         this.draw.on('drawstart', (evt) => {
@@ -439,22 +439,22 @@ class PolygonMap {
     /**
      * Concluye la digitalización del predio:
      * 1. Calcula la superficie total en hectáreas con precisión geodésica.
-     * 2. Aplica el estilo visual de polígono finalizado con etiqueta de área.
+     * 2. Aplica el estilo visual de Parcela finalizado con etiqueta de área.
      * 3. Exporta la geometría en formato GeoJSON al campo `#geometry` del formulario.
      * 4. Habilita el botón de autodetección territorial (`#detect-location`).
      * 5. Desactiva la interacción de dibujo para evitar trazos involuntarios.
      */
     finalizeDrawing(feature) {
         const areaHa = this.refreshArea(feature);
-        
+
         feature.set('area', areaHa);
         feature.setStyle(this.getPolygonStyle('finished', areaHa));
-        
+
         this.convertToGeoJSON(feature, areaHa);
-        this.showAlert(`Polígono completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
-        
+        this.showAlert(`Parcela completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
+
         document.getElementById('detect-location').disabled = false;
-        
+
         this.map.removeInteraction(this.draw);
         this.draw = null;
         this.resetDrawingState();
@@ -492,28 +492,28 @@ class PolygonMap {
         if (!feature || !feature.getGeometry) {
             return 0;
         }
-        
+
         const geometry = feature.getGeometry();
         if (!geometry) {
             return 0;
         }
-        
+
         const geomType = geometry.getType();
-        
+
         if (!['Polygon', 'MultiPolygon'].includes(geomType)) {
             return 0;
         }
-        
+
         if (typeof turf === 'undefined') {
             this.showAlert('Error: Turf.js no está cargado. Los cálculos de área no están disponibles.', 'error');
             return 0;
         }
-        
+
         try {
             // Proyección al elipsoide geodésico WGS84
             const wgs84Geometry = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
             const coordinates = wgs84Geometry.getCoordinates();
-            
+
             let turfFeature;
             switch (geomType) {
                 case 'Polygon':
@@ -525,19 +525,19 @@ class PolygonMap {
                 default:
                     return 0;
             }
-            
+
             // Área geodésica en metros cuadrados
             const areaM2 = turf.area(turfFeature);
-            
+
             if (isNaN(areaM2) || areaM2 <= 0) {
                 return 0;
             }
-            
+
             // Conversión m² a hectáreas
             const areaHa = areaM2 / 10000;
-            
+
             return parseFloat(areaHa.toFixed(6));
-            
+
         } catch (error) {
             console.error('Error en cálculo de área:', error);
             this.showAlert('Error calculando área', 'error');
@@ -579,19 +579,19 @@ class PolygonMap {
                 featureProjection: 'EPSG:3857'
             });
             const geojsonObj = JSON.parse(geojson);
-            
+
             if (!geojsonObj.geometry) {
-                throw new Error('El polígono no tiene geometría válida');
+                throw new Error('El Parcela no tiene geometría válida');
             }
-            
+
             document.getElementById('geometry').value = JSON.stringify(geojsonObj.geometry);
-            
+
             const areaHa = existingArea !== null ? existingArea : feature.get('area') || this.calculateArea(feature);
             document.getElementById('area_ha').value = areaHa.toFixed(6);
-            
+
         } catch (error) {
             console.error('Error al convertir GeoJSON:', error);
-            this.showAlert('Error al guardar el polígono: ' + error.message, 'error');
+            this.showAlert('Error al guardar el Parcela: ' + error.message, 'error');
         }
     }
 
@@ -603,11 +603,11 @@ class PolygonMap {
             this.showAlert(`Capa base no encontrada: ${layerKey}`, 'error');
             return;
         }
-        
+
         Object.values(this.baseLayers).forEach(layer => {
             layer.setVisible(false);
         });
-        
+
         this.baseLayers[layerKey].setVisible(true);
         this.currentBaseLayer = this.baseLayers[layerKey];
     }
@@ -623,16 +623,16 @@ class PolygonMap {
         this.updateAreaDisplay(0);
         document.getElementById('detect-location').disabled = true;
         document.getElementById('location-info').classList.add('hidden');
-        
+
         this.removeExistingDrawInteraction();
         this.drawingFeature = null;
     }
 
     /**
-     * Construye y dibuja un polígono a partir de una lista de coordenadas UTM ingresadas por teclado:
+     * Construye y dibuja un Parcela a partir de una lista de coordenadas UTM ingresadas por teclado:
      * 1. Convierte cada vértice [Este, Norte, Zona, Hemisferio] a coordenadas WGS84 (EPSG:4326) con Proj4.
      * 2. Verifica la validez de rango geográfico de las coordenadas resultantes.
-     * 3. Garantiza que el polígono sea cerrado (primer vértice idéntico al último).
+     * 3. Garantiza que el Parcela sea cerrado (primer vértice idéntico al último).
      * 4. Genera el Feature en el mapa y enfoca la vista (Fit View) con animación suave.
      *
      * @param array utmCoordinates Matriz de vértices [[Easting, Northing, Zone, Hemisphere], ...]
@@ -646,11 +646,11 @@ class PolygonMap {
             });
 
             // Validar que las coordenadas resultantes pertenezcan a la esfera terrestre (-180 a 180, -90 a 90)
-            const invalidCoords = wgs84Coordinates.filter(coord => 
-                isNaN(coord[0]) || isNaN(coord[1]) || 
+            const invalidCoords = wgs84Coordinates.filter(coord =>
+                isNaN(coord[0]) || isNaN(coord[1]) ||
                 Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90
             );
-            
+
             if (invalidCoords.length > 0) {
                 this.showAlert('Algunas coordenadas UTM son inválidas o están fuera de rango', 'error');
                 return;
@@ -658,7 +658,7 @@ class PolygonMap {
 
             this.closePolygonIfNeeded(wgs84Coordinates);
             this.createPolygonFromCoordinates(wgs84Coordinates, utmCoordinates);
-            
+
         } catch (error) {
             console.error('Error al procesar coordenadas UTM:', error);
             this.showAlert('Error al procesar coordenadas UTM. Verifique los valores y formatos.', 'error');
@@ -666,20 +666,20 @@ class PolygonMap {
     }
 
     /**
-     * Regla topológica cartográfica: asegura que el anillo exterior del polígono sea un circuito cerrado.
+     * Regla topológica cartográfica: asegura que el anillo exterior de la Parcela sea un circuito cerrado.
      * Si el último vértice no coincide exactamente con el primero, lo duplica al final del arreglo.
      */
     closePolygonIfNeeded(coordinates) {
         const firstCoord = coordinates[0];
         const lastCoord = coordinates[coordinates.length - 1];
-        
+
         if (firstCoord[0] !== lastCoord[0] || firstCoord[1] !== lastCoord[1]) {
             coordinates.push(firstCoord);
         }
     }
 
     /**
-     * Dibuja en la capa vectorial el polígono generado por coordenadas WGS84:
+     * Dibuja en la capa vectorial el Parcela generado por coordenadas WGS84:
      * - Transforma las coordenadas de EPSG:4326 a EPSG:3857 para representación visual.
      * - Calcula su superficie con Turf.js.
      * - Ajusta el encuadre del mapa para centrar el predio con un margen (padding) de 50px.
@@ -689,33 +689,33 @@ class PolygonMap {
         const feature = new ol.Feature({
             geometry: new ol.geom.Polygon([wgs84Coordinates]).transform('EPSG:4326', 'EPSG:3857')
         });
-        
+
         this.clearMap();
-        
+
         const areaHa = this.calculateArea(feature);
         feature.set('area', areaHa);
         feature.setStyle(this.getPolygonStyle('finished', areaHa));
-        
+
         this.source.addFeature(feature);
         this.updateAreaDisplay(areaHa);
         document.getElementById('detect-location').disabled = false;
-        
-        // Enfocar la cámara sobre el polígono con animación de 1 segundo
+
+        // Enfocar la cámara sobre el Parcela con animación de 1 segundo
         this.map.getView().fit(
             feature.getGeometry().getExtent(),
             { padding: [50, 50, 50, 50], duration: 1000 }
         );
-        
+
         this.convertToGeoJSON(feature, areaHa);
-        
+
         // Identificar zonas UTM utilizadas para reporte en el mensaje
-        const zonesUsed = [...new Set(utmCoordinates.map(coord => 
+        const zonesUsed = [...new Set(utmCoordinates.map(coord =>
             `Zona ${coord[2]}${coord[3]}`
         ))];
         const zonesText = zonesUsed.sort().join(', ');
-        
+
         this.showAlert(
-            `Polígono dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`, 
+            `Parcela dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`,
             'success'
         );
     }
@@ -745,7 +745,7 @@ class PolygonMap {
 // Inicialización del Motor Cartográfico al Cargar el DOM
 // =========================================================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('map')) {
         window.polygonMapInstance = new PolygonMap();
     }

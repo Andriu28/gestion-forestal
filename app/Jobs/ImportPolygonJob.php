@@ -16,7 +16,7 @@ class ImportPolygonJob implements ShouldQueue
 {
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 300; // 5 min máximo por polígono (suficiente)
+    public int $timeout = 300; // 5 min máximo por Parcela (suficiente)
     public int $tries   = 2;
     public array $backoff = [30, 120];
 

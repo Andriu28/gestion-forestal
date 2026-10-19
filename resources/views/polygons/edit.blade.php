@@ -3,7 +3,7 @@
         <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm sm:rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-2 md:mb-2">
-                   Editar Polígono: {{ $polygon->name }}
+                   Editar Parcela: {{ $polygon->name }}
                 </h2>
 
                 <form action="{{ route('polygons.update', $polygon) }}" method="POST" id="polygon-form" novalidate>
@@ -23,8 +23,8 @@
                                         <!-- Fila superior: Cambiar Mapa y Pantalla Completa -->
                                         <div class="flex space-x-2">
                                             <!-- Botón para cambiar mapa base -->
-                                            <!-- Botón de edición (se activará cuando haya un polígono) -->
-                                            <button type="button" id="edit-polygon" title="Editar Polígono" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg hidden">
+                                            <!-- Botón de edición (se activará cuando haya un Parcela) -->
+                                            <button type="button" id="edit-polygon" title="Editar Parcela" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg hidden">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit w-6 h-6">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -83,7 +83,7 @@
                                         </div>
                                         <!-- Botón de  -->
                                         <div class="flex space-x-2">
-                                            <button type="button" id="draw-polygon" title="Dibujar Nuevo Polígono" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
+                                            <button type="button" id="draw-polygon" title="Dibujar Nuevo Parcela" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded-lg flex items-center shadow-lg">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon w-6 h-6 lucide-plus">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                                 </svg>
@@ -131,7 +131,7 @@
                             <x-input-error class="mt-2" :messages="$errors->get('geometry')" />
                         </div>
 
-                        <!-- Panel lateral de puntos del polígono (ocupa 1/3 en pantallas grandes) -->
+                        <!-- Panel lateral de puntos de la Parcela (ocupa 1/3 en pantallas grandes) -->
                         <div class="lg:col-span-1">
                             <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl h-full">
                                 <div class="text-gray-900 dark:text-gray-100 h-full flex flex-col">
@@ -139,7 +139,7 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
                                         </svg>
-                                        Puntos del Polígono
+                                        Puntos de la Parcela
                                         <span id="points-count" class="ml-2 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">0</span>
                                     </h2>
                                     
@@ -151,12 +151,12 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                                 </svg>
                                                 <p>No hay puntos para mostrar</p>
-                                                <p class="text-sm mt-1">Carga un polígono o dibuja uno nuevo</p>
+                                                <p class="text-sm mt-1">Carga un Parcela o dibuja uno nuevo</p>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <!-- Resumen del polígono -->
+                                    <!-- Resumen de la Parcela -->
                                     <div id="polygon-summary" class="mt-4 p-3 bg-blue-50 dark:bg-blue-900 rounded-lg hidden">
                                         <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">Resumen</h3>
                                         <div class="text-sm space-y-1">
@@ -188,13 +188,13 @@
                         <div class="lg:col-span-4">
                             <div class="bg-stone-100/90 dark:bg-custom-gray overflow-hidden sm:rounded-2xl p-4 md:p-6 lg:p-8">
                                 <div class="text-gray-900 dark:text-gray-100">
-                                    <h2 class="text-lg font-semibold mb-4">Datos del Polígono</h2>
+                                    <h2 class="text-lg font-semibold mb-4">Datos de la Parcela</h2>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <!-- Columna izquierda -->
                                         <div class="space-y-6">
                                             <div>
-                                                <x-input-label for="name" :value="__('Nombre del Polígono *')" />
+                                                <x-input-label for="name" :value="__('Nombre de la Parcela *')" />
                                                 <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
                                                     value="{{ old('name', $polygon->name) }}" required placeholder="Ej: Finca La Esperanza" />
                                                 <x-input-error class="mt-2" :messages="$errors->get('name')" />
@@ -204,12 +204,12 @@
                                                 <x-input-label for="description" :value="__('Descripción')" />
                                                 <textarea id="description" name="description" rows="3"
                                                     class="w-full px-2.5 sm:px-3 py-1.5 mt-1 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800/80 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 "
-                                                    placeholder="Descripción del polígono...">{{ old('description', $polygon->description) }}</textarea>
+                                                    placeholder="Descripción de la Parcela...">{{ old('description', $polygon->description) }}</textarea>
                                                 <x-input-error class="mt-2" :messages="$errors->get('description')" />
                                             </div>
 
                                             <div>
-                                                <x-input-label for="producer_id" :value="__('Productor (Opcional)')" />
+                                                <x-input-label for="producer_id" :value="__('Productor')" />
                                                 <select id="producer_id" name="producer_id"
                                                     class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-stone-400/80 dark:border-gray-600 !bg-stone-50 dark:!bg-gray-800 text-custom-gray dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-gold-dark dark:focus:ring-custom-gold-medium/70 focus:border-custom-gold-dark dark:focus:border-custom-gold-medium/70 ">
                                                     <option value="">Seleccione un productor</option>
@@ -301,7 +301,7 @@
                                             <span id="detect-button-text">Detectar Ubicación</span>
                                         </button>
                                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            Dibuja un polígono primero para habilitar la detección automática
+                                            Dibuja un Parcela primero para habilitar la detección automática
                                         </p>
                                     </div>
 
@@ -311,7 +311,7 @@
                                             Cancelar
                                         </a>
                                         <x-primary-button type="submit" id="submit-btn">
-                                            Actualizar Polígono
+                                            Actualizar Parcela
                                         </x-primary-button>
                                     </div>
                                 </div>
@@ -505,7 +505,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-// CLASE PRINCIPAL PARA EDITAR POLÍGONOS CON OPENLAYERS
+// CLASE PRINCIPAL PARA EDITAR Parcelas CON OPENLAYERS
 class PolygonEditor {
     constructor(polygonGeoJSON = null) {
         this.map = null;
@@ -554,7 +554,7 @@ class PolygonEditor {
         this.setupCoordinateDisplay();
         this.setupMapResizeObserver();
         
-        // Cargar polígono existente si está disponible
+        // Cargar Parcela existente si está disponible
         if (this.existingPolygon) {
             setTimeout(() => this.loadExistingPolygon(), 500);
         }
@@ -689,7 +689,7 @@ class PolygonEditor {
         const styles = [];
         const areaHa = feature.get('area') || 0;
         
-        // Estilo base del polígono
+        // Estilo base de la Parcela
         styles.push(new ol.style.Style({
             stroke: new ol.style.Stroke({
                 color: this.isEditMode ? '#8b5cf6' : '#10b981',
@@ -831,7 +831,7 @@ class PolygonEditor {
                 
                 // Actualizar coordenada seleccionada
                 coordinates[this.selectedPointIndex] = evt.coordinate;
-                coordinates[coordinates.length - 1] = coordinates[0]; // Cerrar el polígono
+                coordinates[coordinates.length - 1] = coordinates[0]; // Cerrar el Parcela
                 
                 geometry.setCoordinates([coordinates]);
                 
@@ -936,16 +936,16 @@ class PolygonEditor {
     }
 
     // =============================================
-    // CARGA DE POLÍGONO EXISTENTE
+    // CARGA DE Parcela EXISTENTE
     // =============================================
 
     loadExistingPolygon() {
         if (!this.existingPolygon || !this.map) return;
         
         try {
-            console.log('Cargando polígono existente...');
+            console.log('Cargando Parcela existente...');
             
-            // Limpiar cualquier polígono existente
+            // Limpiar cualquier Parcela existente
             this.source.clear();
             
             // Parsear el GeoJSON
@@ -965,7 +965,7 @@ class PolygonEditor {
                 // Agregar al mapa
                 this.source.addFeature(this.currentFeature);
                 
-                // Ajustar vista al polígono
+                // Ajustar vista al Parcela
                 this.map.getView().fit(this.currentFeature.getGeometry().getExtent(), {
                     padding: [50, 50, 50, 50],
                     duration: 1000
@@ -985,8 +985,8 @@ class PolygonEditor {
                 this.updatePolygonPoints();
             }
         } catch (error) {
-            console.error('Error cargando polígono existente:', error);
-            this.showAlert('Error cargando polígono existente: ' + error.message, 'error');
+            console.error('Error cargando Parcela existente:', error);
+            this.showAlert('Error cargando Parcela existente: ' + error.message, 'error');
         }
     }
 
@@ -995,7 +995,7 @@ class PolygonEditor {
     // =============================================
 
     activateDrawing() {
-        console.log('Activando dibujo de polígonos...');
+        console.log('Activando dibujo de Parcelas...');
         
         // Limpiar interacciones existentes
         this.deactivateModify();
@@ -1045,7 +1045,7 @@ class PolygonEditor {
 
         this.map.addInteraction(this.draw);
         
-        this.showAlert('Modo dibujo activado. Haz clic en el mapa para dibujar el polígono.', 'info');
+        this.showAlert('Modo dibujo activado. Haz clic en el mapa para dibujar el Parcela.', 'info');
     }
 
     finalizeDrawing(feature) {
@@ -1069,7 +1069,7 @@ class PolygonEditor {
         // Remover interacción de dibujo
         this.deactivateDrawing();
         
-        this.showAlert(`Polígono completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
+        this.showAlert(`Parcela completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
     }
 
     deactivateDrawing() {
@@ -1085,7 +1085,7 @@ class PolygonEditor {
 
     activateEditMode() {
         if (!this.currentFeature) {
-            this.showAlert('Primero debes cargar o dibujar un polígono', 'warning');
+            this.showAlert('Primero debes cargar o dibujar un Parcela', 'warning');
             return;
         }
         
@@ -1096,7 +1096,7 @@ class PolygonEditor {
         
         this.isEditMode = true;
         
-        // Actualizar estilo del polígono
+        // Actualizar estilo de la Parcela
         this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
         
         // Mostrar controles de edición
@@ -1110,7 +1110,7 @@ class PolygonEditor {
         document.getElementById('edit-polygon').classList.remove('bg-purple-600', 'hover:bg-purple-700');
         document.getElementById('edit-polygon').classList.add('bg-green-600', 'hover:bg-green-700');
         
-        // Actualizar puntos del polígono
+        // Actualizar puntos de la Parcela
         this.updatePolygonPoints();
         
         // Activar interacción de modificación
@@ -1144,7 +1144,7 @@ class PolygonEditor {
         // Desactivar interacción de modificación
         this.deactivateModify();
         
-        // Actualizar estilo del polígono
+        // Actualizar estilo de la Parcela
         this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
         
         this.showAlert('Modo edición desactivado', 'info');
@@ -1181,7 +1181,7 @@ class PolygonEditor {
                 // Actualizar lista de puntos
                 this.updatePolygonPoints();
                 
-                this.showAlert('Polígono modificado', 'success');
+                this.showAlert('Parcela modificado', 'success');
             }
         });
         
@@ -1207,7 +1207,7 @@ class PolygonEditor {
         // Mostrar panel de información
         document.getElementById('point-info').classList.remove('hidden');
         
-        // Actualizar estilo del polígono para resaltar el punto seleccionado
+        // Actualizar estilo de la Parcela para resaltar el punto seleccionado
         this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
     }
 
@@ -1215,7 +1215,7 @@ class PolygonEditor {
         this.selectedPointIndex = -1;
         document.getElementById('point-info').classList.add('hidden');
         
-        // Actualizar estilo del polígono
+        // Actualizar estilo de la Parcela
         this.vectorLayer.setStyle((feature) => this.getFeatureStyle(feature));
     }
 
@@ -1232,14 +1232,14 @@ class PolygonEditor {
         const coordinates = geometry.getCoordinates()[0];
         
         if (coordinates.length <= 4) { // 3 puntos + el punto de cierre
-            this.showAlert('El polígono debe tener al menos 3 puntos', 'warning');
+            this.showAlert('El Parcela debe tener al menos 3 puntos', 'warning');
             return;
         }
         
         // Eliminar el punto seleccionado
         coordinates.splice(this.selectedPointIndex, 1);
         
-        // Actualizar el último punto para cerrar el polígono
+        // Actualizar el último punto para cerrar el Parcela
         coordinates[coordinates.length - 1] = coordinates[0];
         
         geometry.setCoordinates([coordinates]);
@@ -1287,7 +1287,7 @@ class PolygonEditor {
             // Insertar nuevo punto
             coordinates.splice(insertIndex, 0, coordinate);
             
-            // Actualizar el último punto para cerrar el polígono
+            // Actualizar el último punto para cerrar el Parcela
             coordinates[coordinates.length - 1] = coordinates[0];
             
             geometry.setCoordinates([coordinates]);
@@ -1695,13 +1695,13 @@ class PolygonEditor {
     async detectLocation() {
         const geometryInput = document.getElementById('geometry');
         if (!geometryInput || !geometryInput.value) {
-            this.showAlert('Debes tener un polígono en el mapa', 'error');
+            this.showAlert('Debes tener un Parcela en el mapa', 'error');
             return;
         }
         
         const centroid = this.calculateCentroidFromGeoJSON(geometryInput.value);
         if (!centroid) {
-            this.showAlert('No se pudo calcular el centroide del polígono', 'error');
+            this.showAlert('No se pudo calcular el centroide de la Parcela', 'error');
             return;
         }
         
@@ -1863,7 +1863,7 @@ let coordinatesList = [];
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM completamente cargado, inicializando editor...');
     
-    // Obtener el polígono existente del campo hidden
+    // Obtener el Parcela existente del campo hidden
     const geometryInput = document.getElementById('geometry');
     let existingPolygon = null;
     
@@ -1871,11 +1871,11 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             existingPolygon = JSON.parse(geometryInput.value);
         } catch (error) {
-            console.error('Error parseando polígono existente:', error);
+            console.error('Error parseando Parcela existente:', error);
         }
     }
     
-    // Inicializar el editor con el polígono existente
+    // Inicializar el editor con el Parcela existente
     polygonEditor = new PolygonEditor(existingPolygon);
     
     // Configurar event listeners
@@ -2112,7 +2112,7 @@ function setupPointEditModal() {
                 return;
             }
             
-            // Actualizar punto en el polígono
+            // Actualizar punto en el Parcela
             const geometry = polygonEditor.currentFeature.getGeometry();
             const coordinates = geometry.getCoordinates()[0];
             const newCoord = ol.proj.fromLonLat([lng, lat]);

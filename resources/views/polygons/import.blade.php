@@ -4,7 +4,7 @@
         <div class="bg-stone-100/90 dark:bg-custom-gray shadow-sm rounded-2xl shadow-soft p-4 md:p-6 lg:p-6 mb-6 animate-on-load">
             <div class="text-gray-900 dark:text-gray-100">
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-200 mb-4 md:mb-4">
-                    Importar Polígonos desde GeoJSON
+                    Importar Parcelas desde GeoJSON
                 </h2>
 
                 <form id="import-form" action="{{ route('polygons.import.process') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
@@ -43,7 +43,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-input-label for="parish_id" :value="__('Parroquia predeterminada')" />
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1.5">Se aplicará a todos los polígonos sin asignación manual</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1.5">Se aplicará a todos los Parcelas sin asignación manual</p>
                             <select name="parish_id" id="parish_id"
                                     class="mt-1 block w-full border border-stone-400/80 dark:border-gray-600 rounded-lg shadow-sm
                                            bg-stone-50 dark:bg-gray-800/50 text-gray-900 dark:text-white px-3 py-2
@@ -56,7 +56,7 @@
                         </div>
                         <div>
                             <x-input-label for="default_producer_id" :value="__('Productor predeterminado')" />
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1.5">Se aplicará a los polígonos sin productor</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1.5">Se aplicará a los Parcelas sin productor</p>
                             <select name="default_producer_id" id="default_producer_id"
                                     class="mt-1 block w-full border border-stone-400/80 dark:border-gray-600 rounded-lg shadow-sm
                                            bg-stone-50 dark:bg-gray-800/50 text-gray-900 dark:text-white px-3 py-2
@@ -93,7 +93,7 @@
                                    class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded
                                         dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-green-500
                                         dark:focus:ring-green-400 dark:focus:ring-offset-gray-800">
-                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-950 dark:group-hover:text-gray-50 transition-colors duration-200">Omitir polígonos con 'id' ya existente</span>
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-950 dark:group-hover:text-gray-50 transition-colors duration-200">Omitir Parcelas con 'id' ya existente</span>
                         </label>
                     </div>
 
@@ -115,8 +115,8 @@
                                     Realizar análisis de deforestación al importar
                                 </span>
                                 <span class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                    Consulta Global Forest Watch para cada polígono (2020–{{ now()->year }}).
-                                    Puede tardar varios minutos si importas muchos polígonos.
+                                    Consulta Global Forest Watch para cada Parcela (2020–{{ now()->year }}).
+                                    Puede tardar varios minutos si importas muchos Parcelas.
                                 </span>
                             </span>
                         </label>
@@ -256,7 +256,7 @@
                                                   focus:outline-none focus:ring-2 focus:ring-custom-gold-dark/60">
                                 </td>
                                 <td class="px-2 py-1 whitespace-nowrap">
-                                    <input type="text" name="features[${index}][name]" value="${props.name || props.Productor || 'Polígono'}"
+                                    <input type="text" name="features[${index}][name]" value="${props.name || props.Productor || 'Parcela'}"
                                            class="w-auto min-w-[12rem] px-2 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600
                                                   bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                                                   focus:outline-none focus:ring-2 focus:ring-custom-gold-dark/60">
@@ -364,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // El polling puede dar 404 durante ~1s hasta que el controller
         // cree el cache entry. El widget tiene 6.4s de gracia.
         window.BackgroundProgress.start(importId, {
-            title: 'Importando polígonos',
+            title: 'Importando Parcelas',
             progressUrl: '/polygons/import/progress/__ID__',
         });
 

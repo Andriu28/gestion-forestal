@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
  * 1. Control del estado y avance en tiempo real para análisis masivos o en segundo plano (vía Jobs/Queue).
  * 2. Reconocimiento e identificación de geometrías espaciales duplicadas o preexistentes mediante PostGIS.
  * 3. Ejecución de consultas satelitales a Global Forest Watch (GFW).
- * 4. Persistencia transaccional de polígonos, productores asociados y registros anuales de deforestación.
+ * 4. Persistencia transaccional de Parcelas, productores asociados y registros anuales de deforestación.
  * 5. Generación de enlaces de redirección dinámica según el resultado (monitoreo individual, comparativo o efímero).
  */
 class DeforestationAnalysisService
@@ -67,7 +67,7 @@ class DeforestationAnalysisService
      * Implementa un bloqueo atómico (`Cache::lock`) para evitar colisiones o condiciones de carrera
      * cuando múltiples hilos de cola o subprocesos actualizan el progreso al mismo tiempo:
      * - Actualiza el índice procesado y suma al contador de completados.
-     * - Si fue exitoso: registra las hectáreas deforestadas y anexa el ID del polígono.
+     * - Si fue exitoso: registra las hectáreas deforestadas y anexa el ID de la Parcela.
      * - Si falló: agrega el nombre de la parcela a la lista de errores para notificación al usuario.
      *
      * @param string      $analysisId   UUID de la sesión de análisis
@@ -137,15 +137,15 @@ class DeforestationAnalysisService
      *    si no, utiliza el productor global seleccionado en el formulario.
      * 3. Comprobación de coincidencia espacial exacta:
      *    Usa la función de PostGIS `ST_Equals(geometry, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326))`
-     *    para detectar si este mismo polígono ya fue registrado anteriormente en el sistema.
+     *    para detectar si este mismo Parcela ya fue registrado anteriormente en el sistema.
      * 4. Validación y cálculo de superficie: si el archivo no trae el área especificada,
      *    se calcula en el momento sobre el elipsoide terrestre mediante `ST_Area(...::geography) / 10000`.
      * 5. Consulta de deforestación a GFW:
-     *    - Si el polígono ya existía en BD, llama a su método interno `analyzeDeforestationFromGFW`
+     *    - Si el Parcela ya existía en BD, llama a su método interno `analyzeDeforestationFromGFW`
      *      (reutilizando años ya guardados y pidiendo a GFW solo los años faltantes).
-     *    - Si es un polígono nuevo, consulta a GFW por todo el rango solicitado.
+     *    - Si es un Parcela nuevo, consulta a GFW por todo el rango solicitado.
      * 6. Consolidación de estadísticas: ejecuta `buildTotalLossStats` para obtener áreas acumuladas y porcentajes.
-     * 7. Persistencia opcional: si el usuario marcó la opción de guardar, almacena el polígono y los registros anuales.
+     * 7. Persistencia opcional: si el usuario marcó la opción de guardar, almacena el Parcela y los registros anuales.
      *
      * @param array $feature      Objeto Feature GeoJSON {'type': 'Feature', 'geometry': ..., 'properties': ...}
      * @param array $globalParams Parámetros globales (rango de años, guardar o no, productor por defecto, etc.)
@@ -208,7 +208,7 @@ class DeforestationAnalysisService
                 $globalParams['save_analysis']
             );
         } else {
-            // Polígono no registrado: se crea una instancia temporal para cálculos
+            // Parcela no registrado: se crea una instancia temporal para cálculos
             $polygon = new Polygon(['area_ha' => $areaHa]);
 
             // Consulta directa a GFW para el rango completo
@@ -235,7 +235,7 @@ class DeforestationAnalysisService
             'area__ha'         => $yearlyResults[$endYear]['area__ha'] ?? 0,
             'polygon_area_ha'  => max($areaHa, $totalLossResults['totalDeforestedArea']),
             'status'           => $yearlyResults[$endYear]['status'] ?? 'success',
-            'polygon_name'     => $globalParams['polygon_name'] ?? ('Polígono ' . ($externalId ?: uniqid())),
+            'polygon_name'     => $globalParams['polygon_name'] ?? ('Parcela ' . ($externalId ?: uniqid())),
             'description'      => $globalParams['description'] ?? '',
             'yearly_results'   => $yearlyResults,
             'total_loss'       => $totalLossResults,
@@ -261,7 +261,7 @@ class DeforestationAnalysisService
      * 4. Genera la entrada en la bitácora de auditoría detallando los años analizados y hectáreas perdidas.
      *
      * @param array     $dataToPass   Paquete de datos del análisis (se pasa por referencia para añadir 'polygon_id' o 'save_error')
-     * @param int|null  $existingId   ID del polígono preexistente en caso de actualización
+     * @param int|null  $existingId   ID de la Parcela preexistente en caso de actualización
      * @param bool      $skipActivity Bandera para evitar llenar la auditoría si es una carga masiva
      */
     private function saveSinglePolygonData(array &$dataToPass, $existingId, bool $skipActivity = false): void
@@ -329,7 +329,7 @@ class DeforestationAnalysisService
                 }
             });
         } catch (\Exception $e) {
-            Log::error('Error guardando polígono: ' . $e->getMessage());
+            Log::error('Error guardando Parcela: ' . $e->getMessage());
             $dataToPass['save_error'] = 'Error al guardar: ' . $e->getMessage();
         }
     }
@@ -414,9 +414,9 @@ class DeforestationAnalysisService
     }
 
     /**
-     * Determina la URL de destino final según la cantidad de polígonos y si se guardaron o no:
-     * - Si se guardó 1 solo polígono: redirige a la vista de reporte individual (`deforestation.results`).
-     * - Si se guardaron múltiples polígonos: redirige a la vista comparativa multi-predio (`deforestation.multiple-results`).
+     * Determina la URL de destino final según la cantidad de Parcelas y si se guardaron o no:
+     * - Si se guardó 1 solo Parcela: redirige a la vista de reporte individual (`deforestation.results`).
+     * - Si se guardaron múltiples Parcelas: redirige a la vista comparativa multi-predio (`deforestation.multiple-results`).
      * - Si fue una simulación sin guardar: redirige a la vista temporal de resultados en memoria (`deforestation.view-async`).
      */
     private function buildRedirectUrl(array $state, string $analysisId): string

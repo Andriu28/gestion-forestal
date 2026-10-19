@@ -74,7 +74,7 @@
     <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400 ml-4 mb-6">
         <li><strong>Inicio:</strong> Resumen general de informacion basica.</li>
         <li><strong>Análisis:</strong> Herramienta principal de monitoreo forestal.</li>
-        <li><strong>Polígonos:</strong> Gestión de áreas geográficas delimitadas.</li>
+        <li><strong>Parcelas:</strong> Gestión de áreas geográficas delimitadas.</li>
         <li><strong>Productores:</strong> Directorio y gestión de proveedores.</li>
     </ul>
 
@@ -160,10 +160,10 @@
                 </div>
 
                 <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <h4 class="font-bold text-emerald-700 mb-2">Geometría del Área (Polígono)</h4>
+                    <h4 class="font-bold text-emerald-700 mb-2">Geometría del Área (Parcela)</h4>
                     <div class="manual-image-container my-6 text-center">
                         <img src="{{ isset($is_pdf) ? public_path('images/manual/analisis/poligono.png') : asset('images/manual/analisis/poligono.png') }}" 
-                            alt="Visualización de polígono" 
+                            alt="Visualización de Parcela" 
                             class="rounded-xl shadow-md border border-gray-200 mx-auto max-w-full">
                     </div>
                     <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -177,7 +177,7 @@
             <strong>Parámetros Temporales:</strong> Configuración de rangos de análisis (desde 2001 hasta 2024) para identificar la cronología de la deforestación.
             <div class="manual-image-container my-6 text-center">
                 <img src="{{ isset($is_pdf) ? public_path('images/manual/analisis/parametros.png') : asset('images/manual/analisis/parametros.png') }}" 
-                    alt="Visualización de polígono" 
+                    alt="Visualización de Parcela" 
                     class="rounded-xl shadow-md border border-gray-200 mx-auto max-w-full">
                     <p class="text-xs text-gray-500 mt-2 italic">Figura: Interfaz de configuración de parametros para realizar el análisis de deforestación.</p>
             </div>
@@ -239,24 +239,24 @@
 
 </section>
 
-<section id="gestion-poligonos" class="scroll-mt-20 mb-12">
+<section id="gestion-Parcelas" class="scroll-mt-20 mb-12">
     <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center mb-4">
         <span class="bg-emerald-600 text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm font-bold">0{{ $i++ }}</span>
-        Gestión de Polígonos
+        Gestión de Parcelas
     </h3>
     <p class="text-gray-700 dark:text-gray-400 mb-4">Este módulo permite la administración centralizada de todas las áreas geográficas registradas, ofreciendo herramientas de búsqueda, visualización y control de datos:</p>
     <div class="manual-image-container my-6 text-center">
         <img src="{{ isset($is_pdf) ? public_path('images/manual/polygono/index.png') : asset('images/manual/polygono/index.png') }}" 
-            alt="Visualización de polígono" 
+            alt="Visualización de Parcela" 
             class="rounded-xl shadow-md border border-gray-200 mx-auto max-w-full">
     </div>
     <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400 ml-4 mb-6">
-        <li><strong>Panel de Control Geográfico:</strong> Acceso directo a un mapa general de polígonos y a la función de creación de nuevas áreas.</li>
+        <li><strong>Panel de Control Geográfico:</strong> Acceso directo a un mapa general de Parcelas y a la función de creación de nuevas áreas.</li>
         <li>
-            <strong>Búsqueda Avanzada:</strong> Sistema de filtrado en tiempo real por nombre del polígono o nombre del productor asociado.
+            <strong>Búsqueda Avanzada:</strong> Sistema de filtrado en tiempo real por nombre de la Parcela o nombre del productor asociado.
             <div class="manual-image-container my-6 text-center">
                 <img src="{{ isset($is_pdf) ? public_path('images/manual/polygono/filtrado.png') : asset('images/manual/polygono/filtrado.png') }}" 
-                    alt="Visualización de polígono" 
+                    alt="Visualización de Parcela" 
                     class="rounded-xl shadow-md border border-gray-200 mx-auto max-w-full">
             </div>
         </li>
@@ -264,7 +264,7 @@
             <strong>Visualización de Atributos:</strong> Tabla detallada que muestra el nombre del área, productor vinculado y dimenciones del area.
             <div class="manual-image-container my-6 text-center">
                 <img src="{{ isset($is_pdf) ? public_path('images/manual/polygono/atributos.png') : asset('images/manual/polygono/atributos.png') }}" 
-                    alt="Visualización de polígono" 
+                    alt="Visualización de Parcela" 
                     class="rounded-xl shadow-md border border-gray-200 mx-auto max-w-full">
             </div>
         </li>
@@ -272,15 +272,15 @@
             <strong>Acciones Rápidas:</strong> Interfaz simplificada para ver detalles mediante ventanas emergentes, editar información existente o eliminar registros.
             <div class="manual-image-container my-6 text-center">
                 <img src="{{ isset($is_pdf) ? public_path('images/manual/polygono/acciones.png') : asset('images/manual/polygono/acciones.png') }}" 
-                    alt="Visualización de polígono" 
+                    alt="Visualización de Parcela" 
                     class="rounded-xl shadow-md border border-gray-200 mx-auto max-w-full">
             </div>
         </li>
         <li>
-            <strong>Visualización de Detalles:</strong> Ventana emergente que permite revisar la información completa de un polígono sin abandonar la lista principal.
+            <strong>Visualización de Detalles:</strong> Ventana emergente que permite revisar la información completa de un Parcela sin abandonar la lista principal.
             <div class="manual-image-container my-6 text-center">
                 <img src="{{ isset($is_pdf) ? public_path('images/manual/polygono/detalle.png') : asset('images/manual/polygono/detalle.png') }}" 
-                    alt="Visualización de polígono" 
+                    alt="Visualización de Parcela" 
                     class="rounded-xl shadow-md border border-gray-200 mx-auto max-w-full">
                     <p class="text-xs text-gray-500 mt-2 italic">Figura: Se puede observer el nombre del area, estado, diminciones y fecha exacta de registro y de la ultima actualizacion.</p>
             </div>
@@ -289,7 +289,7 @@
 
     <div class="bg-amber-50 dark:bg-gray-800/50 border-l-4 border-amber-500 p-4 mt-4">
         <p class="text-sm text-amber-700 dark:text-amber-300">
-            <strong>Sugerencia de uso:</strong> Utilice el campo de búsqueda para localizar rápidamente áreas específicas. Si el polígono no aparece, verifique que el nombre del productor esté escrito correctamente.
+            <strong>Sugerencia de uso:</strong> Utilice el campo de búsqueda para localizar rápidamente áreas específicas. Si el Parcela no aparece, verifique que el nombre del productor esté escrito correctamente.
         </p>
     </div>
 </section>
@@ -333,7 +333,7 @@
                 <img src="{{ isset($is_pdf) ? public_path('images/manual/productores/detalles.png') : asset('images/manual/productores/detalles.png') }}" 
                     alt="Gestión de Productores" 
                     class="rounded-xl shadow-md border border-gray-200 mx-auto max-w-full">
-                <p class="text-xs text-gray-500 mt-2 italic">Figura: Informacion como nombre, apellido, poligonos asignados y fecra de creacion.</p>
+                <p class="text-xs text-gray-500 mt-2 italic">Figura: Informacion como nombre, apellido, Parcelas asignados y fecra de creacion.</p>
             </div>
         </li>
         <li><strong>Control de Estatus:</strong> Indicadores visuales sobre el estado del registro, con opciones para edición y actualización de datos personales.</li>

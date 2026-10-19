@@ -10,7 +10,7 @@ use App\Traits\LogsActivityWithDescriptions;
 /**
  * Modelo Deforestation
  * 
- * Representa el registro histórico de pérdida de cobertura boscosa para un polígono específico
+ * Representa el registro histórico de pérdida de cobertura boscosa para un Parcela específico
  * durante un año calendario determinado (obtenido a través de sensores satelitales como Global Forest Watch).
  * 
  * Permite monitorear la evolución temporal de la deforestación parcela por parcela,
@@ -28,10 +28,10 @@ class Deforestation extends Model
 
     /**
      * Atributos asignables de forma masiva:
-     * - polygon_id: Identificador del polígono/parcela monitoreada.
+     * - polygon_id: Identificador de la Parcela/parcela monitoreada.
      * - year: Año calendario de la observación satelital (ej. 2020, 2021, etc.).
      * - deforested_area_ha: Superficie de bosque talado o perdido durante ese año (en hectáreas).
-     * - percentage_loss: Porcentaje que representa esa pérdida respecto al área total del polígono.
+     * - percentage_loss: Porcentaje que representa esa pérdida respecto al área total de la Parcela.
      */
     protected $fillable = [
         'polygon_id',
@@ -55,7 +55,7 @@ class Deforestation extends Model
     // =========================================================================
 
     /**
-     * Polígono o parcela territorial a la que pertenece esta alerta/registro de deforestación.
+     * Parcela o parcela territorial a la que pertenece esta alerta/registro de deforestación.
      */
     public function polygon()
     {
@@ -80,7 +80,7 @@ class Deforestation extends Model
     protected function getActivityDescriptions(): array
     {
         return [
-            'polygon_id'           => 'Polígono asociado',
+            'polygon_id'           => 'Parcela asociado',
             'year'                 => 'Año',
             'deforested_area_ha'   => 'Área deforestada (ha)',
             'percentage_loss'      => 'Porcentaje de pérdida',
@@ -113,12 +113,12 @@ class Deforestation extends Model
     /**
      * Eventos de ciclo de vida del modelo:
      * 
-     * Mantiene sincronizada automáticamente la bandera `deforested` (booleana) del polígono padre:
+     * Mantiene sincronizada automáticamente la bandera `deforested` (booleana) de la Parcela padre:
      * - `saved`: Al registrar un nuevo año o editar la superficie deforestada.
      * - `deleted`: Al eliminar un registro de deforestación (por ejemplo, si fue un falso positivo).
      * - `restored`: Al restaurar un registro eliminado con SoftDeletes.
      * 
-     * Esto asegura que las consultas rápidas sobre si un polígono está deforestado o no
+     * Esto asegura que las consultas rápidas sobre si un Parcela está deforestado o no
      * no tengan inconsistencias de datos.
      */
     protected static function booted(): void

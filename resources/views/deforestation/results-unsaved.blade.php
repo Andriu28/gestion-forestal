@@ -27,14 +27,14 @@
                 <!-- Información del Área de Estudio -->
                 <div class="mb-8 p-4 bg-grey-300 dark:bg-gray-600/10 rounded-lg">
                     <h3 class="font-semibold text-xl text-grey-800 dark:text-grey-100 mb-2">
-                        Nombre del Polígono: {{ $dataToPass['polygon_name'] ?? 'Área sin nombre' }}
+                        Nombre de la Parcela: {{ $dataToPass['polygon_name'] ?? 'Área sin nombre' }}
                     </h3>
                 </div>
 
                 <!-- Tarjetas de estadísticas -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <x-cards.stats-card 
-                        title="Área Total del Polígono" 
+                        title="Área Total de la Parcela" 
                         color="green" 
                         value="{{ number_format($dataToPass['polygon_area_ha'] ?? 0, 4, ',', '.') }}" 
                         unit="ha" 

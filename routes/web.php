@@ -77,7 +77,7 @@ Route::get('/run-polygons', function() {
         $polygonCount = \App\Models\Polygon::count();
         $output = \Artisan::output();
         
-        return "Seeder PolygonsSeeder ejecutado exitosamente. Polígonos en la base de datos: $polygonCount";
+        return "Seeder PolygonsSeeder ejecutado exitosamente. Parcelas en la base de datos: $polygonCount";
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
@@ -151,7 +151,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     /*
     |--------------------------------------------------------------------------
-    | MÓDULO: Polígonos
+    | MÓDULO: Parcelas
     |--------------------------------------------------------------------------
     */
     
@@ -171,7 +171,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/find-parish', [PolygonController::class, 'findParishApi'])
             ->name('find-parish-api');
         
-        // Acciones sobre polígonos específicos
+        // Acciones sobre Parcelas específicos
         Route::get('/{polygon}/details', [PolygonController::class, 'details'])->name('details');
         Route::post('/{polygon}/toggle-status', [PolygonController::class, 'toggleStatus'])
             ->name('toggle-status');

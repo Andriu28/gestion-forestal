@@ -28,7 +28,7 @@ class DeforestationMap {
         this.map = null;              // Instancia principal del mapa OpenLayers
         this.draw = null;             // Interacción de dibujo actual
         this.source = null;           // Fuente de datos vectoriales
-        this.polygonStyle = null;     // Estilo base para polígonos
+        this.polygonStyle = null;     // Estilo base para Parcelas
         this.pointStyle = null;       // Estilo para puntos
         this.labelStyle = null;       // Estilo para etiquetas
         this.coordinateDisplay = null;// Elemento DOM para mostrar coordenadas
@@ -67,12 +67,12 @@ class DeforestationMap {
         console.log('=== VERIFICACIÓN DE LIBRERÍAS ===');
         console.log('OpenLayers cargado:', typeof ol !== 'undefined');
         console.log('Turf.js cargado:', typeof turf !== 'undefined');
-        
+
         if (typeof turf === 'undefined') {
             console.error('ERROR: Turf.js no está cargado');
             console.info('Agrega: <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>');
         }
-        
+
         if (typeof proj4 !== 'undefined') {
             proj4.defs('EPSG:2203', '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs');
         }
@@ -90,13 +90,13 @@ class DeforestationMap {
     defineCustomProjections() {
         if (typeof proj4 !== 'undefined') {
             // EPSG:2203 - UTM Zone 20S (Venezuela)
-           proj4.defs('EPSG:2203', '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs');
-            
+            proj4.defs('EPSG:2203', '+proj=utm +zone=20 +south +ellps=intl +towgs84=-288,175,-376,0,0,0,0 +units=m +no_defs');
+
             // EPSG:32620 - UTM Zone 20N (WGS84)
             proj4.defs('EPSG:32620',
                 '+proj=utm +zone=20 +ellps=WGS84 +datum=WGS84 +units=m +no_defs'
             );
-            
+
             // Registrar definiciones en OpenLayers
             if (typeof ol !== 'undefined') {
                 ol.proj.proj4.register(proj4);
@@ -193,7 +193,7 @@ class DeforestationMap {
 
     /**
      * CONFIGURA CAPA VECTORIAL Y ESTILOS
-     * Capa que contiene polígonos dibujados y elementos vectoriales
+     * Capa que contiene Parcelas dibujados y elementos vectoriales
      * USADO EN: initializeMap(), setupMapInstance()
      */
     setupVectorLayer() {
@@ -239,12 +239,12 @@ class DeforestationMap {
 
     /**
      * CONFIGURA TODOS LOS ESTILOS VISUALES
-     * Define estilos para polígonos, puntos y etiquetas
+     * Define estilos para Parcelas, puntos y etiquetas
      * USADO EN: setupVectorLayer()
      */
     setupStyles() {
         this.polygonStyle = this.getPolygonStyle('default');
-        
+
         this.pointStyle = new ol.style.Style({
             image: new ol.style.Circle({
                 radius: 7,
@@ -270,7 +270,7 @@ class DeforestationMap {
     }
 
     /**
-     * OBTIENE ESTILO DE POLÍGONO POR ESTADO
+     * OBTIENE ESTILO DE Parcela POR ESTADO
      * @param {string} state - 'drawing', 'finished', 'default'
      * @param {number} areaHa - Área para mostrar en etiqueta
      * @returns {ol.style.Style} Estilo correspondiente
@@ -289,7 +289,7 @@ class DeforestationMap {
                     stroke: new ol.style.Stroke({ color: '#3b82f6', width: 2 })
                 })
             }),
-            
+
             finished: new ol.style.Style({
                 stroke: new ol.style.Stroke({
                     color: '#10b981', width: 3, lineDash: null, lineCap: 'round'
@@ -312,7 +312,7 @@ class DeforestationMap {
                     offsetY: 0
                 })
             }),
-            
+
             default: new ol.style.Style({
                 stroke: new ol.style.Stroke({
                     color: '#10b981', width: 3, lineDash: [8, 4], lineCap: 'round'
@@ -334,13 +334,13 @@ class DeforestationMap {
         const geometry = feature.getGeometry();
         const styles = [];
         const areaHa = feature.get('area') || 0;
-        
+
         // Usar estilo personalizado si existe
         const customStyle = feature.getStyle();
         if (customStyle) {
             styles.push(customStyle);
         } else {
-            // Para polígonos finalizados, mostrar área
+            // Para Parcelas finalizados, mostrar área
             if (geometry.getType() === 'Polygon' && areaHa > 0) {
                 styles.push(this.getPolygonStyle('finished', areaHa));
             } else {
@@ -375,7 +375,7 @@ class DeforestationMap {
         }
     }
 
-    
+
 
     // =============================================
     // 6. MANEJO DE EVENTOS
@@ -428,7 +428,7 @@ class DeforestationMap {
      */
     setupCoordinateDisplay() {
         this.createCoordinateDisplayElement();
-        
+
         this.map.on('pointermove', (evt) => {
             if (evt.dragging) return;
             this.updateCoordinateDisplay(evt.coordinate);
@@ -442,10 +442,10 @@ class DeforestationMap {
     createCoordinateDisplayElement() {
         const existingDisplays = document.querySelectorAll('.coordinate-display');
         existingDisplays.forEach(display => display.remove());
-        
+
         this.coordinateDisplay = document.createElement('div');
         this.coordinateDisplay.className = 'coordinate-display';
-        
+
         const mapContainer = this.map.getTargetElement();
         mapContainer.style.position = 'relative';
         mapContainer.appendChild(this.coordinateDisplay);
@@ -460,16 +460,16 @@ class DeforestationMap {
         const lonLat = ol.proj.toLonLat(coordinate);
         const lon = lonLat[0];
         const lat = lonLat[1];
-        
+
         const zone = Math.floor((lon + 180) / 6) + 1;
         const hemisphere = lat >= 0 ? 'N' : 'S';
-        
+
         try {
             const epsgCode = this.setupUTMProjection(zone, hemisphere);
             const [easting, northing] = proj4('EPSG:4326', epsgCode, [lon, lat]);
-            
+
             if (this.isValidUTM(easting, northing, zone, hemisphere)) {
-                this.coordinateDisplay.textContent = 
+                this.coordinateDisplay.textContent =
                     `Zona ${zone}${hemisphere} | ` +
                     `Este: ${easting.toFixed(6)} | ` +
                     `Norte: ${northing.toFixed(6)}`;
@@ -492,12 +492,12 @@ class DeforestationMap {
      */
     setupUTMProjection(zone, hemisphere) {
         const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
-        
+
         if (!proj4.defs(epsgCode)) {
             const proj4String = `+proj=utm +zone=${zone} +${hemisphere === 'S' ? '+south ' : ''}datum=WGS84 +units=m +no_defs`;
             proj4.defs(epsgCode, proj4String);
         }
-        
+
         return epsgCode;
     }
 
@@ -512,7 +512,7 @@ class DeforestationMap {
      */
     isValidUTM(easting, northing, zone, hemisphere) {
         if (easting < 0 || easting > 1000000) return false;
-        
+
         if (hemisphere === 'N') {
             return northing >= 0 && northing <= 10000000;
         } else {
@@ -525,7 +525,7 @@ class DeforestationMap {
     // =============================================
 
     /**
-     * ACTIVA HERRAMIENTA DE DIBUJO DE POLÍGONOS
+     * ACTIVA HERRAMIENTA DE DIBUJO DE Parcelas
      * USADO EN: setupEventListeners() (botón draw-polygon)
      */
     activateDrawing() {
@@ -559,18 +559,18 @@ class DeforestationMap {
 
     /**
      * FINALIZA PROCESO DE DIBUJO
-     * @param {ol.Feature} feature - Polígono dibujado
+     * @param {ol.Feature} feature - Parcela dibujado
      * USADO EN: setupDrawEvents() (evento drawend)
      */
     finalizeDrawing(feature) {
         const areaHa = this.refreshArea(feature);
-        
+
         feature.set('area', areaHa);
         feature.setStyle(this.getPolygonStyle('finished', areaHa));
-        
+
         this.convertToGeoJSON(feature, areaHa);
-        this.showAlert(`Polígono completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
-        
+        this.showAlert(`Parcela completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
+
         this.map.removeInteraction(this.draw);
         this.draw = null;
         this.resetDrawingState();
@@ -600,42 +600,42 @@ class DeforestationMap {
     // =============================================
 
     /**
-     * CALCULA ÁREA DE UN POLÍGONO USANDO TURF.JS
+     * CALCULA ÁREA DE UN Parcela USANDO TURF.JS
      * @param {ol.Feature} feature - Feature con geometría
      * @returns {number} Área en hectáreas
      * USADO EN: refreshArea(), convertToGeoJSON(), processImportedFeatures(), createPolygonFromCoordinates()
      */
     calculateArea(feature) {
         console.log('=== CÁLCULO DE ÁREA CON TURF.JS ===');
-        
+
         if (!feature || !feature.getGeometry) {
             console.warn('Feature no válida para cálculo de área');
             return 0;
         }
-        
+
         const geometry = feature.getGeometry();
         if (!geometry) {
             console.warn('Feature sin geometría');
             return 0;
         }
-        
+
         const geomType = geometry.getType();
-        
+
         if (!['Polygon', 'MultiPolygon'].includes(geomType)) {
             console.log(`Geometría ${geomType} no requiere cálculo de área`);
             return 0;
         }
-        
+
         if (typeof turf === 'undefined') {
             console.error('ERROR: Turf.js no está disponible');
             this.showTurfJSError();
             return 0;
         }
-        
+
         try {
             const wgs84Geometry = geometry.clone().transform('EPSG:3857', 'EPSG:4326');
             const coordinates = wgs84Geometry.getCoordinates();
-            
+
             let turfFeature;
             switch (geomType) {
                 case 'Polygon':
@@ -651,24 +651,24 @@ class DeforestationMap {
                 default:
                     return 0;
             }
-            
+
             const areaM2 = turf.area(turfFeature);
-            
+
             if (isNaN(areaM2) || areaM2 <= 0) {
                 console.warn('Área calculada no válida:', areaM2);
                 return 0;
             }
-            
+
             const areaHa = areaM2 / 10000;
-            
+
             console.log(`Cálculo completado:
               - Tipo: ${geomType}
               - Área: ${areaM2.toFixed(2)} m²
               - Área: ${areaHa.toFixed(6)} ha
             `);
-            
+
             return parseFloat(areaHa.toFixed(6));
-            
+
         } catch (error) {
             console.error('Error en cálculo de área:', error);
             this.showAreaCalculationError(error);
@@ -692,26 +692,26 @@ class DeforestationMap {
     }
 
     /**
-     * VALIDA COORDENADAS DE POLÍGONO
-     * @param {Array} coordinates - Coordenadas del polígono
+     * VALIDA COORDENADAS DE Parcela
+     * @param {Array} coordinates - Coordenadas de la Parcela
      * USADO EN: calculateArea()
      */
     validatePolygonCoordinates(coordinates) {
         if (!coordinates || !Array.isArray(coordinates)) {
-            throw new Error('Coordenadas del polígono no válidas');
+            throw new Error('Coordenadas de la Parcela no válidas');
         }
-        
+
         if (coordinates.length === 0) {
-            throw new Error('Polígono sin coordenadas');
+            throw new Error('Parcela sin coordenadas');
         }
-        
+
         const firstRing = coordinates[0];
         if (firstRing && firstRing.length > 0) {
             const firstPoint = firstRing[0];
             const lastPoint = firstRing[firstRing.length - 1];
-            
+
             if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
-                console.warn('Polígono no cerrado. Asegurándose de cerrar el polígono.');
+                console.warn('Parcela no cerrado. Asegurándose de cerrar el Parcela.');
             }
         }
     }
@@ -724,178 +724,178 @@ class DeforestationMap {
  * IMPORTA GEOJSON CON DETECCIÓN AUTOMÁTICA DE PROYECCIÓN (UTM 20N o WGS84)
  * @param {Object} geojson - Objeto GeoJSON cargado
  */
-importGeoJSON(geojson) {
-    console.log('=== INICIANDO IMPORTACIÓN GEOJSON ===');
-    
-    try {
-        if (!geojson || typeof geojson !== 'object') {
-            throw new Error('El archivo no es un objeto GeoJSON válido');
-        }
+    importGeoJSON(geojson) {
+        console.log('=== INICIANDO IMPORTACIÓN GEOJSON ===');
 
-        this.clearMap();
-        
-        const format = new ol.format.GeoJSON();
-        let features = [];
-
-        // 1. Detectar si el archivo usa la proyección EPSG:2203 (errónea) o coordenadas en metros
-        const crsName = geojson.crs && geojson.crs.properties ? geojson.crs.properties.name : '';
-        const isEPSG2203 = crsName.includes('2203');
-        
-        // 2. Detección por coordenadas: si el primer valor absoluto es > 180 (longitud) o > 90 (latitud)
-        let isProjected = false;
-        if (!isEPSG2203 && geojson.features && geojson.features.length > 0) {
-            const firstCoords = this.getFirstCoordinate(geojson.features[0]);
-            if (firstCoords && (Math.abs(firstCoords[0]) > 180 || Math.abs(firstCoords[1]) > 90)) {
-                isProjected = true;
-                console.warn('Coordenadas fuera de rango geográfico. Asumiendo UTM zona 20 Norte.');
-            }
-        }
-
-        // 3. Si es EPSG:2203 o coordenadas proyectadas, convertimos de UTM 20N a WGS84
-        if (isEPSG2203 || isProjected) {
-            console.log('Proyección UTM detectada. Usando conversor UTM 20N -> WGS84.');
-            features = this.readFeaturesFromUTM20N(geojson, format);
-        } else {
-            // Archivo normal en grados decimales (WGS84)
-            features = format.readFeatures(geojson, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857'
-            });
-        }
-
-        if (!features || features.length === 0) {
-            this.showAlert('El archivo no contiene geometrías válidas.', 'error');
-            return;
-        }
-
-        // 4. Procesar etiquetas, áreas y añadir al mapa
-        const processedData = this.processImportedFeatures(features, 'geojson', geojson);
-        
-        // 5. Ajustar vista y mostrar resultados
-        this.finalizeImport(features, geojson, processedData.totalArea, 'GeoJSON');
-        
-        console.log('Importación finalizada con éxito.');
-
-    } catch (error) {
-        console.error('Error en importGeoJSON:', error);
-        this.showAlert(`Error al importar: ${error.message}`, 'error');
-    }
-}
-
-/**
- * OBTIENE LA PRIMERA COORDENADA DE UNA FEATURE (para detectar proyección)
- * @param {Object} feature - Feature GeoJSON
- * @returns {Array|null} [x, y] o null
- */
-getFirstCoordinate(feature) {
-    try {
-        const geom = feature.geometry;
-        if (!geom || !geom.coordinates) return null;
-        
-        if (geom.type === 'Point') return geom.coordinates;
-        if (geom.type === 'Polygon') return geom.coordinates[0]?.[0] || null;
-        if (geom.type === 'MultiPolygon') return geom.coordinates[0]?.[0]?.[0] || null;
-        return null;
-    } catch (e) {
-        return null;
-    }
-}
-
-/**
- * LEE FEATURES DESDE GEOJSON CON COORDENADAS EN UTM ZONA 20 NORTE
- * @param {Object} geojsonObj - Objeto GeoJSON con coordenadas en metros (UTM 20N)
- * @param {ol.format.GeoJSON} format - No utilizado directamente
- * @returns {Array} Features en EPSG:3857
- */
-readFeaturesFromUTM20N(geojsonObj, format) {
-    const features = [];
-    
-    if (typeof proj4 === 'undefined') {
-        throw new Error('Se requiere la biblioteca proj4 para transformar coordenadas UTM a WGS84');
-    }
-    
-    // Definir proyección UTM zona 20 Norte (WGS84) – la correcta para Venezuela
-    const utm20nProj = '+proj=utm +zone=20 +ellps=WGS84 +datum=WGS84 +units=m +no_defs';
-    if (!proj4.defs('EPSG:32620')) {
-        proj4.defs('EPSG:32620', utm20nProj);
-    }
-    
-    geojsonObj.features.forEach((featureData, index) => {
         try {
-            const geometry = featureData.geometry;
-            const properties = featureData.properties || {};
-            
-            if (!geometry || !geometry.coordinates) {
-                console.warn(`Feature ${index}: Sin geometría válida`);
-                return;
+            if (!geojson || typeof geojson !== 'object') {
+                throw new Error('El archivo no es un objeto GeoJSON válido');
             }
-            
-            // Convertir coordenadas de UTM 20N a WGS84
-            const wgs84Coordinates = this.convertUTM20NToWGS84(geometry);
-            
-            let olGeometry;
-            if (geometry.type === 'MultiPolygon') {
-                olGeometry = new ol.geom.MultiPolygon(wgs84Coordinates);
-            } else if (geometry.type === 'Polygon') {
-                olGeometry = new ol.geom.Polygon(wgs84Coordinates);
-            } else {
-                console.warn(`Feature ${index}: Tipo de geometría no soportado: ${geometry.type}`);
-                return;
-            }
-            
-            // Convertir a la proyección del mapa (EPSG:3857)
-            olGeometry.transform('EPSG:4326', 'EPSG:3857');
-            
-            const feature = new ol.Feature({ geometry: olGeometry });
-            
-            let productor = properties.Productor || properties.productor || null;
-            let areaHa = properties.Area_Ha || properties.area || 0;
-            
-            if (!productor || productor === 'null' || productor === '') {
-                productor = `Polígono ${index + 1}`;
-            }
-            
-            feature.setProperties({
-                id: properties.id || index,
-                area: parseFloat(areaHa) || 0,
-                productor: String(productor),
-                label: String(productor)
-            });
-            
-            features.push(feature);
-            
-        } catch (error) {
-            console.error(`Error procesando feature ${index}:`, error);
-        }
-    });
-    
-    return features;
-}
 
-/**
- * CONVIERTE COORDENADAS DE UTM ZONA 20 NORTE A WGS84
- * @param {Object} geometry - Geometría en UTM 20N (coordenadas en metros)
- * @returns {Array} Coordenadas en EPSG:4326 (grados decimales)
- */
-convertUTM20NToWGS84(geometry) {
-    const transformCoord = (coord) => {
-        if (!Array.isArray(coord) || coord.length < 2) return coord;
-        const [x, y] = coord;
-        // Transformar de UTM 20N a WGS84
-        const transformed = proj4('EPSG:32620', 'EPSG:4326', [x, y]);
-        return transformed;
-    };
-    
-    const transformRing = (ring) => ring.map(transformCoord);
-    const transformPolygon = (polygon) => polygon.map(transformRing);
-    
-    if (geometry.type === 'MultiPolygon') {
-        return geometry.coordinates.map(polygon => transformPolygon(polygon));
-    } else if (geometry.type === 'Polygon') {
-        return transformPolygon(geometry.coordinates);
+            this.clearMap();
+
+            const format = new ol.format.GeoJSON();
+            let features = [];
+
+            // 1. Detectar si el archivo usa la proyección EPSG:2203 (errónea) o coordenadas en metros
+            const crsName = geojson.crs && geojson.crs.properties ? geojson.crs.properties.name : '';
+            const isEPSG2203 = crsName.includes('2203');
+
+            // 2. Detección por coordenadas: si el primer valor absoluto es > 180 (longitud) o > 90 (latitud)
+            let isProjected = false;
+            if (!isEPSG2203 && geojson.features && geojson.features.length > 0) {
+                const firstCoords = this.getFirstCoordinate(geojson.features[0]);
+                if (firstCoords && (Math.abs(firstCoords[0]) > 180 || Math.abs(firstCoords[1]) > 90)) {
+                    isProjected = true;
+                    console.warn('Coordenadas fuera de rango geográfico. Asumiendo UTM zona 20 Norte.');
+                }
+            }
+
+            // 3. Si es EPSG:2203 o coordenadas proyectadas, convertimos de UTM 20N a WGS84
+            if (isEPSG2203 || isProjected) {
+                console.log('Proyección UTM detectada. Usando conversor UTM 20N -> WGS84.');
+                features = this.readFeaturesFromUTM20N(geojson, format);
+            } else {
+                // Archivo normal en grados decimales (WGS84)
+                features = format.readFeatures(geojson, {
+                    dataProjection: 'EPSG:4326',
+                    featureProjection: 'EPSG:3857'
+                });
+            }
+
+            if (!features || features.length === 0) {
+                this.showAlert('El archivo no contiene geometrías válidas.', 'error');
+                return;
+            }
+
+            // 4. Procesar etiquetas, áreas y añadir al mapa
+            const processedData = this.processImportedFeatures(features, 'geojson', geojson);
+
+            // 5. Ajustar vista y mostrar resultados
+            this.finalizeImport(features, geojson, processedData.totalArea, 'GeoJSON');
+
+            console.log('Importación finalizada con éxito.');
+
+        } catch (error) {
+            console.error('Error en importGeoJSON:', error);
+            this.showAlert(`Error al importar: ${error.message}`, 'error');
+        }
     }
-    throw new Error(`Tipo de geometría no soportado: ${geometry.type}`);
-}
+
+    /**
+     * OBTIENE LA PRIMERA COORDENADA DE UNA FEATURE (para detectar proyección)
+     * @param {Object} feature - Feature GeoJSON
+     * @returns {Array|null} [x, y] o null
+     */
+    getFirstCoordinate(feature) {
+        try {
+            const geom = feature.geometry;
+            if (!geom || !geom.coordinates) return null;
+
+            if (geom.type === 'Point') return geom.coordinates;
+            if (geom.type === 'Polygon') return geom.coordinates[0]?.[0] || null;
+            if (geom.type === 'MultiPolygon') return geom.coordinates[0]?.[0]?.[0] || null;
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * LEE FEATURES DESDE GEOJSON CON COORDENADAS EN UTM ZONA 20 NORTE
+     * @param {Object} geojsonObj - Objeto GeoJSON con coordenadas en metros (UTM 20N)
+     * @param {ol.format.GeoJSON} format - No utilizado directamente
+     * @returns {Array} Features en EPSG:3857
+     */
+    readFeaturesFromUTM20N(geojsonObj, format) {
+        const features = [];
+
+        if (typeof proj4 === 'undefined') {
+            throw new Error('Se requiere la biblioteca proj4 para transformar coordenadas UTM a WGS84');
+        }
+
+        // Definir proyección UTM zona 20 Norte (WGS84) – la correcta para Venezuela
+        const utm20nProj = '+proj=utm +zone=20 +ellps=WGS84 +datum=WGS84 +units=m +no_defs';
+        if (!proj4.defs('EPSG:32620')) {
+            proj4.defs('EPSG:32620', utm20nProj);
+        }
+
+        geojsonObj.features.forEach((featureData, index) => {
+            try {
+                const geometry = featureData.geometry;
+                const properties = featureData.properties || {};
+
+                if (!geometry || !geometry.coordinates) {
+                    console.warn(`Feature ${index}: Sin geometría válida`);
+                    return;
+                }
+
+                // Convertir coordenadas de UTM 20N a WGS84
+                const wgs84Coordinates = this.convertUTM20NToWGS84(geometry);
+
+                let olGeometry;
+                if (geometry.type === 'MultiPolygon') {
+                    olGeometry = new ol.geom.MultiPolygon(wgs84Coordinates);
+                } else if (geometry.type === 'Polygon') {
+                    olGeometry = new ol.geom.Polygon(wgs84Coordinates);
+                } else {
+                    console.warn(`Feature ${index}: Tipo de geometría no soportado: ${geometry.type}`);
+                    return;
+                }
+
+                // Convertir a la proyección del mapa (EPSG:3857)
+                olGeometry.transform('EPSG:4326', 'EPSG:3857');
+
+                const feature = new ol.Feature({ geometry: olGeometry });
+
+                let productor = properties.Productor || properties.productor || null;
+                let areaHa = properties.Area_Ha || properties.area || 0;
+
+                if (!productor || productor === 'null' || productor === '') {
+                    productor = `Parcela ${index + 1}`;
+                }
+
+                feature.setProperties({
+                    id: properties.id || index,
+                    area: parseFloat(areaHa) || 0,
+                    productor: String(productor),
+                    label: String(productor)
+                });
+
+                features.push(feature);
+
+            } catch (error) {
+                console.error(`Error procesando feature ${index}:`, error);
+            }
+        });
+
+        return features;
+    }
+
+    /**
+     * CONVIERTE COORDENADAS DE UTM ZONA 20 NORTE A WGS84
+     * @param {Object} geometry - Geometría en UTM 20N (coordenadas en metros)
+     * @returns {Array} Coordenadas en EPSG:4326 (grados decimales)
+     */
+    convertUTM20NToWGS84(geometry) {
+        const transformCoord = (coord) => {
+            if (!Array.isArray(coord) || coord.length < 2) return coord;
+            const [x, y] = coord;
+            // Transformar de UTM 20N a WGS84
+            const transformed = proj4('EPSG:32620', 'EPSG:4326', [x, y]);
+            return transformed;
+        };
+
+        const transformRing = (ring) => ring.map(transformCoord);
+        const transformPolygon = (polygon) => polygon.map(transformRing);
+
+        if (geometry.type === 'MultiPolygon') {
+            return geometry.coordinates.map(polygon => transformPolygon(polygon));
+        } else if (geometry.type === 'Polygon') {
+            return transformPolygon(geometry.coordinates);
+        }
+        throw new Error(`Tipo de geometría no soportado: ${geometry.type}`);
+    }
 
     /**
      * IMPORTA DATOS DESDE KML
@@ -904,19 +904,19 @@ convertUTM20NToWGS84(geometry) {
      */
     importKML(kmlText) {
         console.log('=== INICIANDO IMPORTACIÓN KML ===');
-        
+
         try {
             if (typeof kmlText !== 'string' || kmlText.trim() === '') {
                 throw new Error('El texto KML está vacío o no es válido');
             }
 
             this.clearMap();
-            
+
             const format = new ol.format.KML({
                 extractStyles: false,
                 showPointNames: false
             });
-            
+
             let features;
             try {
                 features = format.readFeatures(kmlText, {
@@ -934,11 +934,11 @@ convertUTM20NToWGS84(geometry) {
             }
 
             console.log(`Features KML importadas: ${features.length}`);
-            
+
             const processedData = this.processImportedFeatures(features, 'kml');
             const featureCollection = this.createFeatureCollection(features);
             this.finalizeImport(features, featureCollection, processedData.totalArea, 'KML');
-            
+
         } catch (error) {
             console.error('Error completo en importKML:', error);
             this.showAlert(`Error al importar KML: ${error.message}`, 'error');
@@ -955,11 +955,11 @@ convertUTM20NToWGS84(geometry) {
      */
     processImportedFeatures(features, type = 'geojson', originalData = null) {
         console.log(`=== PROCESANDO ${features.length} FEATURES (${type}) ===`);
-        
+
         let totalArea = 0;
         let validFeatures = 0;
         let invalidFeatures = 0;
-        
+
         features.forEach((feature, index) => {
             try {
                 const geometry = feature.getGeometry();
@@ -968,24 +968,24 @@ convertUTM20NToWGS84(geometry) {
                     invalidFeatures++;
                     return;
                 }
-                
+
                 const geomType = geometry.getType();
                 console.log(`Feature ${index}: Tipo ${geomType}`);
-                
+
                 const props = feature.getProperties();
-                
+
                 if (type === 'geojson') {
                     const productor = props.productor || props.Productor;
                     const areaHa = props.area || props.Area_Ha || 0;
-                    
+
                     if (productor && productor !== 'Desconocido' && productor !== 'null') {
                         feature.set('label', String(productor));
                         feature.set('productor', String(productor));
                     } else {
-                        feature.set('label', `Polígono ${index + 1}`);
+                        feature.set('label', `Parcela ${index + 1}`);
                         feature.set('productor', 'Sin productor');
                     }
-                    
+
                     if (areaHa && areaHa > 0) {
                         feature.set('area', parseFloat(areaHa));
                         totalArea += parseFloat(areaHa);
@@ -1010,7 +1010,7 @@ convertUTM20NToWGS84(geometry) {
                         feature.set('label', String(productor));
                         feature.set('productor', String(productor));
                     }
-                    
+
                     const calculatedArea = this.calculateArea(feature);
                     if (!isNaN(calculatedArea) && calculatedArea > 0) {
                         feature.set('area', calculatedArea);
@@ -1023,19 +1023,19 @@ convertUTM20NToWGS84(geometry) {
                         feature.setStyle(this.getPolygonStyle('default'));
                     }
                 }
-                
+
                 this.addLabelToFeature(feature, geometry);
                 this.source.addFeature(feature);
-                
+
             } catch (featureError) {
                 console.error(`Error procesando feature ${index}:`, featureError);
                 invalidFeatures++;
             }
         });
-        
+
         console.log(`Procesamiento completado: ${validFeatures} válidas, ${invalidFeatures} inválidas`);
         console.log(`Área total calculada: ${totalArea.toFixed(6)} ha`);
-        
+
         return {
             totalArea: parseFloat(totalArea.toFixed(6)),
             validFeatures,
@@ -1059,12 +1059,12 @@ convertUTM20NToWGS84(geometry) {
         document.getElementById('geometry').value = JSON.stringify(geojsonWGS84);
         // --- CAMBIO 2: Asignar área total al campo oculto ---
         document.getElementById('area_ha').value = totalArea.toFixed(6);
-        
+
         this.updateAreaDisplay(totalArea);
         this.processMultiPolygonInfo(features);
 
         this.showAlert(
-            `${type === 'KML' ? features.length + ' áreas' : 'Áreas'} importadas correctamente. Área total: ${totalArea.toFixed(6)} ha`, 
+            `${type === 'KML' ? features.length + ' áreas' : 'Áreas'} importadas correctamente. Área total: ${totalArea.toFixed(6)} ha`,
             'success'
         );
     }
@@ -1082,7 +1082,7 @@ convertUTM20NToWGS84(geometry) {
         event.preventDefault();
 
         const geometryInput = document.getElementById('geometry');
-        
+
         if (!geometryInput.value) {
             this.showAlert('Por favor, dibuja o importa un área de interés.', 'error');
             return;
@@ -1100,7 +1100,7 @@ convertUTM20NToWGS84(geometry) {
         const form = document.getElementById('analysis-form');
         const submitButton = form.querySelector('button[type="submit"]');
         const spinner = document.getElementById('loading-spinner');
-        
+
         if (submitButton) {
             submitButton.disabled = true;
             submitButton.textContent = 'Analizando...';
@@ -1118,44 +1118,44 @@ convertUTM20NToWGS84(geometry) {
      * USADO EN: finalizeDrawing(), createPolygonFromCoordinates()
      */
     convertToGeoJSON(feature, existingArea = null) {
-    try {
-        const format = new ol.format.GeoJSON();
-        // Clonar la geometría para no modificar la original
-        let geom = feature.getGeometry().clone();
-        // Transformar directamente de la proyección del mapa (3857) a WGS84 (4326)
-        geom.transform('EPSG:3857', 'EPSG:4326');
-        
-        // Escribir solo la geometría en GeoJSON
-        const geojsonGeometry = format.writeGeometry(geom, {
-            dataProjection: 'EPSG:4326',
-            featureProjection: 'EPSG:4326'
-        });
-        const geojsonObj = JSON.parse(geojsonGeometry);
-        if (!geojsonObj || !geojsonObj.coordinates) {
-            throw new Error('Geometría no válida');
-        }
-        
-        // Guardar en el formulario
-        document.getElementById('geometry').value = JSON.stringify(geojsonObj);
-        
-        // Calcular área si no se proporcionó
-        let areaHa = existingArea;
-        if (areaHa === null) {
-            areaHa = feature.get('area');
-            if (!areaHa || areaHa === 0) {
-                areaHa = this.calculateArea(feature);
+        try {
+            const format = new ol.format.GeoJSON();
+            // Clonar la geometría para no modificar la original
+            let geom = feature.getGeometry().clone();
+            // Transformar directamente de la proyección del mapa (3857) a WGS84 (4326)
+            geom.transform('EPSG:3857', 'EPSG:4326');
+
+            // Escribir solo la geometría en GeoJSON
+            const geojsonGeometry = format.writeGeometry(geom, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:4326'
+            });
+            const geojsonObj = JSON.parse(geojsonGeometry);
+            if (!geojsonObj || !geojsonObj.coordinates) {
+                throw new Error('Geometría no válida');
             }
+
+            // Guardar en el formulario
+            document.getElementById('geometry').value = JSON.stringify(geojsonObj);
+
+            // Calcular área si no se proporcionó
+            let areaHa = existingArea;
+            if (areaHa === null) {
+                areaHa = feature.get('area');
+                if (!areaHa || areaHa === 0) {
+                    areaHa = this.calculateArea(feature);
+                }
+            }
+            document.getElementById('area_ha').value = areaHa.toFixed(6);
+
+            if (existingArea === null) {
+                this.showAlert(`Parcela guardado. Área: ${areaHa.toFixed(6)} ha`);
+            }
+        } catch (error) {
+            console.error('Error al convertir a GeoJSON:', error);
+            this.showAlert('Error al guardar el Parcela: ' + error.message, 'error');
         }
-        document.getElementById('area_ha').value = areaHa.toFixed(6);
-        
-        if (existingArea === null) {
-            this.showAlert(`Polígono guardado. Área: ${areaHa.toFixed(6)} ha`);
-        }
-    } catch (error) {
-        console.error('Error al convertir a GeoJSON:', error);
-        this.showAlert('Error al guardar el polígono: ' + error.message, 'error');
     }
-}
 
     // =============================================
     // 12. MANEJO DE CAPAS
@@ -1170,44 +1170,44 @@ convertUTM20NToWGS84(geometry) {
  * CONFIGURA TOGGLE DE CAPA GFW
  * USADO EN: Constructor
  */
-initializeGfWLayerToggle() {
-    const toggleButton = document.getElementById('visibility-toggle-button');
-    
-    if (!toggleButton) {
-        console.warn('Botón de visibilidad GFW no encontrado');
-        return;
-    }
+    initializeGfWLayerToggle() {
+        const toggleButton = document.getElementById('visibility-toggle-button');
 
-    // Leer estado guardado (true = visible, false = oculta)
-    let storedState = localStorage.getItem(this.STORAGE_KEY);
-    let isLayerVisible = true; // Por defecto visible
-    
-    if (storedState !== null) {
-        isLayerVisible = storedState === 'true';
-    } else {
-        // Si no hay estado guardado, guardar el estado por defecto
-        localStorage.setItem(this.STORAGE_KEY, isLayerVisible.toString());
-    }
+        if (!toggleButton) {
+            console.warn('Botón de visibilidad GFW no encontrado');
+            return;
+        }
 
-    console.log(`Estado inicial GFW: ${isLayerVisible ? 'VISIBLE' : 'OCULTA'}`);
-    
-    // Aplicar estado inicial a la capa
-    if (this.gfwLossLayer) {
-        this.gfwLossLayer.setVisible(isLayerVisible);
+        // Leer estado guardado (true = visible, false = oculta)
+        let storedState = localStorage.getItem(this.STORAGE_KEY);
+        let isLayerVisible = true; // Por defecto visible
+
+        if (storedState !== null) {
+            isLayerVisible = storedState === 'true';
+        } else {
+            // Si no hay estado guardado, guardar el estado por defecto
+            localStorage.setItem(this.STORAGE_KEY, isLayerVisible.toString());
+        }
+
+        console.log(`Estado inicial GFW: ${isLayerVisible ? 'VISIBLE' : 'OCULTA'}`);
+
+        // Aplicar estado inicial a la capa
+        if (this.gfwLossLayer) {
+            this.gfwLossLayer.setVisible(isLayerVisible);
+        }
+
+        // Actualizar iconos INMEDIATAMENTE con ambas técnicas
+        this.updateGfwIcons(isLayerVisible);
+
+        // Configurar event listener para el botón
+        toggleButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const newVisibility = this.toggleGFWVisibility();
+            console.log('Nueva visibilidad después de toggle:', newVisibility);
+        });
+
+        console.log('Toggle GFW configurado correctamente');
     }
-    
-    // Actualizar iconos INMEDIATAMENTE con ambas técnicas
-    this.updateGfwIcons(isLayerVisible);
-    
-    // Configurar event listener para el botón
-    toggleButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const newVisibility = this.toggleGFWVisibility();
-        console.log('Nueva visibilidad después de toggle:', newVisibility);
-    });
-    
-    console.log('Toggle GFW configurado correctamente');
-}
 
     /**
      * APLICA ESTADO DE VISIBILIDAD A CAPA GFW
@@ -1218,11 +1218,11 @@ initializeGfWLayerToggle() {
         if (this.gfwLossLayer) {
             this.gfwLossLayer.setVisible(isVisible);
         }
-        
+
         // Actualizar iconos en la interfaz
         const iconVisible = document.getElementById('icon-eye-open');
         const iconHidden = document.getElementById('icon-eye-closed');
-        
+
         if (iconVisible && iconHidden) {
             if (isVisible) {
                 iconVisible.classList.remove('hidden');
@@ -1241,23 +1241,23 @@ initializeGfWLayerToggle() {
      */
     changeBaseLayer(layerKey) {
         console.log(`Cambiando a capa base: ${layerKey}`);
-        
+
         // Verificar que la capa exista
         if (!this.baseLayers[layerKey]) {
             console.error(`Capa base no encontrada: ${layerKey}`);
             this.showAlert(`Capa base no encontrada: ${layerKey}`, 'error');
             return;
         }
-        
+
         // Ocultar todas las capas base
         Object.values(this.baseLayers).forEach(layer => {
             layer.setVisible(false);
         });
-        
+
         // Mostrar la nueva capa base
         this.baseLayers[layerKey].setVisible(true);
         this.currentBaseLayer = this.baseLayers[layerKey];
-        
+
         console.log(`Capa base cambiada a: ${layerKey}`);
         // Opcional: mostrar un mensaje al usuario
         // this.showAlert(`Capa base cambiada a: ${this.baseLayers[layerKey].get('title')}`, 'success');
@@ -1270,79 +1270,79 @@ initializeGfWLayerToggle() {
  * @returns {boolean} Nueva visibilidad
  * USADO EN: initializeGfWLayerToggle()
  */
-toggleGFWVisibility() {
-    console.log('=== TOGGLE GFW VISIBILIDAD ===');
-    
-    if (!this.gfwLossLayer) {
-        console.error('Capa GFW no disponible');
-        this.showAlert('La capa de deforestación no está disponible', 'error');
-        return false;
+    toggleGFWVisibility() {
+        console.log('=== TOGGLE GFW VISIBILIDAD ===');
+
+        if (!this.gfwLossLayer) {
+            console.error('Capa GFW no disponible');
+            this.showAlert('La capa de deforestación no está disponible', 'error');
+            return false;
+        }
+
+        // Obtener visibilidad actual
+        const currentVisibility = this.gfwLossLayer.getVisible();
+        const newVisibility = !currentVisibility;
+
+        console.log(`Cambiando visibilidad de ${currentVisibility} a ${newVisibility}`);
+
+        // Cambiar visibilidad en la capa
+        this.gfwLossLayer.setVisible(newVisibility);
+
+        // Guardar estado en localStorage
+        localStorage.setItem(this.STORAGE_KEY, newVisibility.toString());
+
+        // Actualizar iconos con FORZADO doble
+        this.updateGfwIcons(newVisibility);
+
+        // Verificación adicional después de un breve delay
+        setTimeout(() => {
+            const iconOpen = document.getElementById('icon-eye-open');
+            const iconClosed = document.getElementById('icon-eye-closed');
+            console.log('Verificación después de actualizar:');
+            console.log('- iconOpen.display:', iconOpen?.style?.display, 'hidden class:', iconOpen?.classList?.contains('hidden'));
+            console.log('- iconClosed.display:', iconClosed?.style?.display, 'hidden class:', iconClosed?.classList?.contains('hidden'));
+        }, 100);
+
+        // Mostrar mensaje al usuario
+        const message = newVisibility
+            ? 'Capa de deforestación GFW ACTIVADA'
+            : 'Capa de deforestación GFW DESACTIVADA';
+        this.showAlert(message, newVisibility ? 'success' : 'info');
+
+        return newVisibility;
     }
-    
-    // Obtener visibilidad actual
-    const currentVisibility = this.gfwLossLayer.getVisible();
-    const newVisibility = !currentVisibility;
-    
-    console.log(`Cambiando visibilidad de ${currentVisibility} a ${newVisibility}`);
-    
-    // Cambiar visibilidad en la capa
-    this.gfwLossLayer.setVisible(newVisibility);
-    
-    // Guardar estado en localStorage
-    localStorage.setItem(this.STORAGE_KEY, newVisibility.toString());
-    
-    // Actualizar iconos con FORZADO doble
-    this.updateGfwIcons(newVisibility);
-    
-    // Verificación adicional después de un breve delay
-    setTimeout(() => {
+
+    /**
+     * ACTUALIZA ICONOS DE VISIBILIDAD GFW
+     * @param {boolean} isVisible - Estado de visibilidad
+     * USADO EN: toggleGFWVisibility(), initializeGfWLayerToggle()
+     */
+    updateGfwIcons(isVisible) {
         const iconOpen = document.getElementById('icon-eye-open');
         const iconClosed = document.getElementById('icon-eye-closed');
-        console.log('Verificación después de actualizar:');
-        console.log('- iconOpen.display:', iconOpen?.style?.display, 'hidden class:', iconOpen?.classList?.contains('hidden'));
-        console.log('- iconClosed.display:', iconClosed?.style?.display, 'hidden class:', iconClosed?.classList?.contains('hidden'));
-    }, 100);
-    
-    // Mostrar mensaje al usuario
-    const message = newVisibility 
-        ? 'Capa de deforestación GFW ACTIVADA' 
-        : 'Capa de deforestación GFW DESACTIVADA';
-    this.showAlert(message, newVisibility ? 'success' : 'info');
-    
-    return newVisibility;
-}
 
-/**
- * ACTUALIZA ICONOS DE VISIBILIDAD GFW
- * @param {boolean} isVisible - Estado de visibilidad
- * USADO EN: toggleGFWVisibility(), initializeGfWLayerToggle()
- */
-updateGfwIcons(isVisible) {
-    const iconOpen = document.getElementById('icon-eye-open');
-    const iconClosed = document.getElementById('icon-eye-closed');
-    
-    if (iconOpen && iconClosed) {
-        console.log(`Actualizando iconos - isVisible: ${isVisible}`);
-        
-        if (isVisible) {
-            // Mostrar ojo abierto, ocultar ojo cerrado
-            iconOpen.style.display = 'block';
-            iconClosed.style.display = 'none';
-            iconOpen.classList.remove('hidden');
-            iconClosed.classList.add('hidden');
+        if (iconOpen && iconClosed) {
+            console.log(`Actualizando iconos - isVisible: ${isVisible}`);
+
+            if (isVisible) {
+                // Mostrar ojo abierto, ocultar ojo cerrado
+                iconOpen.style.display = 'block';
+                iconClosed.style.display = 'none';
+                iconOpen.classList.remove('hidden');
+                iconClosed.classList.add('hidden');
+            } else {
+                // Mostrar ojo cerrado, ocultar ojo abierto
+                iconOpen.style.display = 'none';
+                iconClosed.style.display = 'block';
+                iconOpen.classList.add('hidden');
+                iconClosed.classList.remove('hidden');
+            }
+
+            console.log(`Estado después: iconOpen.display=${iconOpen.style.display}, iconClosed.display=${iconClosed.style.display}`);
         } else {
-            // Mostrar ojo cerrado, ocultar ojo abierto
-            iconOpen.style.display = 'none';
-            iconClosed.style.display = 'block';
-            iconOpen.classList.add('hidden');
-            iconClosed.classList.remove('hidden');
+            console.error('No se encontraron los iconos de visibilidad:', { iconOpen, iconClosed });
         }
-        
-        console.log(`Estado después: iconOpen.display=${iconOpen.style.display}, iconClosed.display=${iconClosed.style.display}`);
-    } else {
-        console.error('No se encontraron los iconos de visibilidad:', { iconOpen, iconClosed });
     }
-}
 
     // =============================================
     // 13. UTILIDADES
@@ -1356,7 +1356,7 @@ updateGfwIcons(isVisible) {
     updateAreaDisplay(areaHa) {
         const areaDisplay = document.getElementById('area-display');
         const areaValue = document.getElementById('area-value');
-        
+
         if (areaDisplay && areaValue) {
             if (areaHa > 0) {
                 areaValue.textContent = areaHa.toFixed(6);
@@ -1376,7 +1376,7 @@ updateGfwIcons(isVisible) {
         document.getElementById('geometry').value = '';
         document.getElementById('area_ha').value = '';
         this.updateAreaDisplay(0);
-        
+
         this.removeExistingDrawInteraction();
         this.drawingFeature = null;
     }
@@ -1389,7 +1389,7 @@ updateGfwIcons(isVisible) {
      */
     createFeatureCollection(features) {
         const format = new ol.format.GeoJSON();
-        
+
         const geojsonFeatures = features.map(feature => {
             try {
                 const geojsonStr = format.writeFeature(feature, {
@@ -1403,7 +1403,7 @@ updateGfwIcons(isVisible) {
                 return null;
             }
         }).filter(f => f !== null);
-        
+
         return {
             type: 'FeatureCollection',
             features: geojsonFeatures
@@ -1441,9 +1441,9 @@ updateGfwIcons(isVisible) {
     showTurfJSError() {
         const errorMessage = 'Turf.js no está disponible. ' +
             'Agrega en tu HTML: <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>';
-        
+
         console.error(errorMessage);
-        
+
         if (this.showAlert) {
             this.showAlert(
                 'Error: Turf.js no está cargado. Los cálculos de área no están disponibles.',
@@ -1461,11 +1461,11 @@ updateGfwIcons(isVisible) {
      */
     showAreaCalculationError(error) {
         console.error('Error detallado en cálculo de área:', error);
-        
-        const userMessage = error.message.includes('Turf.js') 
+
+        const userMessage = error.message.includes('Turf.js')
             ? 'Error en la biblioteca de cálculos geográficos. Verifica la consola para más detalles.'
-            : 'Error al calcular el área. Verifica que el polígono sea válido.';
-        
+            : 'Error al calcular el área. Verifica que el Parcela sea válido.';
+
         if (this.showAlert) {
             this.showAlert(userMessage, 'error');
         }
@@ -1476,7 +1476,7 @@ updateGfwIcons(isVisible) {
     // =============================================
 
     /**
-     * DIBUJA POLÍGONO DESDE COORDENADAS UTM
+     * DIBUJA Parcela DESDE COORDENADAS UTM
      * @param {Array} utmCoordinates - Array de coordenadas UTM [easting, northing, zone, hemisphere]
      * USADO EN: Potencialmente desde interfaz externa
      */
@@ -1488,11 +1488,11 @@ updateGfwIcons(isVisible) {
                 return proj4(sourceEpsg, 'EPSG:4326', [easting, northing]);
             });
 
-            const invalidCoords = wgs84Coordinates.filter(coord => 
-                isNaN(coord[0]) || isNaN(coord[1]) || 
+            const invalidCoords = wgs84Coordinates.filter(coord =>
+                isNaN(coord[0]) || isNaN(coord[1]) ||
                 Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90
             );
-            
+
             if (invalidCoords.length > 0) {
                 this.showAlert('Algunas coordenadas UTM son inválidas o están fuera de rango', 'error');
                 return;
@@ -1500,7 +1500,7 @@ updateGfwIcons(isVisible) {
 
             this.closePolygonIfNeeded(wgs84Coordinates);
             this.createPolygonFromCoordinates(wgs84Coordinates, utmCoordinates);
-            
+
         } catch (error) {
             console.error('Error al procesar coordenadas UTM:', error);
             this.showAlert('Error al procesar coordenadas UTM. Verifique los valores y formatos.', 'error');
@@ -1508,21 +1508,21 @@ updateGfwIcons(isVisible) {
     }
 
     /**
-     * CIERRA POLÍGONO SI NO ESTÁ CERRADO
-     * @param {Array} coordinates - Coordenadas del polígono
+     * CIERRA Parcela SI NO ESTÁ CERRADO
+     * @param {Array} coordinates - Coordenadas de la Parcela
      * USADO EN: drawFromUTMCoordinates()
      */
     closePolygonIfNeeded(coordinates) {
         const firstCoord = coordinates[0];
         const lastCoord = coordinates[coordinates.length - 1];
-        
+
         if (firstCoord[0] !== lastCoord[0] || firstCoord[1] !== lastCoord[1]) {
             coordinates.push(firstCoord);
         }
     }
 
     /**
-     * CREA POLÍGONO DESDE COORDENADAS WGS84
+     * CREA Parcela DESDE COORDENADAS WGS84
      * @param {Array} wgs84Coordinates - Coordenadas en WGS84
      * @param {Array} utmCoordinates - Coordenadas UTM originales
      * USADO EN: drawFromUTMCoordinates()
@@ -1531,36 +1531,36 @@ updateGfwIcons(isVisible) {
         const feature = new ol.Feature({
             geometry: new ol.geom.Polygon([wgs84Coordinates]).transform('EPSG:4326', 'EPSG:3857')
         });
-        
+
         this.clearMap();
-        
+
         const areaHa = this.calculateArea(feature);
         feature.set('area', areaHa);
         feature.setStyle(this.getPolygonStyle('finished', areaHa));
-        
+
         this.source.addFeature(feature);
         this.updateAreaDisplay(areaHa);
-        
+
         this.map.getView().fit(
             feature.getGeometry().getExtent(),
             { padding: [50, 50, 50, 50], duration: 1000 }
         );
-        
+
         this.convertToGeoJSON(feature, areaHa);
-        
-        const zonesUsed = [...new Set(utmCoordinates.map(coord => 
+
+        const zonesUsed = [...new Set(utmCoordinates.map(coord =>
             `Zona ${coord[2]}${coord[3]}`
         ))];
         const zonesText = zonesUsed.sort().join(', ');
-        
+
         this.showAlert(
-            `Polígono dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`, 
+            `Parcela dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`,
             'success'
         );
     }
 
     /**
-     * PROCESA INFORMACIÓN DE MÚLTIPLES POLÍGONOS
+     * PROCESA INFORMACIÓN DE MÚLTIPLES Parcelas
      * @param {Array} features - Features a procesar
      * USADO EN: finalizeImport()
      */
@@ -1580,46 +1580,46 @@ updateGfwIcons(isVisible) {
     }
 
     /**
- * Obtiene el GeoJSON de todos los polígonos en WGS84 (EPSG:4326)
+ * Obtiene el GeoJSON de todos los Parcelas en WGS84 (EPSG:4326)
  * @returns {Object} FeatureCollection en coordenadas geográficas (longitud, latitud)
  */
-getGeoJSONInWGS84() {
-    const features = this.source.getFeatures();
-    const format = new ol.format.GeoJSON();
-    const geojsonFeatures = [];
-    features.forEach(feature => {
-        const geom = feature.getGeometry();
-        if (!geom) return;
-        // Solo incluir polígonos o multipolígonos, ignorar puntos
-        const geomType = geom.getType();
-        if (geomType !== 'Polygon' && geomType !== 'MultiPolygon') return;
-        
-        const geom4326 = geom.clone().transform('EPSG:3857', 'EPSG:4326');
-        const newFeature = new ol.Feature({ geometry: geom4326 });
-        const props = feature.getProperties();
-        delete props.geometry;
-        newFeature.setProperties(props);
-        const geojsonStr = format.writeFeature(newFeature, {
-            dataProjection: 'EPSG:4326',
-            featureProjection: 'EPSG:4326'
+    getGeoJSONInWGS84() {
+        const features = this.source.getFeatures();
+        const format = new ol.format.GeoJSON();
+        const geojsonFeatures = [];
+        features.forEach(feature => {
+            const geom = feature.getGeometry();
+            if (!geom) return;
+            // Solo incluir Parcelas o multiParcelas, ignorar puntos
+            const geomType = geom.getType();
+            if (geomType !== 'Polygon' && geomType !== 'MultiPolygon') return;
+
+            const geom4326 = geom.clone().transform('EPSG:3857', 'EPSG:4326');
+            const newFeature = new ol.Feature({ geometry: geom4326 });
+            const props = feature.getProperties();
+            delete props.geometry;
+            newFeature.setProperties(props);
+            const geojsonStr = format.writeFeature(newFeature, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:4326'
+            });
+            geojsonFeatures.push(JSON.parse(geojsonStr));
         });
-        geojsonFeatures.push(JSON.parse(geojsonStr));
-    });
-    return {
-        type: 'FeatureCollection',
-        features: geojsonFeatures
-    };
-}
+        return {
+            type: 'FeatureCollection',
+            features: geojsonFeatures
+        };
+    }
 
     /**
-     * MUESTRA INFORMACIÓN DE POLÍGONOS EN TABLA
-     * @param {Array} polygonsInfo - Información de polígonos
+     * MUESTRA INFORMACIÓN DE Parcelas EN TABLA
+     * @param {Array} polygonsInfo - Información de Parcelas
      * USADO EN: processMultiPolygonInfo()
      */
     displayPolygonsInfo(polygonsInfo) {
         const container = document.getElementById('producers-info');
         const list = document.getElementById('producers-list');
-        
+
         if (polygonsInfo.length > 0) {
             list.innerHTML = polygonsInfo.map(info => `
                 <tr>
@@ -1652,7 +1652,7 @@ getGeoJSONInWGS84() {
  * INICIALIZA MAPA CUANDO EL DOCUMENTO ESTÉ LISTO
  * Crea instancia global window.deforestationMapInstance
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('map')) {
         window.deforestationMapInstance = new DeforestationMap();
     }
@@ -1662,19 +1662,19 @@ document.addEventListener('DOMContentLoaded', function() {
  * MANEJA CARGA DE ARCHIVOS GEOJSON
  * Configura evento para importar archivos GeoJSON
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const importButton = document.getElementById('import-geojson');
     const fileInput = document.getElementById('import-area');
-    
+
     if (importButton && fileInput) {
         importButton.addEventListener('click', () => {
             fileInput.click();
         });
-        
+
         fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
-            
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
@@ -1687,7 +1687,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
             reader.readAsText(file);
-            
+
             event.target.value = '';
         });
     }
