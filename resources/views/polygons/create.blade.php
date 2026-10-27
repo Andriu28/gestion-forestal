@@ -324,8 +324,7 @@
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
 
-<!-- SweetAlert2 para notificaciones -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- SweetAlert2 y showCustomAlert vienen de app.js (no se carga el CDN para no sobrescribirlo) -->
 
 <script>
 // ARCHIVO polygon-map.js MODIFICADO PARA INCLUIR DISPLAY DE COORDENADAS COMO ANALISIS
@@ -778,7 +777,7 @@ class PolygonMap {
         this.setupDrawEvents();
         this.map.addInteraction(this.draw);
         
-        this.showAlert('Modo dibujo activado. Haz clic en el mapa para dibujar el Parcela.', 'info');
+        this.showAlert('Modo dibujo activado. Haz clic en el mapa para dibujar la Parcela.', 'info');
     }
 
     setupDrawEvents() {
@@ -895,7 +894,7 @@ class PolygonMap {
             const geojsonObj = JSON.parse(geojson);
             
             if (!geojsonObj.geometry) {
-                throw new Error('El Parcela no tiene geometría válida');
+                throw new Error('La Parcela no tiene geometría válida');
             }
             
             document.getElementById('geometry').value = JSON.stringify(geojsonObj.geometry);
@@ -905,7 +904,7 @@ class PolygonMap {
             
         } catch (error) {
             console.error('Error al convertir GeoJSON:', error);
-            this.showAlert('Error al guardar el Parcela: ' + error.message, 'error');
+            this.showAlert('Error al guardar la Parcela: ' + error.message, 'error');
         }
     }
 
@@ -1271,19 +1270,8 @@ class PolygonMap {
     }
 
     showAlert(message, icon = 'info') {
-        if (window.Swal) {
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: icon,
-                title: message,
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true
-            });
-        } else {
-            alert(message);
-        }
+        // Usa la función global (mismo estilo que el resto del sistema)
+        window.showAlert(message, icon);
     }
 }
 
@@ -2064,8 +2052,24 @@ function closeMenu(menuId) {
 }
 
 // Función para mostrar alertas
-function showAlert(message, type = 'info') {
-    if (window.Swal) {
+// Usa showCustomAlert de app.js para que se vea igual que las alertas de guardado
+window.showAlert = function (message, type = 'info') {
+    const titles = {
+        success: '¡Éxito!',
+        error: 'Error',
+        warning: 'Atención',
+        info: 'Información'
+    };
+
+    // showCustomAlert inserta el texto como HTML, así que se escapa
+    const safeMessage = String(message)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    if (typeof window.showCustomAlert === 'function') {
+        window.showCustomAlert(type, titles[type] || titles.info, safeMessage);
+    } else if (window.Swal) {
         Swal.fire({
             toast: true,
             position: 'top-end',
@@ -2078,6 +2082,10 @@ function showAlert(message, type = 'info') {
     } else {
         alert(message);
     }
+};
+
+function showAlert(message, type = 'info') {
+    window.showAlert(message, type);
 }
 
 // =============================================

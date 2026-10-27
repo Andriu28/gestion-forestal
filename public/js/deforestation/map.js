@@ -129,7 +129,7 @@ class DeforestationMap {
         this.baseLayers = {
             osm: new ol.layer.Tile({
                 title: 'OpenStreetMap',
-                visible: true,
+                visible: false,
                 source: new ol.source.XYZ({
                     url: 'https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
                     attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -142,7 +142,7 @@ class DeforestationMap {
                     maxZoom: 17,   // Límite superior de zoom (puedes usar 18 o 19)
                     minZoom: 1    // Opcional: límite inferior
                 }),
-                visible: false,
+                visible: true,
                 title: 'Satélite Esri'
             }),
             terrain: new ol.layer.Tile({
