@@ -442,7 +442,7 @@
                                                             <button type="button" 
                                                                     class="inline-flex items-center text-green-700/40 hover:text-green-500/80 dark:text-green-400/60 dark:hover:text-green-300 p-1 hover:bg-gray-600 dark:hover:bg-gray-500/40 rounded-xl hover:bg-opacity-10 hover:scale-110" 
                                                                     title="Activar"
-                                                                    onclick="handleTogglePolygonStatus({{ $polygon->id }}, {{ json_encode($polygon->name) }}, true)">
+                                                                    onclick="handleTogglePolygonStatus({{ $polygon->id }}, {{ json_encode($polygon->name) }}, false)">
                                                                 <svg xmlns="http://www.w3.org/2002/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
                                                                     <circle cx="12" cy="12" r="10" class="fill-none"/>
                                                                     <path d="m8 12 2.5 2.5L16 9"/>
@@ -623,7 +623,7 @@ async function handleTogglePolygonStatus(polygonId, polygonName, isCurrentlyActi
     
     const result = await showCustomConfirmation(
         !isCurrentlyActive,
-        `¿Estás seguro de que deseas ${action} el Parcela <b>${polygonName}</b>?`
+        `¿Estás seguro de que deseas ${action} la Parcela <b>${polygonName}</b>?`
     );
     
     if (result.isConfirmed) {
@@ -696,8 +696,8 @@ function updatePolygonStatusUI(polygonId, polygonName, isActive, statusText = nu
 async function handleDeletePolygon(polygonId, polygonName) {
     const result = await showCustomConfirmation(
         false,
-        `¿Estás seguro de que deseas eliminar el Parcela <b>${polygonName}</b>?<br><br>
-         <small>El Parcela será movido a la lista de eliminados.</small>`
+        `¿Estás seguro de que deseas eliminar la Parcela <b>${polygonName}</b>?<br><br>
+         <small>La Parcela será movida a la lista de eliminados.</small>`
     );
     
     if (result.isConfirmed) {

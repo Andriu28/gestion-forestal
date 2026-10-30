@@ -120,12 +120,11 @@
                             <tbody class="bg-stone-100/90 dark:bg-custom-gray divide-y divide-gray-200">
                                 @foreach($producers as $producer)
                                     <tr id="producer-row-{{ $producer->id }}" class="hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
-                                        <tr id="producer-row-{{ $producer->id }}" class="hover:bg-gray-200/60 dark:hover:bg-gray-700/30 hover:shadow-lg hover:transition-all hover:duration-200">
+                                        
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->code }}</td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->name }}</td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400">{{ $producer->lastname ?? 'N/A' }}</td>
-                                        <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400 font-mono">{{ $producer->cedula_formatted ?? 'N/A' }}
-</td>
+                                        <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 whitespace-nowrap text-gray-900 dark:text-gray-400 font-mono">{{ $producer->cedula_formatted ?? 'N/A' }}</td>
                                         <td class="hover:bg-gray-200 dark:hover:bg-gray-600/20 px-6 py-2 text-gray-900 dark:text-gray-400">
                                             {{ Str::limit($producer->description, 50) ?? 'Sin descripción' }}
                                         </td>
@@ -318,7 +317,7 @@ function updateProducerStatusUI(producerId, producerName, isActive) {
     if (!row) return;
     
     // Encontrar la celda de estado (4ta columna)
-    const statusCell = row.querySelector('td:nth-child(4)');
+    const statusCell = row.querySelector('td:nth-child(6)');
     const toggleButton = row.querySelector('button[onclick*="handleToggleStatus"]');
     
     // Actualizar badge de estado - ESTILO IGUAL QUE Parcelas

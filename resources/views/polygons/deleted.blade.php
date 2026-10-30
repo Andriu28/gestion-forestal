@@ -201,8 +201,8 @@ async function makePolygonRequest(url, method = 'POST', data = null) {
 async function handleDeletePolygon(polygonId, polygonName) {
     const result = await showCustomConfirmation(
         false,
-        `¿Estás seguro de que deseas eliminar el Parcela <b>${polygonName}</b>?<br><br>
-         <small>El Parcela será movido a la lista de deshabilitados.</small>`
+        `¿Estás seguro de que deseas eliminar la Parcela <b>${polygonName}</b>?<br><br>
+         <small>La Parcela será movida a la lista de deshabilitados.</small>`
     );
     
     if (result.isConfirmed) {
@@ -239,7 +239,7 @@ async function handleDeletePolygon(polygonId, polygonName) {
 async function handleRestorePolygon(polygonId, polygonName) {
     const result = await showCustomConfirmation(
         true,
-        `¿Estás seguro de que deseas restaurar el Parcela <b>${polygonName}</b>?`
+        `¿Estás seguro de que deseas restaurar la Parcela <b>${polygonName}</b>?`
     );
     
     if (result.isConfirmed) {
@@ -251,7 +251,7 @@ async function handleRestorePolygon(polygonId, polygonName) {
                 row.remove();
             }
             
-            showCustomAlert('success', 'Éxito', 'Parcela restaurado exitosamente.');
+            showCustomAlert('success', 'Éxito', 'Parcela restaurada exitosamente.');
             
             const tableBody = document.querySelector('table tbody');
             if (tableBody && tableBody.children.length === 0) {
@@ -278,7 +278,7 @@ async function handleTogglePolygonStatus(polygonId, polygonName, isCurrentlyActi
     
     const result = await showCustomConfirmation(
         !isCurrentlyActive,
-        `¿Estás seguro de que deseas ${action} el Parcela <b>${polygonName}</b>?`
+        `¿Estás seguro de que deseas ${action} la Parcela <b>${polygonName}</b>?`
     );
     
     if (result.isConfirmed) {

@@ -34,7 +34,7 @@ window.showCustomAlert = function (icon, title, text) {
         icon: icon,
         title: title,
         showConfirmButton: false,
-        timer: 1600,
+        timer: 2600,
         timerProgressBar: true,
         toast: true,
         width: '380px',

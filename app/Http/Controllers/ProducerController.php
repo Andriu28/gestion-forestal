@@ -91,7 +91,7 @@ class ProducerController extends Controller
     }
 
     /**
-     * Muestra exclusivamente la lista de productores eliminados lógicamente (papelera de reciclaje).
+     * Muestra exclusivamente la lista de productores deshabilitados lógicamente (papelera de reciclaje).
      */
     public function deleted(Request $request)
     {
