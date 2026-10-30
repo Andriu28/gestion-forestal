@@ -47,10 +47,8 @@
             @endif
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center justify-end gap-4">
             <x-primary-button>{{ __('Guardar') }}</x-primary-button>
-
-            
         </div>
     </form>
 </section>

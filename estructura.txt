@@ -269,7 +269,7 @@ resources\views\layouts\navigation.blade.php
 resources\views\livewire\create-producer.blade.php
 resources\views\livewire\edit-producer.blade.php
 resources\views\livewire\edit-user.blade.php
-resources\views\livewire\form-user.blade.php
+resources\views\livewire\create-user.blade.php
 resources\views\livewire\components\location-picker.blade.php
 resources\views\polygons\create.blade.php
 resources\views\polygons\deleted.blade.php
