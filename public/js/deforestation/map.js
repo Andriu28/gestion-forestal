@@ -562,19 +562,34 @@ class DeforestationMap {
      * @param {ol.Feature} feature - Parcela dibujado
      * USADO EN: setupDrawEvents() (evento drawend)
      */
-    finalizeDrawing(feature) {
-        const areaHa = this.refreshArea(feature);
+    // map.js — línea ~470
+finalizeDrawing(feature) {
+    const areaHa = this.refreshArea(feature);
 
-        feature.set('area', areaHa);
-        feature.setStyle(this.getPolygonStyle('finished', areaHa));
+    feature.set('area', areaHa);
+    feature.setStyle(this.getPolygonStyle('finished', areaHa));
 
-        this.convertToGeoJSON(feature, areaHa);
+    this.convertToGeoJSON(feature, areaHa);
+
+    // 🔽 ANTES:
+    // this.showAlert(`Parcela completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
+
+    // 🔽 DESPUÉS: usar el toast global de la app
+    if (window.showCustomAlert) {
+        window.showCustomAlert(
+            'success',
+            'Poligonal cerrada',
+            `Área: <b>${areaHa.toFixed(6)} ha</b>`
+        );
+    } else {
+        // fallback por si app.js no está cargado (no debería pasar)
         this.showAlert(`Parcela completado. Área: ${areaHa.toFixed(6)} ha`, 'success');
-
-        this.map.removeInteraction(this.draw);
-        this.draw = null;
-        this.resetDrawingState();
     }
+
+    this.map.removeInteraction(this.draw);
+    this.draw = null;
+    this.resetDrawingState();
+}
 
     /**
      * ELIMINA INTERACCIÓN DE DIBUJO EXISTENTE
@@ -1553,10 +1568,15 @@ class DeforestationMap {
         ))];
         const zonesText = zonesUsed.sort().join(', ');
 
-        this.showAlert(
-            `Parcela dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`,
-            'success'
-        );
+        if (window.showCustomAlert) {
+            window.showCustomAlert(
+                'success',
+                'Parcela dibujado exitosamente',
+                `${zonesText} · Área: <b>${areaHa.toFixed(6)} ha</b>`
+            );
+        } else {
+            this.showAlert(`Parcela dibujado exitosamente (${zonesText}). Área: ${areaHa.toFixed(6)} ha`, 'success');
+        }
     }
 
     /**
