@@ -578,7 +578,7 @@ finalizeDrawing(feature) {
     if (window.showCustomAlert) {
         window.showCustomAlert(
             'success',
-            'Poligonal cerrada',
+            'Parcela completada',
             `Área: <b>${areaHa.toFixed(6)} ha</b>`
         );
     } else {
