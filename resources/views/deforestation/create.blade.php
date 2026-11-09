@@ -9,7 +9,7 @@
                 </h2>
    
                     <!-- CARGA DEL MAPA AQUÍ -->
-                    <div id="map" style="height: 80vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
+                   <div id="map" data-carto-api-key="{{ config('carto.api_key') }}" data-maptiler-api-key="{{ config('maptiler.api_key') }}" style="height: 80vh; border: 1px solid #dededeff; border-radius: 0.5rem; position: relative;">
                         <!-- Controles del mapa -->
                         <div id="map-controls">
                             <!-- Contenedor para los botones superiores (Cambiar Mapa y Pantalla Completa) -->

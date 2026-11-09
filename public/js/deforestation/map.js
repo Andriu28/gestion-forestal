@@ -44,6 +44,8 @@ class DeforestationMap {
         this.MINZOOM = 5;
         this.MAXZOOM = 18;
         this.GFW_LOSS_URL = 'https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png';
+        this.CARTO_API_KEY = document.getElementById('map')?.dataset?.cartoApiKey || '';
+        this.MAPTILER_API_KEY  = document.getElementById('map')?.dataset?.maptilerApiKey || '';
 
         // =============================================
         // 2. CONFIGURACIÓN INICIAL
@@ -131,7 +133,7 @@ class DeforestationMap {
                 title: 'OpenStreetMap',
                 visible: false,
                 source: new ol.source.XYZ({
-                    url: 'https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                    url: `https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${this.CARTO_API_KEY}`,
                     attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 })
             }),
@@ -155,7 +157,7 @@ class DeforestationMap {
             }),
             dark: new ol.layer.Tile({
                 source: new ol.source.XYZ({
-                    url: 'https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                    url: `https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${this.CARTO_API_KEY}`,
                     attributions: '© CartoDB'
                 }),
                 visible: false,
@@ -163,7 +165,7 @@ class DeforestationMap {
             }),
             maptiler_satellite: new ol.layer.Tile({
                 source: new ol.source.XYZ({
-                    url: 'https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=scUozK4fig7bE6jg7TPi',
+                    url: `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${this.MAPTILER_API_KEY}`,
                     attributions: '© MapTiler & OpenStreetMap',
                     tileSize: 512,
                     maxZoom: 20
@@ -494,7 +496,9 @@ class DeforestationMap {
         const epsgCode = hemisphere === 'N' ? `EPSG:326${zone}` : `EPSG:327${zone}`;
 
         if (!proj4.defs(epsgCode)) {
-            const proj4String = `+proj=utm +zone=${zone} +${hemisphere === 'S' ? '+south ' : ''}datum=WGS84 +units=m +no_defs`;
+            // Construir la cadena PROJ4 correctamente
+            const southToken = hemisphere === 'S' ? ' +south' : '';
+            const proj4String = `+proj=utm +zone=${zone}${southToken} +datum=WGS84 +units=m +no_defs`;
             proj4.defs(epsgCode, proj4String);
         }
 
